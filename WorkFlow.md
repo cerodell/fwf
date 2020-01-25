@@ -17,5 +17,7 @@ When the source code in the master branch is stable and has been deployed, all o
 
 
 `$ git checkout stable                               // change to the stable branch`
+
 `$ git merge master                                  // forces creation of commit object during merge`
+
 `$ git push origin stable --tags                     // push tag changes`
