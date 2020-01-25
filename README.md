@@ -15,7 +15,7 @@ equations developed by Van Wagner (1977) and Van Wanger and Pickett (1985).
 The moisture codes that are the foundation of the FWI system the; Fine Fuel 
 Moisture Code (FFMC), Duff Moisture Code (DMC) and Drought Code (DC), will be
 validated against FWI in-situ measurements at weather stations across Canada,
-to ensure accuracy of our product. [1] The mentioned moisture codes along with
+to ensure accuracy of our product. The mentioned moisture codes along with
 the; Initial Spread Index (ISI), Buildup Index (BUI) and the Fire Weather 
 Index (FWI) will be graphically displayed via FWF online maps encompassing
 regions of interest to the user.  Also, for large fires, point-location 
