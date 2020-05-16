@@ -14,7 +14,7 @@ from wrf import (getvar, g_uvmet)
 
 def readwrf(filein):
     """
-    This Fucntion read wrfout file and grabs varibels of internts and outputs as an xarray
+    This Fucntion reads wrfout files and grabs varibels of internts and writes/outputs as an xarray
     
     Parameters
     ----------
@@ -23,11 +23,11 @@ def readwrf(filein):
     Returns
     -------
     
-    ds_wrf: an xarray of wind speed (km h-1), temp (degC) & rh (%) 
+    ds_wrf: an xarray of wind speed (km h-1), temp (degC), rh (%) & qpf (mm)
     """
     ds_list = []
     pathlist = sorted(Path(filein).glob('wrfout_d03_*'))
-    #print(pathlist)
+    print(pathlist)
     for path in pathlist:
         path_in_str = str(path)
         wrf_file = Dataset(path_in_str,'r')

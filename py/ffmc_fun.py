@@ -53,14 +53,38 @@ ffmc, list_m = [], []
 ffmc_list, F_list, M_list = [], [], []
 
 def ffmc(wsp,temp,rh,m_o):
+
+    """
+    TThis function calculates the Fine Fuel Moisture Code at a one-hour interval writes/outputs as an xarray
+    
+    Parameters
+    ----------
+    temp: temp (degC)
+    wsp:  wind speed (km h-1)
+    rh:   relative humidity (%)
+    m_o:  
+
+
+
+    files: netcdf files
+    Returns
+    -------
+    
+    ds_ffmc: an xarray of wind speed (km h-1), temp (degC), rh (%) & qpf (mm)
+    """
+
+
     ########################################################################
-    ##(4) 
-    a = ((rh-100)/ 10)
-    b = (-0.115 * rh)
+    ##(2.a) 
+    # define powers
+    a = 0.679
+    b = ((rh-100)/ 10)
+    c = (-0.115 * rh)
     print(rh.shape)
     print(temp.shape)
-    E_d = (0.942 * np.power(rh[i],0.679)) + (11 * np.power(e_full,a)) \
-                   + (0.18 * (21.1 - temp) * (1 - np.power(e_full,b)))
+
+    E_d = (0.942 * np.power(rh[i],a)) + (11 * np.power(e_full,b)) \
+                   + (0.18 * (21.1 - temp) * (1 - np.power(e_full,c)))
     
     ########################################################################
     ##(5)

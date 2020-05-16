@@ -112,7 +112,6 @@ for i in range(0,len(ffmc)):
 
     print(diff)
 
-#zzz___ = 3312000 + 1772000
-#zzzzzzzz = np.arange(-1772000,3312000,(5084000/7))
+
 plt.close('all')
 
