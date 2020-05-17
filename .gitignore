@@ -1,6 +1,8 @@
 # My Stuff
 .ipynb_checkpoints
 data
+.DS_Store
+*.DS_Store
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
@@ -51,4 +53,4 @@ coverage.xml
 *.pot
 
 # Sphinx documentation
-docs/_build/
+docs/_build/.DS_Store
