@@ -1,18 +1,11 @@
 import context
 import math
-import errno
 import numpy as np
 import xarray as xr
-
 from context import data_dir
-from pathlib import Path
-from netCDF4 import Dataset
-from datetime import datetime
-
-
 
 from fwi.utils.read_wrfout import readwrf, dict_xarry
-from wrf import (to_np, get_cartopy, latlon_coords)
+
  
 # full_dir = readwrf(filein)
 
@@ -23,16 +16,13 @@ ds_wrf = xr.open_zarr(full_dir)
 
 """ ####################################################################### """
 """ ############ Mathematical Constants and Usefull Arrays ################ """
-# Get the latitude, longitude and projection
-# lats, lons = latlon_coords(ds_wrf.rh2)
-# cart_proj = get_cartopy(ds_wrf.rh2)
 
 ######Math Constants
 e = math.e
 ln_ = np.log
 
 length = len(ds_wrf.Time) 
-shape = np.shape(ds_wrf.T2[0,:,:])
+shape = np.shape(ds_wrf.T[0,:,:])
 e_full    = np.full(shape,e, dtype=float)
 zero_full = np.zeros(shape, dtype=float)
 
@@ -167,31 +157,5 @@ def FFMC(W,T,H,m_o):
     FFMC_list.append(ds)    
 
 
-for i in range(length):
-    FFMC = FFMC(ds_wrf.W[i],ds_wrf.T[i],ds_wrf.H[i],m_o)
-    FFMC_list.append(FFMC)
 
 
-
-
-
-
-
-# def xarray_unlike(dict_list): 
-#     xarray_files = []
-#     for index in dict_list:
-#         ds  = xr.Dataset(index)
-#         xarray_files.append(ds)
-#     ds_final = xr.combine_nested(xarray_files, 'time')
-#     return(ds_final)
-
-
-# def xarray_like(dict_list):
-#     xarray_files = []
-#     for index in dict_list:
-#         ds  = xr.Dataset(index)
-#         xarray_files.append(ds)
-#     ds_final = xr.merge(xarray_files,compat='override')    
-#     return(ds_final)
-
-# ds_ffmc = xarray_like(ffmc_list)

@@ -32,14 +32,14 @@ def readwrf(filein):
         path_in_str = str(path)
         wrf_file = Dataset(path_in_str,'r')
         
-        rh        = getvar(wrf_file, "rh2")*1
-        temp      = getvar(wrf_file, "T2")-273.15
-        # uv         = getvar(wrf_file, "uvmet10", units='km h-1') 
-        # lats      = getvar(wrf_file, "lat")
-        # lons      = getvar(wrf_file, "lon")
-        wsp_wdir  = g_uvmet.get_uvmet10_wspd_wdir(wrf_file,units='km h-1')
+        H            = getvar(wrf_file, "H")*1
+        T            = getvar(wrf_file, "T")-273.15
+        # uv          = getvar(wrf_file, "uvmet10", units='km h-1') 
+        # lats        = getvar(wrf_file, "lat")
+        # lons        = getvar(wrf_file, "lon")
+        wsp_wdir     = g_uvmet.get_uvmet10_wspd_wdir(wrf_file,units='km h-1')
         wsp_array    = np.array(wsp_wdir[0])
-        wsp = xr.DataArray(wsp_array, name='wsp', dims=('south_north', 'west_east'))
+        W            = xr.DataArray(wsp_array, name='W', dims=('south_north', 'west_east'))
 
         # wps=xr.Dataset({'WSP': np.array(wsp_i),'XLONG': (['south_north', 'west_east'], wsp_i.XLONG),
         #                 'XLAT': (['south_north', 'west_east'], wsp_i.XLAT),
@@ -51,7 +51,7 @@ def readwrf(filein):
         # rain_nc   = getvar(wrf_file, "RAINNC")
         # qpf       = rain_c + rain_sh + rain_nc
 
-        var_list = [rh,temp,wsp]
+        var_list = [H,T,W]
         ds = xr.merge(var_list)
         ds_list.append(ds)
 
@@ -82,7 +82,7 @@ def dict_xarry(var1, var2, var3):
     var_dict={}
     var3 = np.array(var3, dtype=float)
     dims = ('time', 'south_north', 'west_east')
-    var_dict.update({'ffmc' : (dims,np.array(var1, dtype=float))})
+    var_dict.update({'FFMC' : (dims,np.array(var1, dtype=float))})
     var_dict.update({'m_o' : (dims,np.array(var2, dtype=float))})
     var_dict.update({'time' : ('time',var3)})
     return var_dict
