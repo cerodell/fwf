@@ -10,7 +10,7 @@ make each of the models will be calculated using a numerical weather prediction
 model WRF-ARW. 
 
 
-The new FWI System hereafter referred to as FWI-UBC, will be developed using 
+The new FWI System hereafter referred to as FWI-UBC, will make use of 
 equations developed by Van Wagner (1977) and Van Wanger and Pickett (1985). 
 The moisture codes that are the foundation of the FWI system the; Fine Fuel 
 Moisture Code (FFMC), Duff Moisture Code (DMC) and Drought Code (DC), will be
