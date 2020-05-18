@@ -2,9 +2,8 @@ import context
 import math
 import numpy as np
 import xarray as xr
-from context import data_dir
+from context import data_dir, xr_dir, wrf_dir
 
-from fwi.utils.read_wrfout import readwrf, dict_xarry
 
  
 # full_dir = readwrf(filein)
@@ -13,6 +12,7 @@ full_dir = str(data_dir) +str('/xr/20200126/20200126_23_ds_wrf.zarr')
 ds_wrf = xr.open_zarr(full_dir)
 
 
+# scp -r /Volumes/CER/WFRT/FWI/Data/20190819 crodell@bluesky2.eoas.ubc.ca:/home/crodell/fwf/data/wrf 
 
 """ ####################################################################### """
 """ ############ Mathematical Constants and Usefull Arrays ################ """

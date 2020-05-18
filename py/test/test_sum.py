@@ -1,6 +1,6 @@
 import context
 import fwi
-from fwi.utils.sumdef import summe
+from fwi.utils.test.sumdef import summe
 
 
 ## Test of the repo fwf

@@ -1,9 +1,13 @@
 """
 define the path to important folders without having
 to install anything -- just do:
+
 import contenxt
+
 then the path for the data directory is
+
 context.data_dir
+
 """
 import sys
 import site
@@ -17,8 +21,8 @@ else:
     notebooks_dir = this_dir
 root_dir = notebooks_dir.parent
 data_dir = root_dir / Path("data")
-test_dir = root_dir / Path("test_data")
-map_dir = root_dir / Path("map_data")
+xr_dir = root_dir / Path("data/xr/")
+wrf_dir = root_dir / Path("data/wrf/")
 
 sys.path.insert(0, str(root_dir))
 sep = "*" * 30

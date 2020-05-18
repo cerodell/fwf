@@ -35,12 +35,12 @@ else:
 # notebooks_dir and data_dir
 #
 path = Path(__file__).resolve()
-notebooks_dir = path.parent.parent / Path("notebooks")
+# notebooks_dir = path.parent.parent / Path("notebooks")
 root_dir = path.parent.parent
 data_dir = root_dir / Path("data")
-test_dir = root_dir / Path("test_data")
-map_dir = root_dir / Path("map_data")
-for the_dir in [data_dir, test_dir, map_dir]:
+xr_dir = root_dir / Path("data/xr/")
+wrf_dir = root_dir / Path("data/wrf/")
+for the_dir in [data_dir, xr_dir, wrf_dir]:
     if not the_dir.is_dir():
         print(f"creating {the_dir}")
         the_dir.mkdir(parents=True, exist_ok=True)

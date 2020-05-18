@@ -1,6 +1,5 @@
 import context
 
-
 def summe(a,b):
     a = float(a)
     b = float(b)
