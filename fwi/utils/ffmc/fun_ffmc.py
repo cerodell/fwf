@@ -16,50 +16,66 @@ from datetime import datetime
  
 
 class FFMC:
-    #############################################
-    # Initialize condtions
-    #############################################
-    def __init__(self, file_dir):
+    """
+    Class to solve the Fire Weather Indices 
 
+
+
+    """
+
+
+
+    ######################################################################
+    ######################################################################
+    def __init__(self, file_dir):
+        """
+        Initialize conditions
+
+
+        """
         ds_wrf = xr.open_zarr(file_dir)
         self.ds_wrf = ds_wrf
 
 
-        """ ####################################################################### """
-        """ ############ Mathematical Constants and Usefull Arrays ################ """
-        # Get the latitude, longitude and projection
-        # lats, lons = latlon_coords(ds_wrf.rh2)
-        # cart_proj = get_cartopy(ds_wrf.rh2)
-
-        ######Math Constants
+        ############ Mathematical Constants and Usefull Arrays ################ 
+        ### Math Constants
         e = math.e
-        # ln_ = np.log
 
+        ### Length of forecast
         self.length = len(ds_wrf.Time)
         print("Time len: ", self.length)
+
+        ### Shape of Domain
         shape = np.shape(ds_wrf.T[0,:,:])
         self.e_full    = np.full(shape,e, dtype=float)
         self.zero_full = np.zeros(shape, dtype=float)
 
-        # ######Initial FFMC Values
-        F_o      = 85.0   #Previous day's F becomes F_o
-        F_o_full = np.full(shape,F_o, dtype=float)
+        if "F" in ds_wrf:
+            var_exists = True
+            print("FFMC exists from last run",var_exists)
 
+        else:
+            var_exists = False
+            print("FFMC exists from last run",var_exists)
+            F_o      = 85.0   #Previous day's F becomes F_o
+            F_o_full = np.full(shape,F_o, dtype=float)
+            self.ds_wrf['F'] = (('south_north', 'west_east'), F_o_full)
 
+            # """ ################## Fine Fuel Moisture Code (FFMC) ##################### """
+            ### (1)
+            m_o = 205.2 * (101 - F_o_full) / (82.9 + F_o_full)  
+            ### Add to xarry 
+            self.ds_wrf['m_o'] = (('south_north', 'west_east'), m_o)
+        
 
-        # """ ####################################################################### """
-        # """ ################## Fine Fuel Moisture Code (FFMC) ##################### """
-
-        # ##(1)
-        self.m_o = 205.2 * (101 - F_o_full) / (82.9 + F_o_full)  
-
-        # FFMC, list_m = [], []
-
-        # FFMC_list, F_list, M_list = [], [], []
 
         return
 
-    def solve_ffmc(self, W, T, H ,m_o):
+
+
+    ######################################################################
+    ######################################################################
+    def solve_ffmc(self, ds_wrf):
 
         """
         This function calculates the Fine Fuel Moisture Code at a one-hour interval writes/outputs as an xarray
@@ -69,11 +85,11 @@ class FFMC:
         T:    temp (degC)
         W:    wind speed (km h-1)
         H:    relative humidity (%)
-        m_o:  Inital fine fuel MC
+        m_o:  Initial fine fuel MC
 
         Variables
         ----------
-        m_o:    initial fine fule MC
+        m_o:    initial fine fuel MC
         m:      final MC
         F_o:    initial FFMC
         F:      final FFMC
@@ -93,11 +109,11 @@ class FFMC:
         ds_F: an xarray of FFMC
         """
 
-        ########################################################################
-        ### Call on tnitial conditions
-        # W, T, H, m_o = self.ds_wrf.W, self.ds_wrf.T, self.ds_wrf.H, self.m_o
+        ### Call on initial conditions
+        W, T, H, m_o = ds_wrf.W, ds_wrf.T, ds_wrf.H, ds_wrf.m_o
 
         e_full, zero_full = self.e_full, self.zero_full
+
 
         ########################################################################
         ##(2a) 
@@ -157,34 +173,33 @@ class FFMC:
 
         ########################################################################
         ##(5c)  
-        m_nutral = xr.where((E_d<=m_o),zero_full, xr.where((m_o<=E_w) ,zero_full,m_o))
+        m_neutral = xr.where((E_d<=m_o),zero_full, xr.where((m_o<=E_w) ,zero_full,m_o))
         
 
         ########################################################################
         ##(6)
-        m = m_d + m_w + m_nutral
+        m = m_d + m_w + m_neutral
         m = xr.where(m<=250,m, 250)
             
         F = 82.9 * ((250 - m) / (205.2 + m))    
         m_o = 205.2 * (101 - F) / (82.9 + F)  
         
-        F_xr = xr.DataArray(F, name='FFMC')
-        m_o_xr = xr.DataArray(m_o, name='m_o')
-        self.m_o = m_o
-        # F_list.append(F)
-        # M_list.append(m_o)
-        var_list = [F_xr,m_o_xr]
-        ds = xr.merge(var_list)
-
-        return ds
+        self.ds_wrf['F'] = F
+        self.ds_wrf['m_o'] = m_o
 
 
-    def write_ffmc(self):
+        # var_list = [F_xr,m_o_xr]
+        # ds = xr.merge(var_list)
+
+        return ds_wrf
+
+
+    def loop_ds(self):
         ds_wrf = self.ds_wrf
         FFMC_list = []
-        print("Lenght: ",self.length)
+        print("Length: ",self.length)
         for i in range(self.length):
-            FFMC = self.solve_ffmc(ds_wrf.W[i],ds_wrf.T[i],ds_wrf.H[i],self.m_o)
+            FFMC = self.solve_ffmc(ds_wrf.isel(time = i))
             FFMC_list.append(FFMC)
         return FFMC_list
 
@@ -198,15 +213,15 @@ class FFMC:
         return(ds_final)
 
 
-    def xarray_like(self,dict_list):
-        xarray_files = []
-        for index in dict_list:
-            ds  = xr.Dataset(index)
-            xarray_files.append(ds)
-        ds_final = xr.merge(xarray_files,compat='override')    
-        return(ds_final)
+    # def xarray_like(self,dict_list):
+    #     xarray_files = []
+    #     for index in dict_list:
+    #         ds  = xr.Dataset(index)
+    #         xarray_files.append(ds)
+    #     ds_final = xr.merge(xarray_files,compat='override')    
+    #     return(ds_final)
 
     def xr_ffmc(self):
-        FFMC_list = self.write_ffmc()
-        ds_ffmc = self.xarray_like(FFMC_list)
+        FFMC_list = self.loop_ds()
+        ds_ffmc = self.xarray_unlike(FFMC_list)
         return ds_ffmc

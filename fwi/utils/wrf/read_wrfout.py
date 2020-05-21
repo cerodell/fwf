@@ -64,7 +64,6 @@ def readwrf(filein):
 
     # ## Write and save DataArray (.zarr) file
     make_dir = Path(str(xr_dir) + str('/') + file_name+str('/') + str(f"_ds_wrf.zarr"))
-    make_dir.mkdir(parents=True, exist_ok=True)
 
     ### Check if file exists....if not write file
     if make_dir.exists():
@@ -75,6 +74,7 @@ def readwrf(filein):
             )
         )
     else:
+        make_dir.mkdir(parents=True, exist_ok=True)
         ds_wrf.compute()
         ds_wrf.to_zarr(make_dir, "w")
         print(f"wrote {make_dir}")
