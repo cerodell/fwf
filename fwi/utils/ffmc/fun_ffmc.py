@@ -4,15 +4,12 @@ import errno
 import numpy as np
 import xarray as xr
 
-from context import data_dir
+from context import data_dir, xr_dir, wrf_dir
 from pathlib import Path
 from netCDF4 import Dataset
 from datetime import datetime
 
 
-
-# from fwi.utils.read_wrfout import readwrf, dict_xarry
-# from wrf import (to_np, get_cartopy, latlon_coords)
  
 
 class FFMC:
@@ -27,14 +24,25 @@ class FFMC:
 
     ######################################################################
     ######################################################################
-    def __init__(self, file_dir):
+    def __init__(self, wrf_file_dir, fwi_file_dir):
         """
         Initialize conditions
 
 
         """
-        ds_wrf = xr.open_zarr(file_dir)
+        ds_wrf = xr.open_zarr(wrf_file_dir)
         self.ds_wrf = ds_wrf
+
+        if fwi_file_dir == None:
+            print("No prior FFMC")
+            pass
+        else:
+            print("Found previous FFMC, will merge with ds_wrf")
+            ds_ffmc = xr.open_zarr(fwi_file_dir)
+            F = np.array(ds_ffmc.F[-1])
+            m_o = np.array(ds_ffmc.m_o[-1])
+            self.ds_wrf['F'] = (('south_north', 'west_east'), F)
+            self.ds_wrf['m_o'] = (('south_north', 'west_east'), m_o)
 
 
         ############ Mathematical Constants and Usefull Arrays ################ 
@@ -51,12 +59,10 @@ class FFMC:
         self.zero_full = np.zeros(shape, dtype=float)
 
         if "F" in ds_wrf:
-            var_exists = True
-            print("FFMC exists from last run",var_exists)
+            print("Again found previous FFMC, will initialize with last FFMC :)")
 
         else:
-            var_exists = False
-            print("FFMC exists from last run",var_exists)
+            print("Again no prior FFMC, initialize with 85s")
             F_o      = 85.0   #Previous day's F becomes F_o
             F_o_full = np.full(shape,F_o, dtype=float)
             self.ds_wrf['F'] = (('south_north', 'west_east'), F_o_full)
@@ -224,4 +230,29 @@ class FFMC:
     def xr_ffmc(self):
         FFMC_list = self.loop_ds()
         ds_ffmc = self.xarray_unlike(FFMC_list)
-        return ds_ffmc
+
+
+        # ### Name file after initial time of wrf 
+        file_name = np.datetime_as_string(ds_ffmc.Time[0], unit='h')
+
+        print("FFMC initialized at :", file_name)
+
+        # # ## Write and save DataArray (.zarr) file
+        make_dir = Path(str(xr_dir) + str('/') + file_name + str(f"_ds_ffmc.zarr"))
+
+        ### Check if file exists....else write file
+        if make_dir.exists():
+            the_size = make_dir.stat().st_size
+            print(
+                ("\n{} already exists\n" "and is {} bytes\n" "will not overwrite\n").format(
+                    file_name, the_size
+                )
+            )
+        else:
+            make_dir.mkdir(parents=True, exist_ok=True)
+            ds_ffmc.compute()
+            ds_ffmc.to_zarr(make_dir, "w")
+            print(f"wrote {make_dir}")
+        
+        ## return path to xr file to open
+        return str(make_dir)

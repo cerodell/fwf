@@ -36,20 +36,20 @@ def readwrf(filein):
         time         = getvar(wrf_file, "times", timeidx=0)
         H            = getvar(wrf_file, "rh2")*1
         T            = getvar(wrf_file, "T2")-273.15
-        # uv          = getvar(wrf_file, "uvmet10", units='km h-1') 
-        # lats        = getvar(wrf_file, "lat")
-        # lons        = getvar(wrf_file, "lon")
         wsp_wdir     = g_uvmet.get_uvmet10_wspd_wdir(wrf_file,units='km h-1')
         wsp_array    = np.array(wsp_wdir[0])
         W            = xr.DataArray(wsp_array, name='W', dims=('south_north', 'west_east'))
-        
-        ##varied parameterization scheme to forecast rain..note this is a sum of rain from the starts of the model run  
-        # rain_c    = getvar(wrf_file, "RAINC")
-        # rain_sh   = getvar(wrf_file, "RAINSH")
-        # rain_nc   = getvar(wrf_file, "RAINNC")
-        # qpf       = rain_c + rain_sh + rain_nc
 
-        var_list = [H,T,W]
+        ##varied parameterization scheme to forecast rain..note this is a sum of rain from the starts of the model run  
+        rain_c    = np.array(getvar(wrf_file, "RAINC"))
+        rain_sh   = np.array(getvar(wrf_file, "RAINSH"))
+        rain_nc   = np.array(getvar(wrf_file, "RAINNC"))
+        qpf_i     = rain_c + rain_sh + rain_nc
+        qpf       = np.where(qpf_i>0,qpf_i, qpf_i*0)
+        r_o       = xr.DataArray(qpf, name='r_o', dims=('south_north', 'west_east'))
+
+
+        var_list = [H,T,W,r_o]
         ds = xr.merge(var_list)
         ds_list.append(ds)
         time_list.append(time)
@@ -63,9 +63,9 @@ def readwrf(filein):
     print("WRF initialized at :",str(file_name))
 
     # ## Write and save DataArray (.zarr) file
-    make_dir = Path(str(xr_dir) + str('/') + file_name+str('/') + str(f"_ds_wrf.zarr"))
+    make_dir = Path(str(xr_dir) + str('/') + file_name + str(f"_ds_wrf.zarr"))
 
-    ### Check if file exists....if not write file
+    ### Check if file exists....else write file
     if make_dir.exists():
         the_size = make_dir.stat().st_size
         print(
