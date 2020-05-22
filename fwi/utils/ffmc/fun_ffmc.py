@@ -99,10 +99,10 @@ class FFMC:
         m:      final MC
         F_o:    initial FFMC
         F:      final FFMC
-        E_d:    EMC for drying
-        E_w:    EMC for wetting 
-        k_a:    intermediate steps to k_d and k_w
-        k_b:    intermediate steps to k_d and k_w
+        E_d:    Equilibrium Moisture content for drying
+        E_w:    Equilibrium Moisture content for wetting 
+        k_a:    intermediate steps to k_d 
+        k_b:    intermediate steps to k_w
         k_d:    log drying rate for hourly computation, log to base 10
         k_w:    log wetting rate for hourly computation, log to base 10
         H:      relative humidity, %
@@ -122,81 +122,92 @@ class FFMC:
 
 
         ########################################################################
-        ##(2a) 
-        # define powers
+        ### (2a) Solve Equilibrium Moisture content for drying (E_d)
+        ## define powers
         a = 0.679
         b = ((H-100)/ 10)
         c = (-0.115 * H)
-        # print(H.shape)
-        print(T.shape)
 
         E_d = (0.942 * np.power(H,a)) + (11 * np.power(e_full,b)) \
                     + (0.18 * (21.1 - T) * (1 - np.power(e_full,c)))
-        
+
+
         ########################################################################
-        ##(2b)
-        
-        E_w  = xr.where(m_o > E_d, zero_full,(0.618 * (np.power(H,0.753))) +  \
-                            (10 * np.power(e_full,((H - 100) / 10))) + (0.18 * (21.1 - T)  * \
-                            (1 - np.power(e_full,(-0.115 * H)))))
-        
-        
+        ### (2b) Solve Equilibrium Moisture content for wetting (E_w)
+        ## define powers (will use b and c from 2a)
+        d = 0.753
+
+        E_w  = xr.where(m_o > E_d, zero_full,(0.618 * (np.power(H, d))) +  \
+                            (10 * np.power(e_full, b)) + (0.18 * (21.1 - T)  * \
+                            (1 - np.power(e_full, c))))
+
+
         ########################################################################
-        ##(3a)
-        k_a = xr.where(m_o < E_d, zero_full, 0.424 * (1 - ((H / 100)** 1.7)) \
-                        + 0.0694 * (np.power(W, 0.5)) * (1 - ((H / 100)** 8)) )
-        
-        #    k_a = 0.424 * (1 - ((H[i] / 100)** 1.7)) + 0.0694 * (np.power(wsp[i], 0.5)) * (1 - ((H[i] / 100)** 8))
-        
-        
+        ### (3a) intermediate step to k_d (k_a)
+        # a = ((100 - H) / 100)   ## Van Wagner 1987
+        a = H/100               ## Van Wagner 1977
+
+        k_a = xr.where(m_o < E_d, zero_full, 0.424 * (1 - np.power(a,1.7)) \
+                        + 0.0694 * (np.power(W, 0.5)) * (1 - np.power(a,8)) )
+
+
         ########################################################################
-        ##(3b)
-        k_d = xr.where(m_o < E_d, zero_full,k_a * (0.579 * np.power(e_full,(0.0365 * T))))
-        
-        
+        ### (3b) Log drying rate for hourly computation, log to base 10 (k_d)
+        b = 0.0579    
+
+        k_d = xr.where(m_o < E_d, zero_full, b * k_a * np.power(e_full,(0.0365 * T)))
+
+
         ########################################################################
-        ##(4a)
-        
+        ### (4a) intermediate steps to k_w (k_b)
         a = ((100 - H) / 100)
+
         k_b = xr.where(m_o > E_w, zero_full, 0.424 * (1 - np.power(a,1.7)) + 0.0694 * \
                     np.power(W,0.5) * (1 - np.power(a,8)))
-        
-        
+
+
         ########################################################################
-        ###(4b)    
-        k_w = xr.where(m_o > E_w, zero_full, k_b * 0.579 * np.power(e_full,(0.0365 * T)))
-        
-        
+        ### (4b)  Log wetting rate for hourly computation, log to base 10 (k_w)
+        b = 0.0579    
+
+        k_w = xr.where(m_o > E_w, zero_full, b * k_b * np.power(e_full,(0.0365 * T)))
+
+
         ########################################################################
-        ##(5a)
+        ### (5a) intermediate dry moisture code (m_d)
+
         m_d = xr.where(m_o < E_d, zero_full, E_d + ((m_o - E_d) * np.power(e_full, -2.303*(k_d))))
-            
-        
-        
+
+
         ########################################################################
-        ##(5b)
+        ### (5b) intermediate wet moisture code (m_w)
+
         m_w = xr.where(m_o > E_w, zero_full, E_w - ((E_w - m_o) * np.power(e_full, -2.303*(k_w))))
 
-        ########################################################################
-        ##(5c)  
-        m_neutral = xr.where((E_d<=m_o),zero_full, xr.where((m_o<=E_w) ,zero_full,m_o))
-        
 
         ########################################################################
-        ##(6)
+        ### (5c) intermediate neutral moisture code (m_neutral)
+
+        m_neutral = xr.where((E_d<=m_o),zero_full, xr.where((m_o<=E_w) ,zero_full,m_o))
+
+
+        ########################################################################
+        ### (6) combine dry, wet, neutral moisture codes
+
         m = m_d + m_w + m_neutral
         m = xr.where(m<=250,m, 250)
-            
-        F = 82.9 * ((250 - m) / (205.2 + m))    
-        m_o = 205.2 * (101 - F) / (82.9 + F)  
         
-        self.ds_wrf['F'] = F
+        ### Solve for FFMC 
+        F = (82.9 * (250 - m)) / (205.2 + m)
+
+        ### Recast initial moisture code for next time stamp  
+        m_o = (205.2 * (101 - F)) / (82.9 + F)  
+        
+        ### Add FFMC and moisture code to xarray 
+        self.ds_wrf['F']   = F
         self.ds_wrf['m_o'] = m_o
 
-
-        # var_list = [F_xr,m_o_xr]
-        # ds = xr.merge(var_list)
-
+        ### Return xarray 
         return ds_wrf
 
 
