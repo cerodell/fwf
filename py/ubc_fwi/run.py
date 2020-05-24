@@ -27,3 +27,5 @@ coeff02 = FWF(ds_wrf_file, ds_ffmc_file)
 ds_ffmc_file02  = coeff02.ds_fwf()
 
 ds_ffmc02 = xr.open_zarr(ds_ffmc_file02)
+
+

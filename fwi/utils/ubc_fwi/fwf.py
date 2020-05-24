@@ -289,12 +289,13 @@ class FWF:
 
         ########################################################################
         ### (11) Solve for the effective rain (r_e) 
-        r_total = 1.5 / 24 ### This is different from van wanger  (dividing by 24 to make hourly)
+        r_total = 1.5  ### This is different from van wanger  (dividing by 24 to make hourly)
         r_ei  = np.where(r_o < r_total, r_o, (0.92*r_o) - 1.27)
-        r_ei  = r_ei / 24  ### This is different from van wanger  (dividing by 24 to make hourly)
+        # r_ei  = r_ei  ### This is different from van wanger  (dividing by 24 to make hourly)
        
-        r_e    = np.where(r_ei>0., r_ei,0.0000001)
+        r_e    = np.where(r_ei > 1e-7, r_ei, 1e-7)
 
+        print(np.min(np.array(r_e)), "r_e min")
 
         ########################################################################
         ### (12) Recast moisture content after rain (M_o)
@@ -313,19 +314,19 @@ class FWF:
         ########################################################################
         ### (13b) Solve for coefficients b where 33 < P_o <= 65 (b_mid)
         
-        b_mid = xr.where(r_o < r_total, zero_full, 
-                        xr.where(P_o < 33, zero_full,
-                                # xr.where(P_o >= 65, zero_full, 14 - (1.3* (P_o)))))
-                                xr.where(P_o >= 65, zero_full, 14 - (1.3* np.log(P_o)))))
+        b_mid = xr.where(r_o < r_total, zero_full,
+                        xr.where((P_o > 33) & (P_o <= 65), zero_full, 14 - (1.3* np.log(P_o))))
+
+                        # xr.where(P_o < 33, zero_full,
+                        #         xr.where(P_o >= 65, zero_full, 14 - (1.3* np.log(P_o)))))
 
         # print(np.min(np.array(b_mid)), "LN issue b_mid")
 
         ########################################################################
         ### (13c) Solve for coefficients b where  P_o > 65 (b_high)
         
-        b_high = np.where(r_o < r_total, zero_full, 
-                        # np.where(P_o < 65, zero_full, (6.2 * (P_o)) - 17.2))
-                        np.where(P_o < 65, zero_full, (6.2 * np.log(P_o)) - 17.2))
+        b_high = xr.where(r_o < r_total, zero_full, 
+                    xr.where(P_o < 65, zero_full, (6.2 * np.log(P_o)) - 17.2))
 
 
         # print(np.min(np.array(b_high)), "LN issue b_high")
@@ -390,7 +391,8 @@ class FWF:
         ### Add to dataarray
         ds_dmc = xr.DataArray(P, name='P', dims=('south_north', 'west_east'))
 
-        
+        print(np.min(np.array(P)), "P final")
+
         ### Return dataarray
         return ds_dmc
 
