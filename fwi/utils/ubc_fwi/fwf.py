@@ -33,27 +33,6 @@ class FWF:
         ds_wrf = xr.open_zarr(wrf_file_dir)
         self.ds_wrf = ds_wrf
 
-        if fwf_file_dir == None:
-            print("No prior FFMC, DMC or DC")
-
-
-            pass
-        else:
-            ds_fwf = xr.open_zarr(fwf_file_dir)
-
-
-            print("Found previous FFMC, will merge with ds_wrf")
-            F = np.array(ds_fwf.F[-1])
-            m_o = np.array(ds_fwf.m_o[-1])
-            self.ds_wrf['F'] = (('south_north', 'west_east'), F)
-            self.ds_wrf['m_o'] = (('south_north', 'west_east'), m_o)
-            
-            
-            print("Found previous DMC, will merge with ds_wrf")
-            P = np.array(ds_fwf.P[-1])
-            self.ds_wrf['P'] = (('south_north', 'west_east'), P)
-
-
         ############ Mathematical Constants and Usefull Arrays ################ 
         ### Math Constants
         e = math.e
@@ -66,8 +45,11 @@ class FWF:
 
         ### Shape of Domain
         shape = np.shape(ds_wrf.T[0,:,:])
+        print(shape)
         self.e_full    = np.full(shape,e, dtype=float)
         self.zero_full = np.zeros(shape, dtype=float)
+        self.ones_full = np.full(shape,1, dtype=float)
+
 
         ### Daylength factor in Duff Moisture Code
         month = np.datetime_as_string(ds_wrf.Time[0], unit='h')
@@ -76,32 +58,24 @@ class FWF:
         L_e = [6.5, 7.5, 9.0, 12.8, 13.9, 13.9, 12.4, 10.9, 9.4, 8.0, 7.0, 6.0]
         L_e = L_e[month]
         self.L_e = L_e
-        # print(L_e)
 
 
-        if "F" in ds_wrf:
-            print("Again found previous FFMC, will initialize with last FFMC :)")
 
-        else:
+        if fwf_file_dir == None:
             # """ ################## Fine Fuel Moisture Code (FFMC) ##################### """
-            print("Again no prior FFMC, initialize with 85s")
+            print("No prior FFMC, initialize with 85s")
             F_o      = 85.0   #Previous day's F becomes F_o
             F_o_full = np.full(shape,F_o, dtype=float)
             self.F = F_o_full
 
-            # self.ds_wrf['F'] = (('south_north', 'west_east'), F_o_full)
 
             ### (1)
             m_o = 205.2 * (101 - F_o_full) / (82.9 + F_o_full)  
             self.m_o = m_o
 
-            ### Add to dataarray 
-            # self.ds_wrf['m_o'] = (('south_north', 'west_east'), m_o)
         
             # """ ####################   Duff Moisture Code (DCM)    ##################### """
-            print("Again no prior DMC, initialize with 6s")
-            L_e = np.full(shape, L_e, dtype=float)
-            self.L_e = L_e
+            print("No prior DMC, initialize with 6s")
             P_o      = 6.0   #Previous day's P becomes P_o
             P_o_full = np.full(shape, P_o, dtype=float)
 
@@ -111,9 +85,26 @@ class FWF:
             ##(1)
             P_o = P_o_full + (100 * K_o)
             self.P = P_o
-            # self.ds_wrf['P'] = (('south_north', 'west_east'), P_o)
 
             # """ #####################     Drought Code (DC)       ########################### """
+
+
+        else:
+            ds_fwf = xr.open_zarr(fwf_file_dir)
+
+
+            print("Found previous FFMC, will merge with ds_wrf")
+            F = np.array(ds_fwf.F[-1])
+            m_o = np.array(ds_fwf.m_o[-1])
+
+            self.F = F
+            self.m_o = m_o
+
+            
+            print("Found previous DMC, will merge with ds_wrf")
+            P = np.array(ds_fwf.P[-1])
+
+            self.P = P
 
 
         return
@@ -244,8 +235,11 @@ class FWF:
         self.m_o = m_o
 
         ### Add FFMC and moisture code to dataarray 
-        ds_ffmc = xr.DataArray(m_o, name='m_o', dims=('south_north', 'west_east'))
-        ds_ffmc['F'] = (('south_north', 'west_east'), F)
+        F = xr.DataArray(F, name='F', dims=('south_north', 'west_east'))
+        m_o   = xr.DataArray(m_o, name='m_o', dims=('south_north', 'west_east'))
+        
+        var_list = [F,m_o]
+        ds_ffmc = xr.merge(var_list)
         # self.ds_wrf['F']   = F
         # self.ds_wrf['m_o'] = m_o
 
@@ -289,9 +283,9 @@ class FWF:
 
         W, T, H, r_o, P_o, L_e = ds_wrf.W, ds_wrf.T, ds_wrf.H, ds_wrf.r_o, self.P, self.L_e
 
-        e_full, zero_full = self.e_full, self.zero_full
+        e_full, zero_full, ones_full = self.e_full, self.zero_full, self.ones_full
 
-        ln = np.log
+        # ln = np.log
 
         ########################################################################
         ### (11) Solve for the effective rain (r_e) 
@@ -308,26 +302,33 @@ class FWF:
         a = (5.6348 - (P_o / 43.43))
         M_o = xr.where(r_o < r_total, zero_full, 20 + np.power(e_full,a))
         
-
+        print(np.min(np.array(P_o)), "LN issue P_o")
         ########################################################################
         ### (13a) Solve for coefficients b where P_o <= 33 (b_low)
         b_low = xr.where(r_o < r_total, zero_full, 
                         xr.where(P_o >= 33, zero_full, 100 / (0.5 + (0.3 * P_o))))
         
+        # print(np.min(np.array(b_low)), "LN issue b_low")
+
         ########################################################################
         ### (13b) Solve for coefficients b where 33 < P_o <= 65 (b_mid)
         
         b_mid = xr.where(r_o < r_total, zero_full, 
-                        xr.where(P_o < 33, zero_full, 
-                                xr.where(P_o >= 65, zero_full, 14 - (1.3* ln(P_o)))))
+                        xr.where(P_o < 33, zero_full,
+                                # xr.where(P_o >= 65, zero_full, 14 - (1.3* (P_o)))))
+                                xr.where(P_o >= 65, zero_full, 14 - (1.3* np.log(P_o)))))
 
-        
+        # print(np.min(np.array(b_mid)), "LN issue b_mid")
+
         ########################################################################
         ### (13c) Solve for coefficients b where  P_o > 65 (b_high)
         
         b_high = np.where(r_o < r_total, zero_full, 
-                        np.where(P_o < 65, zero_full, (6.2 * ln(P_o)) - 17.2))
+                        # np.where(P_o < 65, zero_full, (6.2 * (P_o)) - 17.2))
+                        np.where(P_o < 65, zero_full, (6.2 * np.log(P_o)) - 17.2))
 
+
+        # print(np.min(np.array(b_high)), "LN issue b_high")
 
         ########################################################################
         ### (14a) Solve for moisture content after rain where P_o <= 33 (M_r_low)
@@ -360,7 +361,9 @@ class FWF:
         ########################################################################
         ### (15) Drought moisture code after rain but prior to drying (P_r_pre_K)
         
-        P_r_pre_K = xr.where(r_o < r_total, zero_full, 244.72 - (43.43 * ln(M_r - 20)))
+        P_r_pre_K = xr.where(r_o < r_total, zero_full, 244.72 - (43.43 * np.log(M_r - 20)))
+        # P_r_pre_K = xr.where(r_o < r_total, zero_full, 244.72 - (43.43 * (M_r - 20)))
+
 
 
         ########################################################################
@@ -400,12 +403,16 @@ class FWF:
         print("Length: ",self.length)
         for i in range(self.length):
             FFMC = self.solve_ffmc(ds_wrf.isel(time = i))
-            ds_list.append(FFMC)
+            # ds_list.append(FFMC)
 
             DMC = self.solve_dmc(ds_wrf.isel(time = i))
-            ds_list.append(DMC)
+            # ds_list.append(DMC)
 
-            ds_list.append(ds_wrf.isel(time = i))
+            WRF = ds_wrf.isel(time = i)
+
+            var_list = [FFMC,DMC,WRF]
+            ds_fwf = xr.merge(var_list)
+            ds_list.append(ds_fwf)
         return ds_list
 
 

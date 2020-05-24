@@ -12,8 +12,6 @@ ds_wrf = xr.open_zarr(ds_wrf_file)
 
 coeff = FWF(ds_wrf_file, None)
 ds_list = coeff.loop_ds()
-print(len(ds_list))
-print(ds_list[0])
 ds_ffmc_file  = coeff.ds_fwf()
 
 ds_ffmc = xr.open_zarr(ds_ffmc_file)
