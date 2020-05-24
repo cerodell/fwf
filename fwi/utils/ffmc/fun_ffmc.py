@@ -34,7 +34,7 @@ class FFMC:
         self.ds_wrf = ds_wrf
 
         if fwi_file_dir == None:
-            print("No prior FFMC")
+            print("No prior FFMC, DMC or DC")
             pass
         else:
             print("Found previous FFMC, will merge with ds_wrf")
@@ -43,11 +43,16 @@ class FFMC:
             m_o = np.array(ds_ffmc.m_o[-1])
             self.ds_wrf['F'] = (('south_north', 'west_east'), F)
             self.ds_wrf['m_o'] = (('south_north', 'west_east'), m_o)
+            print("Found previous DMC, will merge with ds_wrf")
+            P = np.array(ds_ffmc.P[-1])
+            self.ds_wrf['P'] = (('south_north', 'west_east'), P)
 
 
         ############ Mathematical Constants and Usefull Arrays ################ 
         ### Math Constants
         e = math.e
+         
+
 
         ### Length of forecast
         self.length = len(ds_wrf.Time)
@@ -58,21 +63,45 @@ class FFMC:
         self.e_full    = np.full(shape,e, dtype=float)
         self.zero_full = np.zeros(shape, dtype=float)
 
+        ### Daylength factor in Duff Moisture Code
+        month = np.datetime_as_string(ds_wrf.Time[0], unit='h')
+        print(month[5:7])
+        month = (int(month[5:7]) - 1)
+        L_e = [6.5, 7.5, 9.0, 12.8, 13.9, 13.9, 12.4, 10.9, 9.4, 8.0, 7.0, 6.0]
+        L_e = L_e[month]
+        # print(L_e)
+
+
         if "F" in ds_wrf:
             print("Again found previous FFMC, will initialize with last FFMC :)")
 
         else:
+            # """ ################## Fine Fuel Moisture Code (FFMC) ##################### """
             print("Again no prior FFMC, initialize with 85s")
             F_o      = 85.0   #Previous day's F becomes F_o
             F_o_full = np.full(shape,F_o, dtype=float)
             self.ds_wrf['F'] = (('south_north', 'west_east'), F_o_full)
 
-            # """ ################## Fine Fuel Moisture Code (FFMC) ##################### """
             ### (1)
             m_o = 205.2 * (101 - F_o_full) / (82.9 + F_o_full)  
             ### Add to xarry 
             self.ds_wrf['m_o'] = (('south_north', 'west_east'), m_o)
         
+            # """ ####################   Duff Moisture Code (DCM)    ##################### """
+            print("Again no prior DMC, initialize with 6s")
+            L_e = np.full(shape, L_e, dtype=float)
+            self.L_e = L_e
+            P_o      = 6.0   #Previous day's P becomes P_o
+            P_o_full = np.full(shape, P_o, dtype=float)
+
+            ### (16)
+            K_o      = 1.894 * (ds_wrf.T[0] + 1.1)* (100 - ds_wrf.H[0]) * (L_e * 10**-6)
+
+            ##(1)
+            P_o = P_o_full + (100 * K_o)
+            self.ds_wrf['P'] = (('south_north', 'west_east'), P_o)
+
+            # """ #####################     Drought Code (DC)       ########################### """
 
 
         return
@@ -88,15 +117,12 @@ class FFMC:
         
         Parameters
         ----------
-        T:    temp (degC)
-        W:    wind speed (km h-1)
-        H:    relative humidity (%)
-        m_o:  Initial fine fuel MC
+        ds_wrf: xarray of wrf variables
 
         Variables
         ----------
-        m_o:    initial fine fuel MC
-        m:      final MC
+        m_o:    initial fine fuel moisture content
+        m:      final fine fuel moisture content
         F_o:    initial FFMC
         F:      final FFMC
         E_d:    Equilibrium Moisture content for drying
@@ -106,7 +132,7 @@ class FFMC:
         k_d:    log drying rate for hourly computation, log to base 10
         k_w:    log wetting rate for hourly computation, log to base 10
         H:      relative humidity, %
-        W:      wind, km/hr
+        W:      wind speed km/hr
         T:      temperature, C    
 
         Returns
@@ -207,16 +233,132 @@ class FFMC:
         self.ds_wrf['F']   = F
         self.ds_wrf['m_o'] = m_o
 
+        P = ds_wrf.P
+        self.ds_wrf['P'] = P * m_o
         ### Return xarray 
         return ds_wrf
 
 
+
+    def solve_dmc(self, ds_wrf):
+
+        """
+        This function calculates the Duff Moisture Code at a one-hour interval writes/outputs as an xarray
+        
+        Parameters
+        ----------
+        ds_wrf: xarray of wrf variables
+
+        r_o:  total qpf
+
+        Variables
+        ----------
+        M_o:    initial duff moisture content
+        M_r:    duff moisture content after rain
+        M:      final duff moisture content
+        P_o:    initial DMC
+        P_r:    DMC after rain
+        P:      final DMC
+        b:      three coefficient with their own empirical equation for diff range of P_o
+        K:      Log drying rate
+        H:      relative humidity, %
+        W:      wind, km/hr
+        T:      temperature, C    
+        r_o:    total rain
+        r_e:    effective rain
+
+        Returns
+        -------
+        
+        ds_P: an xarray of DMC
+        """
+
+        W, T, H, r_o, P_o, L_e = ds_wrf.W, ds_wrf.T, ds_wrf.H, ds_wrf.r_o, ds_wrf.P, self.L_e
+
+        e_full, zero_full = self.e_full, self.zero_full
+
+        ln = np.log
+
+        ########################################################################
+        ### (11) Solve for the effective rain (r_e) 
+
+        r_ei  = np.where(r_o<(1.5), r_o,(0.92*r_o) - 1.27)
+
+        r_e    = np.where(r_ei>0., r_ei,0.0000001)
+
+
+        ########################################################################
+        ### (12) 
+        a = (5.6348 - (P_o/43.43))
+        M_o = xr.where(r_e < 1.5, zero_full, 20 + np.power(e_full,a))
+        
+        ########################################################################
+        ### (13a) Solve for coefficients b where P_o <= 33 (b_low)
+        b_low = xr.where(r_e < 1.5, zero_full, 
+                        xr.where(P_o >= 33, zero_full, 100/(0.5 + (0.3 * P_o))))
+        
+        ########################################################################
+        ### (13b) Solve for coefficients b where 33 < P_o <= 65 (b_mid)
+        
+        b_mid = xr.where(r_e < 1.5, zero_full, 
+                        xr.where(P_o < 33, zero_full, 
+                                xr.where(P_o >= 65, zero_full, 14 - (1.3* ln(P_o)))))
+
+        
+        ########################################################################
+        ### (13c) Solve for coefficients b where  P_o > 65 (b_high)
+        
+        b_high = np.where(r_e < 1.5, zero_full, 
+                        np.where(P_o < 65, zero_full, (6.2*ln(P_o))-17.2))
+
+        
+        ########################################################################
+        ##(6b)
+        m_r_low = xr.where(r_e < 1.5, zero_full, 
+                        xr.where(P_o >= 33, zero_full, M_o + (1000 * r_e) / (48.77 + b_low * r_e)))
+        
+        m_r_mid = xr.where(r_e < 1.5, zero_full, 
+                        xr.where(P_o < 33, zero_full, 
+                                    xr.where(P_o >= 65, zero_full, M_o + (1000 * r_e) / (48.77 + b_mid * r_e))))
+                        
+        m_r_high = xr.where(r_e < 1.5, zero_full, 
+                        xr.where(P_o < 65, zero_full, M_o + (1000 * r_e) / (48.77 + b_high * r_e)))
+                        
+        m_r = m_r_low + m_r_mid + m_r_high
+        ########################################################################
+        ##(7a)
+        
+        p_r = xr.where(r_e < 1.5, zero_full, 244.72 - (43.43* ln(m_r-20)))
+        ########################################################################
+        ###(7b)    
+
+        k = 1.894 * (T + 1.1)* (100 - H) * (L_e * 10**-6)
+        
+        p_d = xr.where(r_e > 1.5, zero_full, P_o + 100 * k)
+
+        
+        ########################################################################
+        ##(8)
+        
+        dmc_dry = xr.where(r_e > 1.5, zero_full, p_d + 100 *k )
+        
+        dmc_wet = xr.where(r_e < 1.5, zero_full, p_r + 100 *k )
+        
+        dmc = dmc_dry + dmc_wet
+
+        return
+
+
+
     def loop_ds(self):
         ds_wrf = self.ds_wrf
+        test = self.ds_wrf
+        # print(ds_wrf.keys())
         FFMC_list = []
         print("Length: ",self.length)
         for i in range(self.length):
             FFMC = self.solve_ffmc(ds_wrf.isel(time = i))
+            
             FFMC_list.append(FFMC)
         return FFMC_list
 
@@ -235,7 +377,8 @@ class FFMC:
     #     for index in dict_list:
     #         ds  = xr.Dataset(index)
     #         xarray_files.append(ds)
-    #     ds_final = xr.merge(xarray_files,compat='override')    
+    #     # ds_final = xr.merge(xarray_files,compat='override')
+    #     # ds_final = xr.concat(xarray_files)
     #     return(ds_final)
 
     def xr_ffmc(self):

@@ -10,6 +10,7 @@ folder = "/20190805/"
 ds_wrf_file = readwrf(str(wrf_dir) + folder)
 ds_wrf = xr.open_zarr(ds_wrf_file)
 coeff = FFMC(ds_wrf_file, None)
+ds_list = coeff.loop_ds()
 ds_ffmc_file  = coeff.xr_ffmc()
 ds_ffmc = xr.open_zarr(ds_ffmc_file)
 
