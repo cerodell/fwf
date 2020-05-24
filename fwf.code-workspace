@@ -3,5 +3,18 @@
 		{
 			"path": "."
 		}
-	]
+	],
+	"settings": {
+		"cSpell.words": [
+			"coeff",
+			"dtype",
+			"errno",
+			"ffmc",
+			"numpy",
+			"readwrf",
+			"wrfout",
+			"xarray",
+			"zarr"
+		]
+	}
 }

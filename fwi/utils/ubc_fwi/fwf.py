@@ -12,7 +12,7 @@ from datetime import datetime
 
  
 
-class FFMC:
+class FWF:
     """
     Class to solve the Fire Weather Indices 
 
@@ -24,7 +24,7 @@ class FFMC:
 
     ######################################################################
     ######################################################################
-    def __init__(self, wrf_file_dir, fwi_file_dir):
+    def __init__(self, wrf_file_dir, fwf_file_dir):
         """
         Initialize conditions
 
@@ -33,18 +33,24 @@ class FFMC:
         ds_wrf = xr.open_zarr(wrf_file_dir)
         self.ds_wrf = ds_wrf
 
-        if fwi_file_dir == None:
+        if fwf_file_dir == None:
             print("No prior FFMC, DMC or DC")
+
+
             pass
         else:
+            ds_fwf = xr.open_zarr(fwf_file_dir)
+
+
             print("Found previous FFMC, will merge with ds_wrf")
-            ds_ffmc = xr.open_zarr(fwi_file_dir)
-            F = np.array(ds_ffmc.F[-1])
-            m_o = np.array(ds_ffmc.m_o[-1])
+            F = np.array(ds_fwf.F[-1])
+            m_o = np.array(ds_fwf.m_o[-1])
             self.ds_wrf['F'] = (('south_north', 'west_east'), F)
             self.ds_wrf['m_o'] = (('south_north', 'west_east'), m_o)
+            
+            
             print("Found previous DMC, will merge with ds_wrf")
-            P = np.array(ds_ffmc.P[-1])
+            P = np.array(ds_fwf.P[-1])
             self.ds_wrf['P'] = (('south_north', 'west_east'), P)
 
 
@@ -69,6 +75,7 @@ class FFMC:
         month = (int(month[5:7]) - 1)
         L_e = [6.5, 7.5, 9.0, 12.8, 13.9, 13.9, 12.4, 10.9, 9.4, 8.0, 7.0, 6.0]
         L_e = L_e[month]
+        self.L_e = L_e
         # print(L_e)
 
 
@@ -80,12 +87,16 @@ class FFMC:
             print("Again no prior FFMC, initialize with 85s")
             F_o      = 85.0   #Previous day's F becomes F_o
             F_o_full = np.full(shape,F_o, dtype=float)
-            self.ds_wrf['F'] = (('south_north', 'west_east'), F_o_full)
+            self.F = F_o_full
+
+            # self.ds_wrf['F'] = (('south_north', 'west_east'), F_o_full)
 
             ### (1)
             m_o = 205.2 * (101 - F_o_full) / (82.9 + F_o_full)  
-            ### Add to xarry 
-            self.ds_wrf['m_o'] = (('south_north', 'west_east'), m_o)
+            self.m_o = m_o
+
+            ### Add to dataarray 
+            # self.ds_wrf['m_o'] = (('south_north', 'west_east'), m_o)
         
             # """ ####################   Duff Moisture Code (DCM)    ##################### """
             print("Again no prior DMC, initialize with 6s")
@@ -99,7 +110,8 @@ class FFMC:
 
             ##(1)
             P_o = P_o_full + (100 * K_o)
-            self.ds_wrf['P'] = (('south_north', 'west_east'), P_o)
+            self.P = P_o
+            # self.ds_wrf['P'] = (('south_north', 'west_east'), P_o)
 
             # """ #####################     Drought Code (DC)       ########################### """
 
@@ -117,7 +129,7 @@ class FFMC:
         
         Parameters
         ----------
-        ds_wrf: xarray of wrf variables
+        ds_wrf: dataarray of wrf variables
 
         Variables
         ----------
@@ -138,11 +150,11 @@ class FFMC:
         Returns
         -------
         
-        ds_F: an xarray of FFMC
+        ds_F: an dataarray of FFMC
         """
 
         ### Call on initial conditions
-        W, T, H, m_o = ds_wrf.W, ds_wrf.T, ds_wrf.H, ds_wrf.m_o
+        W, T, H, m_o = ds_wrf.W, ds_wrf.T, ds_wrf.H, self.m_o
 
         e_full, zero_full = self.e_full, self.zero_full
 
@@ -228,15 +240,17 @@ class FFMC:
 
         ### Recast initial moisture code for next time stamp  
         m_o = (205.2 * (101 - F)) / (82.9 + F)  
-        
-        ### Add FFMC and moisture code to xarray 
-        self.ds_wrf['F']   = F
-        self.ds_wrf['m_o'] = m_o
 
-        P = ds_wrf.P
-        self.ds_wrf['P'] = P * m_o
-        ### Return xarray 
-        return ds_wrf
+        self.m_o = m_o
+
+        ### Add FFMC and moisture code to dataarray 
+        ds_ffmc = xr.DataArray(m_o, name='m_o', dims=('south_north', 'west_east'))
+        ds_ffmc['F'] = (('south_north', 'west_east'), F)
+        # self.ds_wrf['F']   = F
+        # self.ds_wrf['m_o'] = m_o
+
+        ### Return dataarray 
+        return ds_ffmc
 
 
 
@@ -247,7 +261,7 @@ class FFMC:
         
         Parameters
         ----------
-        ds_wrf: xarray of wrf variables
+        ds_wrf: dataarray of wrf variables
 
         r_o:  total qpf
 
@@ -270,10 +284,10 @@ class FFMC:
         Returns
         -------
         
-        ds_P: an xarray of DMC
+        ds_P: an dataarray of DMC
         """
 
-        W, T, H, r_o, P_o, L_e = ds_wrf.W, ds_wrf.T, ds_wrf.H, ds_wrf.r_o, ds_wrf.P, self.L_e
+        W, T, H, r_o, P_o, L_e = ds_wrf.W, ds_wrf.T, ds_wrf.H, ds_wrf.r_o, self.P, self.L_e
 
         e_full, zero_full = self.e_full, self.zero_full
 
@@ -281,26 +295,29 @@ class FFMC:
 
         ########################################################################
         ### (11) Solve for the effective rain (r_e) 
-
-        r_ei  = np.where(r_o<(1.5), r_o,(0.92*r_o) - 1.27)
-
+        r_total = 1.5 / 24 ### This is different from van wanger  (dividing by 24 to make hourly)
+        r_ei  = np.where(r_o < r_total, r_o, (0.92*r_o) - 1.27)
+        r_ei  = r_ei / 24  ### This is different from van wanger  (dividing by 24 to make hourly)
+       
         r_e    = np.where(r_ei>0., r_ei,0.0000001)
 
 
         ########################################################################
-        ### (12) 
-        a = (5.6348 - (P_o/43.43))
-        M_o = xr.where(r_e < 1.5, zero_full, 20 + np.power(e_full,a))
+        ### (12) Recast moisture content after rain (M_o)
+        ##define power
+        a = (5.6348 - (P_o / 43.43))
+        M_o = xr.where(r_o < r_total, zero_full, 20 + np.power(e_full,a))
         
+
         ########################################################################
         ### (13a) Solve for coefficients b where P_o <= 33 (b_low)
-        b_low = xr.where(r_e < 1.5, zero_full, 
-                        xr.where(P_o >= 33, zero_full, 100/(0.5 + (0.3 * P_o))))
+        b_low = xr.where(r_o < r_total, zero_full, 
+                        xr.where(P_o >= 33, zero_full, 100 / (0.5 + (0.3 * P_o))))
         
         ########################################################################
         ### (13b) Solve for coefficients b where 33 < P_o <= 65 (b_mid)
         
-        b_mid = xr.where(r_e < 1.5, zero_full, 
+        b_mid = xr.where(r_o < r_total, zero_full, 
                         xr.where(P_o < 33, zero_full, 
                                 xr.where(P_o >= 65, zero_full, 14 - (1.3* ln(P_o)))))
 
@@ -308,59 +325,88 @@ class FFMC:
         ########################################################################
         ### (13c) Solve for coefficients b where  P_o > 65 (b_high)
         
-        b_high = np.where(r_e < 1.5, zero_full, 
-                        np.where(P_o < 65, zero_full, (6.2*ln(P_o))-17.2))
+        b_high = np.where(r_o < r_total, zero_full, 
+                        np.where(P_o < 65, zero_full, (6.2 * ln(P_o)) - 17.2))
 
-        
+
         ########################################################################
-        ##(6b)
-        m_r_low = xr.where(r_e < 1.5, zero_full, 
-                        xr.where(P_o >= 33, zero_full, M_o + (1000 * r_e) / (48.77 + b_low * r_e)))
+        ### (14a) Solve for moisture content after rain where P_o <= 33 (M_r_low)
         
-        m_r_mid = xr.where(r_e < 1.5, zero_full, 
+        M_r_low = xr.where(r_o < r_total, zero_full, 
+                        xr.where(P_o >= 33, zero_full, M_o + (1000 * r_e) / (48.77 + b_low * r_e)))
+
+
+        ########################################################################
+        ### (14b) Solve for moisture content after rain where 33 < P_o <= 65 (M_r_mid)
+
+        M_r_mid = xr.where(r_o < r_total, zero_full, 
                         xr.where(P_o < 33, zero_full, 
                                     xr.where(P_o >= 65, zero_full, M_o + (1000 * r_e) / (48.77 + b_mid * r_e))))
-                        
-        m_r_high = xr.where(r_e < 1.5, zero_full, 
+
+
+        ########################################################################
+        ### (14c)  Solve for moisture content after rain where P_o > 65 (M_r_high)
+                     
+        M_r_high = xr.where(r_o < r_total, zero_full, 
                         xr.where(P_o < 65, zero_full, M_o + (1000 * r_e) / (48.77 + b_high * r_e)))
-                        
-        m_r = m_r_low + m_r_mid + m_r_high
-        ########################################################################
-        ##(7a)
         
-        p_r = xr.where(r_e < 1.5, zero_full, 244.72 - (43.43* ln(m_r-20)))
-        ########################################################################
-        ###(7b)    
-
-        k = 1.894 * (T + 1.1)* (100 - H) * (L_e * 10**-6)
-        
-        p_d = xr.where(r_e > 1.5, zero_full, P_o + 100 * k)
-
         
         ########################################################################
-        ##(8)
+        ### (14d) Combine all moisture content after rain (M_r)
+                   
+        M_r = M_r_low + M_r_mid + M_r_high
         
-        dmc_dry = xr.where(r_e > 1.5, zero_full, p_d + 100 *k )
         
-        dmc_wet = xr.where(r_e < 1.5, zero_full, p_r + 100 *k )
+        ########################################################################
+        ### (15) Drought moisture code after rain but prior to drying (P_r_pre_K)
         
-        dmc = dmc_dry + dmc_wet
+        P_r_pre_K = xr.where(r_o < r_total, zero_full, 244.72 - (43.43 * ln(M_r - 20)))
 
-        return
+
+        ########################################################################
+        ### (16) Log drying rate (K)
+
+        K = 1.894 * (T + 1.1)* (100 - H) * (L_e * 10**-6)
+
+
+        ########################################################################
+        ### (17a) Drought moisture code dry (P_d)   
+        P_d = xr.where(r_o > r_total, zero_full, P_o + 100 * K)
+
+
+        ########################################################################
+        ### (17b) Drought moisture code dry (P_r)  
+        P_r = xr.where(r_o < r_total, zero_full, P_r_pre_K + 100 * K)
+
+
+        ########################################################################
+        ##(18) Combine Drought Moisture Codes accross domain (P)
+                    
+        P = P_d + P_r
+        self.P = P
+        ### Add to dataarray
+        ds_dmc = xr.DataArray(P, name='P', dims=('south_north', 'west_east'))
+
+        
+        ### Return dataarray
+        return ds_dmc
 
 
 
     def loop_ds(self):
         ds_wrf = self.ds_wrf
-        test = self.ds_wrf
-        # print(ds_wrf.keys())
-        FFMC_list = []
+        ds_list = []
+
         print("Length: ",self.length)
         for i in range(self.length):
             FFMC = self.solve_ffmc(ds_wrf.isel(time = i))
-            
-            FFMC_list.append(FFMC)
-        return FFMC_list
+            ds_list.append(FFMC)
+
+            DMC = self.solve_dmc(ds_wrf.isel(time = i))
+            ds_list.append(DMC)
+
+            ds_list.append(ds_wrf.isel(time = i))
+        return ds_list
 
 
     def xarray_unlike(self,dict_list): 
@@ -381,18 +427,18 @@ class FFMC:
     #     # ds_final = xr.concat(xarray_files)
     #     return(ds_final)
 
-    def xr_ffmc(self):
-        FFMC_list = self.loop_ds()
-        ds_ffmc = self.xarray_unlike(FFMC_list)
+    def ds_fwf(self):
+        ds_list = self.loop_ds()
+        ds_fwf = self.xarray_unlike(ds_list)
 
 
         # ### Name file after initial time of wrf 
-        file_name = np.datetime_as_string(ds_ffmc.Time[0], unit='h')
+        file_name = np.datetime_as_string(ds_fwf.Time[0], unit='h')
 
         print("FFMC initialized at :", file_name)
 
         # # ## Write and save DataArray (.zarr) file
-        make_dir = Path(str(xr_dir) + str('/') + file_name + str(f"_ds_ffmc.zarr"))
+        make_dir = Path(str(xr_dir) + str('/') + file_name + str(f"_ds_fwf.zarr"))
 
         ### Check if file exists....else write file
         if make_dir.exists():
@@ -404,8 +450,8 @@ class FFMC:
             )
         else:
             make_dir.mkdir(parents=True, exist_ok=True)
-            ds_ffmc.compute()
-            ds_ffmc.to_zarr(make_dir, "w")
+            ds_fwf.compute()
+            ds_fwf.to_zarr(make_dir, "w")
             print(f"wrote {make_dir}")
         
         ## return path to xr file to open
