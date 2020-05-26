@@ -4,7 +4,7 @@ import errno
 import numpy as np
 import xarray as xr
 
-from context import data_dir, xr_dir, wrf_dir
+from context import data_dir, xr_dir, wrf_dir, tzone_dir
 from pathlib import Path
 from netCDF4 import Dataset
 from datetime import datetime
@@ -34,6 +34,9 @@ class FWF:
         ds_wrf = xr.open_zarr(wrf_file_dir)
         self.ds_wrf = ds_wrf
 
+        ds_tzone = xr.open_zarr(tzone_dir)
+        self.tzone_dir = tzone_dir
+
         ############ Mathematical Constants and Usefull Arrays ################ 
         ### Math Constants
         e = math.e
@@ -60,6 +63,13 @@ class FWF:
         L_e = L_e[month]
         self.L_e = L_e
 
+        ### Time Zone classification method
+        tzdict   = {"PDT": {'zone_id':7, 'noon':19 , 'plus': 20, 'minus':18},
+                    "MDT": {'zone_id':6, 'noon':18 , 'plus': 19, 'minus':17},
+                    "CDT": {'zone_id':5, 'noon':17 , 'plus': 18, 'minus':16},
+                    "EDT": {'zone_id':4, 'noon':16 , 'plus': 17, 'minus':15},
+                    "ADT": {'zone_id':3, 'noon':15 , 'plus': 16, 'minus':14}}
+        self.tzdict = tzdict
 
 
         if fwf_file_dir == None:
@@ -286,6 +296,10 @@ class FWF:
 
         e_full, zero_full, ones_full = self.e_full, self.zero_full, self.ones_full
 
+        tzdict = self.tzdict
+        
+        ds_pdt = zone_means("PDT",ds_wrf)
+
         # ln = np.log
         print(np.max(np.array(r_o)), "WRF RAIN Max")
 
@@ -398,6 +412,35 @@ class FWF:
 
         ### Return dataarray
         return ds_dmc
+
+
+
+    def zone_means(self,tzone,ds_wrf):
+
+        tzdict = self.tzdict
+
+        
+        zone_id, noon, plus, minus = tzdict[tzone]['zone_id'], tzdict[tzone]['noon'], tzdict[tzone]['plus'], tzdict[tzone]['minus']
+
+        ds_files = []
+        for i in range(0,48,24):
+            ds_mean = []
+            for var in ds_wrf.data_vars:
+                # print(ds_wrf[var])
+                var_mean = ds_wrf[var][minus+i:plus+i].mean(axis=0)
+                da_var = xr.where(self.ds_tzone != zone_id, zero_full, ds_wrf[var][minus+i:plus+i].mean(axis=0))
+                da_var = np.array(da_var.Zone)
+                time = ds_wrf.Time[noon+i]
+                da_var = xr.DataArray(da_var, name=var, 
+                        dims=('south_north', 'west_east'),coords={'noon':time})
+                ds_mean.append(da_var)
+            ds_mean = xr.merge(ds_mean)
+            ds_files.append(ds_mean)
+    
+        ds = xr.combine_nested(ds_files, 'noon')
+        
+        return ds
+
 
 
 

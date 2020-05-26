@@ -5,19 +5,80 @@ import pandas as pd
 import xarray as xr
 from fwi.utils.wrf.read_wrfout import readwrf
 from fwi.utils.ubc_fwi.fwf import FWF
-from context import data_dir, xr_dir, wrf_dir
+from context import data_dir, xr_dir, wrf_dir, tzone_dir
 import timezonefinder, pytz
 from datetime import datetime
 from pathlib import Path
 
 
-folder = "/2019-08-19T00_ds_wrf.zarr"
-ds_wrf_file = str(xr_dir) + folder
+filein = "/2019-08-19T00_ds_wrf.zarr"
+ds_wrf_file = str(data_dir) + filein
 ds_wrf = xr.open_zarr(ds_wrf_file)
 
-folder = "/ds_zone.zarr"
-ds_zone_file = str(xr_dir) + folder
-ds_zone = xr.open_zarr(ds_zone_file)
+filein = "/ds_tzone.zarr"
+ds_tzone_file = str(tzone_dir) + filein
+ds_tzone = xr.open_zarr(ds_tzone_file)
+
+shape = ds_wrf.T.shape
+shape = shape[1:]
+print(shape, "SHAPE")
+
+zero_full = np.zeros(shape, dtype=float)
+i = 0
+hour = np.datetime_as_string(ds_wrf.Time[18+i:20+i], unit='h')
+print(hour)
+
+def zone_means(ds_wrf):
+
+    tzdict     = {"PDT": {'zone_id':7, 'noon':19 , 'plus': 20, 'minus':18},
+                  "MDT": {'zone_id':6, 'noon':18 , 'plus': 19, 'minus':17},
+                  "CDT": {'zone_id':5, 'noon':17 , 'plus': 18, 'minus':16},
+                  "EDT": {'zone_id':4, 'noon':16 , 'plus': 17, 'minus':15},
+                  "ADT": {'zone_id':3, 'noon':15 , 'plus': 16, 'minus':14}}
+    
+    
+    # zone_id, noon, plus, minus = tzdict[tzone]['zone_id'], tzdict[tzone]['noon'], tzdict[tzone]['plus'], tzdict[tzone]['minus']
+
+    ds_files = []
+    for i in range(0,48,24):
+
+        ds_list_sum = []
+        for key in tzdict.keys():
+            zone_id, noon, plus, minus = tzdict[key]['zone_id'], tzdict[key]['noon'], tzdict[key]['plus'], tzdict[key]['minus']
+
+            da_mean = []
+            for var in ds_wrf.data_vars:
+                # print(ds_wrf[var])
+                var_mean = ds_wrf[var][minus+i:plus+i].mean(axis=0)
+                da_var = xr.where(ds_tzone != zone_id, zero_full, ds_wrf[var][minus+i:plus+i].mean(axis=0))
+                da_var = np.array(da_var.Zone)
+                time = ds_wrf.Time[noon+i]
+                da_var = xr.DataArray(da_var, name=var, 
+                        dims=('south_north', 'west_east'),coords={'noon':time})
+                da_mean.append(da_var)
+
+            
+            ds_mean = xr.merge(da_mean)
+            ds_list_sum.append(ds_mean)
+        ds_sum = sum(ds_list_sum)
+        ds_files.append(ds_sum)
+    
+
+
+
+        ds = xr.combine_nested(ds_files, 'noon')
+    
+    return ds
+
+ds = zone_means(ds_wrf)
+
+
+
+
+
+
+
+
 
 
 

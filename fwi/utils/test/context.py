@@ -20,6 +20,7 @@ root_dir = notebooks_dir.parents[1]
 data_dir = root_dir / Path("data")
 xr_dir = root_dir / Path("data/xr/")
 wrf_dir = root_dir / Path("data/wrf/")
+tzone_dir = root_dir / Path("data/tzone/")
 
 
 

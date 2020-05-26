@@ -14,6 +14,8 @@
 			"ffmc",
 			"numpy",
 			"readwrf",
+			"tzdict",
+			"tzone",
 			"wrfout",
 			"xarray",
 			"zarr"
