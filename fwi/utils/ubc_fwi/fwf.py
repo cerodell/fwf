@@ -8,6 +8,7 @@ from context import data_dir, xr_dir, wrf_dir
 from pathlib import Path
 from netCDF4 import Dataset
 from datetime import datetime
+from timezonefinder import TimezoneFinder
 
 
  
@@ -286,6 +287,7 @@ class FWF:
         e_full, zero_full, ones_full = self.e_full, self.zero_full, self.ones_full
 
         # ln = np.log
+        print(np.max(np.array(r_o)), "WRF RAIN Max")
 
         ########################################################################
         ### (11) Solve for the effective rain (r_e) 
@@ -295,7 +297,7 @@ class FWF:
        
         r_e    = np.where(r_ei > 1e-7, r_ei, 1e-7)
 
-        print(np.min(np.array(r_e)), "r_e min")
+        print(np.max(np.array(r_e)), "r_e max")
 
         ########################################################################
         ### (12) Recast moisture content after rain (M_o)
@@ -303,13 +305,13 @@ class FWF:
         a = (5.6348 - (P_o / 43.43))
         M_o = xr.where(r_o < r_total, zero_full, 20 + np.power(e_full,a))
         
-        print(np.min(np.array(P_o)), "LN issue P_o")
+        print(np.min(np.array(P_o)), "Initial P_o")
         ########################################################################
         ### (13a) Solve for coefficients b where P_o <= 33 (b_low)
         b_low = xr.where(r_o < r_total, zero_full, 
                         xr.where(P_o >= 33, zero_full, 100 / (0.5 + (0.3 * P_o))))
         
-        # print(np.min(np.array(b_low)), "LN issue b_low")
+        print(np.min(np.array(b_low)), "b_low min")
 
         ########################################################################
         ### (13b) Solve for coefficients b where 33 < P_o <= 65 (b_mid)
@@ -320,7 +322,7 @@ class FWF:
                         # xr.where(P_o < 33, zero_full,
                         #         xr.where(P_o >= 65, zero_full, 14 - (1.3* np.log(P_o)))))
 
-        # print(np.min(np.array(b_mid)), "LN issue b_mid")
+        print(np.max(np.array(b_mid)), "b_mid max")
 
         ########################################################################
         ### (13c) Solve for coefficients b where  P_o > 65 (b_high)
@@ -329,7 +331,7 @@ class FWF:
                     xr.where(P_o < 65, zero_full, (6.2 * np.log(P_o)) - 17.2))
 
 
-        # print(np.min(np.array(b_high)), "LN issue b_high")
+        print(np.max(np.array(b_high)), "b_high max")
 
         ########################################################################
         ### (14a) Solve for moisture content after rain where P_o <= 33 (M_r_low)
@@ -358,6 +360,7 @@ class FWF:
                    
         M_r = M_r_low + M_r_mid + M_r_high
         
+        print(np.max(np.array(M_r)), "M_r min")
         
         ########################################################################
         ### (15) Drought moisture code after rain but prior to drying (P_r_pre_K)
@@ -404,7 +407,7 @@ class FWF:
 
         print("Length: ",self.length)
         for i in range(self.length):
-            FFMC = self.solve_ffmc(ds_wrf.isel(time = i))
+            # FFMC = self.solve_ffmc(ds_wrf.isel(time = i))
             # ds_list.append(FFMC)
 
             DMC = self.solve_dmc(ds_wrf.isel(time = i))
@@ -412,7 +415,8 @@ class FWF:
 
             WRF = ds_wrf.isel(time = i)
 
-            var_list = [FFMC,DMC,WRF]
+            # var_list = [FFMC,DMC,WRF]
+            var_list = [DMC,WRF]
             ds_fwf = xr.merge(var_list)
             ds_list.append(ds_fwf)
         return ds_list

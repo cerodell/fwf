@@ -15,7 +15,7 @@ from wrf import (getvar, g_uvmet)
 
 def readwrf(filein):
     """
-    This Fucntion reads wrfout files and grabs varibels of internts and writes/outputs as an xarray
+    This function reads wrfout files and grabs variables of interest and writes/outputs as an xarray
     
     Parameters
     ----------
