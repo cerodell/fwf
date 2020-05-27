@@ -52,9 +52,10 @@ def zone_means(ds_wrf):
                 var_mean = ds_wrf[var][minus+i:plus+i].mean(axis=0)
                 da_var = xr.where(ds_tzone != zone_id, zero_full, ds_wrf[var][minus+i:plus+i].mean(axis=0))
                 da_var = np.array(da_var.Zone)
-                time = ds_wrf.Time[noon+i]
+                # day  = np.datetime_as_string(ds_wrf.Time[noon+i], unit='h')
+                day    = np.array(ds_wrf.Time[noon + i], dtype ='datetime64[D]')
                 da_var = xr.DataArray(da_var, name=var, 
-                        dims=('south_north', 'west_east'),coords={'noon':time})
+                        dims=('south_north', 'west_east'),coords={'noon':day})
                 da_mean.append(da_var)
 
             

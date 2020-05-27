@@ -34,8 +34,8 @@ class FWF:
         ds_wrf = xr.open_zarr(wrf_file_dir)
         self.ds_wrf = ds_wrf
 
-        ds_tzone = xr.open_zarr(tzone_dir)
-        self.tzone_dir = tzone_dir
+        ds_tzone = xr.open_zarr(str(tzone_dir) + "/ds_tzone.zarr")
+        self.ds_tzone = ds_tzone
 
         ############ Mathematical Constants and Usefull Arrays ################ 
         ### Math Constants
@@ -298,7 +298,6 @@ class FWF:
 
         tzdict = self.tzdict
         
-        ds_pdt = zone_means("PDT",ds_wrf)
 
         # ln = np.log
         print(np.max(np.array(r_o)), "WRF RAIN Max")
@@ -415,29 +414,37 @@ class FWF:
 
 
 
-    def zone_means(self,tzone,ds_wrf):
+    def zone_means(self,ds_wrf):
+        zero_full = self.zero_full
 
         tzdict = self.tzdict
-
-        
-        zone_id, noon, plus, minus = tzdict[tzone]['zone_id'], tzdict[tzone]['noon'], tzdict[tzone]['plus'], tzdict[tzone]['minus']
+        ds_tzone = self.ds_tzone
 
         ds_files = []
         for i in range(0,48,24):
-            ds_mean = []
-            for var in ds_wrf.data_vars:
-                # print(ds_wrf[var])
-                var_mean = ds_wrf[var][minus+i:plus+i].mean(axis=0)
-                da_var = xr.where(self.ds_tzone != zone_id, zero_full, ds_wrf[var][minus+i:plus+i].mean(axis=0))
-                da_var = np.array(da_var.Zone)
-                time = ds_wrf.Time[noon+i]
-                da_var = xr.DataArray(da_var, name=var, 
-                        dims=('south_north', 'west_east'),coords={'noon':time})
-                ds_mean.append(da_var)
-            ds_mean = xr.merge(ds_mean)
-            ds_files.append(ds_mean)
-    
-        ds = xr.combine_nested(ds_files, 'noon')
+
+            ds_list_sum = []
+            for key in tzdict.keys():
+                zone_id, noon, plus, minus = tzdict[key]['zone_id'], tzdict[key]['noon'], tzdict[key]['plus'], tzdict[key]['minus']
+
+                da_mean = []
+                for var in ds_wrf.data_vars:
+                    # print(ds_wrf[var])
+                    var_mean = ds_wrf[var][minus+i:plus+i].mean(axis=0)
+                    da_var = xr.where(ds_tzone != zone_id, zero_full, ds_wrf[var][minus+i:plus+i].mean(axis=0))
+                    da_var = np.array(da_var.Zone)
+                    day    = np.array(ds_wrf.Time[noon + i], dtype ='datetime64[D]')
+                    da_var = xr.DataArray(da_var, name=var, 
+                            dims=('south_north', 'west_east'),coords={'noon':day})
+                    da_mean.append(da_var)
+
+                
+                ds_mean = xr.merge(da_mean)
+                ds_list_sum.append(ds_mean)
+            ds_sum = sum(ds_list_sum)
+            ds_files.append(ds_sum)
+        
+            ds = xr.combine_nested(ds_files, 'noon')
         
         return ds
 
@@ -446,23 +453,26 @@ class FWF:
 
     def loop_ds(self):
         ds_wrf = self.ds_wrf
+        ds_mean = self.zone_means(ds_wrf)
+        
+        ds_dmc = []
+        for i in range(len(ds_mean.noon)):
+            DMC = self.solve_dmc(ds_mean.isel(noon = i))
+            ds_dmc.append(DMC)
+
         ds_list = []
-
         print("Length: ",self.length)
-        for i in range(self.length):
-            # FFMC = self.solve_ffmc(ds_wrf.isel(time = i))
-            # ds_list.append(FFMC)
+        # for i in range(self.length):
+        #     FFMC = self.solve_ffmc(ds_wrf.isel(time = i))
+        #     ds_list.append(FFMC)
 
-            DMC = self.solve_dmc(ds_wrf.isel(time = i))
-            # ds_list.append(DMC)
+        #     WRF = ds_wrf.isel(time = i)
 
-            WRF = ds_wrf.isel(time = i)
-
-            # var_list = [FFMC,DMC,WRF]
-            var_list = [DMC,WRF]
-            ds_fwf = xr.merge(var_list)
-            ds_list.append(ds_fwf)
-        return ds_list
+        #     var_list = [FFMC,WRF]
+        #     ds_fwf = xr.merge(var_list)
+        #     ds_list.append(ds_fwf)
+        print("loop_ds done: ")
+        return ds_dmc
 
 
     def xarray_unlike(self,dict_list): 

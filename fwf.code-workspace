@@ -10,6 +10,7 @@
 			"coeff",
 			"crodell",
 			"dtype",
+			"eqtime",
 			"errno",
 			"ffmc",
 			"numpy",
