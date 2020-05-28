@@ -25,6 +25,7 @@
 			"wrfout",
 			"xarray",
 			"zarr"
-		]
+		],
+		"python.pythonPath": "/Users/rodell/miniconda3/envs/cr/bin/python"
 	}
 }

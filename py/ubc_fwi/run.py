@@ -17,10 +17,12 @@ from context import data_dir, xr_dir, wrf_dir, tzone_dir, root_dir
 
 
 
-folder = "/01_wrf_ds.zarr"
+# folder = "/01_wrf_ds.zarr"
 
-wrf_file_dir = str(data_dir) + folder
+# wrf_file_dir = str(data_dir) + folder
 # ds_wrf = xr.open_zarr(wrf_file_dir)
+wrf_file_dir = '/Volumes/CER/WFRT/FWI/Data/20190819_05'
+
 
 coeff = FWF(wrf_file_dir, None)
 # ds_list = coeff.loop_ds()

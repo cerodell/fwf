@@ -59,11 +59,11 @@ def readwrf(filein):
     wrf_ds = wrf_ds.rename_vars({"T2":"T", "rh2":"H"})
 
     ### Name file after initial time of wrf 
-    file_name = np.datetime_as_string(time_list[0],unit='h')
-    print("WRF initialized at :",str(file_name))
+    # file_name = np.datetime_as_string(time_list[0],unit='h')
+    # print("WRF initialized at :",str(file_name))
 
     # ## Write and save DataArray (.zarr) file
-    make_dir = Path(str(xr_dir) + str('/') + file_name + str(f"_wrf_ds.zarr"))
+    # make_dir = Path(str(xr_dir) + str('/') + file_name + str(f"_wrf_ds.zarr"))
 
     ### Check if file exists....else write file
     # if make_dir.exists():
@@ -79,13 +79,14 @@ def readwrf(filein):
     #     wrf_ds.to_zarr(make_dir, "w")
     #     print(f"wrote {make_dir}")
 
-    make_dir.mkdir(parents=True, exist_ok=True)
-    wrf_ds.compute()
-    wrf_ds.to_zarr(make_dir, "w")
-    print(f"wrote {make_dir}")
+    # make_dir.mkdir(parents=True, exist_ok=True)
+    # wrf_ds.compute()
+    # wrf_ds.to_zarr(make_dir, "w")
+    # print(f"wrote {make_dir}")
     
     ### return path to xr file to open
-    return str(make_dir)
+    # return str(make_dir)
+    return wrf_ds
 
 
 

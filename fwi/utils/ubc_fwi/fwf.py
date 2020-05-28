@@ -35,8 +35,8 @@ class FWF:
 
         """
         ### Read then open WRF dataset
-        # wrf = readwrf(wrf_file_dir)
-        wrf_ds = xr.open_zarr(wrf_file_dir)
+        wrf_ds = readwrf(wrf_file_dir)
+        # wrf_ds = xr.open_zarr(wrf_file_dir)
 
         ############ Mathematical Constants and Usefull Arrays ################ 
         ### Math Constants
@@ -66,6 +66,7 @@ class FWF:
         self.tzdict = tzdict
 
         ### Open time zones dataset
+        print(str(tzone_dir) + "/ds_tzone.zarr")
         tzone_ds = xr.open_zarr(str(tzone_dir) + "/ds_tzone.zarr")
         self.tzone_ds = tzone_ds
 
