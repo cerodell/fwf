@@ -3,12 +3,15 @@ import math
 import errno
 import numpy as np
 import xarray as xr
+from timezonefinder import TimezoneFinder
 
-from context import data_dir, xr_dir, wrf_dir, tzone_dir
+
 from pathlib import Path
 from netCDF4 import Dataset
 from datetime import datetime
-from timezonefinder import TimezoneFinder
+# from fwi.utils.wrf.read_wrfout import readwrf
+from context import data_dir, xr_dir, wrf_dir, tzone_dir
+
 
 
  
@@ -31,6 +34,7 @@ class FWF:
 
 
         """
+        # wrf = readwrf(wrf_file_dir)
         ds_wrf = xr.open_zarr(wrf_file_dir)
         self.ds_wrf = ds_wrf
 
@@ -246,16 +250,16 @@ class FWF:
         self.m_o = m_o
 
         ### Add FFMC and moisture code to dataarray 
-        F = xr.DataArray(F, name='F', dims=('south_north', 'west_east'))
-        m_o   = xr.DataArray(m_o, name='m_o', dims=('south_north', 'west_east'))
+        # F = xr.DataArray(F, name='F', dims=('south_north', 'west_east'))
+        # m_o   = xr.DataArray(m_o, name='m_o', dims=('south_north', 'west_east'))
         
-        var_list = [F,m_o]
-        ds_ffmc = xr.merge(var_list)
-        # self.ds_wrf['F']   = F
-        # self.ds_wrf['m_o'] = m_o
+        # var_list = [F,m_o]
+        # ds_ffmc = xr.merge(var_list)
+        self.ds_wrf['F']   = F
+        self.ds_wrf['m_o'] = m_o
 
         ### Return dataarray 
-        return ds_ffmc
+        return ds_wrf
 
 
 
@@ -453,26 +457,26 @@ class FWF:
 
     def loop_ds(self):
         ds_wrf = self.ds_wrf
-        ds_mean = self.zone_means(ds_wrf)
+        # ds_mean = self.zone_means(ds_wrf)
         
-        ds_dmc = []
-        for i in range(len(ds_mean.noon)):
-            DMC = self.solve_dmc(ds_mean.isel(noon = i))
-            ds_dmc.append(DMC)
+        # ds_dmc = []
+        # for i in range(len(ds_mean.noon)):
+        #     DMC = self.solve_dmc(ds_mean.isel(noon = i))
+        #     ds_dmc.append(DMC)
 
         ds_list = []
         print("Length: ",self.length)
-        # for i in range(self.length):
-        #     FFMC = self.solve_ffmc(ds_wrf.isel(time = i))
-        #     ds_list.append(FFMC)
+        for i in range(self.length):
+            FFMC = self.solve_ffmc(ds_wrf.isel(time = i))
+            # ds_list.append(FFMC)
 
-        #     WRF = ds_wrf.isel(time = i)
+            WRF = ds_wrf.isel(time = i)
 
-        #     var_list = [FFMC,WRF]
-        #     ds_fwf = xr.merge(var_list)
-        #     ds_list.append(ds_fwf)
+            var_list = [FFMC,WRF]
+            ds_fwf = xr.merge(var_list)
+            ds_list.append(ds_fwf)
         print("loop_ds done: ")
-        return ds_dmc
+        return ds_list
 
 
     def xarray_unlike(self,dict_list): 
@@ -516,7 +520,8 @@ class FWF:
             )
         else:
             make_dir.mkdir(parents=True, exist_ok=True)
-            ds_fwf.compute()
+            # ds_fwf.compute()
+            ds_fwf.chunk()
             ds_fwf.to_zarr(make_dir, "w")
             print(f"wrote {make_dir}")
         

@@ -7,7 +7,11 @@
 	"settings": {
 		"cSpell.words": [
 			"AKST",
+			"Carree",
+			"XLONG",
+			"ccrs",
 			"coeff",
+			"contourf",
 			"crodell",
 			"dtype",
 			"eqtime",
@@ -15,6 +19,7 @@
 			"ffmc",
 			"numpy",
 			"readwrf",
+			"snoon",
 			"tzdict",
 			"tzone",
 			"wrfout",
