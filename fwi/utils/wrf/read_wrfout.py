@@ -55,29 +55,34 @@ def readwrf(filein):
         time_list.append(time)
 
     ### Combine xarrays and rename to match van wangers defs 
-    ds_wrf = xr.combine_nested(ds_list, 'time')
-    ds_wrf = ds_wrf.rename_vars({"T2":"T", "rh2":"H"})
+    wrf_ds = xr.combine_nested(ds_list, 'time')
+    wrf_ds = wrf_ds.rename_vars({"T2":"T", "rh2":"H"})
 
     ### Name file after initial time of wrf 
     file_name = np.datetime_as_string(time_list[0],unit='h')
     print("WRF initialized at :",str(file_name))
 
     # ## Write and save DataArray (.zarr) file
-    make_dir = Path(str(xr_dir) + str('/') + file_name + str(f"_ds_wrf.zarr"))
+    make_dir = Path(str(xr_dir) + str('/') + file_name + str(f"_wrf_ds.zarr"))
 
     ### Check if file exists....else write file
-    if make_dir.exists():
-        the_size = make_dir.stat().st_size
-        print(
-            ("\n{} already exists\n" "and is {} bytes\n" "will not overwrite\n").format(
-                file_name, the_size
-            )
-        )
-    else:
-        make_dir.mkdir(parents=True, exist_ok=True)
-        ds_wrf.compute()
-        ds_wrf.to_zarr(make_dir, "w")
-        print(f"wrote {make_dir}")
+    # if make_dir.exists():
+    #     the_size = make_dir.stat().st_size
+    #     print(
+    #         ("\n{} already exists\n" "and is {} bytes\n" "will not overwrite\n").format(
+    #             file_name, the_size
+    #         )
+    #     )
+    # else:
+    #     make_dir.mkdir(parents=True, exist_ok=True)
+    #     wrf_ds.compute()
+    #     wrf_ds.to_zarr(make_dir, "w")
+    #     print(f"wrote {make_dir}")
+
+    make_dir.mkdir(parents=True, exist_ok=True)
+    wrf_ds.compute()
+    wrf_ds.to_zarr(make_dir, "w")
+    print(f"wrote {make_dir}")
     
     ### return path to xr file to open
     return str(make_dir)

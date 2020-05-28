@@ -9,7 +9,7 @@ from timezonefinder import TimezoneFinder
 from pathlib import Path
 from netCDF4 import Dataset
 from datetime import datetime
-# from fwi.utils.wrf.read_wrfout import readwrf
+from fwi.utils.wrf.read_wrfout import readwrf
 from context import data_dir, xr_dir, wrf_dir, tzone_dir
 
 
@@ -34,33 +34,23 @@ class FWF:
 
 
         """
+        ### Read then open WRF dataset
         # wrf = readwrf(wrf_file_dir)
-        ds_wrf = xr.open_zarr(wrf_file_dir)
-        self.ds_wrf = ds_wrf
-
-        ds_tzone = xr.open_zarr(str(tzone_dir) + "/ds_tzone.zarr")
-        self.ds_tzone = ds_tzone
+        wrf_ds = xr.open_zarr(wrf_file_dir)
 
         ############ Mathematical Constants and Usefull Arrays ################ 
         ### Math Constants
         e = math.e
-         
-
-
-        ### Length of forecast
-        self.length = len(ds_wrf.Time)
-        print("Time len: ", self.length)
 
         ### Shape of Domain
-        shape = np.shape(ds_wrf.T[0,:,:])
+        shape = np.shape(wrf_ds.T[0,:,:])
         print(shape)
         self.e_full    = np.full(shape,e, dtype=float)
         self.zero_full = np.zeros(shape, dtype=float)
         self.ones_full = np.full(shape,1, dtype=float)
 
-
         ### Daylength factor in Duff Moisture Code
-        month = np.datetime_as_string(ds_wrf.Time[0], unit='h')
+        month = np.datetime_as_string(wrf_ds.Time[0], unit='h')
         print(month[5:7])
         month = (int(month[5:7]) - 1)
         L_e = [6.5, 7.5, 9.0, 12.8, 13.9, 13.9, 12.4, 10.9, 9.4, 8.0, 7.0, 6.0]
@@ -75,49 +65,63 @@ class FWF:
                     "ADT": {'zone_id':3, 'noon':15 , 'plus': 16, 'minus':14}}
         self.tzdict = tzdict
 
+        ### Open time zones dataset
+        tzone_ds = xr.open_zarr(str(tzone_dir) + "/ds_tzone.zarr")
+        self.tzone_ds = tzone_ds
+
+        ### Create an hourly and daily datasets for use with their respected codes/indices 
+        self.hourly_ds = wrf_ds
+        # self.daily_ds = self.solve_daily_ds(wrf_ds)
+
+
+ 
 
         if fwf_file_dir == None:
             # """ ################## Fine Fuel Moisture Code (FFMC) ##################### """
             print("No prior FFMC, initialize with 85s")
             F_o      = 85.0   #Previous day's F becomes F_o
             F_o_full = np.full(shape,F_o, dtype=float)
-            self.F = F_o_full
-
+            # self.F = F_o_full
 
             ### (1)
             m_o = 205.2 * (101 - F_o_full) / (82.9 + F_o_full)  
-            self.m_o = m_o
+            # self.m_o = m_o
 
-        
+
+            F = xr.DataArray(F_o_full, name='F', dims=('south_north', 'west_east'))
+            m_o = xr.DataArray(m_o, name='m_o', dims=('south_north', 'west_east'))
+            
+            self.hourly_ds['F']   = F
+            self.hourly_ds['m_o'] = m_o
             # """ ####################   Duff Moisture Code (DCM)    ##################### """
-            print("No prior DMC, initialize with 6s")
-            P_o      = 6.0   #Previous day's P becomes P_o
-            P_o_full = np.full(shape, P_o, dtype=float)
+            # print("No prior DMC, initialize with 6s")
+            # P_o      = 6.0   #Previous day's P becomes P_o
+            # P_o_full = np.full(shape, P_o, dtype=float)
 
-            ### (16)
-            K_o      = 1.894 * (ds_wrf.T[0] + 1.1)* (100 - ds_wrf.H[0]) * (L_e * 10**-6)
+            # ### (16)
+            # K_o      = 1.894 * (daily_ds.T[0] + 1.1)* (100 - daily_ds.H[0]) * (L_e * 10**-6)
 
-            ##(1)
-            P_o = P_o_full + (100 * K_o)
-            self.P = P_o
+            # ##(1)
+            # P_o = P_o_full + (100 * K_o)
+            # self.P = P_o
 
             # """ #####################     Drought Code (DC)       ########################### """
 
 
         else:
-            ds_fwf = xr.open_zarr(fwf_file_dir)
+            fwf_ds = xr.open_zarr(fwf_file_dir)
 
 
-            print("Found previous FFMC, will merge with ds_wrf")
-            F = np.array(ds_fwf.F[-1])
-            m_o = np.array(ds_fwf.m_o[-1])
+            print("Found previous FFMC, will merge with hourly_ds")
+            F = np.array(fwf_ds.F[-1])
+            m_o = np.array(fwf_ds.m_o[-1])
 
             self.F = F
             self.m_o = m_o
 
             
-            print("Found previous DMC, will merge with ds_wrf")
-            P = np.array(ds_fwf.P[-1])
+            print("Found previous DMC, will merge with daily_ds")
+            P = np.array(fwf_ds.P[-1])
 
             self.P = P
 
@@ -128,7 +132,7 @@ class FWF:
 
     ######################################################################
     ######################################################################
-    def solve_ffmc(self, ds_wrf):
+    def solve_ffmc(self, hourly_ds):
 
         """
         This function calculates the Fine Fuel Moisture Code at a one-hour interval writes/outputs as an xarray
@@ -156,11 +160,12 @@ class FWF:
         Returns
         -------
         
-        ds_F: an dataarray of FFMC
+        F_ds: an dataset of FFMC and m_o
         """
 
         ### Call on initial conditions
-        W, T, H, m_o = ds_wrf.W, ds_wrf.T, ds_wrf.H, self.m_o
+        # W, T, H, m_o = hourly_ds.W, hourly_ds.T, hourly_ds.H, self.m_o
+        W, T, H, m_o = hourly_ds.W, hourly_ds.T, hourly_ds.H, hourly_ds.m_o
 
         e_full, zero_full = self.e_full, self.zero_full
 
@@ -251,15 +256,16 @@ class FWF:
 
         ### Add FFMC and moisture code to dataarray 
         # F = xr.DataArray(F, name='F', dims=('south_north', 'west_east'))
-        # m_o   = xr.DataArray(m_o, name='m_o', dims=('south_north', 'west_east'))
+        # m_o = xr.DataArray(m_o, name='m_o', dims=('south_north', 'west_east'))
         
         # var_list = [F,m_o]
         # ds_ffmc = xr.merge(var_list)
-        self.ds_wrf['F']   = F
-        self.ds_wrf['m_o'] = m_o
+
+        self.hourly_ds['F']   = F
+        self.hourly_ds['m_o'] = m_o
 
         ### Return dataarray 
-        return ds_wrf
+        return hourly_ds
 
 
 
@@ -418,74 +424,82 @@ class FWF:
 
 
 
-    def zone_means(self,ds_wrf):
+    def solve_daily_ds(self,wrf_ds):
         zero_full = self.zero_full
 
         tzdict = self.tzdict
-        ds_tzone = self.ds_tzone
+        tzone_ds = self.tzone_ds
 
-        ds_files = []
+        files_ds = []
         for i in range(0,48,24):
 
-            ds_list_sum = []
+            sum_list = []
             for key in tzdict.keys():
                 zone_id, noon, plus, minus = tzdict[key]['zone_id'], tzdict[key]['noon'], tzdict[key]['plus'], tzdict[key]['minus']
 
-                da_mean = []
-                for var in ds_wrf.data_vars:
+                mean_da = []
+                for var in wrf_ds.data_vars:
                     # print(ds_wrf[var])
-                    var_mean = ds_wrf[var][minus+i:plus+i].mean(axis=0)
-                    da_var = xr.where(ds_tzone != zone_id, zero_full, ds_wrf[var][minus+i:plus+i].mean(axis=0))
-                    da_var = np.array(da_var.Zone)
-                    day    = np.array(ds_wrf.Time[noon + i], dtype ='datetime64[D]')
-                    da_var = xr.DataArray(da_var, name=var, 
-                            dims=('south_north', 'west_east'),coords={'noon':day})
-                    da_mean.append(da_var)
+                    var_mean = wrf_ds[var][minus+i:plus+i].mean(axis=0)
+                    var_da = xr.where(tzone_ds != zone_id, zero_full, wrf_ds[var][minus+i:plus+i].mean(axis=0))
+                    var_da = np.array(var_da.Zone)
+                    day    = np.array(wrf_ds.Time[noon + i], dtype ='datetime64[D]')
+                    var_da = xr.DataArray(var_da, name=var, 
+                            dims=('south_north', 'west_east'),coords={'time':day})
+                    mean_da.append(var_da)
 
                 
-                ds_mean = xr.merge(da_mean)
-                ds_list_sum.append(ds_mean)
-            ds_sum = sum(ds_list_sum)
-            ds_files.append(ds_sum)
+                mean_ds = xr.merge(mean_da)
+                sum_list.append(mean_ds)
+            sum_ds = sum(sum_list)
+            files_ds.append(sum_ds)
         
-            ds = xr.combine_nested(ds_files, 'noon')
+            daily_ds = xr.combine_nested(files_ds, 'time')
         
-        return ds
+        return daily_ds
 
 
 
 
-    def loop_ds(self):
-        ds_wrf = self.ds_wrf
-        # ds_mean = self.zone_means(ds_wrf)
-        
-        # ds_dmc = []
-        # for i in range(len(ds_mean.noon)):
-        #     DMC = self.solve_dmc(ds_mean.isel(noon = i))
-        #     ds_dmc.append(DMC)
-
-        ds_list = []
-        print("Length: ",self.length)
-        for i in range(self.length):
-            FFMC = self.solve_ffmc(ds_wrf.isel(time = i))
+    def hourly_loop(self):
+        # hourly_ds = self.hourly_ds
+        length = len(self.hourly_ds.time)
+        ffmc_list = []
+        print("Hourly length: ", length)
+        for i in range(length):
+            FFMC = self.solve_ffmc(self.hourly_ds.isel(time = i))
             # ds_list.append(FFMC)
 
-            WRF = ds_wrf.isel(time = i)
+            # WRF = hourly_ds.isel(time = i)
 
-            var_list = [FFMC,WRF]
-            ds_fwf = xr.merge(var_list)
-            ds_list.append(ds_fwf)
-        print("loop_ds done: ")
-        return ds_list
+            # var_list = [FFMC,WRF]
+            # ds_fwf = xr.merge(var_list)
+            ffmc_list.append(FFMC)
+        print("hourly loop done")
+        ffmc_ds = self.combine_by_time(ffmc_list)
+        return ffmc_ds
+
+    def daily_loop(self):
+        daily_ds = self.daily_ds
+        length = len(daily_ds.time)
+        dmc_list = []
+        print("Daily length: ", length)
+        for i in range(length):
+            DMC = self.solve_dmc(daily_ds.isel(noon = i))
+            dmc_list.append(DMC)
+        
+        print("daily loop done")
+        return dmc_list
 
 
-    def xarray_unlike(self,dict_list): 
-        xarray_files = []
+
+    def combine_by_time(self,dict_list): 
+        files_ds = []
         for index in dict_list:
             ds  = xr.Dataset(index)
-            xarray_files.append(ds)
-        ds_final = xr.combine_nested(xarray_files, 'time')
-        return(ds_final)
+            files_ds.append(ds)
+        combined_ds = xr.combine_nested(files_ds, 'time')
+        return(combined_ds)
 
 
     # def xarray_like(self,dict_list):
@@ -497,33 +511,41 @@ class FWF:
     #     # ds_final = xr.concat(xarray_files)
     #     return(ds_final)
 
-    def ds_fwf(self):
-        ds_list = self.loop_ds()
-        ds_fwf = self.xarray_unlike(ds_list)
+    def fwf_ds(self):
+        fwf_ds = self.hourly_loop()
+        # fwf_ds = self.combine_by_time(ffmc_list)
 
 
         # ### Name file after initial time of wrf 
-        file_name = np.datetime_as_string(ds_fwf.Time[0], unit='h')
+        file_name = np.datetime_as_string(fwf_ds.Time[0], unit='h')
 
         print("FFMC initialized at :", file_name)
 
         # # ## Write and save DataArray (.zarr) file
-        make_dir = Path(str(xr_dir) + str('/') + file_name + str(f"_ds_fwf.zarr"))
+        make_dir = Path(str(xr_dir) + str('/') + file_name + str(f"daily_ds.zarr"))
 
-        ### Check if file exists....else write file
-        if make_dir.exists():
-            the_size = make_dir.stat().st_size
-            print(
-                ("\n{} already exists\n" "and is {} bytes\n" "will not overwrite\n").format(
-                    file_name, the_size
-                )
-            )
-        else:
-            make_dir.mkdir(parents=True, exist_ok=True)
-            # ds_fwf.compute()
-            ds_fwf.chunk()
-            ds_fwf.to_zarr(make_dir, "w")
-            print(f"wrote {make_dir}")
+        # ### Check if file exists....else write file
+        # if make_dir.exists():
+        #     the_size = make_dir.stat().st_size
+        #     print(
+        #         ("\n{} already exists\n" "and is {} bytes\n" "will not overwrite\n").format(
+        #             file_name, the_size
+        #         )
+        #     )
+        # else:
+        #     make_dir.mkdir(parents=True, exist_ok=True)
+        #     # fwf_ds.compute()
+        #     # fwf_ds.chunk()
+        #     fwf_ds.to_zarr(make_dir, "w")
+        #     print(f"wrote {make_dir}")
+
+        make_dir.mkdir(parents=True, exist_ok=True)
+        # fwf_ds.compute()
+        # fwf_ds.chunk()
+        # for var in fwf_ds.data_vars:
+            # del fwf_ds[var].encoding['chunks']
+        fwf_ds.to_zarr(make_dir, "w")
+        print(f"wrote {make_dir}")
         
         ## return path to xr file to open
         return str(make_dir)

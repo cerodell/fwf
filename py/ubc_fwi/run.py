@@ -17,18 +17,15 @@ from context import data_dir, xr_dir, wrf_dir, tzone_dir, root_dir
 
 
 
-folder = "/2019-08-19T00_ds_wrf.zarr"
-# ds_wrf_file = readwrf(str(wrf_dir) + folder)
-# ds_wrf_file = str(data_dir) + folder
-ds_wrf_file = str(xr_dir) + folder
+folder = "/01_wrf_ds.zarr"
 
-ds_wrf = xr.open_zarr(ds_wrf_file)
+wrf_file_dir = str(data_dir) + folder
+# ds_wrf = xr.open_zarr(wrf_file_dir)
 
-coeff = FWF(ds_wrf_file, None)
+coeff = FWF(wrf_file_dir, None)
 # ds_list = coeff.loop_ds()
-ds_ffmc_file  = coeff.ds_fwf()
-# ds_ff_dir = '/home/crodell/fwf/data/xr/2019-08-19T00_ds_fwf.zarr'
-ds_ffmc = xr.open_zarr(ds_ffmc_file)
+fwf_file_dir  = coeff.fwf_ds()
+ds_ffmc = xr.open_zarr(fwf_file_dir)
 
 
 
