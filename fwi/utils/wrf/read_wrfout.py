@@ -36,7 +36,6 @@ def readwrf(filein, *args):
 
         time         = getvar(wrf_file, "times", timeidx=0)
         Hi           = getvar(wrf_file, "rh2")
-        print(Hi)
         H            = Hi * 1
         H.attrs      = Hi.attrs
         Ti           = getvar(wrf_file, "T2")
@@ -57,19 +56,11 @@ def readwrf(filein, *args):
         r_o       = xr.DataArray(qpf, name='r_o', dims=('south_north', 'west_east'))
         r_o.attrs = rain_ci.attrs
         
-        # cords = getvar(wrf_file, "rh2")
-        # print(cords.attrs)
-        # cart_proj = get_cartopy(cords)
-        attributes.append(path_in_str)
-
-        # NetCDF global attributes
-        # nc_attrs = wrf_file.ncattrs()
-        # attributes.append(nc_attrs)
-
         var_list = [H,T,W,r_o]
         ds = xr.merge(var_list)
         ds_list.append(ds)
         time_list.append(time)
+        attributes.append(path_in_str)
 
     ### Combine xarrays and rename to match van wangers defs 
     wrf_ds = xr.combine_nested(ds_list, 'time')

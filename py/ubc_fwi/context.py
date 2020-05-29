@@ -21,6 +21,7 @@ data_dir = root_dir / Path("data")
 xr_dir = root_dir / Path("data/xr/")
 wrf_dir = root_dir / Path("data/wrf/")
 tzone_dir = root_dir / Path("data/tzone/")
+gsuite_dir = notebooks_dir.parents[2] / Path("Google Drive File Stream/Shared drives/Research/CRodell/Model/Images/")
 
 
 

@@ -15,7 +15,7 @@ from wrf import (to_np, getvar, get_cartopy, latlon_coords, g_uvmet)
 
 from fwi.utils.ubc_fwi.fwf import FWF
 from fwi.utils.wrf.read_wrfout import readwrf
-from context import data_dir, xr_dir, wrf_dir, tzone_dir, root_dir
+from context import data_dir, xr_dir, wrf_dir, tzone_dir, root_dir, gsuite_dir
 
 startTime = datetime.now()
 
@@ -60,17 +60,16 @@ print(time)
 
 "############################# Make Plots #############################"
 
-cmap = plt.cm.jet
-level = np.arange(70,100,0.01)
 
 lats, lons = latlon_coords(ffmc_ds.F)
 cart_proj = get_cartopy(wrf_ds.H)
 
 fig = plt.figure(figsize=(6,8))
 fig.suptitle('Fine Fuel Moisture Code', fontsize = 14, fontweight = 'bold')
-
 ax = plt.axes(projection=cart_proj)
-ax.set_title(r"Init:    " +  initial + "Z  -----> " +"Valid: " + valid+"Z", loc='left', fontsize = 12)
+
+title_fig = ("Init: " +  initial + "Z  -----> " +"Valid: " + valid + "Z")
+ax.set_title(str(title_fig), loc='left', fontsize = 12)
 
 # Download and create the states, land, and oceans using cartopy features
 states = cfeature.NaturalEarthFeature(category='cultural', scale='50m',
@@ -86,12 +85,15 @@ lake = cfeature.NaturalEarthFeature(category='physical', name='lakes',
                                         scale='50m',
                                         facecolor=cfeature.COLORS['water'])
 
-ax.add_feature(states, linewidth=.5, edgecolor="black", zorder= 1)
+ax.add_feature(states, linewidth=.5, edgecolor="black", zorder= 4)
 ax.add_feature(ocean, zorder= 1)              
 ax.add_feature(lake, linewidth=.25, edgecolor="black", zorder= 1)
 
 ax.coastlines('50m', linewidth=0.8)
-ax.gridlines(draw_labels = True, crs=crs.PlateCarree() )
+gl = ax.gridlines(draw_labels = True, color='gray', \
+                alpha=0.5, linestyle='--', crs=crs.PlateCarree(), zorder= 3 )
+# gl.xlabels_top = False
+# gl.ylabels_left = False
 
 
 ## colors = ["#0000FF","#00E000","#FFFF00", "#E0A000", "#FF0000"]
@@ -103,7 +105,9 @@ ax.gridlines(draw_labels = True, crs=crs.PlateCarree() )
 
 
 locs={"Vancouver":[-123.1207, 49.2827 ], "Prince George":[-122.7497,53.9171], \
-    "Fort St John":[-120.8464,56.2524], "Kamloops":[-120.3273,50.6745], "Creston":[-116.5, 49.083]}
+    "Fort St John":[-120.8464,56.2524], "Kamloops":[-120.3273,50.6745], "Creston":[-116.5, 49.083], \
+        "Prince Rupert": [-130.3208, 54.3150], "Atlin": [-133.6895,59.5780], "Tofino":[-125.9066,49.1530], \
+            "Fort Nelson":[-122.6972,58.8050]}
 
 for key in locs.keys():
     print(key)
@@ -114,7 +118,7 @@ for key in locs.keys():
                      fontsize=6, xycoords=crs.PlateCarree()._as_mpl_transform(ax), zorder= 10)
 
 cmap = plt.cm.jet
-level = np.arange(70,101,1)
+level = np.arange(70,100.5,1)
 
 C = plt.contourf(to_np(lons), to_np(lats),ffmc_ds.F[time_ind], extend = 'both',
                 transform=crs.PlateCarree(), levels = level, cmap=cmap, zorder = 1)
@@ -126,8 +130,11 @@ clb.ax.tick_params(labelsize= 10)
 plt.xlim(-1453900,-253900)
 plt.ylim(-4448000,-2789000)
 
-plt.show()
-# fig.savefig(save + path_str[i][-19:-6])
+# ax.set_ylim(-135,-115)
+# ax.set_xlim(50,60)
+
+# plt.show()
+fig.savefig(str(gsuite_dir) + "/FFMC/Contour/BC/" + valid  + ".png", dpi=300)
 
 
 print("Run Time: ", datetime.now() - startTime)
