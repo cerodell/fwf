@@ -25,3 +25,19 @@ variables such as wind speed/ direction, temperature, and relative humidity
 
 
 
+#### Required packages
+
+
+`conda install -c conda-forge dask`
+
+`conda install -c conda-forge zarr`
+
+`conda install -c conda-forge wrf-python`
+
+`conda install -c conda-forge timezonefinder`
+
+`conda install -c conda-forge cartopy`
+
+`conda install -c conda-forge xarray`
+
+`conda install -c conda-forge pandas`

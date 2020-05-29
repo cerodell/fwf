@@ -117,14 +117,17 @@ class FWF:
             F = np.array(fwf_ds.F[-1])
             m_o = np.array(fwf_ds.m_o[-1])
 
-            self.F = F
-            self.m_o = m_o
+            F = xr.DataArray(F, name='F', dims=('south_north', 'west_east'))
+            m_o = xr.DataArray(m_o, name='m_o', dims=('south_north', 'west_east'))
+            
+            self.hourly_ds['F']   = F
+            self.hourly_ds['m_o'] = m_o
 
             
-            print("Found previous DMC, will merge with daily_ds")
-            P = np.array(fwf_ds.P[-1])
+            # print("Found previous DMC, will merge with daily_ds")
+            # P = np.array(fwf_ds.P[-1])
 
-            self.P = P
+            # self.P = P
 
 
         return
@@ -523,7 +526,7 @@ class FWF:
         print("FFMC initialized at :", file_name)
 
         # # ## Write and save DataArray (.zarr) file
-        make_dir = Path(str(xr_dir) + str('/') + file_name + str(f"daily_ds.zarr"))
+        make_dir = Path(str(xr_dir) + str('/') + file_name + str(f"_daily_ds.zarr"))
 
         # ### Check if file exists....else write file
         # if make_dir.exists():

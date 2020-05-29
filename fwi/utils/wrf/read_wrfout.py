@@ -6,14 +6,14 @@ from netCDF4 import Dataset
 from datetime import datetime
 from context import data_dir, xr_dir, wrf_dir
 
-from wrf import (getvar, g_uvmet)
+from wrf import (getvar, g_uvmet,get_cartopy, ll_to_xy)
 
 
 
 """ ####################################################################### """
 """ ###################### Grab WRF Variables ####################### """
 
-def readwrf(filein):
+def readwrf(filein, *args):
     """
     This function reads wrfout files and grabs variables of interest and writes/outputs as an xarray
     
@@ -26,28 +26,45 @@ def readwrf(filein):
     
     ds_wrf: an xarray of wind speed (km h-1), temp (degC), rh (%) & qpf (mm)
     """
-    ds_list, time_list = [], []
+   
+    ds_list, time_list, attributes = [], [], []
     pathlist = sorted(Path(filein).glob('wrfout_d03_*'))
     # print(pathlist)
     for path in pathlist:
         path_in_str = str(path)
         wrf_file = Dataset(path_in_str,'r')
-        
+
         time         = getvar(wrf_file, "times", timeidx=0)
-        H            = getvar(wrf_file, "rh2")*1
-        T            = getvar(wrf_file, "T2")-273.15
+        Hi           = getvar(wrf_file, "rh2")
+        print(Hi)
+        H            = Hi * 1
+        H.attrs      = Hi.attrs
+        Ti           = getvar(wrf_file, "T2")
+        T            = Ti-273.15
+        T.attrs      = Ti.attrs
         wsp_wdir     = g_uvmet.get_uvmet10_wspd_wdir(wrf_file,units='km h-1')
         wsp_array    = np.array(wsp_wdir[0])
         W            = xr.DataArray(wsp_array, name='W', dims=('south_north', 'west_east'))
+        W.attrs      = wsp_wdir.attrs
 
         ##varied parameterization scheme to forecast rain..note this is a sum of rain from the starts of the model run  
-        rain_c    = np.array(getvar(wrf_file, "RAINC"))
+        rain_ci   = getvar(wrf_file, "RAINC")
+        rain_c    = np.array(rain_ci)
         rain_sh   = np.array(getvar(wrf_file, "RAINSH"))
         rain_nc   = np.array(getvar(wrf_file, "RAINNC"))
         qpf_i     = rain_c + rain_sh + rain_nc
         qpf       = np.where(qpf_i>0,qpf_i, qpf_i*0)
         r_o       = xr.DataArray(qpf, name='r_o', dims=('south_north', 'west_east'))
+        r_o.attrs = rain_ci.attrs
+        
+        # cords = getvar(wrf_file, "rh2")
+        # print(cords.attrs)
+        # cart_proj = get_cartopy(cords)
+        attributes.append(path_in_str)
 
+        # NetCDF global attributes
+        # nc_attrs = wrf_file.ncattrs()
+        # attributes.append(nc_attrs)
 
         var_list = [H,T,W,r_o]
         ds = xr.merge(var_list)
@@ -57,6 +74,17 @@ def readwrf(filein):
     ### Combine xarrays and rename to match van wangers defs 
     wrf_ds = xr.combine_nested(ds_list, 'time')
     wrf_ds = wrf_ds.rename_vars({"T2":"T", "rh2":"H"})
+
+    wrf_file = Dataset(attributes[0],'r')
+    nc_attrs = wrf_file.ncattrs()
+    for nc_attr in nc_attrs:
+        # print('\t%s:' % nc_attr, repr(wrf_file.getncattr(nc_attr)))
+        wrf_ds.attrs[nc_attr] = repr(wrf_file.getncattr(nc_attr))
+
+    if args:
+        xy_np    = np.array(ll_to_xy(wrf_file, float(args[0]), float(args[1])))
+    else:
+        xy_np    = None
 
     ### Name file after initial time of wrf 
     # file_name = np.datetime_as_string(time_list[0],unit='h')
@@ -86,7 +114,7 @@ def readwrf(filein):
     
     ### return path to xr file to open
     # return str(make_dir)
-    return wrf_ds
+    return wrf_ds, xy_np
 
 
 

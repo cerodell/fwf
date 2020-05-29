@@ -9,6 +9,7 @@
 			"AKST",
 			"Carree",
 			"XLONG",
+			"arange",
 			"ccrs",
 			"coeff",
 			"contourf",
@@ -26,6 +27,6 @@
 			"xarray",
 			"zarr"
 		],
-		"python.pythonPath": "/Users/rodell/miniconda3/envs/cr/bin/python"
+		"python.pythonPath": "/Users/rodell/miniconda3/envs/fwf/bin/python"
 	}
 }
