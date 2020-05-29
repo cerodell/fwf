@@ -43,8 +43,11 @@ def readwrf(filein, *args):
         T.attrs      = Ti.attrs
         wsp_wdir     = g_uvmet.get_uvmet10_wspd_wdir(wrf_file,units='km h-1')
         wsp_array    = np.array(wsp_wdir[0])
+        wdir_array   = np.array(wsp_wdir[1])
         W            = xr.DataArray(wsp_array, name='W', dims=('south_north', 'west_east'))
+        WD           = xr.DataArray(wdir_array, name='WD', dims=('south_north', 'west_east'))
         W.attrs      = wsp_wdir.attrs
+        WD.attrs      = wsp_wdir.attrs
 
         ##varied parameterization scheme to forecast rain..note this is a sum of rain from the starts of the model run  
         rain_ci   = getvar(wrf_file, "RAINC")
@@ -56,7 +59,7 @@ def readwrf(filein, *args):
         r_o       = xr.DataArray(qpf, name='r_o', dims=('south_north', 'west_east'))
         r_o.attrs = rain_ci.attrs
         
-        var_list = [H,T,W,r_o]
+        var_list = [H,T,W,WD,r_o]
         ds = xr.merge(var_list)
         ds_list.append(ds)
         time_list.append(time)

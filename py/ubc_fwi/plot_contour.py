@@ -65,6 +65,8 @@ lats, lons = latlon_coords(ffmc_ds.F)
 cart_proj = get_cartopy(wrf_ds.H)
 
 fig = plt.figure(figsize=(6,8))
+# fig = plt.figure()
+
 fig.suptitle('Fine Fuel Moisture Code', fontsize = 14, fontweight = 'bold')
 ax = plt.axes(projection=cart_proj)
 
@@ -91,9 +93,12 @@ ax.add_feature(lake, linewidth=.25, edgecolor="black", zorder= 1)
 
 ax.coastlines('50m', linewidth=0.8)
 gl = ax.gridlines(draw_labels = True, color='gray', \
-                alpha=0.5, linestyle='--', crs=crs.PlateCarree(), zorder= 3 )
-# gl.xlabels_top = False
+                alpha=0.3, linestyle='--', crs=crs.PlateCarree(), zorder= 3 )
+gl.top_labels = False
+# gl.xlabels_bottom = False
+# gl.ylabels_right = False
 # gl.ylabels_left = False
+
 
 
 ## colors = ["#0000FF","#00E000","#FFFF00", "#E0A000", "#FF0000"]
@@ -118,7 +123,7 @@ for key in locs.keys():
                      fontsize=6, xycoords=crs.PlateCarree()._as_mpl_transform(ax), zorder= 10)
 
 cmap = plt.cm.jet
-level = np.arange(70,100.5,1)
+level = np.arange(70,100.5,0.5)
 
 C = plt.contourf(to_np(lons), to_np(lats),ffmc_ds.F[time_ind], extend = 'both',
                 transform=crs.PlateCarree(), levels = level, cmap=cmap, zorder = 1)
@@ -130,11 +135,11 @@ clb.ax.tick_params(labelsize= 10)
 plt.xlim(-1453900,-253900)
 plt.ylim(-4448000,-2789000)
 
-# ax.set_ylim(-135,-115)
-# ax.set_xlim(50,60)
+plt.tight_layout()
+
 
 # plt.show()
-fig.savefig(str(gsuite_dir) + "/FFMC/Contour/BC/" + valid  + ".png", dpi=300)
+fig.savefig(str(gsuite_dir) + "/FFMC/Contour/BC/" + valid  + ".pdf")
 
 
 print("Run Time: ", datetime.now() - startTime)
