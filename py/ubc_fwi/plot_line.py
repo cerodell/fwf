@@ -136,7 +136,7 @@ ax[4].yaxis.grid(color='gray', linestyle='dashed')
 ax[4].tick_params(axis='both', which='major', labelsize=tick_size)
 # plt.tight_layout()
 
-fig.savefig(str(gsuite_dir) + "/FFMC/Line/BC/" + valid  + ".pdf")
+# fig.savefig(str(gsuite_dir) + "/FFMC/Line/BC/" + valid  + ".pdf")
 
 plt.show()
 

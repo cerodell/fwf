@@ -1,6 +1,7 @@
 import context
 import math
 import errno
+import pickle
 import numpy as np
 import xarray as xr
 from timezonefinder import TimezoneFinder
@@ -35,9 +36,8 @@ class FWF:
 
         """
         ### Read then open WRF dataset
-        wrf_ds = readwrf(wrf_file_dir)
-        # wrf_ds = xr.open_zarr(wrf_file_dir)
-
+        wrf_ds, xy_np = readwrf(wrf_file_dir)
+        self.attrs    = wrf_ds.attrs
         ############ Mathematical Constants and Usefull Arrays ################ 
         ### Math Constants
         e = math.e
@@ -94,6 +94,14 @@ class FWF:
             
             self.hourly_ds['F']   = F
             self.hourly_ds['m_o'] = m_o
+            # self.hourly_ds['F'].attrs   = self.hourly_ds['T'].attrs
+            # del self.hourly_ds['F'].attrs['units']
+            # self.hourly_ds['F'].attrs['description'] = "FINE FUEL MOISTURE CODE"
+            # self.hourly_ds['m_o'].attrs = self.hourly_ds['T'].attrs
+            # del self.hourly_ds['m_o'].attrs['units']
+            # self.hourly_ds['m_o'].attrs['description'] = "FINE FUEL MOISTURE CONTENT"
+
+
             # """ ####################   Duff Moisture Code (DCM)    ##################### """
             # print("No prior DMC, initialize with 6s")
             # P_o      = 6.0   #Previous day's P becomes P_o
@@ -169,7 +177,7 @@ class FWF:
 
         ### Call on initial conditions
         # W, T, H, m_o = hourly_ds.W, hourly_ds.T, hourly_ds.H, self.m_o
-        W, T, H, m_o = hourly_ds.W, hourly_ds.T, hourly_ds.H, hourly_ds.m_o
+        W, T, H, m_o, F = hourly_ds.W, hourly_ds.T, hourly_ds.H, hourly_ds.m_o, hourly_ds.F
 
         e_full, zero_full = self.e_full, self.zero_full
 
@@ -256,7 +264,7 @@ class FWF:
         ### Recast initial moisture code for next time stamp  
         m_o = (205.2 * (101 - F)) / (82.9 + F)  
 
-        self.m_o = m_o
+        # self.m_o = m_o
 
         ### Add FFMC and moisture code to dataarray 
         # F = xr.DataArray(F, name='F', dims=('south_north', 'west_east'))
@@ -515,11 +523,28 @@ class FWF:
     #     # ds_final = xr.concat(xarray_files)
     #     return(ds_final)
 
+
+
     def fwf_ds(self):
         fwf_ds = self.hourly_loop()
-        # fwf_ds = self.combine_by_time(ffmc_list)
+        fwf_ds.attrs = self.attrs
+        fwf_ds.F.attrs   = fwf_ds.T.attrs
+        del fwf_ds.F.attrs['units']
+        fwf_ds.F.attrs['description'] = "FINE FUEL MOISTURE CODE"
+        fwf_ds.m_o.attrs = fwf_ds.T.attrs
+        del fwf_ds.m_o.attrs['units']
+        fwf_ds.m_o.attrs['description'] = "FINE FUEL MOISTURE CONTENT"
+        print(fwf_ds.F.attrs)
 
 
+        for var in fwf_ds.data_vars:
+            print(var)
+            del fwf_ds[var].attrs['coordinates']
+            # fwf_ds[var].attrs['coordinates'] = 'XLONG XLAT XTIME'
+            # fwf_ds[var].attrs['projection'] = [pickle.dumps(fwf_ds[var].projection)]
+            fwf_ds[var].attrs['projection'] = str(fwf_ds[var].projection)
+
+            # back = pickle.loads(test)
         # ### Name file after initial time of wrf 
         file_name = np.datetime_as_string(fwf_ds.Time[0], unit='h')
 
@@ -544,11 +569,13 @@ class FWF:
         #     print(f"wrote {make_dir}")
 
         make_dir.mkdir(parents=True, exist_ok=True)
-        # fwf_ds.compute()
+        fwf_ds.compute()
         # fwf_ds.chunk()
         # for var in fwf_ds.data_vars:
             # del fwf_ds[var].encoding['chunks']
         fwf_ds.to_zarr(make_dir, "w")
+        # fwf_ds.to_netcdf(make_dir)
+
         print(f"wrote {make_dir}")
         
         ## return path to xr file to open

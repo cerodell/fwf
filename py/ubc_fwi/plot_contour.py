@@ -1,5 +1,6 @@
 import context
 import math
+import pickle
 import numpy as np
 import pandas as pd
 import xarray as xr
@@ -60,9 +61,26 @@ print(time)
 
 "############################# Make Plots #############################"
 
+import sys
 
+
+    
 lats, lons = latlon_coords(ffmc_ds.F)
-cart_proj = get_cartopy(wrf_ds.H)
+cart_proj = get_cartopy(wrf_ds.r_o)
+
+# test = pickle.dumps(wrf_ds.W.projection)
+# back = pickle.loads(test)
+
+# test2 = str(wrf_ds.W.projection) 
+
+
+#  my_proj = crs.Stereographic(central_latitude=0.0, central_longitude=0.0, \
+#      false_easting=0.0, false_northing=0.0, true_scale_latitude=None, scale_factor=None, globe=None)
+
+
+
+# blah = [wrf_ds.W.projection]
+# blah2 = tuple(wrf_ds.W.projection)
 
 fig = plt.figure(figsize=(6,8))
 # fig = plt.figure()

@@ -23,17 +23,19 @@ from context import data_dir, xr_dir, wrf_dir, tzone_dir, root_dir
 
 # wrf_file_dir = str(data_dir) + folder
 # ds_wrf = xr.open_zarr(wrf_file_dir)
-# wrf_file_dir = '/Volumes/CER/WFRT/FWI/Data/20190819
+wrf_file_dir = '/Volumes/CER/WFRT/FWI/Data/20190819'
 
 
-# coeff = FWF(wrf_file_dir, None)
-# ds_list = coeff.loop_ds()
-# fwf_file_dir  = coeff.fwf_ds()
-fwf_file_dir  = str(xr_dir) + "/2019-08-19T00_daily_ds.zarr"
-# ffmc_ds = xr.open_zarr(fwf_file_dir)
+coeff = FWF(wrf_file_dir, None)
+fwf_file_dir  = coeff.fwf_ds()
+# fwf_file_dir  = str(xr_dir) + "/2019-08-19T00_daily_ds.zarr"
+ffmc_ds = xr.open_zarr(fwf_file_dir)
+print(ffmc_ds)
+print(ffmc_ds.H)
+# print(type(ffmc_ds.F.projection))
 
-
-
+# from wrf import (to_np, getvar, get_cartopy, latlon_coords, g_uvmet)
+# test = get_cartopy(ffmc_ds.F)
 
 
 # %%
@@ -45,6 +47,7 @@ fwf_file_dir_02  = coeff02.fwf_ds()
 
 ffmc_ds_02 = xr.open_zarr(fwf_file_dir_02)
 print(ffmc_ds_02)
+print(ffmc_ds_02.F)
 
 ### Timer
 print("Run Time: ", datetime.now() - startTime)
