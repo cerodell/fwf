@@ -72,8 +72,11 @@ class FWF:
 
         ### Create an hourly and daily datasets for use with their respected codes/indices 
         self.hourly_ds = wrf_ds
-        # self.daily_ds = self.solve_daily_ds(wrf_ds)
-
+        self.daily_ds = self.create_daily_ds(wrf_ds)
+        for var in self.hourly_ds.data_vars:
+            print(var)
+            self.daily_ds[var].attrs = self.hourly_ds[var].attrs
+        self.daily_ds['r_o_tomorrow'].attrs = self.daily_ds['r_o'].attrs      
 
  
 
@@ -94,25 +97,19 @@ class FWF:
             
             self.hourly_ds['F']   = F
             self.hourly_ds['m_o'] = m_o
-            # self.hourly_ds['F'].attrs   = self.hourly_ds['T'].attrs
-            # del self.hourly_ds['F'].attrs['units']
-            # self.hourly_ds['F'].attrs['description'] = "FINE FUEL MOISTURE CODE"
-            # self.hourly_ds['m_o'].attrs = self.hourly_ds['T'].attrs
-            # del self.hourly_ds['m_o'].attrs['units']
-            # self.hourly_ds['m_o'].attrs['description'] = "FINE FUEL MOISTURE CONTENT"
 
 
             # """ ####################   Duff Moisture Code (DCM)    ##################### """
-            # print("No prior DMC, initialize with 6s")
-            # P_o      = 6.0   #Previous day's P becomes P_o
-            # P_o_full = np.full(shape, P_o, dtype=float)
+            print("No prior DMC, initialize with 6s")
+            P_o      = 6.0   #Previous day's P becomes P_o
+            P_o_full = np.full(shape, P_o, dtype=float)
 
-            # ### (16)
-            # K_o      = 1.894 * (daily_ds.T[0] + 1.1)* (100 - daily_ds.H[0]) * (L_e * 10**-6)
+            ### (16)
+            K_o      = 1.894 * (self.daily_ds.T[0] + 1.1)* (100 - self.daily_ds.H[0]) * (L_e * 10**-6)
 
-            # ##(1)
-            # P_o = P_o_full + (100 * K_o)
-            # self.P = P_o
+            ##(1)
+            P_o = P_o_full + (100 * K_o)
+            self.daily_ds['P'] = P_o
 
             # """ #####################     Drought Code (DC)       ########################### """
 
@@ -281,7 +278,7 @@ class FWF:
 
 
 
-    def solve_dmc(self, ds_wrf):
+    def solve_dmc(self, daily_ds):
 
         """
         This function calculates the Duff Moisture Code at a one-hour interval writes/outputs as an xarray
@@ -314,7 +311,7 @@ class FWF:
         ds_P: an dataarray of DMC
         """
 
-        W, T, H, r_o, P_o, L_e = ds_wrf.W, ds_wrf.T, ds_wrf.H, ds_wrf.r_o, self.P, self.L_e
+        W, T, H, r_o, P_o, L_e = daily_ds.W, daily_ds.T, daily_ds.H, daily_ds.r_o, daily_ds.P, self.L_e
 
         e_full, zero_full, ones_full = self.e_full, self.zero_full, self.ones_full
 
@@ -425,18 +422,18 @@ class FWF:
         ##(18) Combine Drought Moisture Codes accross domain (P)
                     
         P = P_d + P_r
-        self.P = P
+        self.daily_ds['P'] = P
         ### Add to dataarray
-        ds_dmc = xr.DataArray(P, name='P', dims=('south_north', 'west_east'))
+        # ds_dmc = xr.DataArray(P, name='P', dims=('south_north', 'west_east'))
 
         print(np.min(np.array(P)), "P final")
 
         ### Return dataarray
-        return ds_dmc
+        return daily_ds
 
 
 
-    def solve_daily_ds(self,wrf_ds):
+    def create_daily_ds(self,wrf_ds):
         zero_full = self.zero_full
 
         tzdict = self.tzdict
@@ -451,14 +448,30 @@ class FWF:
 
                 mean_da = []
                 for var in wrf_ds.data_vars:
-                    # print(ds_wrf[var])
+                    # print(wrf_ds[var])
                     var_mean = wrf_ds[var][minus+i:plus+i].mean(axis=0)
-                    var_da = xr.where(tzone_ds != zone_id, zero_full, wrf_ds[var][minus+i:plus+i].mean(axis=0))
+                    var_da = xr.where(tzone_ds != zone_id, zero_full, var_mean)
                     var_da = np.array(var_da.Zone)
                     day    = np.array(wrf_ds.Time[noon + i], dtype ='datetime64[D]')
                     var_da = xr.DataArray(var_da, name=var, 
                             dims=('south_north', 'west_east'),coords={'time':day})
                     mean_da.append(var_da)
+
+                    if var == 'r_o':
+
+
+
+
+                        r_o_tom_mean  = wrf_ds[var][noon+i:].mean(axis=0)
+                        r_o_tom       = xr.where(tzone_ds != zone_id, zero_full, r_o_tom_mean)
+                        r_o_tom       = np.array(r_o_tom.Zone)
+                        r_o_tom_da    = r_o_tom - np.array(var_da)
+                        day           = np.array(wrf_ds.Time[noon + i], dtype ='datetime64[D]')
+                        r_o_tom_da    = xr.DataArray(r_o_tom_da, name="r_o_tomorrow", 
+                                dims=('south_north', 'west_east'),coords={'time':day})
+                        mean_da.append(r_o_tom_da)
+                    else:
+                        pass
 
                 
                 mean_ds = xr.merge(mean_da)
@@ -476,32 +489,31 @@ class FWF:
     def hourly_loop(self):
         # hourly_ds = self.hourly_ds
         length = len(self.hourly_ds.time)
-        ffmc_list = []
+        hourly_list = []
         print("Hourly length: ", length)
         for i in range(length):
             FFMC = self.solve_ffmc(self.hourly_ds.isel(time = i))
-            # ds_list.append(FFMC)
+            # ISI  = self.solve_isi(self.hourly_ds.isel(time = i))
+            # FWI  = self.solve_fwi(self.hourly_ds.isel(time = i))
 
-            # WRF = hourly_ds.isel(time = i)
-
-            # var_list = [FFMC,WRF]
-            # ds_fwf = xr.merge(var_list)
-            ffmc_list.append(FFMC)
+            hourly_list.append(FFMC)
         print("hourly loop done")
-        ffmc_ds = self.combine_by_time(ffmc_list)
-        return ffmc_ds
+        hourly_ds = self.combine_by_time(hourly_list)
+        return hourly_ds
 
     def daily_loop(self):
-        daily_ds = self.daily_ds
-        length = len(daily_ds.time)
-        dmc_list = []
+        # daily_ds = self.daily_ds
+        length = len(self.daily_ds.time)
+        daily_list = []
         print("Daily length: ", length)
         for i in range(length):
-            DMC = self.solve_dmc(daily_ds.isel(noon = i))
-            dmc_list.append(DMC)
+            DMC = self.solve_dmc(self.daily_ds.isel(time = i))
+            daily_list.append(DMC)
         
         print("daily loop done")
-        return dmc_list
+        daily_ds = self.combine_by_time(daily_list)
+
+        return daily_ds
 
 
 
@@ -514,7 +526,7 @@ class FWF:
         return(combined_ds)
 
 
-    # def xarray_like(self,dict_list):
+    # def merge_by_coords(self,dict_list):
     #     xarray_files = []
     #     for index in dict_list:
     #         ds  = xr.Dataset(index)
@@ -525,30 +537,84 @@ class FWF:
 
 
 
-    def fwf_ds(self):
-        fwf_ds = self.hourly_loop()
-        fwf_ds.attrs = self.attrs
-        fwf_ds.F.attrs   = fwf_ds.T.attrs
-        del fwf_ds.F.attrs['units']
-        fwf_ds.F.attrs['description'] = "FINE FUEL MOISTURE CODE"
-        fwf_ds.m_o.attrs = fwf_ds.T.attrs
-        del fwf_ds.m_o.attrs['units']
-        fwf_ds.m_o.attrs['description'] = "FINE FUEL MOISTURE CONTENT"
-        print(fwf_ds.F.attrs)
+    def hourly(self):
+        hourly_ds = self.hourly_loop()
+        hourly_ds.attrs = self.attrs
+        hourly_ds.F.attrs   = hourly_ds.T.attrs
+        del hourly_ds.F.attrs['units']
+        hourly_ds.F.attrs['description'] = "FINE FUEL MOISTURE CODE"
+        hourly_ds.m_o.attrs = hourly_ds.T.attrs
+        del hourly_ds.m_o.attrs['units']
+        hourly_ds.m_o.attrs['description'] = "FINE FUEL MOISTURE CONTENT"
+        print(hourly_ds.F.attrs)
 
 
-        for var in fwf_ds.data_vars:
+        for var in hourly_ds.data_vars:
             print(var)
-            del fwf_ds[var].attrs['coordinates']
-            # fwf_ds[var].attrs['coordinates'] = 'XLONG XLAT XTIME'
-            # fwf_ds[var].attrs['projection'] = [pickle.dumps(fwf_ds[var].projection)]
-            fwf_ds[var].attrs['projection'] = str(fwf_ds[var].projection)
+            del hourly_ds[var].attrs['coordinates']
+            # hourly_ds[var].attrs['coordinates'] = 'XLONG XLAT XTIME'
+            hourly_ds[var].attrs['projection'] = str(hourly_ds[var].projection)
 
             # back = pickle.loads(test)
         # ### Name file after initial time of wrf 
-        file_name = np.datetime_as_string(fwf_ds.Time[0], unit='h')
+        file_name = np.datetime_as_string(hourly_ds.Time[0], unit='h')
 
         print("FFMC initialized at :", file_name)
+
+        # # ## Write and save DataArray (.zarr) file
+        make_dir = Path(str(xr_dir) + str('/') + file_name + str(f"_hourly_ds.zarr"))
+
+        # ### Check if file exists....else write file
+        # if make_dir.exists():
+        #     the_size = make_dir.stat().st_size
+        #     print(
+        #         ("\n{} already exists\n" "and is {} bytes\n" "will not overwrite\n").format(
+        #             file_name, the_size
+        #         )
+        #     )
+        # else:
+        #     make_dir.mkdir(parents=True, exist_ok=True)
+        #     # hourly_ds.compute()
+        #     # hourly_ds.chunk()
+        #     hourly_ds.to_zarr(make_dir, "w")
+        #     print(f"wrote {make_dir}")
+
+        make_dir.mkdir(parents=True, exist_ok=True)
+        hourly_ds.compute()
+        # hourly_ds.chunk()
+        # for var in hourly_ds.data_vars:
+            # del hourly_ds[var].encoding['chunks']
+        hourly_ds.to_zarr(make_dir, "w")
+        # hourly_ds.to_netcdf(make_dir)
+
+        print(f"wrote {make_dir}")
+        
+        ## return path to hourly_ds file to open
+        return str(make_dir)
+
+
+
+    def daily(self):
+        daily_ds = self.daily_loop()
+        daily_ds.attrs = self.attrs
+        print(daily_ds.T.attrs)
+        daily_ds.P.attrs   = daily_ds.T.attrs
+        del daily_ds.P.attrs['units']
+        daily_ds.P.attrs['description'] = "DUFF MOISTURE CODE"
+        print(daily_ds.P.attrs)
+
+
+        for var in daily_ds.data_vars:
+            print(var)
+            del daily_ds[var].attrs['coordinates']
+            # daily_ds[var].attrs['coordinates'] = 'XLONG XLAT XTIME'
+            daily_ds[var].attrs['projection'] = str(daily_ds[var].projection)
+
+            # back = pickle.loads(test)
+        # ### Name file after initial time of wrf 
+        file_name = np.datetime_as_string(self.hourly_ds.Time[0], unit='h')
+
+        print("DMC initialized at :", file_name)
 
         # # ## Write and save DataArray (.zarr) file
         make_dir = Path(str(xr_dir) + str('/') + file_name + str(f"_daily_ds.zarr"))
@@ -563,20 +629,20 @@ class FWF:
         #     )
         # else:
         #     make_dir.mkdir(parents=True, exist_ok=True)
-        #     # fwf_ds.compute()
-        #     # fwf_ds.chunk()
-        #     fwf_ds.to_zarr(make_dir, "w")
+        #     # daily_ds.compute()
+        #     # daily_ds.chunk()
+        #     daily_ds.to_zarr(make_dir, "w")
         #     print(f"wrote {make_dir}")
 
         make_dir.mkdir(parents=True, exist_ok=True)
-        fwf_ds.compute()
-        # fwf_ds.chunk()
-        # for var in fwf_ds.data_vars:
-            # del fwf_ds[var].encoding['chunks']
-        fwf_ds.to_zarr(make_dir, "w")
-        # fwf_ds.to_netcdf(make_dir)
+        daily_ds.compute()
+        # daily_ds.chunk()
+        # for var in daily_ds.data_vars:
+            # del daily_ds[var].encoding['chunks']
+        daily_ds.to_zarr(make_dir, "w")
+        # daily_ds.to_netcdf(make_dir)
 
         print(f"wrote {make_dir}")
         
-        ## return path to xr file to open
+        ## return path to daily_ds file to open
         return str(make_dir)

@@ -47,7 +47,10 @@ def readwrf(filein, *args):
         W            = xr.DataArray(wsp_array, name='W', dims=('south_north', 'west_east'))
         WD           = xr.DataArray(wdir_array, name='WD', dims=('south_north', 'west_east'))
         W.attrs      = wsp_wdir.attrs
+        W.attrs['description'] = "10m Wind Speed"
         WD.attrs      = wsp_wdir.attrs
+        WD.attrs['description'] = "10m Wind Direction"
+        WD.attrs['units'] = "degrees"
 
         ##varied parameterization scheme to forecast rain..note this is a sum of rain from the starts of the model run  
         rain_ci   = getvar(wrf_file, "RAINC")
@@ -58,7 +61,7 @@ def readwrf(filein, *args):
         qpf       = np.where(qpf_i>0,qpf_i, qpf_i*0)
         r_o       = xr.DataArray(qpf, name='r_o', dims=('south_north', 'west_east'))
         r_o.attrs = rain_ci.attrs
-        
+        r_o.attrs['description'] = "ACCUMULATED TOTAL PRECIPITATION"
         var_list = [H,T,W,WD,r_o]
         ds = xr.merge(var_list)
         ds_list.append(ds)
