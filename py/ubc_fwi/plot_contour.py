@@ -31,7 +31,7 @@ wrf_ds, xy_np = readwrf(wrf_file_dir)
 
 
 
-fwf_file_dir  = str(xr_dir) + "/2019-08-20T00_daily_ds.zarr"
+fwf_file_dir  = str(xr_dir) + "/2019-08-19T00_hourly_ds.zarr"
 
 ffmc_ds = xr.open_zarr(fwf_file_dir)
 
@@ -145,6 +145,9 @@ level = np.arange(70,100.5,0.5)
 
 C = plt.contourf(to_np(lons), to_np(lats),ffmc_ds.F[time_ind], extend = 'both',
                 transform=crs.PlateCarree(), levels = level, cmap=cmap, zorder = 1)
+
+# C = plt.pcolormesh(to_np(lons), to_np(lats),ffmc_ds.F[time_ind], 
+#                 transform=crs.PlateCarree(),  cmap=cmap, zorder = 1)
 
 clb = fig.colorbar(C, ax = ax, fraction=0.054, pad=0.04)
 clb.set_label("FFMC", fontsize = 12, fontweight = 'bold')
