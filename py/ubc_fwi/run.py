@@ -36,8 +36,9 @@ coeff = FWF(wrf_file_dir, None, None)
 """######### This Solves for daily_ds #############"""
 daily_file_dir  = coeff.daily()
 daily_ds = xr.open_zarr(daily_file_dir)
-print(daily_ds)
-print(daily_ds.P)
+# print(daily_ds)
+print(np.nanmin(np.array(daily_ds.D)), "D final min")
+print(np.nanmax(np.array(daily_ds.D)), "D final max")
 print((daily_ds.H.projection))
 daily_ds.T[1]
 # u, indices = np.unique(np.array(daily_ds.T[1]), return_index=True)
@@ -45,8 +46,8 @@ daily_ds.T[1]
 
 
 
-wrf_file_dir = '/Volumes/CER/WFRT/FWI/Data/20190820'
-coeff = FWF(wrf_file_dir, None, daily_file_dir )
+# wrf_file_dir = '/Volumes/CER/WFRT/FWI/Data/20190820'
+# coeff = FWF(wrf_file_dir, None, daily_file_dir )
 
 
 # """######### This Solves for hourly_ds #############"""
@@ -57,12 +58,12 @@ coeff = FWF(wrf_file_dir, None, daily_file_dir )
 
 
 # """######### This Solves for daily_ds #############"""
-daily_file_dir  = coeff.daily()
-daily_ds = xr.open_zarr(daily_file_dir)
-print(daily_ds)
-print(daily_ds.r_o)
+# daily_file_dir  = coeff.daily()
+# daily_ds = xr.open_zarr(daily_file_dir)
+# print(daily_ds)
+# print(np.nanmin(np.array(daily_ds.D)), "D final min")
+# print(np.nanmax(np.array(daily_ds.D)), "D final max")
 # print((daily_ds.H.projection))
-# daily_ds.r_o
 
 
 

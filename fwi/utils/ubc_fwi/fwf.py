@@ -42,7 +42,7 @@ class FWF:
         ### Math Constants
         e = math.e
 
-        ### Shape of Domain
+        ### Shape of Domain make useful fill arrays
         shape = np.shape(wrf_ds.T[0,:,:])
         print(shape)
         self.e_full    = np.full(shape,e, dtype=float)
@@ -56,6 +56,11 @@ class FWF:
         L_e = [6.5, 7.5, 9.0, 12.8, 13.9, 13.9, 12.4, 10.9, 9.4, 8.0, 7.0, 6.0]
         L_e = L_e[month]
         self.L_e = L_e
+
+        ### Daylength adjustment in Drought Code
+        L_f = [-1.6, -1.6, -1.6, 0.9, 3.8, 5.8, 6.4, 5.0, 2.4, 0.4, -1.6, -1.6]
+        L_f = L_f[month]
+        self.L_f = L_f
 
         ### Time Zone classification method
         tzdict   = {"PDT": {'zone_id':7, 'noon':19 , 'plus': 20, 'minus':18},
@@ -329,11 +334,11 @@ class FWF:
         ########################################################################
         ### (11) Solve for the effective rain (r_e) 
         r_total = 1.5  
-        r_ei  = np.where(r_o < r_total, r_o, (0.92*r_o) - 1.27)
+        r_ei  = xr.where(r_o < r_total, r_o, (0.92*r_o) - 1.27) ### Im confusing myself here
        
-        r_e    = np.where(r_ei > 1e-7, r_ei, 1e-7)
+        r_e    = xr.where(r_ei > 1e-7, r_ei, 1e-7)
 
-
+        print(np.nanmax(np.array(r_e)), "RAIN MAX R_E")
         ########################################################################
         ### (12) Recast moisture content after rain (M_o)
         ##define power
@@ -398,8 +403,9 @@ class FWF:
         
         P_r_pre_K = xr.where(r_o < r_total, zero_full, 244.72 - (43.43 * np.log(M_r - 20)))
         print(np.nanmin(np.array(P_r_pre_K)),"P_r_pre_K before")
-        P_r_pre_K = xr.where(r_o < r_total, zero_full, \
-                                xr.where(P_r_pre_K>0,P_r_pre_K, 1e-6))
+        # P_r_pre_K = xr.where(r_o < r_total, zero_full, \
+        #                         xr.where(P_r_pre_K>0,P_r_pre_K, 1e-6))
+        P_r_pre_K = xr.where(P_r_pre_K > 0, P_r_pre_K, 1e-6)
         print(np.nanmin(np.array(P_r_pre_K)),"P_r_pre_K after")
 
 
@@ -471,24 +477,52 @@ class FWF:
         ########################################################################
         ### (18) Solve for the effective rain (r_d) 
         r_limit = 2.8  
-        r_di  = np.where(r_o < r_limit, r_o, (0.83*r_o) - 1.27)
-        r_d    = np.where(r_di > 1e-7, r_di, 1e-7)
+        r_di  = xr.where(r_o < r_limit, r_o, (0.83*r_o) - 1.27)
+        r_d    = xr.where(r_di > 1e-7, r_di, 1e-7)
 
         ########################################################################
         ### (19) Solve for initial moisture equivalent (Q_o) 
+        a = (-D_o/400)
+        Q_o = xr.where(r_o < r_limit, zero_full, 800 * np.power(e_full,a))
 
 
+        ########################################################################
+        ### (20) Solve for moisture equivalent (Q_r) 
+
+        Q_r = xr.where(r_o < r_limit, zero_full, Q_o + (3.937 * r_d))
 
 
+        ########################################################################
+        ### (21) Solve for DC after rain (D_r) 
+        a = (800/Q_r)
+        D_r = xr.where(r_o < r_limit, zero_full, 400 * np.log(a))
+        print(np.mean(np.array(D_r)), "Mean before zeroing D_r")
+        D_r = xr.where(D_r > 0, D_r, 1e-6)
 
+        print(np.nanmin(np.array(D_r)), "Min D_r")
+        print(np.nanmax(np.array(D_r)), "Max D_r")
+        ########################################################################
+        ### (21) Solve for potential evapotranspiration (V) 
+        print(np.nanmin(np.array(T)),"T before")
+        T = np.where(T>-2.8,T, -2.8)
+        print(np.nanmin(np.array(T)),"T after")
 
+        V = (0.36 * (T + 2.8)) + L_f
 
+        ########################################################################
+        ### (21) Combine dry and moist D and Solve for Drought Code (D) 
+        D_d = xr.where(r_o > r_limit, zero_full, D_o)
+        D_combine = D_d + D_r
+        D = D_combine + (0.5 * V)
 
-
-
-
+        self.daily_ds['D'] = D
 
         return daily_ds
+
+
+
+
+
 
     def create_daily_ds(self,wrf_ds):
         print("Create Daily ds")
@@ -571,6 +605,8 @@ class FWF:
         print("Daily length: ", length)
         for i in range(length):
             DMC = self.solve_dmc(self.daily_ds.isel(time = i))
+            DC  = self.solve_dc(self.daily_ds.isel(time = i))
+            DMC['D'] = DC['D']
             daily_list.append(DMC)
         
         print("Daily loop done")
