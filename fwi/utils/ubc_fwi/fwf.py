@@ -468,6 +468,7 @@ class FWF:
         
         daily_ds: an dataset of DC
         """
+        ### Call on initial conditions
         W, T, H, r_o, D_o, L_f = daily_ds.W, daily_ds.T, daily_ds.H, daily_ds.r_o, daily_ds.D, self.L_f
 
         e_full, zero_full, ones_full = self.e_full, self.zero_full, self.ones_full
@@ -567,6 +568,54 @@ class FWF:
 
         return R
 
+    def solve_bui(self, daily_ds):
+
+        """
+        This function calculates the Build up Index at noon local daily and outputs as an xarray
+        
+        Parameters
+        ----------
+        daily_ds: dataset of daily variables at noon local averaged from (1100-1300) local 
+                    the averageing was done as a buffer for any frontal passage.
+        Variables
+        ----------
+        P:      duff moisture code
+        D:      drought code  
+        U:      build up index
+
+
+        Returns
+        -------
+        U: an datarray of the build up index (U)
+        """
+        zero_full  =  self.zero_full
+
+        ### Call on initial conditions
+        P, D  = daily_ds.P, daily_ds.D
+
+        ########################################################################
+        ### (27a) Solve for build up index where P =< 0.4D (U_a) 
+        P_limit = 0.4 * D
+        U_a = (0.8 * P * D) / (P + (0.4 * D))
+        U_a = xr.where(P >= P_limit, zero_full, U_a)
+
+        ########################################################################
+        ### (27b) Solve for build up index where P > 0.4D (U_b) 
+
+        a   = 0.92 + np.power((0.0114 * P), 1.7)
+        U_b = P - ((1 - (0.8 * D)) / ((P + (0.4 * D)) * a))
+        U_b = xr.where(P < P_limit, zero_full, U_b)
+
+
+        ########################################################################
+        ### (27c) Combine build up index (U) 
+
+        U = U_a + U_b
+
+        U = xr.DataArray(U, name='U', dims=('time', 'south_north', 'west_east'))
+
+        return U
+
     def create_daily_ds(self,wrf_ds):
         print("Create Daily ds")
         zero_full = self.zero_full
@@ -621,26 +670,22 @@ class FWF:
 
 
     def hourly_loop(self):
-        # hourly_ds = self.hourly_ds
+
         length = len(self.hourly_ds.time)
         hourly_list = []
         print("Hourly length: ", length)
         for i in range(length):
             FFMC = self.solve_ffmc(self.hourly_ds.isel(time = i))
-            # ISI  = self.solve_isi(self.hourly_ds.isel(time = i))
-            # FWI  = self.solve_fwi(self.hourly_ds.isel(time = i))
-            # FFMC['R'] = ISI
             hourly_list.append(FFMC)
         print("Hourly loop done")
         hourly_ds = self.combine_by_time(hourly_list)
-        ISI  = self.solve_isi(self.hourly_ds)
+        ISI  = self.solve_isi(hourly_ds)
         hourly_ds['R'] = ISI
         return hourly_ds
 
     def daily_loop(self):
-        # daily_ds = self.daily_ds
-        length = len(self.daily_ds.time)
 
+        length = len(self.daily_ds.time)
         r_o_list = []
         r_o_list.append(self.zero_full)
         r_o_list.append(np.array(self.daily_ds.r_o[0]))
@@ -658,6 +703,8 @@ class FWF:
         
         print("Daily loop done")
         daily_ds = self.combine_by_time(daily_list)
+        U  = self.solve_bui(daily_ds)
+        daily_ds['U'] = U
 
         return daily_ds
 
@@ -701,7 +748,6 @@ class FWF:
 
         for var in hourly_ds.data_vars:
             del hourly_ds[var].attrs['coordinates']
-            # hourly_ds[var].attrs['coordinates'] = 'TIME XLONG XLAT'
             hourly_ds[var].attrs['projection'] = str(hourly_ds[var].projection)
 
 
@@ -733,10 +779,13 @@ class FWF:
         del daily_ds.D.attrs['units']
         daily_ds.D.attrs['description'] = "DROUGHT CODE"
 
+        daily_ds.U.attrs   = daily_ds.T.attrs
+        del daily_ds.U.attrs['units']
+        daily_ds.U.attrs['description'] = "BUILD UP INDEX"
+
         for var in daily_ds.data_vars:
             # print(var)
             del daily_ds[var].attrs['coordinates']
-            # daily_ds[var].attrs['coordinates'] = 'TIME XLAT XLONG'
             daily_ds[var].attrs['projection'] = str(daily_ds[var].projection)
 
         daily_ds.r_o.attrs['description'] = "24 HOUR ACCUMULATED PRECIPITATION"
