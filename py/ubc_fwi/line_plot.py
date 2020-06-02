@@ -35,9 +35,9 @@ fwf_file_dir  = str(xr_dir) + "/2019-08-20T00_daily_ds.zarr"
 ffmc_ds = xr.open_zarr(fwf_file_dir)
 
 time_ind = -18
-time = np.datetime_as_string(ffmc_ds.Time[time_ind], unit='h')
-initial = np.datetime_as_string(ffmc_ds.Time[0], unit='h')
-valid = np.datetime_as_string(ffmc_ds.Time[time_ind], unit='h')
+time = np.datetime_as_string(ffmc_ds.time[time_ind], unit='h')
+initial = np.datetime_as_string(ffmc_ds.time[0], unit='h')
+valid = np.datetime_as_string(ffmc_ds.time[time_ind], unit='h')
 print(time)
 
 

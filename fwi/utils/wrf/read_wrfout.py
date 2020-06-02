@@ -41,15 +41,17 @@ def readwrf(filein, *args):
         Ti           = getvar(wrf_file, "T2")
         T            = Ti-273.15
         T.attrs      = Ti.attrs
+        T.attrs['description'] = "2m TEMP"
+        T.attrs['units'] = "C"
         wsp_wdir     = g_uvmet.get_uvmet10_wspd_wdir(wrf_file,units='km h-1')
         wsp_array    = np.array(wsp_wdir[0])
         wdir_array   = np.array(wsp_wdir[1])
         W            = xr.DataArray(wsp_array, name='W', dims=('south_north', 'west_east'))
         WD           = xr.DataArray(wdir_array, name='WD', dims=('south_north', 'west_east'))
         W.attrs      = wsp_wdir.attrs
-        W.attrs['description'] = "10m Wind Speed"
+        W.attrs['description'] = "10m WIND SPEED"
         WD.attrs      = wsp_wdir.attrs
-        WD.attrs['description'] = "10m Wind Direction"
+        WD.attrs['description'] = "10m WIND DIRECTION"
         WD.attrs['units'] = "degrees"
 
         ##varied parameterization scheme to forecast rain..note this is a sum of rain from the starts of the model run  

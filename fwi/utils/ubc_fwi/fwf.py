@@ -74,8 +74,10 @@ class FWF:
         tzone_ds = xr.open_zarr(str(tzone_dir) + "/ds_tzone.zarr")
         self.tzone_ds = tzone_ds
 
-        ### Create an hourly and daily datasets for use with their respected codes/indices 
+        # ### Create an hourly datasets for use with their respected codes/indices 
         self.hourly_ds = wrf_ds
+
+        ### Create an hourly and daily datasets for use with their respected codes/indices 
         self.daily_ds = self.create_daily_ds(wrf_ds)
         for var in self.hourly_ds.data_vars:
             # print(var)
@@ -168,7 +170,7 @@ class FWF:
         
         Parameters
         ----------
-        ds_wrf: dataarray of wrf variables
+        hourly_ds: dataset of hourly forecast variables
 
         Variables
         ----------
@@ -189,11 +191,10 @@ class FWF:
         Returns
         -------
         
-        F_ds: an dataset of FFMC and m_o
+        hourly_ds: an dataset of FFMC and m_o
         """
 
         ### Call on initial conditions
-        # W, T, H, m_o = hourly_ds.W, hourly_ds.T, hourly_ds.H, self.m_o
         W, T, H, m_o, F = hourly_ds.W, hourly_ds.T, hourly_ds.H, hourly_ds.m_o, hourly_ds.F
 
         e_full, zero_full = self.e_full, self.zero_full
@@ -519,10 +520,52 @@ class FWF:
 
         return daily_ds
 
+    def solve_isi(self, hourly_ds):
+
+        """
+        This function calculates the hourly initial spread index
+        
+        Parameters
+        ----------
+        hourly_ds: dataset of hourly forecast variables
+
+        Variables
+        ----------
+        W:      wind speed, km/hr
+        F:      fine fuel moisture code    
+        R:      initial spread index
 
 
+        Returns
+        -------
+        R: an datarray of R
+        """
+        ### Call on initial conditions
+        W, F, m_o = hourly_ds.W, hourly_ds.F, hourly_ds.m_o
 
+        e_full, zero_full = self.e_full, self.zero_full
 
+        ########################################################################
+        ### (24) Solve for wind function (f_W) 
+        a = 0.05039 * W
+        f_W = np.power(e_full, a)
+
+        ########################################################################
+        ### (25) Solve for fine fuel moisture function (f_F) 
+        a = -0.1386 * m_o
+        b = np.power(e_full, a)
+        c = ((1 + np.power(m_o, 5.31)) / (4.93e7))
+        f_F = 91.9 * b * c
+        ########################################################################
+        ### (26) Solve for initial spread index (R) 
+
+        R = 0.208 * f_W * f_F
+
+        R = xr.DataArray(R, name='R', dims=('time', 'south_north', 'west_east'))
+        
+        # self.hourly_ds['R']   = R
+
+        return R
 
     def create_daily_ds(self,wrf_ds):
         print("Create Daily ds")
@@ -546,7 +589,8 @@ class FWF:
                     var_da = np.array(var_da.Zone)
                     day    = np.array(wrf_ds.Time[noon + i], dtype ='datetime64[D]')
                     var_da = xr.DataArray(var_da, name=var, 
-                            dims=('south_north', 'west_east'),coords={'time':day})
+                            dims=('south_north', 'west_east'), coords= wrf_ds.isel(time = i).coords)
+                    var_da["Time"] = day
                     mean_da.append(var_da)
 
                     if var == 'r_o':
@@ -556,7 +600,8 @@ class FWF:
                         r_o_tom_da    = r_o_tom - np.array(var_da)
                         day           = np.array(wrf_ds.Time[noon + i], dtype ='datetime64[D]')
                         r_o_tom_da    = xr.DataArray(r_o_tom_da, name="r_o_tomorrow", 
-                                dims=('south_north', 'west_east'),coords={'time':day})
+                                dims=('south_north', 'west_east'),coords= wrf_ds.isel(time = i).coords)
+                        r_o_tom_da["Time"] = day
                         mean_da.append(r_o_tom_da)
                     else:
                         pass
@@ -584,10 +629,12 @@ class FWF:
             FFMC = self.solve_ffmc(self.hourly_ds.isel(time = i))
             # ISI  = self.solve_isi(self.hourly_ds.isel(time = i))
             # FWI  = self.solve_fwi(self.hourly_ds.isel(time = i))
-
+            # FFMC['R'] = ISI
             hourly_list.append(FFMC)
         print("Hourly loop done")
         hourly_ds = self.combine_by_time(hourly_list)
+        ISI  = self.solve_isi(self.hourly_ds)
+        hourly_ds['R'] = ISI
         return hourly_ds
 
     def daily_loop(self):
@@ -639,17 +686,24 @@ class FWF:
     def hourly(self):
         hourly_ds = self.hourly_loop()
         hourly_ds.attrs = self.attrs
+
         hourly_ds.F.attrs   = hourly_ds.T.attrs
         del hourly_ds.F.attrs['units']
         hourly_ds.F.attrs['description'] = "FINE FUEL MOISTURE CODE"
+
         hourly_ds.m_o.attrs = hourly_ds.T.attrs
         del hourly_ds.m_o.attrs['units']
         hourly_ds.m_o.attrs['description'] = "FINE FUEL MOISTURE CONTENT"
 
+        hourly_ds.R.attrs = hourly_ds.T.attrs
+        del hourly_ds.R.attrs['units']
+        hourly_ds.R.attrs['description'] = "INITIAL SPREAD INDEX"
+
         for var in hourly_ds.data_vars:
             del hourly_ds[var].attrs['coordinates']
-            # hourly_ds[var].attrs['coordinates'] = 'XLONG XLAT XTIME'
+            # hourly_ds[var].attrs['coordinates'] = 'TIME XLONG XLAT'
             hourly_ds[var].attrs['projection'] = str(hourly_ds[var].projection)
+
 
         # ### Name file after initial time of wrf 
         file_name = np.datetime_as_string(hourly_ds.Time[0], unit='h')
@@ -670,6 +724,7 @@ class FWF:
     def daily(self):
         daily_ds = self.daily_loop()
         daily_ds.attrs = self.attrs
+
         daily_ds.P.attrs   = daily_ds.T.attrs
         del daily_ds.P.attrs['units']
         daily_ds.P.attrs['description'] = "DUFF MOISTURE CODE"
@@ -681,9 +736,11 @@ class FWF:
         for var in daily_ds.data_vars:
             # print(var)
             del daily_ds[var].attrs['coordinates']
-            # daily_ds[var].attrs['coordinates'] = 'XLONG XLAT XTIME'
+            # daily_ds[var].attrs['coordinates'] = 'TIME XLAT XLONG'
             daily_ds[var].attrs['projection'] = str(daily_ds[var].projection)
+
         daily_ds.r_o.attrs['description'] = "24 HOUR ACCUMULATED PRECIPITATION"
+
 
         # ### Name file after initial time of wrf 
         file_name = np.datetime_as_string(self.hourly_ds.Time[0], unit='h')
