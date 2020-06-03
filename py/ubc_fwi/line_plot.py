@@ -29,15 +29,18 @@ wrf_ds, xy_np = readwrf(wrf_file_dir, lat, lon)
 print(xy_np)
 
 
+daily_file_dir  = str(xr_dir) + "/2019-08-20T00_daily_ds.zarr"
+daily_ds = xr.open_zarr(daily_file_dir)
 
-fwf_file_dir  = str(xr_dir) + "/2019-08-20T00_daily_ds.zarr"
 
-ffmc_ds = xr.open_zarr(fwf_file_dir)
 
-time_ind = -18
-time = np.datetime_as_string(ffmc_ds.time[time_ind], unit='h')
-initial = np.datetime_as_string(ffmc_ds.time[0], unit='h')
-valid = np.datetime_as_string(ffmc_ds.time[time_ind], unit='h')
+hourly_file_dir  = str(xr_dir) + "/2019-08-20T00_hourly_ds.zarr"
+hourly_ds = xr.open_zarr(hourly_file_dir)
+R = hourly_ds.R
+time_ind = 24
+time = np.datetime_as_string(hourly_ds.Time[time_ind], unit='h')
+initial = np.datetime_as_string(hourly_ds.Time[0], unit='h')
+valid = np.datetime_as_string(hourly_ds.Time[time_ind], unit='h')
 print(time)
 
 

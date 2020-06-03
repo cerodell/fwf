@@ -85,7 +85,7 @@ class FWF:
     """########################################################################"""
     def __init__(self, wrf_file_dir, hourly_file_dir, daily_file_dir):
         """
-        Initialize conditions
+        Initialize Fire Weather Index Model
 
 
         """
@@ -117,7 +117,8 @@ class FWF:
         self.L_f = L_f
 
         ### Time Zone classification method
-        tzdict   = {"PDT": {'zone_id':7, 'noon':19 , 'plus': 20, 'minus':18},
+        tzdict  = {"AKDT": {'zone_id':8, 'noon':20 , 'plus': 21, 'minus':19},
+                    "PDT": {'zone_id':7, 'noon':19 , 'plus': 20, 'minus':18},
                     "MDT": {'zone_id':6, 'noon':18 , 'plus': 19, 'minus':17},
                     "CDT": {'zone_id':5, 'noon':17 , 'plus': 18, 'minus':16},
                     "EDT": {'zone_id':4, 'noon':16 , 'plus': 17, 'minus':15},
@@ -211,7 +212,7 @@ class FWF:
 
             ### Get last time step of P and r_o_previous (carry over rain)
             P = np.array(previous_daily_ds.P[-1])
-            r_o_previous = np.array(previous_daily_ds.r_o_tomorrow[-1])
+            r_o_previous = np.array(previous_daily_ds.r_o_tomorrow[0])
 
             ### Create dataarrays for P
             P = xr.DataArray(P, name='P', dims=('south_north', 'west_east'))
@@ -222,8 +223,19 @@ class FWF:
             self.daily_ds['r_o'][0] = self.daily_ds['r_o'][0] + np.array(r_o_previous)
             
             # """ #####################     Drought Code (DC)       ########################### """
-            previous_daily_ds = xr.open_zarr(daily_file_dir)
             print("Found previous DC, will merge with daily_ds")
+
+            ### Get last time step of D
+            D = np.array(previous_daily_ds.D[-1])
+
+            ### Create dataarrays for D
+            D = xr.DataArray(D, name='D', dims=('south_north', 'west_east'))
+
+            ### Add dataarrays to daily dataset
+            self.daily_ds['D'] = D
+
+            # """ #####################     Drought Code (DC)       ########################### """
+            print("Found previous BUI, will merge with daily_ds")
 
             ### Get last time step of D
             D = np.array(previous_daily_ds.D[-1])
@@ -715,16 +727,14 @@ class FWF:
     """########################################################################"""
     """ ###################### Fire Weather Index #############################"""
     """########################################################################"""
-    def solve_fwi(self, hourly_ds):
+    def solve_fwi(self):
 
         """
         Calculates the hourly fire weather index
         
         Parameters
         ----------
-        hourly_ds: dataset of hourly forecast variables
 
-        Variables
         ----------
         W:      wind speed, km/hr
         F:      fine fuel moisture code    
@@ -736,11 +746,56 @@ class FWF:
         R: an datarray of R
         """
         ### Call on initial conditions
-        W, F, m_o = hourly_ds.W, hourly_ds.F, hourly_ds.m_o
 
+        U, R = self.U, self.R
         e_full, zero_full = self.e_full, self.zero_full
 
-        return
+        ########################################################################
+        ### (28a) Solve for duff moisture function where U =< 80(f_D_a) 
+        U_limit = 80
+        f_D_a = (0.626 * np.power(U, 0.809)) + 2
+        f_D_a = xr.where(U >= U_limit, zero_full, f_D_a)
+
+        ########################################################################
+        ### (28b) Solve for duff moisture function where U > 80 (f_D_b) 
+        a = np.power(e_full, (-0.023 * U))
+        f_D_b = 1000 / (25 + 108.64 * a)
+        f_D_a = xr.where(U < U_limit, zero_full, f_D_b)
+
+        ########################################################################
+        ### (28c) Combine duff moisture functions (f_D) 
+        f_D = f_D_a + f_D_b
+
+        ########################################################################
+        ### (29a) Solve FWI intermediate form  for day 1(B_a)
+        B_a = 0.1 * R[:36] * f_D[0]
+
+        ########################################################################
+        ### (29b) Solve FWI intermediate form for day 2 (B_b)
+        B_b = 0.1 * R[36:] * f_D[1]
+
+        ########################################################################
+        ### (29c) COmbine FWI intermediate (B)
+        B   = xr.combine_nested([B_a,B_b], 'time')
+
+        ########################################################################
+        ### (30a) Solve FWI where B > 1 (S_a)
+        B_limit = 1
+        a = np.power((0.434 * np.log(B)), 0.647)
+        S_a = np.power(e_full,2.72 * a)
+        S_a = xr.where(B < B_limit, zero_full, S_a)
+
+        ########################################################################
+        ### (30b) Solve FWI where B =< 1 (S_b)
+
+        S_b = xr.where(B >= B_limit, zero_full, B)
+        ########################################################################
+        ### (30) COmbine for FWI (S)
+
+        S = S_a + S_b
+        S = xr.DataArray(S, name='S', dims=('time', 'south_north', 'west_east'))
+
+        return S
 
 
 
@@ -801,7 +856,7 @@ class FWF:
                     mean_da.append(var_da)
 
                     if var == 'r_o':
-                        r_o_tom_mean  = wrf_ds[var][noon+i:].mean(axis=0)
+                        r_o_tom_mean  = wrf_ds[var][noon:24].mean(axis=0)
                         r_o_tom       = xr.where(tzone_ds != zone_id, zero_full, r_o_tom_mean)
                         r_o_tom       = np.array(r_o_tom.Zone)
                         r_o_tom_da    = r_o_tom - np.array(var_da)
@@ -846,6 +901,10 @@ class FWF:
         hourly_ds = self.combine_by_time(hourly_list)
         ISI  = self.solve_isi(hourly_ds)
         hourly_ds['R'] = ISI
+        self.R = ISI
+        FWI  = self.solve_fwi()
+        hourly_ds['S'] = FWI
+
         return hourly_ds
 
 
@@ -878,7 +937,7 @@ class FWF:
         daily_ds = self.combine_by_time(daily_list)
         U  = self.solve_bui(daily_ds)
         daily_ds['U'] = U
-
+        self.U = U
         return daily_ds
 
 
@@ -931,6 +990,10 @@ class FWF:
         del hourly_ds.R.attrs['units']
         hourly_ds.R.attrs['description'] = "INITIAL SPREAD INDEX"
 
+        hourly_ds.S.attrs   = hourly_ds.T.attrs
+        del hourly_ds.S.attrs['units']
+        hourly_ds.S.attrs['description'] = "FIRE WEATHER INDEX"
+
         for var in hourly_ds.data_vars:
             del hourly_ds[var].attrs['coordinates']
             hourly_ds[var].attrs['projection'] = str(hourly_ds[var].projection)
@@ -973,6 +1036,7 @@ class FWF:
         daily_ds.U.attrs   = daily_ds.T.attrs
         del daily_ds.U.attrs['units']
         daily_ds.U.attrs['description'] = "BUILD UP INDEX"
+
 
         for var in daily_ds.data_vars:
             # print(var)

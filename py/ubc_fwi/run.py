@@ -24,21 +24,24 @@ from context import data_dir, xr_dir, wrf_dir, tzone_dir, root_dir
 wrf_file_dir = '/Volumes/CER/WFRT/FWI/Data/20190819'
 coeff = FWF(wrf_file_dir, None, None)
 
+daily_file_dir  = coeff.daily()
+hourly_file_dir  = coeff.hourly()
+
+"""######### This Solves for daily_ds #############"""
+daily_ds = xr.open_zarr(daily_file_dir)
+print(daily_ds)
+# print(np.nanmin(np.array(daily_ds.D)), "D final min")
+# print(np.nanmax(np.array(daily_ds.D)), "D final max")
+
 
 """######### This Solves for hourly_ds #############"""
-hourly_file_dir  = coeff.hourly()
 hourly_ds = xr.open_zarr(hourly_file_dir)
 # print(hourly_ds)
 # print(hourly_ds.H)
 # print((hourly_ds.R))
+print((hourly_ds.S))
 
-"""######### This Solves for daily_ds #############"""
-daily_file_dir  = coeff.daily()
-daily_ds = xr.open_zarr(daily_file_dir)
-# print(daily_ds)
-# print(np.nanmin(np.array(daily_ds.D)), "D final min")
-# print(np.nanmax(np.array(daily_ds.D)), "D final max")
-# print((daily_ds.H.projection))
+
 
 
 # %%
@@ -49,12 +52,6 @@ daily_ds = xr.open_zarr(daily_file_dir)
 # coeff = FWF(wrf_file_dir, hourly_file_dir, daily_file_dir )
 
 
-# """######### This Solves for hourly_ds #############"""
-# hourly_file_dir  = coeff.hourly()
-# hourly_ds = xr.open_zarr(hourly_file_dir)
-# print(hourly_ds)
-# print(hourly_ds.F)
-
 
 # """######### This Solves for daily_ds #############"""
 # daily_file_dir  = coeff.daily()
@@ -63,6 +60,13 @@ daily_ds = xr.open_zarr(daily_file_dir)
 # print(np.nanmin(np.array(daily_ds.D)), "D final min")
 # print(np.nanmax(np.array(daily_ds.D)), "D final max")
 # print((daily_ds.H.projection))
+
+
+# """######### This Solves for hourly_ds #############"""
+# hourly_file_dir  = coeff.hourly()
+# hourly_ds = xr.open_zarr(hourly_file_dir)
+# print(hourly_ds)
+# print(hourly_ds.F)
 
 
 
