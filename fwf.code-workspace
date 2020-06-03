@@ -1,32 +1,10 @@
 {
-	"folders": [
-		{
-			"path": "."
-		}
-	],
-	"settings": {
-		"cSpell.words": [
-			"AKST",
-			"Carree",
-			"XLONG",
-			"arange",
-			"ccrs",
-			"coeff",
-			"contourf",
-			"crodell",
-			"dtype",
-			"eqtime",
-			"errno",
-			"ffmc",
-			"numpy",
-			"readwrf",
-			"snoon",
-			"tzdict",
-			"tzone",
-			"wrfout",
-			"xarray",
-			"zarr"
-		],
-		"python.pythonPath": "/Users/rodell/miniconda3/envs/fwf/bin/python"
-	}
+    "folders": [
+        {
+            "path": "."
+        }
+    ],
+    "settings": {
+        "python.pythonPath": "/bluesky/fireweather/miniconda3/envs/fwf/bin/python"
+    }
 }

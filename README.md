@@ -1,6 +1,6 @@
 # FWF
-
-Fire Weather Forecast Model 
+---
+## Fire Weather Forecast Model 
 
 
 This project aims to create a  Fire Weather Forecast (FWF) Model. FWF will be
@@ -23,10 +23,28 @@ forecast(s) will be disseminated online in Meteogram format. Product variables
 will include maps of high-resolution FWI-system indices and surface weather 
 variables such as wind speed/ direction, temperature, and relative humidity 
 
+---
+## Model structure
+
+`/bluesky/fireweather/` is the operational directory, its where the model code resides and where the forecast runs
+
+`/bluesky/archive/fireweather/` is the archive directory, it where copies of completed forecasts are stored.
+
+`/nfs/kitsault/archives/forecasts/WAN00CP-04/YYMMDD00/` is the WRF directory where the model pulls in `.nc` files
+- the model currently uses 4-km WRF 00Z but is adaptable to other domains. 
+    - Youll first need to run `timezone.py` to generate a tzone_ds.zarr file (Note it takes awhile to generate ~3 hours)
+    - after it should run as per normal
+- `fwf/fwi/utils/ubc_fwi/fwf.py` contains the FWF class that does all the calculations.
+	- note FWF calls on function `read_wrf` in `fwf/fwi/utils/wrf/read_wrfout.py` this script compiles the `.nc` wrfout files into a compact `.zarr` file 
+
+- `fwf/py/ubc_fwi/run.py` is the script that runs the model
 
 
+
+---
 #### Required packages
 
+`conda install -c conda-forge netcdf4`
 
 `conda install -c conda-forge dask`
 
@@ -41,3 +59,4 @@ variables such as wind speed/ direction, temperature, and relative humidity
 `conda install -c conda-forge xarray`
 
 `conda install -c conda-forge pandas`
+
