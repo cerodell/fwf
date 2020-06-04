@@ -54,7 +54,7 @@ class FWF:
         Calculates the Build up Index at noon local daily and outputs as an xarray
 
     solve_fwi()
-        Calculates the hourly fire weather index
+        Calculates the hourly fire weather index and daily severity rating
 
     create_daily_ds()
         Creates a dataset of forecast variables averaged from
@@ -719,20 +719,23 @@ class FWF:
     def solve_fwi(self):
 
         """
-        Calculates the hourly fire weather index
+        Calculates the hourly fire weather index and daily severity rating
         
         Parameters
         ----------
 
+        Variables
         ----------
         W:      wind speed, km/hr
         F:      fine fuel moisture code    
         R:      initial spread index
-
+        S:      fire weather index
+        DSR:    daily severity rating
 
         Returns
         -------
-        R: an datarray of R
+        S:   an datarray of S
+        DSR: an datarray of DSR
         """
         ### Call on initial conditions
 
@@ -779,12 +782,18 @@ class FWF:
 
         S_b = xr.where(B >= B_limit, zero_full, B)
         ########################################################################
-        ### (30) COmbine for FWI (S)
+        ### (30) Combine for FWI (S)
 
         S = S_a + S_b
         S = xr.DataArray(S, name='S', dims=('time', 'south_north', 'west_east'))
 
-        return S
+        ########################################################################
+        ### (31) Solve for daily severity rating (DSR)
+
+        DSR = 0.0272 * np.power(S,1.77) 
+        DSR = xr.DataArray(DSR, name='DSR', dims=('time', 'south_north', 'west_east'))
+
+        return S, DSR
 
 
 
@@ -891,8 +900,9 @@ class FWF:
         ISI  = self.solve_isi(hourly_ds)
         hourly_ds['R'] = ISI
         self.R = ISI
-        FWI  = self.solve_fwi()
-        hourly_ds['S'] = FWI
+        FWI, DSR  = self.solve_fwi()
+        hourly_ds['S']   = FWI
+        hourly_ds['DSR'] = DSR
 
         return hourly_ds
 
@@ -982,6 +992,10 @@ class FWF:
         hourly_ds.S.attrs   = hourly_ds.T.attrs
         del hourly_ds.S.attrs['units']
         hourly_ds.S.attrs['description'] = "FIRE WEATHER INDEX"
+
+        hourly_ds.DSR.attrs   = hourly_ds.T.attrs
+        del hourly_ds.DSR.attrs['units']
+        hourly_ds.DSR.attrs['description'] = "DAILY SEVERITY RATING"
 
         for var in hourly_ds.data_vars:
             del hourly_ds[var].attrs['coordinates']
