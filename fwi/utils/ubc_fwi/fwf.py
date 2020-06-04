@@ -98,14 +98,14 @@ class FWF:
 
         ### Shape of Domain make useful fill arrays
         shape = np.shape(wrf_ds.T[0,:,:])
-        print(shape)
+        print("Domain shape:  ",shape)
         self.e_full    = np.full(shape,e, dtype=float)
         self.zero_full = np.zeros(shape, dtype=float)
         self.ones_full = np.full(shape,1, dtype=float)
 
         ### Daylength factor in Duff Moisture Code
         month = np.datetime_as_string(wrf_ds.Time[0], unit='h')
-        print(month[5:7])
+        print("Current Month:  ", month[5:7])
         month = (int(month[5:7]) - 1)
         L_e = [6.5, 7.5, 9.0, 12.8, 13.9, 13.9, 12.4, 10.9, 9.4, 8.0, 7.0, 6.0]
         L_e = L_e[month]
