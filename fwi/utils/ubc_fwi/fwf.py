@@ -431,7 +431,6 @@ class FWF:
        
         r_e    = xr.where(r_ei > 1e-7, r_ei, 1e-7)
 
-        print(np.nanmax(np.array(r_e)), "RAIN MAX R_E")
         ########################################################################
         ### (12) Recast moisture content after rain (M_o)
         ##define power
@@ -485,28 +484,22 @@ class FWF:
         ### (14d) Combine all moisture content after rain (M_r)
                    
         M_r = M_r_low + M_r_mid + M_r_high
-        print(np.nanmin(np.array(M_r)),"M_r before")
         M_r = xr.where(r_o < r_total, zero_full, \
                         xr.where(M_r>20,M_r, 20.0001))
-        print(np.nanmin(np.array(M_r)),"M_r after")
 
         
         ########################################################################
         ### (15) Duff moisture code after rain but prior to drying (P_r_pre_K)
         
         P_r_pre_K = xr.where(r_o < r_total, zero_full, 244.72 - (43.43 * np.log(M_r - 20)))
-        print(np.nanmin(np.array(P_r_pre_K)),"P_r_pre_K before")
         # P_r_pre_K = xr.where(r_o < r_total, zero_full, \
         #                         xr.where(P_r_pre_K>0,P_r_pre_K, 1e-6))
         P_r_pre_K = xr.where(P_r_pre_K > 0, P_r_pre_K, 1e-6)
-        print(np.nanmin(np.array(P_r_pre_K)),"P_r_pre_K after")
 
 
         ########################################################################
         ### (16) Log drying rate (K)
-        print(np.nanmin(np.array(T)),"T before")
         T = np.where(T>-1.1,T, -1.1)
-        print(np.nanmin(np.array(T)),"T after")
 
         K = 1.894 * (T + 1.1)* (100 - H) * (L_e * 10**-6)
 
@@ -594,16 +587,12 @@ class FWF:
         ### (21) Solve for DC after rain (D_r) 
         a = (800/Q_r)
         D_r = xr.where(r_o < r_limit, zero_full, 400 * np.log(a))
-        print(np.mean(np.array(D_r)), "Mean before zeroing D_r")
         D_r = xr.where(D_r > 0, D_r, 1e-6)
 
-        print(np.nanmin(np.array(D_r)), "Min D_r")
-        print(np.nanmax(np.array(D_r)), "Max D_r")
+
         ########################################################################
         ### (21) Solve for potential evapotranspiration (V) 
-        print(np.nanmin(np.array(T)),"T before")
         T = np.where(T>-2.8,T, -2.8)
-        print(np.nanmin(np.array(T)),"T after")
 
         V = (0.36 * (T + 2.8)) + L_f
 
@@ -893,7 +882,7 @@ class FWF:
 
         length = len(self.hourly_ds.time)
         hourly_list = []
-        print("Hourly length: ", length)
+        print("Start Hourly loop lenght: ", length)
         for i in range(length):
             FFMC = self.solve_ffmc(self.hourly_ds.isel(time = i))
             hourly_list.append(FFMC)
@@ -926,7 +915,7 @@ class FWF:
             r_o = r_o_list[j+1] - r_o_list[j]
             self.daily_ds.r_o[j] = r_o
         daily_list = []
-        print("Daily length: ", length)
+        print("Start Daily loop length: ", length)
         for i in range(length):
             DMC = self.solve_dmc(self.daily_ds.isel(time = i))
             DC  = self.solve_dc(self.daily_ds.isel(time = i))
@@ -1001,10 +990,10 @@ class FWF:
 
         # ### Name file after initial time of wrf 
         file_name = np.datetime_as_string(hourly_ds.Time[0], unit='h')
-        print("FFMC initialized at :", file_name)
+        print("Hourly zarr initialized at :", file_name)
 
         # # ## Write and save DataArray (.zarr) file
-        make_dir = Path(str(xr_dir) + str('/') + file_name + str(f"_hourly_ds.zarr"))
+        make_dir = Path(str(xr_dir) + str('/hourly/') + file_name + str(f".zarr"))
         make_dir.mkdir(parents=True, exist_ok=True)
         # hourly_ds.compute()
         hourly_ds.to_zarr(make_dir, "w")
@@ -1048,10 +1037,10 @@ class FWF:
 
         # ### Name file after initial time of wrf 
         file_name = np.datetime_as_string(self.hourly_ds.Time[0], unit='h')
-        print("DMC initialized at :", file_name)
+        print("Daily zarr initialized at :", file_name)
 
         # # ## Write and save DataArray (.zarr) file
-        make_dir = Path(str(xr_dir) + str('/') + file_name + str(f"_daily_ds.zarr"))
+        make_dir = Path(str(xr_dir) + str('/daily/') + file_name + str(f".zarr"))
         make_dir.mkdir(parents=True, exist_ok=True)
         # daily_ds.compute()
         daily_ds.to_zarr(make_dir, "w")

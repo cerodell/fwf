@@ -16,9 +16,9 @@ filein = "/2019-08-19T00_ds_wrf.zarr"
 ds_wrf_file = str(data_dir) + filein
 ds_wrf = xr.open_zarr(ds_wrf_file)
 
-filein = "/ds_tzone.zarr"
-ds_tzone_file = str(tzone_dir) + filein
-ds_tzone = xr.open_zarr(ds_tzone_file)
+# filein = "/ds_tzone.zarr"
+# ds_tzone_file = str(tzone_dir) + filein
+# ds_tzone = xr.open_zarr(ds_tzone_file)
 
 
 shape = ds_wrf.T.shape

@@ -26,11 +26,11 @@ variables such as wind speed/ direction, temperature, and relative humidity
 ---
 ## Model structure
 
-`/bluesky/fireweather/` is the operational directory, its where the model code resides and where the forecast runs
+- `/bluesky/fireweather/` is the operational directory, its where the model code resides and where the forecast runs
 
-`/bluesky/archive/fireweather/` is the archive directory, it where copies of completed forecasts are stored.
+- `/bluesky/archive/fireweather/` is the archive directory, it where copies of completed forecasts are stored.
 
-`/nfs/kitsault/archives/forecasts/WAN00CP-04/YYMMDD00/` is the WRF directory where the model pulls in `.nc` files
+- `/nfs/kitsault/archives/forecasts/WAN00CP-04/YYMMDD00/` is the WRF directory where the model pulls in `.nc` files
 - the model currently uses 4-km WRF 00Z but is adaptable to other domains. 
     - Youll first need to run `timezone.py` to generate a tzone_ds.zarr file (Note it takes awhile to generate ~3 hours)
     - after it should run as per normal
