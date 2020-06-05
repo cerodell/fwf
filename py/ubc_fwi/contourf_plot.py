@@ -16,7 +16,7 @@ from wrf import (to_np, getvar, get_cartopy, latlon_coords, g_uvmet)
 
 from fwi.utils.ubc_fwi.fwf import FWF
 from fwi.utils.wrf.read_wrfout import readwrf
-from context import data_dir, xr_dir, wrf_dir, tzone_dir, root_dir, gsuite_dir
+# from context import data_dir, xr_dir, wrf_dir, tzone_dir, root_dir, gsuite_dir
 
 startTime = datetime.now()
 
@@ -31,15 +31,15 @@ wrf_ds, xy_np = readwrf(wrf_file_dir)
 
 
 
-fwf_file_dir  = str(xr_dir) + "/2019-08-19T00_hourly_ds.zarr"
+# fwf_file_dir  = str(xr_dir) + "/2019-08-19T00_hourly_ds.zarr"
 
-ffmc_ds = xr.open_zarr(fwf_file_dir)
+# ffmc_ds = xr.open_zarr(fwf_file_dir)
 
-time_ind = -18
-time = np.datetime_as_string(ffmc_ds.Time[time_ind], unit='h')
-initial = np.datetime_as_string(ffmc_ds.Time[0], unit='h')
-valid = np.datetime_as_string(ffmc_ds.Time[time_ind], unit='h')
-print(time)
+# time_ind = -18
+# time = np.datetime_as_string(ffmc_ds.Time[time_ind], unit='h')
+# initial = np.datetime_as_string(ffmc_ds.Time[0], unit='h')
+# valid = np.datetime_as_string(ffmc_ds.Time[time_ind], unit='h')
+# print(time)
 
 # %%
 
@@ -65,7 +65,7 @@ import sys
 
 
     
-lats, lons = latlon_coords(ffmc_ds.F)
+# lats, lons = latlon_coords(ffmc_ds.F)
 cart_proj = get_cartopy(wrf_ds.r_o)
 
 # test = pickle.dumps(wrf_ds.W.projection)
