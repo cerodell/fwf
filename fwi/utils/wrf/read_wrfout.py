@@ -35,14 +35,15 @@ def readwrf(filein, *args):
         wrf_file = Dataset(path_in_str,'r')
 
         time         = getvar(wrf_file, "times", timeidx=0)
-        Hi           = getvar(wrf_file, "rh2")
-        H            = Hi * 1
-        H.attrs      = Hi.attrs
+        H            = getvar(wrf_file, "rh2") * 1.0
         Ti           = getvar(wrf_file, "T2")
         T            = Ti-273.15
         T.attrs      = Ti.attrs
         T.attrs['description'] = "2m TEMP"
         T.attrs['units'] = "C"
+        H.attrs      = Ti.attrs
+        H.attrs['units'] = "(%)"
+        H.attrs['description'] = "2m RELATIVE HUMIDITY"
         wsp_wdir     = g_uvmet.get_uvmet10_wspd_wdir(wrf_file,units='km h-1')
         wsp_array    = np.array(wsp_wdir[0])
         wdir_array   = np.array(wsp_wdir[1])
