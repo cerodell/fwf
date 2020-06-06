@@ -3,15 +3,9 @@ import math
 import numpy as np
 import pandas as pd
 import xarray as xr
-import folium
-# from branca.colormap import linear
-import branca.colormap as cm
-import geojsoncontour
+import cartopy.crs as ccrs
 import matplotlib.pyplot as plt
-import cartopy.crs as crs
-from folium import plugins
-import geojson
-# from folium.plugins import TimestampedGeoJson
+
 from datetime import datetime, date, timedelta
 startTime = datetime.now()
 
@@ -21,19 +15,36 @@ from context import data_dir,leaflet_dir, xr_dir
 """######### get directory to yesterdays hourly/daily .zarr files.  #############"""
 # yesterday = date.today() - timedelta(days=1)
 # zarr_filein = yesterday.strftime('%Y-%m-%dT00.zarr')
-zarr_filein = "2020-06-05T00.zarr"
-hourly_file_dir = str(xr_dir) + str("/hourly/") + zarr_filein
+# zarr_filein = "2019-08-20T00_hourly_ds.zarr"
+# hourly_file_dir = str(xr_dir) + str("/hourly/") + zarr_filein
+
+##### Personal Comp path 
+zarr_filein = "2019-08-20T00_hourly_ds.zarr"
+hourly_file_dir = str(data_dir) + str("/xr/") + zarr_filein
+
+
 ds = xr.open_zarr(hourly_file_dir)
 lats, lons = ds.XLAT, ds.XLONG
 
 
+center_lon = float(ds.CEN_LON)
 
 # levels = np.arange(70,101,1)
 vmin , vmax = 70, 100
-# cmap  = cm.LinearColormap(colors, vmin = vmin, vmax = vmax).to_step(len(levels))
 
-contourf = plt.pcolormesh(np.array(lons), np.array(lats), np.array(ds.F[18]), \
-                        alpha = 0.5, vmin = vmin, vmax = vmax)
-plt.savefig("/bluesky/fireweather/fwf/Images/test.png")
+
+proj_ = ccrs.NorthPolarStereo(central_longitude=center_lon)
+
+lat, lon, ffmc = np.array(lons), np.array(lats), np.array(ds.F[18])
+
+fig = plt.figure()
+ax = fig.gca(projection=proj_)
+contourf = ax.pcolormesh(lat, lon, ffmc,\
+                             vmin = vmin, vmax = vmax, transform = ccrs.PlateCarree())
+
+# plt.show()
+fig.savefig("/Users/rodell/fwf/Images/test.png", transparent=True)
+
+# fig.savefig("/bluesky/fireweather/fwf/Images/test.png")
 # ### Timer
 print("Run Time: ", datetime.now() - startTime)

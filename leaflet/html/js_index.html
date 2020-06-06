@@ -26,10 +26,16 @@
 	attribution: 'Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community'
 	}).addTo(map);
     
-  var geojson = new L.GeoJSON.AJAX("/data/json/test.geojson");
-    geojson.on('data:loaded', function(){
-    geojson.addTo(map);
+
+      // Initial daily average forecast image, format should be "images/daily_average_201904150900.png"
+  var forecastImageDailyAvg = '';
+  var forecastLayerDailyAvg = L.imageOverlay(forecastImageDailyAvg, forecastBounds, {
+        opacity: 0.7,
     });
+  // var geojson = new L.GeoJSON.AJAX("/data/json/test.geojson");
+  //   geojson.on('data:loaded', function(){
+  //   geojson.addTo(map);
+  //   });
  
   </script>
 </body>
