@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<head>    
+    <meta http-equiv="content-type" content="text/html; charset=UTF-8" />
+    
+        <script>
+            L_NO_TOUCH = false;
+            L_DISABLE_3D = false;
+        </script>
+    
+    <script src="https://cdn.jsdelivr.net/npm/leaflet@1.6.0/dist/leaflet.js"></script>
+    <script src="https://code.jquery.com/jquery-1.12.4.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.2.0/js/bootstrap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Leaflet.awesome-markers/2.0.2/leaflet.awesome-markers.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.6.0/dist/leaflet.css"/>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.2.0/css/bootstrap.min.css"/>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.2.0/css/bootstrap-theme.min.css"/>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.6.3/css/font-awesome.min.css"/>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/Leaflet.awesome-markers/2.0.2/leaflet.awesome-markers.css"/>
+    <link rel="stylesheet" href="https://rawcdn.githack.com/python-visualization/folium/master/folium/templates/leaflet.awesome.rotate.css"/>
+    <style>html, body {width: 100%;height: 100%;margin: 0;padding: 0;}</style>
+    <style>#map {position:absolute;top:0;bottom:0;right:0;left:0;}</style>
+    
+            <meta name="viewport" content="width=device-width,
+                initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+            <style>
+                #map_fwi {
+                    position: relative;
+                    width: 100.0%;
+                    height: 100.0%;
+                    left: 0.0%;
+                    top: 0.0%;
+                }
+            </style>
+        
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/3.5.5/d3.min.js"></script>
+</head>
+<body>    
+    
+            <div class="fwi-map" id="map_fwi" ></div>
+        
+</body>
+<script>    
+    
+            var map_fwi = L.map(
+                "map_fwi",
+                {
+                    center: [53.684414, -98.44137],
+                    crs: L.CRS.EPSG3857,
+                    zoom: 3,
+                    zoomControl: true,
+                    preferCanvas: false,
+                }
+            );
+
+            
+
+        
+    
+            var tile_layer_openstreetmap = L.tileLayer(
+                "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
+                {"attribution": "Data by \u0026copy; \u003ca href=\"http://openstreetmap.org\"\u003eOpenStreetMap\u003c/a\u003e, under \u003ca href=\"http://www.openstreetmap.org/copyright\"\u003eODbL\u003c/a\u003e.", "detectRetina": false, "maxNativeZoom": 18, "maxZoom": 18, "minZoom": 0, "noWrap": false, "opacity": 1, "subdomains": "abc", "tms": false}
+            ).addTo(map_fwi);
+        
+    
+            var tile_layer_Esri_World_Image = L.tileLayer(
+                "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
+                {"attribution": "Tiles \u0026copy; Esri \u0026mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community", "detectRetina": false, "maxNativeZoom": 18, "maxZoom": 18, "minZoom": 0, "noWrap": false, "opacity": 1, "subdomains": "abc", "tms": false}
+            ).addTo(map_fwi);
+        
+    
+            var tile_layer_Esri_NatGeo = L.tileLayer(
+                "https://server.arcgisonline.com/ArcGIS/rest/services/NatGeo_World_Map/MapServer/tile/{z}/{y}/{x}",
+                {"attribution": "Tiles \u0026copy; Esri \u0026mdash; National Geographic, Esri, DeLorme, NAVTEQ, UNEP-WCMC, USGS, NASA, ESA, METI, NRCAN, GEBCO, NOAA, iPC", "detectRetina": false, "maxNativeZoom": 18, "maxZoom": 18, "minZoom": 0, "noWrap": false, "opacity": 1, "subdomains": "abc", "tms": false}
+            ).addTo(map_fwi);
+        
+    
+            var tile_layer_Esri_Light_Grey = L.tileLayer(
+                "https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Base/MapServer/tile/{z}/{y}/{x}",
+                {"attribution": "Tiles \u0026copy; Esri \u0026mdash; Esri, DeLorme, NAVTEQ", "detectRetina": false, "maxNativeZoom": 18, "maxZoom": 18, "minZoom": 0, "noWrap": false, "opacity": 1, "subdomains": "abc", "tms": false}
+            ).addTo(map_fwi);
+        
+    
+            var tile_layer_Carto_Light = L.tileLayer(
+                "https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png",
+                {"attribution": "\u0026copy; \u003ca href=\"https://www.openstreetmap.org/copyright\"\u003eOpenStreetMap\u003c/a\u003e contributors \u0026copy; \u003ca href=\"https://carto.com/attributions\"\u003eCARTO\u003c/a\u003e", "detectRetina": false, "maxNativeZoom": 18, "maxZoom": 18, "minZoom": 0, "noWrap": false, "opacity": 1, "subdomains": "abc", "tms": false}
+            ).addTo(map_fwi);
+        
+    
+            var tile_layer_Carto_Dark = L.tileLayer(
+                "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png",
+                {"attribution": "\u0026copy; \u003ca href=\"https://www.openstreetmap.org/copyright\"\u003eOpenStreetMap\u003c/a\u003e contributors \u0026copy; \u003ca href=\"https://carto.com/attributions\"\u003eCARTO\u003c/a\u003e", "detectRetina": false, "maxNativeZoom": 18, "maxZoom": 18, "minZoom": 0, "noWrap": false, "opacity": 1, "subdomains": "abc", "tms": false}
+            ).addTo(map_fwi);
+        
+    
+        function geo_json_styler(feature) {
+            switch(feature.properties.fill) {
+                case "#004ddb": 
+                    return {"color": "#004ddb", "fillColor": "#004ddb", "opacity": 0.95, "weight": 0.2};
+                case "#0057c8": 
+                    return {"color": "#0057c8", "fillColor": "#0057c8", "opacity": 0.95, "weight": 0.2};
+                case "#0162b4": 
+                    return {"color": "#0162b4", "fillColor": "#0162b4", "opacity": 0.95, "weight": 0.2};
+                case "#016ca0": 
+                    return {"color": "#016ca0", "fillColor": "#016ca0", "opacity": 0.95, "weight": 0.2};
+                case "#01778d": 
+                    return {"color": "#01778d", "fillColor": "#01778d", "opacity": 0.95, "weight": 0.2};
+                case "#028179": 
+                    return {"color": "#028179", "fillColor": "#028179", "opacity": 0.95, "weight": 0.2};
+                case "#028c65": 
+                    return {"color": "#028c65", "fillColor": "#028c65", "opacity": 0.95, "weight": 0.2};
+                case "#029651": 
+                    return {"color": "#029651", "fillColor": "#029651", "opacity": 0.95, "weight": 0.2};
+                case "#19a045": 
+                    return {"color": "#19a045", "fillColor": "#19a045", "opacity": 0.95, "weight": 0.2};
+                case "#37a93a": 
+                    return {"color": "#37a93a", "fillColor": "#37a93a", "opacity": 0.95, "weight": 0.2};
+                case "#55b22f": 
+                    return {"color": "#55b22f", "fillColor": "#55b22f", "opacity": 0.95, "weight": 0.2};
+                case "#73bb25": 
+                    return {"color": "#73bb25", "fillColor": "#73bb25", "opacity": 0.95, "weight": 0.2};
+                case "#91c51a": 
+                    return {"color": "#91c51a", "fillColor": "#91c51a", "opacity": 0.95, "weight": 0.2};
+                case "#afce10": 
+                    return {"color": "#afce10", "fillColor": "#afce10", "opacity": 0.95, "weight": 0.2};
+                case "#ccd705": 
+                    return {"color": "#ccd705", "fillColor": "#ccd705", "opacity": 0.95, "weight": 0.2};
+                case "#d4c000": 
+                    return {"color": "#d4c000", "fillColor": "#d4c000", "opacity": 0.95, "weight": 0.2};
+                case "#cfae00": 
+                    return {"color": "#cfae00", "fillColor": "#cfae00", "opacity": 0.95, "weight": 0.2};
+                case "#ca9c00": 
+                    return {"color": "#ca9c00", "fillColor": "#ca9c00", "opacity": 0.95, "weight": 0.2};
+                case "#c58a00": 
+                    return {"color": "#c58a00", "fillColor": "#c58a00", "opacity": 0.95, "weight": 0.2};
+                case "#c07801": 
+                    return {"color": "#c07801", "fillColor": "#c07801", "opacity": 0.95, "weight": 0.2};
+                case "#bb6601": 
+                    return {"color": "#bb6601", "fillColor": "#bb6601", "opacity": 0.95, "weight": 0.2};
+                case "#b75501": 
+                    return {"color": "#b75501", "fillColor": "#b75501", "opacity": 0.95, "weight": 0.2};
+                case "#b64902": 
+                    return {"color": "#b64902", "fillColor": "#b64902", "opacity": 0.95, "weight": 0.2};
+                case "#b43d03": 
+                    return {"color": "#b43d03", "fillColor": "#b43d03", "opacity": 0.95, "weight": 0.2};
+                case "#b33105": 
+                    return {"color": "#b33105", "fillColor": "#b33105", "opacity": 0.95, "weight": 0.2};
+                default:
+                    return {"color": "#d9d200", "fillColor": "#d9d200", "opacity": 0.95, "weight": 0.2};
+            }
+        }
+        function geo_json_ffmc_onEachFeature(feature, layer) {
+            layer.on({
+                click: function(e) {
+                    map_fwi.fitBounds(e.target.getBounds());
+                }
+            });
+        };
+        var geo_json_ffmc = L.geoJson(null, {
+                onEachFeature: geo_json_ffmc_onEachFeature,
+            
+                style: geo_json_styler,
+        }).addTo(map_fwi);
+
+        function geo_json_ffmc_add (data) {
+            geo_json_ffmc.addData(data);
+        }
+        // Where the GeoJson DATA once lived 
+        // geo_json_ffmc_add({"features": [{"geometry": {"coordinates": 
+        //  [[[GEOJSO DATA LIVED HERE]]] 
+        //  "type": "MultiPolygon"}, "properties": {"fill": "#b43d03", "fill-opacity": 0.95, "stroke": "#b43d03", "stroke-opacity": 1, 
+        //  "stroke-width": 0.2, "title": "93.60 "}, "type": "Feature"}, {"geometry": {"coordinates": [[[[-117.07, 46.39], [-117.02, 46.4],
+        //   [-117.01, 46.4], [-117.02, 46.4], [-117.07, 46.4], [-117.07, 46.39]]], [[[-117.89, 48.55], [-117.89, 48.55], [-117.89, 48.55], 
+        //   [-117.89, 48.55]]]], "type": "MultiPolygon"}, "properties": {"fill": "#b33105", "fill-opacity": 0.95, "stroke": "#b33105",
+        //    "stroke-opacity": 1, "stroke-width": 0.2, "title": "94.40 "}, "type": "Feature"}], "type": "FeatureCollection"});
+    
+            var layer_controler = {
+                base_layers : {
+                    "Open Street" : tile_layer_openstreetmap,
+                    "World Imagery" : tile_layer_Esri_World_Image,
+                    "NatGeo World Map" : tile_layer_Esri_NatGeo,
+                    "Light Gray Base" : tile_layer_Esri_Light_Grey,
+                    "Carto Basemap Light" : tile_layer_Carto_Light,
+                    "Carto Basemap Dark" : tile_layer_Carto_Dark,
+                },
+                overlays :  {
+                    "FFMC" : geo_json_ffmc,
+                },
+            };
+            L.control.layers(
+                layer_controler.base_layers,
+                layer_controler.overlays,
+                {"autoZIndex": true, "collapsed": true, "position": "topright"}
+            ).addTo(map_fwi);
+            tile_layer_Esri_World_Image.remove();
+            tile_layer_Esri_NatGeo.remove();
+            tile_layer_Esri_Light_Grey.remove();
+            tile_layer_Carto_Light.remove();
+            tile_layer_Carto_Dark.remove();
+        
+    
+    var color_map_ffmc = {};
+
+    
+    color_map_ffmc.color = d3.scale.threshold()
+              .domain([70.0, 70.06012024048096, 70.12024048096193, 70.18036072144288, 70.24048096192385, 70.3006012024048, 70.36072144288578, 70.42084168336673, 70.4809619238477, 70.54108216432866, 70.60120240480961, 70.66132264529058, 70.72144288577154, 70.78156312625251, 70.84168336673346, 70.90180360721443, 70.96192384769539, 71.02204408817636, 71.08216432865731, 71.14228456913828, 71.20240480961924, 71.2625250501002, 71.32264529058116, 71.38276553106212, 71.44288577154309, 71.50300601202404, 71.56312625250501, 71.62324649298597, 71.68336673346694, 71.7434869739479, 71.80360721442885, 71.86372745490982, 71.92384769539078, 71.98396793587175, 72.0440881763527, 72.10420841683367, 72.16432865731463, 72.2244488977956, 72.28456913827655, 72.34468937875752, 72.40480961923848, 72.46492985971943, 72.5250501002004, 72.58517034068136, 72.64529058116233, 72.70541082164328, 72.76553106212425, 72.82565130260521, 72.88577154308618, 72.94589178356713, 73.00601202404809, 73.06613226452906, 73.12625250501002, 73.18637274549098, 73.24649298597194, 73.30661322645291, 73.36673346693387, 73.42685370741484, 73.48697394789579, 73.54709418837675, 73.60721442885772, 73.66733466933867, 73.72745490981964, 73.7875751503006, 73.84769539078157, 73.90781563126252, 73.96793587174349, 74.02805611222445, 74.0881763527054, 74.14829659318637, 74.20841683366733, 74.2685370741483, 74.32865731462925, 74.38877755511022, 74.44889779559118, 74.50901803607215, 74.5691382765531, 74.62925851703407, 74.68937875751503, 74.74949899799599, 74.80961923847696, 74.86973947895791, 74.92985971943888, 74.98997995991984, 75.0501002004008, 75.11022044088176, 75.17034068136273, 75.23046092184369, 75.29058116232466, 75.35070140280561, 75.41082164328657, 75.47094188376754, 75.53106212424849, 75.59118236472946, 75.65130260521042, 75.71142284569139, 75.77154308617234, 75.83166332665331, 75.89178356713427, 75.95190380761522, 76.0120240480962, 76.07214428857715, 76.13226452905812, 76.19238476953907, 76.25250501002004, 76.312625250501, 76.37274549098197, 76.43286573146293, 76.49298597194388, 76.55310621242485, 76.6132264529058, 76.67334669338678, 76.73346693386773, 76.7935871743487, 76.85370741482966, 76.91382765531063, 76.97394789579158, 77.03406813627254, 77.09418837675351, 77.15430861723446, 77.21442885771543, 77.27454909819639, 77.33466933867736, 77.39478957915831, 77.45490981963928, 77.51503006012024, 77.57515030060121, 77.63527054108216, 77.69539078156312, 77.75551102204409, 77.81563126252505, 77.87575150300601, 77.93587174348697, 77.99599198396794, 78.0561122244489, 78.11623246492987, 78.17635270541082, 78.23647294589179, 78.29659318637275, 78.3567134268537, 78.41683366733467, 78.47695390781563, 78.5370741482966, 78.59719438877755, 78.65731462925852, 78.71743486973948, 78.77755511022045, 78.8376753507014, 78.89779559118236, 78.95791583166333, 79.01803607214428, 79.07815631262525, 79.13827655310621, 79.19839679358718, 79.25851703406813, 79.3186372745491, 79.37875751503006, 79.43887775551102, 79.49899799599199, 79.55911823647294, 79.61923847695391, 79.67935871743487, 79.73947895791584, 79.79959919839679, 79.85971943887776, 79.91983967935872, 79.97995991983967, 80.04008016032064, 80.1002004008016, 80.16032064128257, 80.22044088176352, 80.28056112224449, 80.34068136272545, 80.40080160320642, 80.46092184368737, 80.52104208416833, 80.5811623246493, 80.64128256513027, 80.70140280561122, 80.76152304609218, 80.82164328657315, 80.8817635270541, 80.94188376753507, 81.00200400801603, 81.062124248497, 81.12224448897796, 81.18236472945893, 81.24248496993988, 81.30260521042084, 81.3627254509018, 81.42284569138276, 81.48296593186373, 81.54308617234469, 81.60320641282566, 81.66332665330661, 81.72344689378758, 81.78356713426854, 81.84368737474949, 81.90380761523046, 81.96392785571142, 82.02404809619239, 82.08416833667334, 82.14428857715431, 82.20440881763527, 82.26452905811624, 82.3246492985972, 82.38476953907815, 82.44488977955912, 82.50501002004007, 82.56513026052104, 82.625250501002, 82.68537074148297, 82.74549098196393, 82.8056112224449, 82.86573146292585, 82.9258517034068, 82.98597194388778, 83.04609218436873, 83.1062124248497, 83.16633266533066, 83.22645290581163, 83.28657314629258, 83.34669338677355, 83.40681362725451, 83.46693386773546, 83.52705410821643, 83.5871743486974, 83.64729458917836, 83.70741482965931, 83.76753507014028, 83.82765531062124, 83.88777555110221, 83.94789579158316, 84.00801603206413, 84.06813627254509, 84.12825651302606, 84.18837675350701, 84.24849699398797, 84.30861723446894, 84.3687374749499, 84.42885771543087, 84.48897795591182, 84.54909819639279, 84.60921843687375, 84.66933867735472, 84.72945891783567, 84.78957915831663, 84.8496993987976, 84.90981963927855, 84.96993987975952, 85.03006012024048, 85.09018036072145, 85.1503006012024, 85.21042084168337, 85.27054108216433, 85.33066132264528, 85.39078156312625, 85.45090180360721, 85.51102204408818, 85.57114228456913, 85.6312625250501, 85.69138276553106, 85.75150300601203, 85.81162324649299, 85.87174348697394, 85.93186372745491, 85.99198396793587, 86.05210420841684, 86.11222444889779, 86.17234468937876, 86.23246492985972, 86.29258517034069, 86.35270541082164, 86.4128256513026, 86.47294589178357, 86.53306613226454, 86.59318637274549, 86.65330661322645, 86.71342685370742, 86.77354709418837, 86.83366733466934, 86.8937875751503, 86.95390781563125, 87.01402805611222, 87.0741482965932, 87.13426853707415, 87.1943887775551, 87.25450901803607, 87.31462925851703, 87.374749498998, 87.43486973947896, 87.49498997995993, 87.55511022044088, 87.61523046092185, 87.6753507014028, 87.73547094188376, 87.79559118236473, 87.85571142284569, 87.91583166332666, 87.97595190380761, 88.03607214428858, 88.09619238476954, 88.15631262525051, 88.21643286573146, 88.27655310621242, 88.33667334669339, 88.39679358717434, 88.45691382765531, 88.51703406813627, 88.57715430861724, 88.6372745490982, 88.69739478957916, 88.75751503006012, 88.81763527054107, 88.87775551102204, 88.93787575150301, 88.99799599198397, 89.05811623246493, 89.1182364729459, 89.17835671342685, 89.23847695390782, 89.29859719438878, 89.35871743486973, 89.4188376753507, 89.47895791583167, 89.53907815631263, 89.59919839679358, 89.65931863727455, 89.71943887775551, 89.77955911823648, 89.83967935871743, 89.89979959919839, 89.95991983967936, 90.02004008016033, 90.08016032064128, 90.14028056112224, 90.20040080160321, 90.26052104208416, 90.32064128256513, 90.38076152304609, 90.44088176352706, 90.50100200400801, 90.56112224448898, 90.62124248496994, 90.6813627254509, 90.74148296593187, 90.80160320641282, 90.86172344689379, 90.92184368737475, 90.98196392785572, 91.04208416833667, 91.10220440881764, 91.1623246492986, 91.22244488977955, 91.28256513026052, 91.34268537074148, 91.40280561122245, 91.4629258517034, 91.52304609218437, 91.58316633266533, 91.6432865731463, 91.70340681362725, 91.76352705410821, 91.82364729458918, 91.88376753507015, 91.9438877755511, 92.00400801603206, 92.06412825651303, 92.12424849699399, 92.18436873747495, 92.24448897795591, 92.30460921843687, 92.36472945891784, 92.4248496993988, 92.48496993987976, 92.54509018036072, 92.60521042084169, 92.66533066132264, 92.72545090180361, 92.78557114228457, 92.84569138276552, 92.90581162324649, 92.96593186372746, 93.02605210420842, 93.08617234468937, 93.14629258517034, 93.2064128256513, 93.26653306613227, 93.32665330661322, 93.38677354709418, 93.44689378757515, 93.50701402805612, 93.56713426853707, 93.62725450901803, 93.687374749499, 93.74749498997996, 93.80761523046093, 93.86773547094188, 93.92785571142285, 93.9879759519038, 94.04809619238478, 94.10821643286573, 94.16833667334669, 94.22845691382766, 94.28857715430861, 94.34869739478958, 94.40881763527054, 94.46893787575151, 94.52905811623246, 94.58917835671343, 94.64929859719439, 94.70941883767534, 94.76953907815631, 94.82965931863728, 94.88977955911824, 94.9498997995992, 95.01002004008016, 95.07014028056112, 95.13026052104209, 95.19038076152304, 95.250501002004, 95.31062124248497, 95.37074148296594, 95.4308617234469, 95.49098196392785, 95.55110220440882, 95.61122244488978, 95.67134268537075, 95.7314629258517, 95.79158316633266, 95.85170340681363, 95.9118236472946, 95.97194388777555, 96.03206412825651, 96.09218436873748, 96.15230460921843, 96.2124248496994, 96.27254509018036, 96.33266533066131, 96.39278557114228, 96.45290581162325, 96.51302605210421, 96.57314629258516, 96.63326653306613, 96.69338677354709, 96.75350701402806, 96.81362725450902, 96.87374749498998, 96.93386773547094, 96.99398797595191, 97.05410821643287, 97.11422845691382, 97.17434869739479, 97.23446893787575, 97.29458917835672, 97.35470941883767, 97.41482965931864, 97.4749498997996, 97.53507014028057, 97.59519038076152, 97.65531062124248, 97.71543086172345, 97.77555110220442, 97.83567134268537, 97.89579158316633, 97.9559118236473, 98.01603206412825, 98.07615230460922, 98.13627254509018, 98.19639278557113, 98.2565130260521, 98.31663326653307, 98.37675350701403, 98.43687374749499, 98.49699398797596, 98.55711422845691, 98.61723446893788, 98.67735470941884, 98.73747494989979, 98.79759519038076, 98.85771543086173, 98.91783567134269, 98.97795591182364, 99.03807615230461, 99.09819639278557, 99.15831663326654, 99.21843687374749, 99.27855711422845, 99.33867735470942, 99.39879759519039, 99.45891783567134, 99.5190380761523, 99.57915831663327, 99.63927855711422, 99.6993987975952, 99.75951903807615, 99.81963927855712, 99.87975951903807, 99.93987975951904, 100.0])
+              .range(['#004ddbff', '#004ddbff', '#004ddbff', '#004ddbff', '#004ddbff', '#004ddbff', '#004ddbff', '#004ddbff', '#004ddbff', '#004ddbff', '#004ddbff', '#004ddbff', '#004ddbff', '#004ddbff', '#004ddbff', '#004ddbff', '#004ddbff', '#0057c8ff', '#0057c8ff', '#0057c8ff', '#0057c8ff', '#0057c8ff', '#0057c8ff', '#0057c8ff', '#0057c8ff', '#0057c8ff', '#0057c8ff', '#0057c8ff', '#0057c8ff', '#0057c8ff', '#0057c8ff', '#0057c8ff', '#0057c8ff', '#0057c8ff', '#0162b4ff', '#0162b4ff', '#0162b4ff', '#0162b4ff', '#0162b4ff', '#0162b4ff', '#0162b4ff', '#0162b4ff', '#0162b4ff', '#0162b4ff', '#0162b4ff', '#0162b4ff', '#0162b4ff', '#0162b4ff', '#0162b4ff', '#0162b4ff', '#016ca0ff', '#016ca0ff', '#016ca0ff', '#016ca0ff', '#016ca0ff', '#016ca0ff', '#016ca0ff', '#016ca0ff', '#016ca0ff', '#016ca0ff', '#016ca0ff', '#016ca0ff', '#016ca0ff', '#016ca0ff', '#016ca0ff', '#016ca0ff', '#016ca0ff', '#01778dff', '#01778dff', '#01778dff', '#01778dff', '#01778dff', '#01778dff', '#01778dff', '#01778dff', '#01778dff', '#01778dff', '#01778dff', '#01778dff', '#01778dff', '#01778dff', '#01778dff', '#01778dff', '#01778dff', '#028179ff', '#028179ff', '#028179ff', '#028179ff', '#028179ff', '#028179ff', '#028179ff', '#028179ff', '#028179ff', '#028179ff', '#028179ff', '#028179ff', '#028179ff', '#028179ff', '#028179ff', '#028179ff', '#028c65ff', '#028c65ff', '#028c65ff', '#028c65ff', '#028c65ff', '#028c65ff', '#028c65ff', '#028c65ff', '#028c65ff', '#028c65ff', '#028c65ff', '#028c65ff', '#028c65ff', '#028c65ff', '#028c65ff', '#028c65ff', '#028c65ff', '#029651ff', '#029651ff', '#029651ff', '#029651ff', '#029651ff', '#029651ff', '#029651ff', '#029651ff', '#029651ff', '#029651ff', '#029651ff', '#029651ff', '#029651ff', '#029651ff', '#029651ff', '#029651ff', '#029651ff', '#19a045ff', '#19a045ff', '#19a045ff', '#19a045ff', '#19a045ff', '#19a045ff', '#19a045ff', '#19a045ff', '#19a045ff', '#19a045ff', '#19a045ff', '#19a045ff', '#19a045ff', '#19a045ff', '#19a045ff', '#19a045ff', '#37a93aff', '#37a93aff', '#37a93aff', '#37a93aff', '#37a93aff', '#37a93aff', '#37a93aff', '#37a93aff', '#37a93aff', '#37a93aff', '#37a93aff', '#37a93aff', '#37a93aff', '#37a93aff', '#37a93aff', '#37a93aff', '#37a93aff', '#55b22fff', '#55b22fff', '#55b22fff', '#55b22fff', '#55b22fff', '#55b22fff', '#55b22fff', '#55b22fff', '#55b22fff', '#55b22fff', '#55b22fff', '#55b22fff', '#55b22fff', '#55b22fff', '#55b22fff', '#55b22fff', '#73bb25ff', '#73bb25ff', '#73bb25ff', '#73bb25ff', '#73bb25ff', '#73bb25ff', '#73bb25ff', '#73bb25ff', '#73bb25ff', '#73bb25ff', '#73bb25ff', '#73bb25ff', '#73bb25ff', '#73bb25ff', '#73bb25ff', '#73bb25ff', '#73bb25ff', '#91c51aff', '#91c51aff', '#91c51aff', '#91c51aff', '#91c51aff', '#91c51aff', '#91c51aff', '#91c51aff', '#91c51aff', '#91c51aff', '#91c51aff', '#91c51aff', '#91c51aff', '#91c51aff', '#91c51aff', '#91c51aff', '#91c51aff', '#afce10ff', '#afce10ff', '#afce10ff', '#afce10ff', '#afce10ff', '#afce10ff', '#afce10ff', '#afce10ff', '#afce10ff', '#afce10ff', '#afce10ff', '#afce10ff', '#afce10ff', '#afce10ff', '#afce10ff', '#afce10ff', '#ccd705ff', '#ccd705ff', '#ccd705ff', '#ccd705ff', '#ccd705ff', '#ccd705ff', '#ccd705ff', '#ccd705ff', '#ccd705ff', '#ccd705ff', '#ccd705ff', '#ccd705ff', '#ccd705ff', '#ccd705ff', '#ccd705ff', '#ccd705ff', '#ccd705ff', '#d9d200ff', '#d9d200ff', '#d9d200ff', '#d9d200ff', '#d9d200ff', '#d9d200ff', '#d9d200ff', '#d9d200ff', '#d9d200ff', '#d9d200ff', '#d9d200ff', '#d9d200ff', '#d9d200ff', '#d9d200ff', '#d9d200ff', '#d9d200ff', '#d9d200ff', '#d4c000ff', '#d4c000ff', '#d4c000ff', '#d4c000ff', '#d4c000ff', '#d4c000ff', '#d4c000ff', '#d4c000ff', '#d4c000ff', '#d4c000ff', '#d4c000ff', '#d4c000ff', '#d4c000ff', '#d4c000ff', '#d4c000ff', '#d4c000ff', '#cfae00ff', '#cfae00ff', '#cfae00ff', '#cfae00ff', '#cfae00ff', '#cfae00ff', '#cfae00ff', '#cfae00ff', '#cfae00ff', '#cfae00ff', '#cfae00ff', '#cfae00ff', '#cfae00ff', '#cfae00ff', '#cfae00ff', '#cfae00ff', '#cfae00ff', '#ca9c00ff', '#ca9c00ff', '#ca9c00ff', '#ca9c00ff', '#ca9c00ff', '#ca9c00ff', '#ca9c00ff', '#ca9c00ff', '#ca9c00ff', '#ca9c00ff', '#ca9c00ff', '#ca9c00ff', '#ca9c00ff', '#ca9c00ff', '#ca9c00ff', '#ca9c00ff', '#ca9c00ff', '#c58a00ff', '#c58a00ff', '#c58a00ff', '#c58a00ff', '#c58a00ff', '#c58a00ff', '#c58a00ff', '#c58a00ff', '#c58a00ff', '#c58a00ff', '#c58a00ff', '#c58a00ff', '#c58a00ff', '#c58a00ff', '#c58a00ff', '#c58a00ff', '#c07801ff', '#c07801ff', '#c07801ff', '#c07801ff', '#c07801ff', '#c07801ff', '#c07801ff', '#c07801ff', '#c07801ff', '#c07801ff', '#c07801ff', '#c07801ff', '#c07801ff', '#c07801ff', '#c07801ff', '#c07801ff', '#c07801ff', '#bb6601ff', '#bb6601ff', '#bb6601ff', '#bb6601ff', '#bb6601ff', '#bb6601ff', '#bb6601ff', '#bb6601ff', '#bb6601ff', '#bb6601ff', '#bb6601ff', '#bb6601ff', '#bb6601ff', '#bb6601ff', '#bb6601ff', '#bb6601ff', '#b75501ff', '#b75501ff', '#b75501ff', '#b75501ff', '#b75501ff', '#b75501ff', '#b75501ff', '#b75501ff', '#b75501ff', '#b75501ff', '#b75501ff', '#b75501ff', '#b75501ff', '#b75501ff', '#b75501ff', '#b75501ff', '#b75501ff', '#b64902ff', '#b64902ff', '#b64902ff', '#b64902ff', '#b64902ff', '#b64902ff', '#b64902ff', '#b64902ff', '#b64902ff', '#b64902ff', '#b64902ff', '#b64902ff', '#b64902ff', '#b64902ff', '#b64902ff', '#b64902ff', '#b64902ff', '#b43d03ff', '#b43d03ff', '#b43d03ff', '#b43d03ff', '#b43d03ff', '#b43d03ff', '#b43d03ff', '#b43d03ff', '#b43d03ff', '#b43d03ff', '#b43d03ff', '#b43d03ff', '#b43d03ff', '#b43d03ff', '#b43d03ff', '#b43d03ff', '#b33105ff', '#b33105ff', '#b33105ff', '#b33105ff', '#b33105ff', '#b33105ff', '#b33105ff', '#b33105ff', '#b33105ff', '#b33105ff', '#b33105ff', '#b33105ff', '#b33105ff', '#b33105ff', '#b33105ff', '#b33105ff', '#b33105ff', '#b22406ff', '#b22406ff', '#b22406ff', '#b22406ff', '#b22406ff', '#b22406ff', '#b22406ff', '#b22406ff', '#b22406ff', '#b22406ff', '#b22406ff', '#b22406ff', '#b22406ff', '#b22406ff', '#b22406ff', '#b22406ff', '#b22406ff', '#b01807ff', '#b01807ff', '#b01807ff', '#b01807ff', '#b01807ff', '#b01807ff', '#b01807ff', '#b01807ff', '#b01807ff', '#b01807ff', '#b01807ff', '#b01807ff', '#b01807ff', '#b01807ff', '#b01807ff', '#b01807ff', '#af0c08ff', '#af0c08ff', '#af0c08ff', '#af0c08ff', '#af0c08ff', '#af0c08ff', '#af0c08ff', '#af0c08ff', '#af0c08ff', '#af0c08ff', '#af0c08ff', '#af0c08ff', '#af0c08ff', '#af0c08ff', '#af0c08ff', '#af0c08ff', '#af0c08ff', '#ae0009ff', '#ae0009ff', '#ae0009ff', '#ae0009ff', '#ae0009ff', '#ae0009ff', '#ae0009ff', '#ae0009ff', '#ae0009ff', '#ae0009ff', '#ae0009ff', '#ae0009ff', '#ae0009ff', '#ae0009ff', '#ae0009ff', '#ae0009ff', '#ae0009ff']);
+    
+
+    color_map_ffmc.x = d3.scale.linear()
+              .domain([70.0, 100.0])
+              .range([0, 400]);
+
+    color_map_ffmc.legend = L.control({position: 'bottomright'});
+    color_map_ffmc.legend.onAdd = function (map) {var div = L.DomUtil.create('div', 'legend'); return div};
+    color_map_ffmc.legend.addTo(map_fwi);
+
+    color_map_ffmc.xAxis = d3.svg.axis()
+        .scale(color_map_ffmc.x)
+        .orient("top")
+        .tickSize(1)
+        .tickValues([70.0, '', '', '', 74.0, '', '', '', 78.0, '', '', '', 82.0, '', '', '', 86.0, '', '', '', 90.0, '', '', '', 94.0, '', '', '', 98.0, '', '', '']);
+
+    color_map_ffmc.svg = d3.select(".legend.leaflet-control").append("svg")
+        .attr("id", 'legend')
+        .attr("width", 450)
+        .attr("height", 40);
+
+    color_map_ffmc.g = color_map_ffmc.svg.append("g")
+        .attr("class", "key")
+        .attr("transform", "translate(25,16)");
+
+    color_map_ffmc.g.selectAll("rect")
+        .data(color_map_ffmc.color.range().map(function(d, i) {
+          return {
+            x0: i ? color_map_ffmc.x(color_map_ffmc.color.domain()[i - 1]) : color_map_ffmc.x.range()[0],
+            x1: i < color_map_ffmc.color.domain().length ? color_map_ffmc.x(color_map_ffmc.color.domain()[i]) : color_map_ffmc.x.range()[1],
+            z: d
+          };
+        }))
+      .enter().append("rect")
+        .attr("height", 10)
+        .attr("x", function(d) { return d.x0; })
+        .attr("width", function(d) { return d.x1 - d.x0; })
+        .style("fill", function(d) { return d.z; });
+
+    color_map_ffmc.g.call(color_map_ffmc.xAxis).append("text")
+        .attr("class", "caption")
+        .attr("y", 21)
+        .text('');
+</script>
