@@ -648,7 +648,7 @@ class FWF:
         ### (25) Solve for fine fuel moisture function (f_F) 
         a = -0.1386 * m_o
         b = np.power(e_full, a)
-        c = ((1 + np.power(m_o, 5.31)) / (4.93e7))
+        c = (1 + np.power(m_o, 5.31) / (4.93e7))
         f_F = 91.9 * b * c
         ########################################################################
         ### (26) Solve for initial spread index (R) 

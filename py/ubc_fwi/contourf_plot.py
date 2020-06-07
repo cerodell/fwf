@@ -160,7 +160,7 @@ plt.tight_layout()
 
 
 # plt.show()
-fig.savefig(str(gsuite_dir) + "/FFMC/Contour/BC/" + valid  + ".pdf")
+# fig.savefig(str(gsuite_dir) + "/FFMC/Contour/BC/" + valid  + ".pdf")
 
 
 print("Run Time: ", datetime.now() - startTime)
