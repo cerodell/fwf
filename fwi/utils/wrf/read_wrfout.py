@@ -35,12 +35,13 @@ def readwrf(filein, *args):
         wrf_file = Dataset(path_in_str,'r')
 
         time         = getvar(wrf_file, "times", timeidx=0)
-        H            = np.array(getvar(wrf_file, "rh2")) * 1.0
         Ti           = getvar(wrf_file, "T2")
         T            = Ti-273.15
         T.attrs      = Ti.attrs
         T.attrs['description'] = "2m TEMP"
         T.attrs['units'] = "C"
+        Hi           = np.array(getvar(wrf_file, "rh2")) * 1.0
+        H            = xr.DataArray(Hi, name='H', dims=('south_north', 'west_east'))
         H.attrs      = Ti.attrs
         H.attrs['units'] = "(%)"
         H.attrs['description'] = "2m RELATIVE HUMIDITY"
@@ -73,7 +74,7 @@ def readwrf(filein, *args):
 
     ### Combine xarrays and rename to match van wangers defs 
     wrf_ds = xr.combine_nested(ds_list, 'time')
-    wrf_ds = wrf_ds.rename_vars({"T2":"T", "rh2":"H"})
+    wrf_ds = wrf_ds.rename_vars({"T2":"T"})
 
     wrf_file = Dataset(attributes[0],'r')
     nc_attrs = wrf_file.ncattrs()

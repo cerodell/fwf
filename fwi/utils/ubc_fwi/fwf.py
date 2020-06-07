@@ -423,6 +423,8 @@ class FWF:
 
         tzdict = self.tzdict
 
+        #### HOPEFULLY SOLVES RUNTIME WARNING
+        P_o = xr.where(P_o > 0, P_o, 1e-6)
 
         ########################################################################
         ### (11) Solve for the effective rain (r_e) 
@@ -581,7 +583,9 @@ class FWF:
         ### (20) Solve for moisture equivalent (Q_r) 
 
         Q_r = xr.where(r_o < r_limit, zero_full, Q_o + (3.937 * r_d))
-
+        
+        #### HOPEFULLY SOLVES RUNTIME WARNING
+        Q_r = xr.where(Q_r > 0, Q_r, 1e-6)
 
         ########################################################################
         ### (21) Solve for DC after rain (D_r) 
@@ -769,6 +773,9 @@ class FWF:
         ########################################################################
         ### (29c) COmbine FWI intermediate (B)
         B   = xr.combine_nested([B_a,B_b], 'time')
+
+        #### HOPEFULLY SOLVES RUNTIME WARNING
+        B = xr.where(B > 0, B, 1e-6)
 
         ########################################################################
         ### (30a) Solve FWI where B > 1 (S_a)
