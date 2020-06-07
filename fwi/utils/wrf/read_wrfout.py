@@ -35,7 +35,7 @@ def readwrf(filein, *args):
         wrf_file = Dataset(path_in_str,'r')
 
         time         = getvar(wrf_file, "times", timeidx=0)
-        H            = getvar(wrf_file, "rh2") * 1.0
+        H            = np.array(getvar(wrf_file, "rh2")) * 1.0
         Ti           = getvar(wrf_file, "T2")
         T            = Ti-273.15
         T.attrs      = Ti.attrs
