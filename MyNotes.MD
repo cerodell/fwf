@@ -26,7 +26,7 @@
 
 ## ISI
 - Will be an hourly output and live in `hourly_ds`
-- Odd issue will work to debug Jun 7th 2020
+- Seems to be working well Jun 7th 2020 
 
 ## BUI 
 - Will be an daily output and live in `daily_ds`
@@ -36,7 +36,7 @@
 
 ## FWI
 - Will be an hourly output and live in `hourly_ds`
-- Odd issue will work to debug first onh the ISI Jun 7th 2020
+- Seems to be working well but BUI/DC need more spin up time Jun 7th 2020 
 
 
 --- 

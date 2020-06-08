@@ -27,12 +27,14 @@ startTime = datetime.now()
 # wrf_file_dir = "/Volumes/CER/WFRT/FWI/Data/20190819_05/"
 # wrf_ds, xy_np = readwrf(wrf_file_dir)
 
-# scp -r fwfop@bluesky2.eoas.ubc.ca:/bluesky/archive/fireweather/daily /Volumes/CER/WFRT/FWI/Data
+# scp -r fwfop@bluesky2.eoas.ubc.ca:/bluesky/archive/fireweather/hourly/2020-06-07T00.zarr /Volumes/CER/WFRT/FWI/Data/hourly
+# scp -r fwfop@bluesky2.eoas.ubc.ca:/bluesky/archive/fireweather/daily/2020-06-07T00.zarr /Volumes/CER/WFRT/FWI/Data/daily
 
-hourly_file_dir  = "/Volumes/CER/WFRT/FWI/Data/hourly/2020-06-04T00.zarr"
+
+hourly_file_dir  = "/Volumes/CER/WFRT/FWI/Data/hourly/2020-06-07T00.zarr"
 hourly_ds = xr.open_zarr(hourly_file_dir)
 
-daily_file_dir  = "/Volumes/CER/WFRT/FWI/Data/daily/2020-06-04T00.zarr"
+daily_file_dir  = "/Volumes/CER/WFRT/FWI/Data/daily/2020-06-07T00.zarr"
 daily_ds = xr.open_zarr(daily_file_dir)
 
 time_ind = -18

@@ -3,6 +3,7 @@
 data
 .DS_Store
 *.DS_Store
+Images
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
