@@ -25,7 +25,7 @@ wrf_filein = date.today().strftime('/%y%m%d00/')
 # wrf_filein = str('/20060300/')
 wrf_file_dir = str(wrf_dir) + wrf_filein
 
-tar -cvzf my_files.tar.gz /path/to/my/directory
+
 """######### Open wrf_out.nc and write  new hourly/daily .zarr files #############"""
 coeff = FWF(wrf_file_dir, hourly_file_dir, daily_file_dir)
 

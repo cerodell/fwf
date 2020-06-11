@@ -31,10 +31,10 @@ startTime = datetime.now()
 # scp -r fwfop@bluesky2.eoas.ubc.ca:/bluesky/archive/fireweather/daily/2020-06-07T00.zarr /Volumes/CER/WFRT/FWI/Data/daily
 
 
-hourly_file_dir  = "/Volumes/CER/WFRT/FWI/Data/hourly/2020-06-07T00.zarr"
+# hourly_file_dir  = "/bluesky/archive/fireweather/xr/hourly/foo/bluesky/archive/fireweather/xr/hourly/20200611/2020-06-09T00.zarr"
 hourly_ds = xr.open_zarr(hourly_file_dir)
 
-daily_file_dir  = "/Volumes/CER/WFRT/FWI/Data/daily/2020-06-07T00.zarr"
+# daily_file_dir  = "/bluesky/fireweather/fwf/data/xr/daily/2020-06-09T00.zarr"
 daily_ds = xr.open_zarr(daily_file_dir)
 
 time_ind = -18
@@ -92,7 +92,7 @@ ax[2][1].set_title(title + f" max {round(np.nanmax(bui),1)}  min {round(np.nanmi
 
 fig.savefig(str(root_dir) + "/Images/ALL_FWI/" + day  + ".png")
 
-# plt.show()
+plt.show()
 print("Run Time: ", datetime.now() - startTime)
 
 

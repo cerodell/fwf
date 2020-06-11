@@ -2,9 +2,13 @@
 
 
 
-mkdir /bluesky/archive/fireweather/hourly/$(date '+%Y%m%d')
-mv /bluesky/fireweather/fwf/data/xr/hourly/*.zarr /bluesky/archive/fireweather/hourly/$(date '+%Y%m%d')
+mkdir /bluesky/archive/fireweather/xr/hourly/$(date '+%Y%m%d')
+mv /bluesky/fireweather/fwf/data/xr/hourly/*.zarr /bluesky/archive/fireweather/xr/hourly/$(date '+%Y%m%d')
+tar -czvf /bluesky/archive/fireweather/xr/hourly/$(date '+%Y%m%d').tar.gz /bluesky/archive/fireweather/xr/hourly/$(date '+%Y%m%d') 
 
-tar -czvf $(date '+%Y%m%d').tar.gz /bluesky/archive/fireweather/hourly/$(date '+%Y%m%d') 
+mkdir /bluesky/archive/fireweather/xr/daily/$(date '+%Y%m%d')
+mv /bluesky/fireweather/fwf/data/xr/daily/*.zarr /bluesky/archive/fireweather/xr/daily/$(date '+%Y%m%d')
+tar -czvf /bluesky/archive/fireweather/xr/daily/$(date '+%Y%m%d').tar.gz /bluesky/archive/fireweather/xr/daily/$(date '+%Y%m%d') 
 
-tar -czvf 20200610.tar.gz /bluesky/archive/fireweather/daily/20200610
+
+

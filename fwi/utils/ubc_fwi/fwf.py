@@ -1021,7 +1021,7 @@ class FWF:
         print(f"wrote {make_dir}")
     
         current_dir_hourly = str(xr_dir) + str('/current/hourly.zarr')
-        daily_ds.to_zarr(current_dir_hourly, "w")
+        hourly_ds.to_zarr(current_dir_hourly, "w")
         print(f"wrote working {current_dir_hourly}")
         ## return path to hourly_ds file to open
         return str(make_dir)
