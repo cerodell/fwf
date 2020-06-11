@@ -22,9 +22,11 @@ else:
 root_dir = notebooks_dir.parent
 data_dir = root_dir / Path("data")
 tzone_dir = root_dir / Path("data/tzone/")
+xr_dir   = root_dir / Path("data/xr/")
+
 
 wrf_dir = Path("/nfs/kitsault/archives/forecasts/WAN00CP-04/")
-xr_dir = Path("/bluesky/archive/fireweather/")
+# xr_dir = Path("/bluesky/archive/fireweather/")
 
 sys.path.insert(0, str(root_dir))
 sep = "*" * 30

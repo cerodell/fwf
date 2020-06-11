@@ -19,10 +19,12 @@ notebooks_dir = this_dir
 root_dir = notebooks_dir.parents[1]
 data_dir = root_dir / Path("data")
 tzone_dir = root_dir / Path("data/tzone/")
+xr_dir   = root_dir / Path("data/xr/")
+
 # gsuite_dir = notebooks_dir.parents[2] / Path("Google Drive File Stream/Shared drives/Research/CRodell/Model/Images/")
 
 wrf_dir = Path("/nfs/kitsault/archives/forecasts/WAN00CP-04/")
-xr_dir = Path("/bluesky/archive/fireweather/")
+# xr_dir = Path("/bluesky/archive/fireweather/")
 
 
 sys.path.insert(0, str(root_dir))

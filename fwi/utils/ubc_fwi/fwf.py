@@ -66,7 +66,7 @@ class FWF:
 
     daily_loop()
         Loops through each daily time step and solves daily fwi(s)
-   
+   cp -R /bluesky/fireweather/fwf/firewx_website/json/ /bluesky/archive/fireweather/test/
     combine_by_time()
         Combine datsets by time coordinate
 
@@ -1019,7 +1019,10 @@ class FWF:
         # hourly_ds.compute()
         hourly_ds.to_zarr(make_dir, "w")
         print(f"wrote {make_dir}")
-        
+    
+        current_dir_hourly = str(xr_dir) + str('/current/hourly.zarr')
+        daily_ds.to_zarr(current_dir_hourly, "w")
+        print(f"wrote working {current_dir_hourly}")
         ## return path to hourly_ds file to open
         return str(make_dir)
 
@@ -1065,7 +1068,10 @@ class FWF:
         make_dir.mkdir(parents=True, exist_ok=True)
         # daily_ds.compute()
         daily_ds.to_zarr(make_dir, "w")
-        print(f"wrote {make_dir}")
-        
+        print(f"wrote archive {make_dir}")
+        current_dir_daily = str(xr_dir) + str('/current/daily.zarr')
+        daily_ds.to_zarr(current_dir_daily, "w")
+        print(f"wrote working {current_dir_daily}")
+
         ## return path to daily_ds file to open
         return str(make_dir)
