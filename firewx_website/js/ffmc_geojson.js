@@ -44,9 +44,17 @@ var geo_json_ffmc = L.geoJson(null, {
 
 
 
-function geo_json_ffmc_add (data) {
-    geo_json_ffmc.addData(data);
-};
+$.ajax({
+    dataType: "json",
+    url: "json/FFMC_20200607.geojson",
+    success: function(data) {
+        $(data.features).each(function(key, data) {
+            geo_json_ffmc.addData(data);
+        });
+    }
+    });
+
+
 
 /////////// ADDD FFMC DAAAATTTTAAAAAAA !!!!!!!!!!!!!!!!
 

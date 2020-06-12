@@ -26,14 +26,30 @@ variables such as wind speed/ direction, temperature, and relative humidity
 ---
 ## Model structure
 
-- `/bluesky/fireweather/` is the operational directory, its where the model code resides and where the forecast runs
+- `/bluesky/fireweather/fwf/` is the operational directory, its where the model code resides and current forecast data 
+resides.
 
-- `/bluesky/archive/fireweather/` is the archive directory, it where copies of completed forecasts are stored.
+- the current forecast data is broken up into two groups `hourly` and `daily` the table below shows whats in each group.
+
+
+| Hourly Dataset `hourly_ds`  | Daily Dataset `daily_ds`  | 
+ --------------------------- | ------------------------- |
+| Fine Fuel Moisture Code **FFMC**  | Duff Moisture Code **DMC**  |
+| Initial Spread INdex **ISI**  | Drought Moisture Code **DC**  |
+| Fire Weather Index **FWI** | Build Up Index **BUI** |
+| *WRF*: Temp, RH, <br> Wind Speed/Direction <br> Hourly Rain Fall Totals | *WRF*: Average Temp, RH, <br> Wind Speed/Direction <br> 24 hour Rain Fall Totals <br> between (1100-1300) local time|
+
+
+- `/bluesky/archive/fireweather/` is the archive directory, it where copies of completed forecasts are stored as `tar.gz`
+    - `../hourly/` for the hourly forecasts
+    - `../daily/` for the daily forecasts
 
 - `/nfs/kitsault/archives/forecasts/WAN00CP-04/YYMMDD00/` is the WRF directory where the model pulls in `.nc` files
 - the model currently uses 4-km WRF 00Z but is adaptable to other domains. 
     - Youll first need to run `timezone.py` to generate a tzone_ds.zarr file (Note it takes awhile to generate ~3 hours)
     - after it should run as per normal
+
+    
 - `fwf/fwi/utils/ubc_fwi/fwf.py` contains the FWF class that does all the calculations.
 	- note FWF calls on function `read_wrf` in `fwf/fwi/utils/wrf/read_wrfout.py` this script compiles the `.nc` wrfout files into a compact `.zarr` file 
 
