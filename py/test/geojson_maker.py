@@ -1,45 +1,60 @@
-import context
-import math
-import pickle
-import numpy as np
-import pandas as pd
-import xarray as xr
-import cartopy.crs as crs
-import cartopy.feature as cfeature
-import timezonefinder, pytz
-from datetime import datetime
-import matplotlib as mpl
-import matplotlib.colors
-import matplotlib.pyplot as plt
-from wrf import (to_np, getvar, get_cartopy, latlon_coords, g_uvmet)
-from bson import json_util
-
+import sys
 import json
-import geojson
-from fwi.utils.ubc_fwi.fwf import FWF
-from fwi.utils.wrf.read_wrfout import readwrf
-from context import data_dir, xr_dir, wrf_dir, tzone_dir, root_dir
+import numpy as np
+import xarray as xr
+import geojsoncontour
+import matplotlib.pyplot as plt
+from datetime import datetime, date, timedelta
+from context import data_dir, xr_dir
 
 startTime = datetime.now()
 
-"""######### get directory to yesterdays hourly/daily .zarr files.  #############"""
-# yesterday = date.today() - timedelta(days=1)
-# zarr_filein = yesterday.strftime('%Y-%m-%dT00.zarr')
-zarr_filein = "2019-08-20T00_hourly_ds.zarr"
-# hourly_file_dir = str(xr_dir) + str("/hourly/") + zarr_filein
 
-##### Personal Comp path 
- 
-hourly_file_dir = str(data_dir) + str("/xr/") + zarr_filein
-ds = xr.open_zarr(hourly_file_dir)
+"""######### get directory to hourly/daily .zarr files.  #############"""
+# hourly_file_dir  = "/Volumes/CER/WFRT/FWI/Data/hourly/2020-06-07T00.zarr"
+hourly_file_dir  = str(xr_dir) + '/current/hourly.zarr'
+hourly_ds = xr.open_zarr(hourly_file_dir)
+
+# daily_file_dir  = "/Volumes/CER/WFRT/FWI/Data/daily/2020-06-07T00.zarr"
+daily_file_dir  = str(xr_dir) + '/current/daily.zarr'
+
+daily_ds = xr.open_zarr(daily_file_dir)
+lats, lons = np.array(hourly_ds.XLAT), np.array(hourly_ds.XLONG)
 
 
-d = ds.F.to_dict()
+with open('/bluesky/fireweather/fwf/firewx_website/python/colormaps.json') as f:
+  cmaps = json.load(f)
 
-# with open(str(data_dir) + '/json/test.json', 'w') as json_file:
-#     json.dump(d, json_file, default=json_util.default)
 
-with open(str(data_dir) + '/json/ffmc_timeseires.geojson', 'w') as outfile:
-    geojson.dump(d, outfile, sort_keys=True, default=json_util.default)
 
-    print("Run Time: ", datetime.now() - startTime)
+def contourf_to_geojson(cmaps, var, ds, index):
+    day  = str(np.array(ds.Time[0], dtype ='datetime64[D]'))
+    vmin, vmax = cmaps[var]["vmin"], cmaps[var]["vmax"]
+    name, colors = cmaps[var]["name"], cmaps[var]["colors15"]
+    geojson_filepath = str(name)
+    levels = len(colors)
+    contourf = plt.contourf(np.array(ds.XLONG), np.array(ds.XLAT), np.array(ds[var][index]), levels = levels, \
+                            linestyles = 'None', vmin = vmin, vmax = vmax, colors = colors)
+    plt.close()
+
+    geojsoncontour.contourf_to_geojson(
+        contourf=contourf,
+        min_angle_deg=3.0,
+        ndigits=2,
+        stroke_width=0.2,
+        fill_opacity=0.95,
+        geojson_filepath = f'/bluesky/fireweather/fwf/firewx_website/json/{geojson_filepath}.geojson')
+
+    return
+
+# ### Make Geojson files
+contourf_to_geojson(cmaps, 'F', hourly_ds, 18)
+contourf_to_geojson(cmaps, 'P', daily_ds, 0)
+contourf_to_geojson(cmaps, 'D', daily_ds, 0)
+contourf_to_geojson(cmaps, 'R', hourly_ds, 18)
+contourf_to_geojson(cmaps, 'U', daily_ds, 0)
+contourf_to_geojson(cmaps, 'S', hourly_ds, 18)
+
+
+# ### Timer
+print("Run Time: ", datetime.now() - startTime)
