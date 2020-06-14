@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>    
+    <meta http-equiv="content-type" content="text/html; charset=UTF-8" />
+    
+        <script>
+            L_NO_TOUCH = false;
+            L_DISABLE_3D = false;
+        </script>
+    <title>Fire Weather Forecast</title>
+    <script src="https://cdn.jsdelivr.net/npm/leaflet@1.6.0/dist/leaflet.js"></script>
+    <!-- <script src="json/FFMC_20200607.geojson" type="text/javascript"></script> -->
+
+    <!-- <script src="https://code.jquery.com/jquery-1.12.4.min.js"></script> -->
+    <!-- <script src="https://cdnjs.cloudflare.com/ajax/libs/Leaflet.awesome-markers/2.0.2/leaflet.awesome-markers.js"></script> -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.6.0/dist/leaflet.css"/>
+    <style>html, body {width: 100%;height: 100%;margin: 0;padding: 0;}</style>
+    <style>#map {position:absolute;top:0;bottom:0;right:0;left:0;}</style>
+    
+            <meta name="viewport" content="width=device-width,
+                initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+            <style>
+                #map_fwi {
+                    position: relative;
+                    width: 100.0%;
+                    height: 100.0%;
+                    left: 0.0%;
+                    top: 0.0%;
+                }
+            </style>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/3.5.5/d3.min.js"></script>
+</head>
+
+
+<body>    
+    
+            <div class="fwi-map" id="map_fwi" ></div>
+  
+            
+<script src="js/leaflet.groupedlayercontrol.min.js"></script>
+<script src="js/leaflet.ajax.min.js"></script>
+
+
+
+<script>    
+
+        var map_fwi = L.map(
+            "map_fwi",
+            {
+                center: [53.684414, -98.44137],
+                crs: L.CRS.EPSG3857,
+                zoom: 3,
+                zoomControl: true,
+                preferCanvas: false,
+            }
+        );
+        
+
+</script> 
+
+
+    <script src="js/basemaps.js"></script>
+    <script src="js/colorbars.js"></script>
+
+
+    <script src="js/ffmc_geojson.js"></script>
+
+    <!-- <script src="json/FFMC_20200607.geojson"></script> -->
+
+    <script src="js/dmc_geojson.js"></script>
+    <!-- <script src="json/DMC_20200607.geojson"></script> -->
+
+    <script src="js/dc_geojson.js"></script>
+    <script src="js/isi_geojson.js"></script>
+
+    <!-- <script src="json/ISI_20200607.geojson"></script> -->
+
+    <script src="js/bui_geojson.js"></script>
+    <script src="js/fwi_geojson.js"></script>
+
+
+
+    <script src="js/layer_controler.js"></script>
+
+
+
+
+</body>
+
+</html>

@@ -37,7 +37,7 @@ hourly_ds = xr.open_zarr(hourly_file_dir)
 daily_file_dir  = str(xr_dir) + "/current/daily.zarr"
 daily_ds = xr.open_zarr(daily_file_dir)
 
-time_ind = -18
+time_ind = 18
 time = np.datetime_as_string(hourly_ds.Time[time_ind], unit='h')
 initial = np.datetime_as_string(hourly_ds.Time[0], unit='h')
 valid = np.datetime_as_string(hourly_ds.Time[time_ind], unit='h')

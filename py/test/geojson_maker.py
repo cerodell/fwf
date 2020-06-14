@@ -49,11 +49,11 @@ def contourf_to_geojson(cmaps, var, ds, index):
 
 # ### Make Geojson files
 contourf_to_geojson(cmaps, 'F', hourly_ds, 18)
-contourf_to_geojson(cmaps, 'P', daily_ds, 0)
-contourf_to_geojson(cmaps, 'D', daily_ds, 0)
-contourf_to_geojson(cmaps, 'R', hourly_ds, 18)
-contourf_to_geojson(cmaps, 'U', daily_ds, 0)
-contourf_to_geojson(cmaps, 'S', hourly_ds, 18)
+# contourf_to_geojson(cmaps, 'P', daily_ds, 0)
+# contourf_to_geojson(cmaps, 'D', daily_ds, 0)
+# contourf_to_geojson(cmaps, 'R', hourly_ds, 18)
+# contourf_to_geojson(cmaps, 'U', daily_ds, 0)
+# contourf_to_geojson(cmaps, 'S', hourly_ds, 18)
 
 
 # ### Timer
