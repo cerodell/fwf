@@ -20,9 +20,10 @@ root_dir = notebooks_dir.parents[1]
 data_dir = root_dir / Path("data")
 tzone_dir = root_dir / Path("data/tzone/")
 leaflet_dir = root_dir / Path("leaflet/")
+xr_dir   = root_dir / Path("data/xr/")
+
 
 wrf_dir = Path("/nfs/kitsault/archives/forecasts/WAN00CP-04/")
-xr_dir = Path("/bluesky/archive/fireweather/")
 
 
 sys.path.insert(0, str(root_dir))
