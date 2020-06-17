@@ -15,7 +15,7 @@ from wrf import (to_np, getvar, get_cartopy, latlon_coords, g_uvmet, ll_to_xy_pr
 
 from fwi.utils.ubc_fwi.fwf import FWF
 from fwi.utils.wrf.read_wrfout import readwrf
-from context import data_dir, xr_dir, wrf_dir, tzone_dir, root_dir, gsuite_dir
+from context import data_dir, xr_dir, wrf_dir, tzone_dir, root_dir
 
 
 

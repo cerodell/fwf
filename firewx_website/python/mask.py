@@ -26,29 +26,34 @@ hourly_ds = xr.open_zarr(hourly_file_dir)
 daily_ds = xr.open_zarr(daily_file_dir)
 
 ### Bring in WRF Data and open
-wrf_filein = date.today().strftime('/%y%m%d00/wrfout_d03_2020-06-18_12:00:00')
-wrf_file_dir = str(wrf_dir) + wrf_filein
-wrf_file = Dataset(wrf_file_dir,'r')
+
+wrf_folder = date.today().strftime('/%y%m%d00/')
+filein = str(wrf_dir) + wrf_folder
+wrf_file_dir = sorted(Path(filein).glob('wrfout_d03_*'))
+
+
+wrf_file = Dataset(wrf_file_dir[-1],'r')
 
 
 ### Get Land Mask and Lake Mask data
 LANDMASK        = getvar(wrf_file, "LANDMASK")
 LAKEMASK        = getvar(wrf_file, "LAKEMASK")
 SNOWC           = getvar(wrf_file, "SNOWC")
-# SNOWC[:,:600] = 0
 
-### Merge into dataset
-var_list = [LANDMASK, LAKEMASK]
-ds_mask = xr.merge(var_list)
+def mask(ds_unmasked, LANDMASK, LAKEMASK, SNOWC):
+    ds = xr.where(LANDMASK == 1, ds_unmasked, np.nan)
+    ds = ds.transpose("time", "south_north", "west_east")
+    ds = xr.where(LAKEMASK == 0, ds, np.nan)
+    ds = ds.transpose("time", "south_north", "west_east")
+    ds = xr.where(SNOWC == 0, ds, np.nan)
+    ds = ds.transpose("time", "south_north", "west_east")
+    ds['Time'] = ds_unmasked['Time']
+    return ds
+
+hourly_ds = mask(hourly_ds, LANDMASK, LAKEMASK, SNOWC)
+daily_ds  = mask(daily_ds, LANDMASK, LAKEMASK, SNOWC)
 
 
-ds = xr.where(LANDMASK == 1, hourly_ds, np.nan)
-ds = ds.transpose("time", "south_north", "west_east")
-ds = xr.where(LAKEMASK == 0, ds, np.nan)
-ds = ds.transpose("time", "south_north", "west_east")
-ds = xr.where(SNOWC == 0, ds, np.nan)
-
-hourly_ds = ds.transpose("time", "south_north", "west_east")
 # %%
 Plot_Title = "ALL FWI:  "
 day  = str(np.array(daily_ds.Time[0], dtype ='datetime64[D]'))
@@ -63,38 +68,38 @@ ffmc = np.array(hourly_ds.F[18])
 title = "FFMC"
 C = ax[0][0].pcolormesh(lons, lats, ffmc, cmap = cmap, vmin = 70, vmax = 100)
 clb = fig.colorbar(C, ax = ax[0][0], fraction=0.054, pad=0.04)
-ax[0][0].set_title(title + f" max {round(np.nanmax(ffmc),1)}  min {round(np.nanmin(ffmc),1)} mean {round(np.mean(ffmc),1)}")
+ax[0][0].set_title(title + f" max {round(np.nanmax(ffmc),1)}  min {round(np.nanmin(ffmc),1)} mean {round(np.nanmean(ffmc),1)}")
 
 isi = np.array(hourly_ds.R[18])
 title = "ISI"
 C = ax[1][0].pcolormesh(lons, lats, isi, cmap = cmap, vmin = 0, vmax = 15)
 clb = fig.colorbar(C, ax = ax[1][0], fraction=0.054, pad=0.04)
-ax[1][0].set_title(title + f" max {round(np.nanmax(isi),1)}  min {round(np.nanmin(isi),1)} mean {round(np.mean(isi),1)}")
+ax[1][0].set_title(title + f" max {round(np.nanmax(isi),1)}  min {round(np.nanmin(isi),1)} mean {round(np.nanmean(isi),1)}")
 
 fwi = np.array(hourly_ds.S[18])
 title = "FWI"
 C = ax[2][0].pcolormesh(lons, lats, fwi, cmap = cmap, vmin = 0, vmax = 30)
 clb = fig.colorbar(C, ax = ax[2][0], fraction=0.054, pad=0.04)
-ax[2][0].set_title(title + f" max {round(np.nanmax(fwi),1)}  min {round(np.nanmin(fwi),1)} mean {round(np.mean(fwi),1)}")
+ax[2][0].set_title(title + f" max {round(np.nanmax(fwi),1)}  min {round(np.nanmin(fwi),1)} mean {round(np.nanmean(fwi),1)}")
 
 dmc = np.array(daily_ds.P[0])
 title = "DMC"
 C = ax[0][1].pcolormesh(lons, lats, dmc, cmap = cmap, vmin = 0, vmax = 60)
 clb = fig.colorbar(C, ax = ax[0][1], fraction=0.054, pad=0.04)
-ax[0][1].set_title(title + f" max {round(np.nanmax(dmc),1)}  min {round(np.nanmin(dmc),1)} mean {round(np.mean(dmc),1)}")
+ax[0][1].set_title(title + f" max {round(np.nanmax(dmc),1)}  min {round(np.nanmin(dmc),1)} mean {round(np.nanmean(dmc),1)}")
 
 dc = np.array(daily_ds.D[0])
 title = "DC"
 C = ax[1][1].pcolormesh(lons, lats, dc, cmap = cmap, vmin = 40, vmax = 400)
 clb = fig.colorbar(C, ax = ax[1][1], fraction=0.054, pad=0.04)
-ax[1][1].set_title(title + f" max {round(np.nanmax(dc),1)}  min {round(np.nanmin(dc),1)} mean {round(np.mean(dc),1)}")
+ax[1][1].set_title(title + f" max {round(np.nanmax(dc),1)}  min {round(np.nanmin(dc),1)} mean {round(np.nanmean(dc),1)}")
 
 
 bui = np.array(daily_ds.U[0])
 title = "BUI"
 C = ax[2][1].pcolormesh(lons, lats, bui, cmap = cmap, vmin = 0, vmax = 90)
 clb = fig.colorbar(C, ax = ax[2][1], fraction=0.054, pad=0.04)
-ax[2][1].set_title(title + f" max {round(np.nanmax(bui),1)}  min {round(np.nanmin(bui),1)} mean {round(np.mean(bui),1)}")
+ax[2][1].set_title(title + f" max {round(np.nanmax(bui),1)}  min {round(np.nanmin(bui),1)} mean {round(np.nanmean(bui),1)}")
 
 fig.savefig(str(root_dir) + "/Images/ALL_FWI/" + day  + ".png")
 
