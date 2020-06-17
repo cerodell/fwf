@@ -31,16 +31,6 @@ for path in pathlist:
     wsp_array    = np.array(wsp_wdir[0])
     wsp = xr.DataArray(wsp_array, name='wsp', dims=('south_north', 'west_east'))
 
-    # wps=xr.Dataset({'WSP': np.array(wsp_i),'XLONG': (['south_north', 'west_east'], wsp_i.XLONG),
-    #                 'XLAT': (['south_north', 'west_east'], wsp_i.XLAT),
-    #                 'time': (wsp_i.Time)})
-    
-    ##varied parameterization scheme to forecast rain..note this is a sum of rain from the starts of the model run  
-    # rain_c    = getvar(wrf_file, "RAINC")
-    # rain_sh   = getvar(wrf_file, "RAINSH")
-    # rain_nc   = getvar(wrf_file, "RAINNC")
-    # qpf       = rain_c + rain_sh + rain_nc
-
     var_list = [rh,temp,wsp]
     ds = xr.merge(var_list)
     ds_list.append(ds)
