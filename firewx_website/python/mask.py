@@ -39,6 +39,7 @@ wrf_file = Dataset(wrf_file_dir[-1],'r')
 LANDMASK        = getvar(wrf_file, "LANDMASK")
 LAKEMASK        = getvar(wrf_file, "LAKEMASK")
 SNOWC           = getvar(wrf_file, "SNOWC")
+SNOWC[:,:600]   = 0
 
 def mask(ds_unmasked, LANDMASK, LAKEMASK, SNOWC):
     ds = xr.where(LANDMASK == 1, ds_unmasked, np.nan)

@@ -13,11 +13,12 @@ from wrf import getvar
 
 
 def contourf_to_geojson(cmaps, var, ds, index):
-    day  = str(np.array(ds.Time[0], dtype ='datetime64[D]'))
+    timestamp  = str(np.array(ds.Time[index], dtype ='datetime64[h]'))
+    timestamp = datetime.strptime(str(timestamp), '%Y-%m-%dT%H').strftime('%Y%m%d%H')
     vmin, vmax = cmaps[var]["vmin"], cmaps[var]["vmax"]
     name, colors = cmaps[var]["name"], cmaps[var]["colors15"]
-    # geojson_filepath = str(name + "_" + day)
-    geojson_filepath = str(name)
+    geojson_filepath = str(name + "_" + timestamp)
+    # geojson_filepath = str(name)
     levels = len(colors)
     contourf = plt.contourf(np.array(ds.XLONG), np.array(ds.XLAT), np.round(np.array(ds[var][index]),3), levels = levels, \
                             linestyles = 'None', vmin = vmin, vmax = vmax, colors = colors)
@@ -31,10 +32,12 @@ def contourf_to_geojson(cmaps, var, ds, index):
         fill_opacity=0.95,
         geojson_filepath = f'/bluesky/fireweather/fwf/data/geojson/{geojson_filepath}.geojson')
 
+    print(f'wrote geojson to: /bluesky/fireweather/fwf/data/geojson/{geojson_filepath}.geojson')
     return
 
 def mask(ds_unmasked, wrf_file_dir):
     LANDMASK, LAKEMASK, SNOWC = wrfmasks(wrf_file_dir)
+    SNOWC[:,:600]   = 0
     ds = xr.where(LANDMASK == 1, ds_unmasked, np.nan)
     ds = ds.transpose("time", "south_north", "west_east")
     ds = xr.where(LAKEMASK == 0, ds, np.nan)
@@ -52,6 +55,8 @@ def wrfmasks(wrf_file_dir):
     LANDMASK        = getvar(wrf_file, "LANDMASK")
     LAKEMASK        = getvar(wrf_file, "LAKEMASK")
     SNOWC           = getvar(wrf_file, "SNOWC")
+    SNOWC[:,:600]   = 0
+
     return LANDMASK, LAKEMASK, SNOWC
 
 

@@ -16,7 +16,7 @@ from context import data_dir, xr_dir, wrf_dir, root_dir
 
 
 ### Open color map json
-with open('colormaps.json') as f:
+with open('/bluesky/fireweather/fwf/firewx_website/json/colormaps.json') as f:
   cmaps = json.load(f)
 
 
@@ -37,16 +37,24 @@ wrf_file_dir = sorted(Path(filein).glob('wrfout_d03_*'))
 hourly_ds = mask(hourly_ds, wrf_file_dir)
 daily_ds  = mask(daily_ds, wrf_file_dir)
 
-# for var in hourly_ds.data_vars:
-#   print(var)
+
+for i in range(4):
+  contourf_to_geojson(cmaps, 'F', hourly_ds, i)
+  contourf_to_geojson(cmaps, 'R', hourly_ds, i)
+  contourf_to_geojson(cmaps, 'S', hourly_ds, i)
+
+for i in range(len(daily_ds.Time)):
+  contourf_to_geojson(cmaps, 'P', daily_ds, i)
+  contourf_to_geojson(cmaps, 'D', daily_ds, i)
+  contourf_to_geojson(cmaps, 'U', daily_ds, i)
 
 # ### Make Geojson files with mask applied
-contourf_to_geojson(cmaps, 'F', hourly_ds, 18)
-contourf_to_geojson(cmaps, 'P', daily_ds, 0)
-contourf_to_geojson(cmaps, 'D', daily_ds, 0)
-contourf_to_geojson(cmaps, 'R', hourly_ds, 18)
-contourf_to_geojson(cmaps, 'U', daily_ds, 0)
-contourf_to_geojson(cmaps, 'S', hourly_ds, 18)
+# contourf_to_geojson(cmaps, 'F', hourly_ds, 18)
+# contourf_to_geojson(cmaps, 'P', daily_ds, 0)
+# contourf_to_geojson(cmaps, 'D', daily_ds, 0)
+# contourf_to_geojson(cmaps, 'R', hourly_ds, 18)
+# contourf_to_geojson(cmaps, 'U', daily_ds, 0)
+# contourf_to_geojson(cmaps, 'S', hourly_ds, 18)
 
 
 # ### Timer
