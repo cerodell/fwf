@@ -16,7 +16,7 @@ def contourf_to_geojson(cmaps, var, ds, index):
     timestamp  = str(np.array(ds.Time[index], dtype ='datetime64[h]'))
     timestamp = datetime.strptime(str(timestamp), '%Y-%m-%dT%H').strftime('%Y%m%d%H')
     vmin, vmax = cmaps[var]["vmin"], cmaps[var]["vmax"]
-    name, colors = cmaps[var]["name"], cmaps[var]["colors15"]
+    name, colors = str(cmaps[var]["name"]), cmaps[var]["colors15"]
     geojson_filepath = str(name + "_" + timestamp)
     # geojson_filepath = str(name)
     levels = len(colors)
@@ -31,9 +31,9 @@ def contourf_to_geojson(cmaps, var, ds, index):
         stroke_width=0.2,
         fill_opacity=0.95,
         unit=timestamp, 
-        geojson_filepath = f'/bluesky/fireweather/fwf/data/geojson/{geojson_filepath}.geojson')
+        geojson_filepath = f'/bluesky/fireweather/fwf/data/geojson/{timestamp[:-2]}/{name}/{geojson_filepath}.geojson')
 
-    print(f'wrote geojson to: /bluesky/fireweather/fwf/data/geojson/{geojson_filepath}.geojson')
+    print(f'wrote geojson to: /bluesky/fireweather/fwf/data/geojson/{timestamp[:-2]}/{name}/{geojson_filepath}.geojson')
     return
 
 def mask(ds_unmasked, wrf_file_dir):
