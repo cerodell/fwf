@@ -27,8 +27,10 @@ hourly_ds = xr.open_zarr(hourly_file_dir)
 daily_ds = xr.open_zarr(daily_file_dir)
 
 
+
 ### Get Path to most recent WRF run for most uptodate snowcover info
 wrf_folder = date.today().strftime('/%y%m%d00/')
+# wrf_folder = '/20061700/'
 filein = str(wrf_dir) + wrf_folder
 wrf_file_dir = sorted(Path(filein).glob('wrfout_d03_*'))
 
@@ -38,15 +40,15 @@ hourly_ds = mask(hourly_ds, wrf_file_dir)
 daily_ds  = mask(daily_ds, wrf_file_dir)
 
 
-for i in range(4):
+for i in range(2):
   contourf_to_geojson(cmaps, 'F', hourly_ds, i)
-  contourf_to_geojson(cmaps, 'R', hourly_ds, i)
-  contourf_to_geojson(cmaps, 'S', hourly_ds, i)
+  # contourf_to_geojson(cmaps, 'R', hourly_ds, i)
+  # contourf_to_geojson(cmaps, 'S', hourly_ds, i)
 
-for i in range(len(daily_ds.Time)):
-  contourf_to_geojson(cmaps, 'P', daily_ds, i)
-  contourf_to_geojson(cmaps, 'D', daily_ds, i)
-  contourf_to_geojson(cmaps, 'U', daily_ds, i)
+# for i in range(len(daily_ds.Time)):
+#   contourf_to_geojson(cmaps, 'P', daily_ds, i)
+#   contourf_to_geojson(cmaps, 'D', daily_ds, i)
+#   contourf_to_geojson(cmaps, 'U', daily_ds, i)
 
 # ### Make Geojson files with mask applied
 # contourf_to_geojson(cmaps, 'F', hourly_ds, 18)

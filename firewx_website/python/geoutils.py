@@ -30,6 +30,7 @@ def contourf_to_geojson(cmaps, var, ds, index):
         ndigits=2,
         stroke_width=0.2,
         fill_opacity=0.95,
+        unit=timestamp, 
         geojson_filepath = f'/bluesky/fireweather/fwf/data/geojson/{geojson_filepath}.geojson')
 
     print(f'wrote geojson to: /bluesky/fireweather/fwf/data/geojson/{geojson_filepath}.geojson')
@@ -40,8 +41,8 @@ def mask(ds_unmasked, wrf_file_dir):
     SNOWC[:,:600]   = 0
     ds = xr.where(LANDMASK == 1, ds_unmasked, np.nan)
     ds = ds.transpose("time", "south_north", "west_east")
-    ds = xr.where(LAKEMASK == 0, ds, np.nan)
-    ds = ds.transpose("time", "south_north", "west_east")
+    # ds = xr.where(LAKEMASK == 0, ds, np.nan)
+    # ds = ds.transpose("time", "south_north", "west_east")
     ds = xr.where(SNOWC == 0, ds, np.nan)
     ds = ds.transpose("time", "south_north", "west_east")
     ds['Time'] = ds_unmasked['Time']

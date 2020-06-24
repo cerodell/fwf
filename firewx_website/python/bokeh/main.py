@@ -49,7 +49,7 @@ source = ColumnDataSource(df)
 
 
 # output HTML file
-output_file('/bluesky/archive/fireweather/test/index.html')
+output_file('/bluesky/archive/fireweather/test/index_bokeh.html')
 
 # create a new plot with a title and axis labels
 FFMC = figure(title="FINE FUEL MOISTURE CODE", x_axis_label='Time', y_axis_label='FFMC',

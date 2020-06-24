@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<title>UBC WFRT Forecast Page</title>
+		<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+        <link href="static/css/fcst.css" rel="stylesheet" type="text/css" />
+        <!-- <link type="text/css" href="static/css/roboto.css" rel="stylesheet">
+        <link type="text/css" href="static/material-icons.css" rel="stylesheet">
+        <link href="static/css/roboto.css" rel="preload" as="style">
+        <link href="static/google/iconfont/material-icons.css" rel="preload" as="style"> -->
+        <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+
+	</head>
+
+	<body>
+		<div id="cntnr">
+			<!-- <img id="ubclogo" src="static/images/ubcLogo.gif"></img> -->
+			<div id="title">UBC NWP-Derived Fire Weather Index Forecasts</div>
+			<div id="topbar">  
+				<div class="btnwrap">
+
+                </div>
+
+<!-- <div class="pastwrap">
+<form method="get">
+<a class="pastprompt">Past YYYYMMDDHH: <input type="text" name="pastdate"></a>
+</form>
+</div> -->
+</div>
+<div id="ptmenu">
+<div class="graphite demo-container">
+    <ul class="plev accordion">
+      <li><a href="#"> Fire Weather Indices</i></a>
+        <ul class="ptype" id="accordion-1">
+          <li><a href="#">Fine Fuel Moisture Code</a>
+            <ul class="parea">
+                <li><a href="#">Canada Wide</a>
+                    <ul class="mod">
+                      <li><a target="iframe_a" id="myDiv" href="ffmc.html">Map</a></li>
+                    </ul>
+                  </li>
+              <li><a href="#">British Columbia</a>
+                <ul class="mod">
+                  <li><a target="iframe_a" id="myDiv" href="">Map</a></li>
+                </ul>
+              </li>
+            </ul>
+          </li>
+          <li><a href="#">Duff Moisture Code</a>
+            <ul class="parea">
+                <li><a href="#">Canada Wide</a>
+                    <ul class="mod">
+                      <li><a target="iframe_a" id="myDiv" href="">Map</a></li>
+                    </ul>
+                  </li>
+              <li><a href="#">British Columbia</a>
+                <ul class="mod">
+                  <li><a target="iframe_a" id="myDiv" href="">Map</a></li>
+                </ul>
+              </li>
+            </ul>
+          </li>
+          <li><a href="#">Drought Moisture Code</a>
+            <ul class="parea">
+                <li><a href="#">Canada Wide</a>
+                    <ul class="mod">
+                      <li><a target="iframe_a" id="myDiv" href="">Map</a></li>
+                    </ul>
+                  </li>
+              <li><a href="#">British Columbia</a>
+                <ul class="mod">
+                  <li><a target="iframe_a" id="myDiv" href="">Map</a></li>
+                </ul>
+              </li>
+            </ul>
+          </li>
+          <li><a href="#">Initial Spread Index</a>
+            <ul class="parea">
+                <li><a href="#">Canada Wide</a>
+                    <ul class="mod">
+                      <li><a target="iframe_a" id="myDiv" href="">Map</a></li>
+                    </ul>
+                  </li>
+              <li><a href="#">British Columbia</a>
+                <ul class="mod">
+                  <li><a target="iframe_a" id="myDiv" href="">Map</a></li>
+                </ul>
+              </li>
+            </ul>
+          </li>
+          <li><a href="#">Build Up Index</a>
+            <ul class="parea">
+                <li><a href="#">Canada Wide</a>
+                    <ul class="mod">
+                      <li><a target="iframe_a" id="myDiv" href="">Map</a></li>
+                    </ul>
+                  </li>
+              <li><a href="#">British Columbia</a>
+                <ul class="mod">
+                  <li><a target="iframe_a" id="myDiv" href="">Map</a></li>
+                </ul>
+              </li>
+            </ul>
+          </li>
+          <li><a href="#">Fire Weather Index</a>
+            <ul class="parea">
+                <li><a href="#">Canada Wide</a>
+                    <ul class="mod">
+                      <li><a target="iframe_a" id="myDiv" href="">Map</a></li>
+                    </ul>
+                  </li>
+              <li><a href="#">British Columbia</a>
+                <ul class="mod">
+                  <li><a target="iframe_a" id="myDiv" href="">Map</a></li>
+                </ul>
+              </li>
+            </ul>
+          </li>
+        
+
+      <!-- <li><a href="#">4-Panel</a>
+        <ul class="ptype" id="accordion-2">
+          <li><a href="#">Synoptic</a>
+            <ul class="parea">
+              <li><a href="#">BC</a>
+                <ul class="mod">
+                  <li><a target="iframe_a" href="">GDPS</a></li>
+                  <li><a target="iframe_a" href="">GFS</a></li>
+                  <li><a target="iframe_a" href="">RDPS</a></li>
+                </ul>
+              </li>
+            </ul>
+          </li>
+          <li><a href="#">Convective</a>
+            <ul class="parea">
+              <li><a href="#">BC</a>
+                <ul class="mod">
+                  <li><a target="iframe_a" href="">GFS</a></li>
+                  <li><a target="iframe_a" href="">RDPS</a></li>
+                </ul>
+              </li>
+            </ul>
+          </li>
+        </ul>
+      </li> -->
+ 
+
+
+    </ul>
+    </div>
+    </div>
+
+<!---------------------------Plot Area--------------------------------------->
+		<div id="plot">
+			<iframe frameborder="0" src="" name="iframe_a"></iframe>
+		</div>
+
+<!---------------------------Bottom Bar--------------------------------------->
+		<!-- <div id="btmbar">
+			<div class="btnwrap">
+				<a href="https://weather.eos.ubc.ca/cgi-wx/statush.cgi" target="_blank" class="barlink">UBC Model Status</a>
+				<a class="vertdiv">|</a>
+				<a href="https://weather.eos.ubc.ca/wxfcst/html-etc/disclaimer.html" target="_blank" class="barlink">Disclaimer</a>
+				<a class="vertdiv">|</a>
+				<a href="mailto:rstull@eos.ubc.ca" target="_blank" class="barlink">Contact</a>
+				<a class="vertdiv">|</a>
+				<a href="https://weather.eos.ubc.ca/cgi-bin/index.cgi" target="_blank" class="barlink">About</a>
+				<a class="vertdiv">|</a>
+				<a href="#" target="_blank" class="barlink">Add loop to Quicklinks</a>
+				a class="copyrt">© Copyright UBC & GDCFDC 2012</a
+			</div>
+			<a id="copyrt">© Copyright UBC & GDCFDC 2012</a>
+		</div>
+        <div id="fineprint">
+            <div class="finetext">
+                <br>Weather forecasts provided by Geophysical Disaster Computational Fluid Dynamics Center • Earth, Ocean and Atmospheric Sciences Department • University of British Columbia
+                <br>Providing research-quality forecasts for Western Canada since 1996 • For more info, contact Prof. Roland Stull:  rstull (at) eos.ubc.ca
+                <br>Research supported by BC Hydro, Natural Sciences and Engineering Research Council, Canadian Foundation for Innovation, and others.
+                <br>Webpage and forecast graphics developed by <a href="mailto:gwest@eos.ubc.ca" target="_blank" class="emailgreg">Dr. Greg West</a>
+            </div>
+        </div>
+
+
+		</div> -->
+
+<script type='text/javascript' src='static/js/ffmc_plot.js'></script>
+
+<script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.4.2/jquery.min.js"></script>
+<!--script src="js/jquery.min.js"></script-->
+<script type='text/javascript' src='static/js/jquery.cookie.js'></script>
+<script type='text/javascript' src='static/js/jquery.hoverIntent.minified.js'></script>
+<!--script type='text/javascript' src='js/jquery.dcjqaccordion.2.7.js'></script-->
+<script type='text/javascript' src='static/js/jquery.greg.js'></script>
+<script type="text/javascript">
+$(document).ready(function($){
+					$('#accordion-1').dcAccordion({
+						eventType: 'click',
+                        autoClose: true,
+                        menuClose: true,
+						saveState: false,
+						disableLink: true,
+						speed: 'fast',
+						showCount: false,
+						autoExpand: false,
+					});
+});
+$(document).ready(function($){
+					$('#accordion-2').dcAccordion({
+						eventType: 'click',
+                        autoClose: true,
+                        menuClose: true,
+						saveState: false,
+						disableLink: true,
+						speed: 'fast',
+						showCount: false,
+						autoExpand: false,
+					});
+});
+$(document).ready(function($){
+					$('#accordion-3').dcAccordion({
+						eventType: 'click',
+                        autoClose: true,
+                        menuClose: true,
+						saveState: false,
+						disableLink: true,
+						speed: 'fast',
+						showCount: false,
+						autoExpand: false,
+					});
+});
+$(document).ready(function($){
+					$('#accordion-4').dcAccordion({
+						eventType: 'click',
+                        autoClose: true,
+                        menuClose: true,
+						saveState: false,
+						disableLink: true,
+						speed: 'fast',
+						showCount: false,
+						autoExpand: false,
+					});
+});
+$(document).ready(function($){
+					$('#accordion-5').dcAccordion({
+						eventType: 'click',
+                        autoClose: true,
+                        menuClose: true,
+						saveState: false,
+						disableLink: true,
+						speed: 'fast',
+						showCount: false,
+						autoExpand: false,
+					});
+});
+$(document).ready(function($){
+					$('#accordion-6').dcAccordion({
+						eventType: 'click',
+                        autoClose: true,
+                        menuClose: true,
+						saveState: false,
+						disableLink: true,
+						speed: 'fast',
+						showCount: false,
+						autoExpand: false,
+					});
+});
+$(document).ready(function($){
+					$('#accordion-7').dcAccordion({
+						eventType: 'click',
+                        autoClose: true,
+                        menuClose: true,
+						saveState: false,
+						disableLink: true,
+						speed: 'fast',
+						showCount: false,
+						autoExpand: false,
+					});
+});
+$(document).ready(function($){
+					$('#accordion-8').dcAccordion({
+						eventType: 'click',
+                        autoClose: true,
+                        menuClose: true,
+						saveState: false,
+						disableLink: true,
+						speed: 'fast',
+						showCount: false,
+						autoExpand: false,
+					});
+});
+$(document).ready(function($){
+					$('#accordion-9').dcAccordion({
+						eventType: 'click',
+                        autoClose: true,
+                        menuClose: true,
+						saveState: false,
+						disableLink: true,
+						speed: 'fast',
+						showCount: false,
+						autoExpand: false,
+					});
+});
+$(document).ready(function($){
+					$('#accordion-10').dcAccordion({
+						eventType: 'click',
+                        autoClose: true,
+                        menuClose: true,
+						saveState: false,
+						disableLink: true,
+						speed: 'fast',
+						showCount: false,
+						autoExpand: false,
+					});
+});
+</script>
+
+</body>
+</html>

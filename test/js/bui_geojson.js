@@ -1,6 +1,6 @@
-var geo_json_bui = L.layerGroup().addTo(map_fwi);
+var geo_json_bui = L.layerGroup().addTo(map);
 
-fetch('json/BUI_20200607.geojson').then(function(response){
+fetch('json/BUI_2020061800.geojson').then(function(response){
     return response.json();
 }).then(function(json){
 
@@ -43,7 +43,7 @@ fetch('json/BUI_20200607.geojson').then(function(response){
                     }
                 }
             }
-        )
+        ).setZIndex(1000)
     )
 });
 

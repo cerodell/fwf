@@ -4,6 +4,7 @@ import xarray as xr
 from pathlib import Path
 from netCDF4 import Dataset
 from datetime import datetime
+from geoutils import mask, contourf_to_geojson
 from context import data_dir, xr_dir, wrf_dir, root_dir
 from datetime import datetime, date, timedelta
 startTime = datetime.now()
@@ -28,6 +29,7 @@ daily_ds = xr.open_zarr(daily_file_dir)
 ### Bring in WRF Data and open
 
 wrf_folder = date.today().strftime('/%y%m%d00/')
+# wrf_folder = '/20061700/'
 filein = str(wrf_dir) + wrf_folder
 wrf_file_dir = sorted(Path(filein).glob('wrfout_d03_*'))
 
@@ -44,8 +46,8 @@ SNOWC[:,:600]   = 0
 def mask(ds_unmasked, LANDMASK, LAKEMASK, SNOWC):
     ds = xr.where(LANDMASK == 1, ds_unmasked, np.nan)
     ds = ds.transpose("time", "south_north", "west_east")
-    ds = xr.where(LAKEMASK == 0, ds, np.nan)
-    ds = ds.transpose("time", "south_north", "west_east")
+    # ds = xr.where(LAKEMASK == 0, ds, np.nan)
+    # ds = ds.transpose("time", "south_north", "west_east")
     ds = xr.where(SNOWC == 0, ds, np.nan)
     ds = ds.transpose("time", "south_north", "west_east")
     ds['Time'] = ds_unmasked['Time']
@@ -104,5 +106,7 @@ ax[2][1].set_title(title + f" max {round(np.nanmax(bui),1)}  min {round(np.nanmi
 
 fig.savefig(str(root_dir) + "/Images/ALL_FWI/" + day  + ".png")
 
-plt.show()
+# plt.show()
 print("Run Time: ", datetime.now() - startTime)
+
+# %%

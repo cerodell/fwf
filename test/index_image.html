@@ -1,0 +1,86 @@
+
+
+
+
+<!DOCTYPE html>
+<html lang="en">
+  
+  <head>
+    
+      <meta charset="utf-8">
+      <title>image.py example</title>
+      
+      
+        
+          
+        
+        
+          
+        <script type="text/javascript" src="https://cdn.bokeh.org/bokeh/release/bokeh-2.1.0.min.js" integrity="sha384-YobFyzPeVUsFQydHkJGsJL1kyfHnWxOlPc3EwaV22TmBaeGoXHLWx5aRRVPS9xlE" crossorigin="anonymous"></script>
+        <script type="text/javascript" src="https://cdn.bokeh.org/bokeh/release/bokeh-widgets-2.1.0.min.js" integrity="sha384-NuAg9+TcTQQqvQCTtkCneRrpkTiMhhfiq0KHiBzx8ECiKiLWXHN6i6ia3q7b3eHu" crossorigin="anonymous"></script>
+        <script type="text/javascript">
+            Bokeh.set_log_level("info");
+        </script>
+        
+      
+      
+    
+  </head>
+  
+  
+  <body>
+    
+      
+        
+          
+          
+            
+              <div class="bk-root" id="ccf1f022-5b31-4609-ba24-60ca0c472a23" data-root-id="1003"></div>
+            
+          
+        
+      
+      
+        <script type="application/json" id="1004">
+          {"47050f95-6ab4-44af-bcc6-ebf0fad00b06":{"roots":{"references":[{"attributes":{"children":[{"id":"1001"},{"id":"1002"}]},"id":"1003","type":"Column"},{"attributes":{"active":0,"labels":["20200604","20200614"]},"id":"1001","type":"RadioButtonGroup"},{"attributes":{"height":10,"text":"&lt;img src=\"./static/images/20200604.png\" alt=\"div_image\"&gt;","width":10},"id":"1002","type":"Div"}],"root_ids":["1003"]},"title":"Bokeh Application","version":"2.1.0"}}
+        </script>
+        <script type="text/javascript">
+          (function() {
+            var fn = function() {
+              Bokeh.safely(function() {
+                (function(root) {
+                  function embed_document(root) {
+                    
+                  var docs_json = document.getElementById('1004').textContent;
+                  var render_items = [{"docid":"47050f95-6ab4-44af-bcc6-ebf0fad00b06","root_ids":["1003"],"roots":{"1003":"ccf1f022-5b31-4609-ba24-60ca0c472a23"}}];
+                  root.Bokeh.embed.embed_items(docs_json, render_items);
+                
+                  }
+                  if (root.Bokeh !== undefined) {
+                    embed_document(root);
+                  } else {
+                    var attempts = 0;
+                    var timer = setInterval(function(root) {
+                      if (root.Bokeh !== undefined) {
+                        clearInterval(timer);
+                        embed_document(root);
+                      } else {
+                        attempts++;
+                        if (attempts > 100) {
+                          clearInterval(timer);
+                          console.log("Bokeh: ERROR: Unable to run BokehJS code because BokehJS library is missing");
+                        }
+                      }
+                    }, 10, root)
+                  }
+                })(window);
+              });
+            };
+            if (document.readyState != "loading") fn();
+            else document.addEventListener("DOMContentLoaded", fn);
+          })();
+        </script>
+    
+  </body>
+  
+</html>

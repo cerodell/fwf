@@ -89,11 +89,13 @@ To visualize the data on leaflet many several steps are made to simplify and red
     - steps 1-3 are done in python all in `/bluesky/fireweather/fwf/firewx_website/python/geojson_maker.py`
 
 - 4\) next geojsons are converted to topojsons using `geo2topo`
-    - `geo2topo -q 1e4 file_YYYYMMDDHH.geojson > file_YYYYMMDDHH.geojson`
-    - *YES TOPOJSON HAS THE SAME FILE EXTENTION*
+    - `geo2topo -q 1e4 path_to_infile/file_YYYYMMDDHH.geojson > path_to_outfile/file_YYYYMMDDHH.geojson`
+    - *YES TopoJsons have the **SAME** file extention a GeoJsons*
     - reference: https://github.com/topojson/topojson-server
-    - a `q` (ie quantization count) of `1e4` reduce the geojson file by about half and doest take away for the quality of the visualization on leaflet
+    - a `q` (ie quantization count) of `1e4` reduces the geojson file by about half and doest take away for the quality of the visualization on leaflet
         - there are many ways to simplify topojson and reduce the file size further
             - reference: https://github.com/topojson/topojson-simplify 
 
 - 5\) topojsons are stored: `/bluesky/fireweather/fwf/data/topojson/` 
+
+/bluesky/fireweather/topojson-server-3.0.1/bin/geo2topo -q 1e4 /bluesky/fireweather/fwf/data/geojson/FFMC_2020061700.geojson > /bluesky/fireweather/fwf/data/topojson/FFMC_2020061700.geojson
