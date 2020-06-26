@@ -79,13 +79,15 @@ resides.
 ---
 ## Website 
 
-To visualize the data on leaflet many several steps are made to simplify and reduce the file as much as possible. 
+To visualize the data on leaflet several steps are made to simplify and reduce the file as much as possible. 
 
 #### Data
 - 1\) zarr file data is first masked to remove all lakes, oceans, and snow cover.
-- 2\) after mask is applied fire weather indices/codes are made into contourf plots 
-- 3\) from contourf they are converted to geojson files
-    - note all indices and moisture codes are rounded to the third decimal 
+- 2\) after mask is applied fire weather indices/codes are made into contourf
+- 3\) from contourf they are converted to geojson files using geojsoncontour
+    - https://pypi.org/project/geojsoncontour/
+    - the method for writing/saving the geojson took me a sec to figure out...look at...https://gl.tawhiri.eos.ubc.ca/bluesky/fwf/-/blob/master/firewx_website/python/geoutils.py#L34 
+- note all indices and moisture codes are rounded to the third decimal 
     - steps 1-3 are done in python all in `/bluesky/fireweather/fwf/firewx_website/python/geojson_maker.py`
 
 - 4\) next geojsons are converted to topojsons using `geo2topo`
@@ -98,4 +100,3 @@ To visualize the data on leaflet many several steps are made to simplify and red
 
 - 5\) topojsons are stored: `/bluesky/fireweather/fwf/data/topojson/` 
 
-/bluesky/fireweather/topojson-server-3.0.1/bin/geo2topo -q 1e4 /bluesky/fireweather/fwf/data/geojson/FFMC_2020061700.geojson > /bluesky/fireweather/fwf/data/topojson/FFMC_2020061700.geojson
