@@ -12,13 +12,15 @@ from wrf import getvar
 
 
 
-def contourf_to_geojson(cmaps, var, ds, index):
+def contourf_to_geojson(cmaps, var, ds, index, folderdate):
+    """
+    This makes a gejson file from a matplot lib countourf
+
+    """
     timestamp  = str(np.array(ds.Time[index], dtype ='datetime64[h]'))
-    timestamp = datetime.strptime(str(timestamp), '%Y-%m-%dT%H').strftime('%Y%m%d%H')
     vmin, vmax = cmaps[var]["vmin"], cmaps[var]["vmax"]
     name, colors = str(cmaps[var]["name"]), cmaps[var]["colors15"]
-    geojson_filepath = str(name + "_" + timestamp)
-    # geojson_filepath = str(name)
+    geojson_filepath = str(name + "-" + timestamp)
     levels = len(colors)
     contourf = plt.contourf(np.array(ds.XLONG), np.array(ds.XLAT), np.round(np.array(ds[var][index]),3), levels = levels, \
                             linestyles = 'None', vmin = vmin, vmax = vmax, colors = colors)
@@ -31,9 +33,9 @@ def contourf_to_geojson(cmaps, var, ds, index):
         stroke_width=0.2,
         fill_opacity=0.95,
         unit=timestamp, 
-        geojson_filepath = f'/bluesky/fireweather/fwf/data/geojson/{timestamp[:-2]}/{name}/{geojson_filepath}.geojson')
+        geojson_filepath = f'/bluesky/fireweather/fwf/data/geojson/{folderdate}/{geojson_filepath}.geojson')
 
-    print(f'wrote geojson to: /bluesky/fireweather/fwf/data/geojson/{timestamp[:-2]}/{name}/{geojson_filepath}.geojson')
+    print(f'wrote geojson to: /bluesky/fireweather/fwf/data/geojson/{folderdate}/{geojson_filepath}.geojson')
     return
 
 def mask(ds_unmasked, wrf_file_dir):
@@ -62,85 +64,14 @@ def wrfmasks(wrf_file_dir):
 
 
 
-
-# import sys
-# sys.path.insert(0, 'folium')
-# sys.path.insert(0, 'branca')
-
-# import branca
-# import folium
-# import branca.colormap as cm
-# from jinja2 import Template
-
-
-
-# class BindColormap(MacroElement):
-#     """Binds a colormap to a given layer.
-
-#     Parameters
-#     ----------
-#     colormap : branca.colormap.ColorMap
-#         The colormap to bind.
-#     """
-#     def __init__(self, layer, colormap):
-#         super(BindColormap, self).__init__()
-#         self.layer = layer
-#         self.colormap = colormap
-#         self._template = Template(u"""
-#         {% macro script(this, kwargs) %}
-#             {{this.colormap.get_name()}}.svg[0][0].style.display = 'block';
-#             {{this._parent.get_name()}}.on('overlayadd', function (eventLayer) {
-#                 if (eventLayer.layer == {{this.layer.get_name()}}) {
-#                     {{this.colormap.get_name()}}.svg[0][0].style.display = 'block';
-#                 }});
-#             {{this._parent.get_name()}}.on('overlayremove', function (eventLayer) {
-#                 if (eventLayer.layer == {{this.layer.get_name()}}) {
-#                     {{this.colormap.get_name()}}.svg[0][0].style.display = 'none';
-#                 }});
-#         {% endmacro %}
-#         """)  # noqa
-############################################
-#### Convert matplotlib contourf to geojson
-############################################
-# def contourf_to_geojson(contourf, name):
-#     geojson = geojsoncontour.contourf_to_geojson(
-#         contourf=contourf,
-#         min_angle_deg=3.0,
-#         ndigits=2,
-#         stroke_width=0.2,
-#         fill_opacity=0.95)
-
-#     folium_GeoJson = folium.GeoJson(
-#     geojson,
-#     style_function=lambda x: {
-#         'color':     x['properties']['stroke'],
-#         'weight':    x['properties']['stroke-width'],
-#         'fillColor': x['properties']['fill'],
-#         'opacity':   0.95,
-#     }, name=name, overlay=True)
-#     return folium_GeoJson
-
-
-# def contourf_cm(cmaps, var, ds, index):
-#     vmin, vmax = cmaps[var]["vmin"], cmaps[var]["vmax"]
-#     name, colors = cmaps[var]["name"], cmaps[var]["colors15"]
-#     levels = len(colors)
-#     cmap  = cm.LinearColormap(colors, vmin = vmin, vmax = vmax, caption = name).to_step(levels)
-#     contourf = plt.contourf(np.array(ds.XLONG), np.array(ds.XLAT), np.array(ds[var][index]), levels = levels, \
-#                             linestyles = 'None', vmin = vmin, vmax = vmax, colors = colors)
-#     plt.close()
-#     return contourf, cmap
-
-# def colormaps(cmaps, var):
-#     vmin, vmax = cmaps[var]["vmin"], cmaps[var]["vmax"]
-#     name, colors = cmaps[var]["name"], cmaps[var]["colors15"]
-#     levels = len(colors)
-#     cmap  = cm.LinearColormap(colors, vmin = vmin, vmax = vmax, caption = name).to_step(levels)
-#     cmap.caption = cmaps[var]["title"]
-#     return cmap
-
-
-
-
-
-
+def jsonmask(ds_unmasked, wrf_file_dir):
+    LANDMASK, LAKEMASK, SNOWC = wrfmasks(wrf_file_dir)
+    SNOWC[:,:600]   = 0
+    ds = xr.where(LANDMASK == 1, ds_unmasked, "")
+    ds = ds.transpose("time", "south_north", "west_east")
+    # ds = xr.where(LAKEMASK == 0, ds, np.nan)
+    # ds = ds.transpose("time", "south_north", "west_east")
+    ds = xr.where(SNOWC == 0, ds, "")
+    ds = ds.transpose("time", "south_north", "west_east")
+    ds['Time'] = ds_unmasked['Time']
+    return ds

@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>    
+    <meta http-equiv="content-type" content="text/html; charset=UTF-8" />
+    
+        <script>
+            L_NO_TOUCH = false;
+            L_DISABLE_3D = false;
+        </script>
+    <title>Fire Weather Forecast</title>
+
+    <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.8.1/css/all.css"
+    integrity="sha384-50oBUHEmvpQ+1lW4y57PTFmhCaXp0ML5d60M1M7uH2+nqUivzIebhndOJK28anvf"
+    crossorigin="anonymous">
+
+    <script src="https://cdn.jsdelivr.net/npm/leaflet@1.6.0/dist/leaflet.js"></script>
+
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.6.0/dist/leaflet.css"/>
+    <link rel="stylesheet" href="https://cdn.rawgit.com/socib/Leaflet.TimeDimension/master/dist/leaflet.timedimension.control.min.css">
+    <link rel='stylesheet' href='https://api.mapbox.com/mapbox.js/plugins/leaflet-fullscreen/v1.0.1/leaflet.fullscreen.css'>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.4.1/dist/MarkerCluster.css">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.4.1/dist/MarkerCluster.Default.css">
+    <link rel="stylesheet" href="/static/css/jquery-ui.css">
+
+
+    <style>html, body {width: 100%;height: 100%;margin: 0;padding: 0;}</style>
+    <style>#map {position:absolute;top:0;bottom:0;right:0;left:0;}</style>
+    
+            <meta name="viewport" content="width=device-width,
+                initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+            <style>
+                #text-box {
+                    float: top;
+                }
+                #map_fwi {
+                    float: right;
+                    width: 50.0%;
+                    height: 96.0%;
+                    left: 0.0%;
+                    top: 0.0%;
+                }
+                #plot_fwi {
+                    float: left;
+                    width: 50.0%;
+                    height: 96.0%;
+                    left: 0.0%;
+                    top: 0.0%;
+                }
+                @media (max-width:480px) {
+                    #text-box,
+                    #map_fwi,
+                    #plot_fwi {
+                        width: 100%;
+                        /* Below 480px the width will be 100% and the images will come in stakced view. */
+                    }
+                }
+            </style>
+
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/3.5.5/d3.min.js"></script>
+    <script src="https://unpkg.com/leaflet.vectorgrid@latest/dist/Leaflet.VectorGrid.bundled.js"></script>
+    <script src="https://unpkg.com/geojson-vt@3.2.0/geojson-vt.js"></script>
+    <script src='https://api.mapbox.com/mapbox.js/plugins/leaflet-fullscreen/v1.0.1/Leaflet.fullscreen.min.js'></script>
+    <script src='https://cdn.plot.ly/plotly-latest.min.js'></script>
+    <link rel="stylesheet" href="static/css/leaflet.zoomhome.css"/>
+
+</head>
+
+
+<body>
+
+    <form method="GET">
+        <input type="number" step="any" value="0" placeholder="0" size="20" id="lat" onkeydown = "if (event.keyCode == 13)  document.getElementById('mybutton').click()"   />
+        <button type="button" id="mybutton">Submit</button>
+    </form>
+
+    <div id="text-box"></div>
+    <div class="fwi-map" id="map_fwi"></div>
+    <div class="fwi-plot" id="plot_fwi"></div>
+
+
+
+    <script src='https://cdnjs.cloudflare.com/ajax/libs/proj4js/2.6.2/proj4.js'></script>
+    <script src="https://code.jquery.com/jquery-3.4.1.min.js"
+    integrity="sha256-CSXorXvZcTkaix6Yvo6HppcZGetbYMGWSFlBw8HfCJo="
+    crossorigin="anonymous"></script>
+    <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.min.js"
+    integrity="sha256-VazP97ZCwtekAsvgPBSUwPFKdrwD3unUfSGVYrahUqU="
+    crossorigin="anonymous"></script>
+    <script src='//api.tiles.mapbox.com/mapbox.js/plugins/leaflet-omnivore/v0.2.0/leaflet-omnivore.min.js'></script>
+    <script src="https://cdn.rawgit.com/nezasa/iso8601-js-period/master/iso8601.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Leaflet.awesome-markers/2.0.2/leaflet.awesome-markers.js"></script>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/jqueryui-touch-punch/0.2.2/jquery.ui.touch-punch.min.js"></script>
+    <script src="https://cdn.rawgit.com/nezasa/iso8601-js-period/master/iso8601.min.js"></script>
+    <script src="https://cdn.rawgit.com/socib/Leaflet.TimeDimension/master/dist/leaflet.timedimension.min.js"></script>
+    <script src="static/js/leaflet.zoomhome.min.js"></script>
+    <script src="static/js/leaflet.groupedlayercontrol.min.js"></script>
+    <script src="static/js/leaflet.ajax.min.js"></script>
+    <script type="text/javascript" src="static/js/leaflet.ajax.js"></script>
+    <script src="static/js/leaflet-opacity.js"></script>
+    <script src="static/js/time_layer_group.js"></script>
+
+    <!-- <script src="js/ll_to_xy.js"></script> -->
+
+
+
+
+<script>    
+
+        var map = L.map(
+            "map_fwi",
+            {
+                center: [53.684414, -98.44137],
+                crs: L.CRS.EPSG3857,
+                zoom: 3,
+                zoomControl: true,
+                preferCanvas: false,
+                fullscreenControl: true,
+                timeDimension: true,
+                timeDimensionOptions: {
+                    // format should be "yyyy-mm-ddThh:mm:ssZ"
+                    timeInterval: "{%FirstDateTime%}/{%LastDateTime%}",
+                    period: "PT6H",
+                    currentTime: Date.parse("{%FirstDateTime%}"),
+                },
+                timeDimensionControl: true,
+                timeDimensionControlOptions: {
+                    autoPlay: false,
+                    playButton: false,
+                    speedSlider: false,
+                    timeSteps: 1,
+                    timeZones: ["UTC", "Local"],
+                    playerOptions: {
+                        loop: false,
+                        buffer: 10,
+                        transitionTime: 500,
+                    },
+                },
+            });
+
+        json_ffmc_time = '{%FWFLineForecast%}'
+
+        var ffmc_topo_file = '{%FirstFFMCForecast%}';
+        var geo_json_ffmc = L.layerGroup().addTo(map);
+
+
+        var dmc_topo_file = '{%FirstDMCForecast%}';
+        var geo_json_dmc = L.layerGroup().addTo(map);
+
+
+        var dc_topo_file = '{%FirstDCForecast%}';
+        var geo_json_dc = L.layerGroup().addTo(map);
+
+
+        var isi_topo_file = '{%FirstISIForecast%}';
+        var geo_json_isi = L.layerGroup().addTo(map);
+
+
+        var bui_topo_file = '{%FirstBUIForecast%}';
+        var geo_json_bui = L.layerGroup().addTo(map);
+
+
+        var fwi_topo_file = '{%FirstFWIForecast%}';
+        var geo_json_fwi = L.layerGroup().addTo(map);
+
+    </script> 
+
+        <script src="static/js/plotly.js"></script>
+        <script src="static/js/basemaps.js"></script>
+        <script src="static/js/colorbars.js"></script>
+        <script src="static/js/layer_controler.js"></script>
+
+    
+        <!-- Google analytics -->
+    <script>
+        (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+        (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+        m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+        })(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
+        ga('create', 'UA-103958338-1', 'auto');
+        ga('send', 'pageview');
+    </script> 
+        <!-- end Google Analytics -->
+
+
+    </script>
+</body>
+
+</html>

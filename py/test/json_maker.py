@@ -21,3 +21,6 @@ colors = ["#004ddb", "#0057c8", "#0162b4", "#016ca0", "#01778d", "#028179", "#02
 
 with open("config.json","w") as f:
     json.dump(colors,f)
+
+
+

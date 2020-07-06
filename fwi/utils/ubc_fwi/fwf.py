@@ -1014,16 +1014,17 @@ class FWF:
         print("Hourly zarr initialized at :", file_name)
 
         # # ## Write and save DataArray (.zarr) file
-        make_dir = Path(str(xr_dir) + str('/hourly/') + file_name + str(f".zarr"))
+        make_dir = Path(str(xr_dir) + str('/fwf-hourly-') + file_name + str(f".zarr"))
         make_dir.mkdir(parents=True, exist_ok=True)
         # hourly_ds.compute()
         hourly_ds.to_zarr(make_dir, "w")
-        print(f"wrote {make_dir}")
+        print(f"wrote archive {make_dir}")
     
         current_dir_hourly = str(xr_dir) + str('/current/hourly.zarr')
         hourly_ds.to_zarr(current_dir_hourly, "w")
         print(f"wrote working {current_dir_hourly}")
-        ## return path to hourly_ds file to open
+
+        # ## return path to hourly_ds file to open
         return str(make_dir)
 
 
@@ -1064,11 +1065,12 @@ class FWF:
         print("Daily zarr initialized at :", file_name)
 
         # # ## Write and save DataArray (.zarr) file
-        make_dir = Path(str(xr_dir) + str('/daily/') + file_name + str(f".zarr"))
+        make_dir = Path(str(xr_dir) + str('/fwf-daily-') + file_name + str(f".zarr"))
         make_dir.mkdir(parents=True, exist_ok=True)
         # daily_ds.compute()
         daily_ds.to_zarr(make_dir, "w")
         print(f"wrote archive {make_dir}")
+
         current_dir_daily = str(xr_dir) + str('/current/daily.zarr')
         daily_ds.to_zarr(current_dir_daily, "w")
         print(f"wrote working {current_dir_daily}")
