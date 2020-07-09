@@ -1,3 +1,5 @@
+#!/bluesky/fireweather/miniconda3/envs/fwf/bin/python
+
 import context
 import numpy as np
 import xarray as xr
@@ -18,6 +20,7 @@ def contourf_to_geojson(cmaps, var, ds, index, folderdate):
 
     """
     timestamp  = str(np.array(ds.Time[index], dtype ='datetime64[h]'))
+    timestamp = datetime.strptime(str(timestamp), '%Y-%m-%dT%H').strftime('%Y%m%d%H')
     vmin, vmax = cmaps[var]["vmin"], cmaps[var]["vmax"]
     name, colors = str(cmaps[var]["name"]), cmaps[var]["colors15"]
     geojson_filepath = str(name + "-" + timestamp)
@@ -67,11 +70,11 @@ def wrfmasks(wrf_file_dir):
 def jsonmask(ds_unmasked, wrf_file_dir):
     LANDMASK, LAKEMASK, SNOWC = wrfmasks(wrf_file_dir)
     SNOWC[:,:600]   = 0
-    ds = xr.where(LANDMASK == 1, ds_unmasked, "")
+    ds = xr.where(LANDMASK == 1, ds_unmasked, '')
     ds = ds.transpose("time", "south_north", "west_east")
     # ds = xr.where(LAKEMASK == 0, ds, np.nan)
     # ds = ds.transpose("time", "south_north", "west_east")
-    ds = xr.where(SNOWC == 0, ds, "")
+    ds = xr.where(SNOWC == 0, ds, '')
     ds = ds.transpose("time", "south_north", "west_east")
     ds['Time'] = ds_unmasked['Time']
     return ds

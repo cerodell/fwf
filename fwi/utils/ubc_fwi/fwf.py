@@ -1010,7 +1010,8 @@ class FWF:
 
 
         # ### Name file after initial time of wrf 
-        file_name = np.datetime_as_string(hourly_ds.Time[0], unit='h')
+        file_name  = str(np.array(self.hourly_ds.Time[0], dtype ='datetime64[h]'))
+        file_name = datetime.strptime(str(file_name), '%Y-%m-%dT%H').strftime('%Y%m%d%H')
         print("Hourly zarr initialized at :", file_name)
 
         # # ## Write and save DataArray (.zarr) file
@@ -1061,7 +1062,10 @@ class FWF:
 
 
         # ### Name file after initial time of wrf 
-        file_name = np.datetime_as_string(self.hourly_ds.Time[0], unit='h')
+        # file_name = np.datetime_as_string(self.hourly_ds.Time[0], unit='h')
+        file_name  = str(np.array(self.hourly_ds.Time[0], dtype ='datetime64[h]'))
+        file_name = datetime.strptime(str(file_name), '%Y-%m-%dT%H').strftime('%Y%m%d%H')
+
         print("Daily zarr initialized at :", file_name)
 
         # # ## Write and save DataArray (.zarr) file

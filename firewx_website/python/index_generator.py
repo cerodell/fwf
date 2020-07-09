@@ -1,3 +1,5 @@
+#!/bluesky/fireweather/miniconda3/envs/fwf/bin/python
+
 import context
 import logging
 from shell import shell
@@ -15,13 +17,13 @@ from context import html_dir, ops_dir
 
 forecast_start_date = date.today()
 forecast_end_date   = forecast_start_date + timedelta(days=2)
-folder = forecast_start_date.strftime('%Y%m%d00')
+folderdate = forecast_start_date.strftime('%Y%m%d00')
 
 forecast_start_date = forecast_start_date.strftime('%Y-%m-%dT00:00:00Z')
 forecast_end_date   = forecast_end_date.strftime('%Y-%m-%dT00:00:00Z')
 
-files_datetime    = forecast_start_date[:-7]
-
+files_datetime    = folderdate
+print(f"{str(datetime.now())} ---> open/read html template" )
 fcst_template = str(html_dir) + "/fwf-forecast-template.html"
 with open(fcst_template, 'r') as fin:
     fcst = fin.read()
@@ -29,33 +31,37 @@ with open(fcst_template, 'r') as fin:
     fcst = fcst.replace('{%FirstDateTime%}', forecast_start_date)
     fcst = fcst.replace('{%LastDateTime%}', forecast_end_date)
     ## update line plot dir
-    line_plot = f"fwf-line-{files_datetime}.json"
+    line_plot = f"fwf-all-{files_datetime}.json"
     fcst = fcst.replace('{%FWFLineForecast%}', line_plot)
     ## update ffmc geo dir
-    ffmc = f"fwf-ffmc-{files_datetime}.geojson"
+    ffmc = f"FFMC-{files_datetime}.geojson"
     fcst = fcst.replace('{%FirstFFMCForecast%}', ffmc)
     ## update dmc geo dir
-    dmc = f"fwf-dmc-{files_datetime}.geojson"
+    dmc = f"DMC-{files_datetime}.geojson"
     fcst = fcst.replace('{%FirstDMCForecast%}', dmc)
     ## update dc geo dir
-    dc = f"fwf-dc-{files_datetime}.geojson"
+    dc = f"DC-{files_datetime}.geojson"
     fcst = fcst.replace('{%FirstDCForecast%}', dc)
     ## update isi geo dir
-    isi = f"fwf-isi-{files_datetime}.geojson"
+    isi = f"ISI-{files_datetime}.geojson"
     fcst = fcst.replace('{%FirstISIForecast%}', isi)
     ## update bui geo dir
-    bui = f"fwf-bui-{files_datetime}.geojson"
+    bui = f"BUI-{files_datetime}.geojson"
     fcst = fcst.replace('{%FirstBUIForecast%}', bui)
     ## update fwi geo dir
-    fwi = f"fwf-fwi-{files_datetime}.geojson"
+    fwi = f"FWI-{files_datetime}.geojson"
     fcst = fcst.replace('{%FirstFWIForecast%}', fwi)
 
-    make_dir = Path(str(ops_dir) + '/' + str(folder))
-    make_dir.mkdir(parents=True, exist_ok=True)
-    out_dir = str(make_dir) + '/fwf-forecast.html' 
+    make_dir = Path(str(ops_dir) + '/' + str(folderdate))
+    # make_dir.mkdir(parents=True, exist_ok=True)
+    out_dir = str(make_dir) + '/index.html' 
     with open(out_dir, 'w') as fout:
         fout.write(fcst)
+print(f"{str(datetime.now())} ---> write index.html" )
 
 # Link default page to correct forecast page
 # command = "ln -fnsv fwf-forecast.html {}/index.html".format(out_dir)
 # shell(command)
+
+# ### Timer
+print("Run Time: ", datetime.now() - startTime)

@@ -1,3 +1,5 @@
+#!/bluesky/fireweather/miniconda3/envs/fwf/bin/python
+
 import context
 import sys
 import json
@@ -48,18 +50,25 @@ make_dir.mkdir(parents=True, exist_ok=True)
 
 
 ## Make geojson of ffmc, isi, fwf every 6 hours
+print(f"{str(datetime.now())} ---> start loop of hourly fwf products" )
+
 index = np.arange(0,66,6)
 for i in index:
   contourf_to_geojson(cmaps, 'F', hourly_ds, i, folderdate)
   contourf_to_geojson(cmaps, 'R', hourly_ds, i, folderdate)
   contourf_to_geojson(cmaps, 'S', hourly_ds, i, folderdate)
 
+print(f"{str(datetime.now())} ---> end loop of hourly fwf products" )
+
 ## Make geojson of dmc, dc, bui at noon local for the two day forecast period
+print(f"{str(datetime.now())} ---> start loop of daily fwf products" )
+
 for i in range(len(daily_ds.Time)):
   contourf_to_geojson(cmaps, 'P', daily_ds, i, folderdate)
   contourf_to_geojson(cmaps, 'D', daily_ds, i, folderdate)
   contourf_to_geojson(cmaps, 'U', daily_ds, i, folderdate)
 
+print(f"{str(datetime.now())} ---> end loop of daily fwf products" )
 
 # ### Timer
 print("Run Time: ", datetime.now() - startTime)

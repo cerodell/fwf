@@ -1,3 +1,4 @@
+#!/bluesky/fireweather/miniconda3/envs/fwf/bin/python
 import context
 import json
 import numpy as np
@@ -31,7 +32,7 @@ daily_ds = xr.open_zarr(daily_file_dir)
 
 ### Get Path to most recent WRF run for most uptodate snowcover info
 wrf_folder = date.today().strftime('/%y%m%d00/')
-# wrf_folder = '/20062300/'
+# wrf_folder = '/20070700/'
 filein = str(wrf_dir) + wrf_folder
 wrf_file_dir = sorted(Path(filein).glob('wrfout_d03_*'))
 
@@ -47,52 +48,77 @@ daily_ds  = jsonmask(daily_ds, wrf_file_dir)
 # hourly_ds = hourly_ds.sel(time=slice(0 ,10), south_north=slice(0 ,2), west_east=slice(0 ,2))
 # daily_ds = daily_ds.sel( south_north=slice(0 ,10), west_east=slice(0 ,2))
 
+print(f"{str(datetime.now())} ---> start to convert datasets to np arrays" )
+
 ### Convert from xarry to np array
 time = np.array(hourly_ds.Time.dt.strftime('%Y-%m-%dT%H'))
 ffmc = np.array(hourly_ds.F)
 isi = np.array(hourly_ds.R)
 fwi = np.array(hourly_ds.S)
+dsr = np.array(hourly_ds.DSR)
 dmc = np.array(daily_ds.P)
 dc = np.array(daily_ds.D)
 bui = np.array(daily_ds.U)
 day = np.array(daily_ds.Time.dt.strftime('%Y-%m-%d'))
 
+xlat = np.round(np.array(daily_ds.XLAT),5)
+xlong = np.round(np.array(daily_ds.XLONG),5)
+
+print(f"{str(datetime.now())} ---> end of convert datasets to np arrays" )
+
 ### set skip to make file size smaller
 # test = ffmc[:,0::skip,0::skip]
-skip = 4
+# skip = 8
 
+print(f"{str(datetime.now())} ---> build dictonary" )
 ### Build dictionary to save to json
+# fwf = {
+#         'FFMC': ffmc[:,0::skip,0::skip].tolist(),
+#         'DMC': dmc[:,0::skip,0::skip].tolist(),
+#         'DC': dc[:,0::skip,0::skip].tolist(),
+#         'ISI': isi[:,0::skip,0::skip].tolist(),
+#         'BUI': bui[:,0::skip,0::skip].tolist(),
+#         'FWI': fwi[:,0::skip,0::skip].tolist(),
+#         'DSR': dsr[:,0::skip,0::skip].tolist(),
+#         'XLAT': xlat[0::skip,0::skip].tolist(),
+#         'XLONG': xlong[0::skip,0::skip].tolist(),
+#         'Time': time.tolist(),
+#         'Day':  day.tolist()
+#         }
+
 fwf = {
-        'FFMC': ffmc[:,0::skip,0::skip].tolist(),
-        'DMC': dmc[:,0::skip,0::skip].tolist(),
-        'DC': dc[:,0::skip,0::skip].tolist(),
-        'ISI': isi[:,0::skip,0::skip].tolist(),
-        'BUI': bui[:,0::skip,0::skip].tolist(),
-        'FWI': fwi[:,0::skip,0::skip].tolist(),
-        # 'XLAT': xlat[0::skip,0::skip].tolist(),
-        # 'XLONG': xlong[0::skip,0::skip].tolist(),
+        'FFMC': ffmc.tolist(),
+        'DMC': dmc.tolist(),
+        'DC': dc.tolist(),
+        'ISI': isi.tolist(),
+        'BUI': bui.tolist(),
+        'FWI': fwi.tolist(),
+        'DSR': dsr.tolist(),
+        'XLAT': xlat.tolist(),
+        'XLONG': xlong.tolist(),
         'Time': time.tolist(),
         'Day':  day.tolist()
         }
-
-# print(fwf)
-
 ### Print of ffmc lenght to make sure you have all the times
-print(len(fwf['FFMC']))
+# print(len(fwf['FFMC']))
 
 
 ### Get first timestamp of forecast and make dir to store files
 timestamp = datetime.strptime(str(time[0]), '%Y-%m-%dT%H').strftime('%Y%m%d%H')
 
 
+
 ### make dir for that days forecast files to be sotred...along woth index.html etc!!!!!
-make_dir = Path("/bluesky/archive/fireweather/forecasts/" + str(timestamp))
-make_dir.mkdir(parents=True, exist_ok=True)
+# make_dir = Path("/bluesky/archive/fireweather/forecasts/" + str(timestamp))
+# make_dir.mkdir(parents=True, exist_ok=True)
 
-
+make_dir = str("/bluesky/archive/fireweather/test/json/plotly")
+print(f"{str(datetime.now())} ---> write dictonary to json" )
 ### Write json file to defind dir 
-with open(str(make_dir) + f"/fwf-all-{time[0]}.json","w") as f:
-    json.dump(fwf,f, default=json_util.default)
+with open(str(make_dir) + f"/fwf-all-{timestamp}.json","w") as f:
+    json.dump(fwf,f, default=json_util.default, separators=(',', ':'))
+
+print(f"{str(datetime.now())} ---> wrote json to:  " + str(make_dir) + f"/fwf-all-{timestamp}.json")
 
 # ### Timer
 print("Run Time: ", datetime.now() - startTime)

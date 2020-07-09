@@ -43,46 +43,86 @@ LANDMASK    = getvar(wrf_file, "LANDMASK")
 
 
 
-lat, lon = 44, -129.3
-
+# lat, lon = 44, -129.3
+# lat, lon = 49.2923,-74.8584
+lat, lon = 50.6745, -120.3273
 xy = ll_to_xy(wrf_file, lat, lon)
 print("x wrf: ", np.array(xy[0]))
 print("y wrf: ", np.array(xy[1]))
-ll = xy_to_ll(wrf_file, 0, 0)
+ll = xy_to_ll(wrf_file, 20, 10)
 # print(np.array(ll))
 
 
-R_o = 6371                    ## earths rad km 
-phi_o = 57                    ## lat in degs where intersected by the projection plane
-dxy   = 4                     ## 4km of grid spacing 
-deg2rad = (np.pi/180)         ## degree to radians
-lat_ref = 42.94568253         ## domain low left lat
-lon_ref = -130.33840942       ## domain low left long
+xlong = np.array(hourly_ds.XLONG)
+xlong = xlong[::8,::8]
+xlat = np.array(hourly_ds.XLAT)
+xlat = xlat[::8,::8]
 
-L_ref = R_o * (1 + np.sin(phi_o * deg2rad))
+points = list(zip(xlat.ravel(), xlong.ravel()))
+# ----- search nearest grid point ----- #
+from scipy.spatial import cKDTree
+gridTree = cKDTree(list(zip(xlat.ravel(), xlong.ravel())))
+grid_shape = xlong.shape
+# for stnname, stnloc in stns.items():
+dist, inds = gridTree.query((lat, lon))
+print(np.unravel_index(inds, grid_shape))
+# ------------------------------ #
 
-r_ref = L_ref * np.tan(0.5 * ((90 - lat_ref) * deg2rad))
-print("r_ref: ", r_ref)
+# xlist = [1,3,5,7]
+# ylist = [2,4,6,8]
 
-x_ref = r_ref * np.cos(lon_ref * deg2rad)
-y_ref = r_ref * np.sin(lon_ref * deg2rad)
+# points = list(zip(xlist, ylist))
+# gridTree = cKDTree(list(zip(xlist, ylist)))
+# grid_shape = [1,2]
+# # for stnname, stnloc in stns.items():
+# x, y = 5, 5
+# dist, inds = gridTree.query((x, y))
+# print(np.unravel_index(inds, grid_shape))
 
-####################################
-L = R_o * (1 + np.sin(lat_ref * deg2rad))
-L = L- L_ref
-r = L * np.tan(0.5 * ((lat_ref - (lat)) * deg2rad))
-r = r - r_ref
-print("r: ", r)
 
-xi = r * np.cos(lon  * deg2rad)
-yj = r * np.sin(lon * deg2rad)
-print("xi: ", int(xi/dxy))
-print("yj: ", int((yj/dxy)))
 
-x = int(( xi - x_ref) / dxy)
-y = round((( yj - y_ref) / dxy),0)
-print("x: ", x )
-print("y: ", y )
+
+
+
+
+
+
+
+
+
+# R_o = 6371                    ## earths rad km 
+# phi_o = 57                    ## lat in degs where intersected by the projection plane
+# dxy   = 4                     ## 4km of grid spacing 
+# deg2rad = (np.pi/180)         ## degree to radians
+# lat_ref = 42.94568253         ## domain low left lat
+# lon_ref = -130.33840942       ## domain low left long
+
+# L_ref = R_o * (1 + np.sin(phi_o * deg2rad))
+
+# r_ref = L_ref * np.tan(0.5 * ((90 - lat_ref) * deg2rad))
+# # print("r_ref: ", r_ref)
+
+# x_ref = r_ref * np.cos(lon_ref * deg2rad)
+# y_ref = r_ref * np.sin(lon_ref * deg2rad)
+# print("x_ref: ", x_ref )
+# print("y_ref: ", y_ref )
+
+# ####################################
+# L = R_o * (1 + np.sin(phi_o * deg2rad))
+# # L = L- L_ref
+# r = L * np.tan(0.5 * ((90 - lat) * deg2rad))
+# # r = r - r_ref
+# print("r: ", r)
+
+# xi = r * np.cos(lon  * deg2rad)
+# yj = r * np.sin(lon * deg2rad)
+# print("xi: ", int(xi/dxy))
+# print("yj: ", int((yj/dxy)))
+
+# x = int(( xi - x_ref) / dxy)
+# y = round((( yj - y_ref) / dxy),0)
+# print("x: ", x )
+# print("y: ", y )
 
 
 
