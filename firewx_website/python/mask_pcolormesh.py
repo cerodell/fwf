@@ -67,9 +67,9 @@ lats, lons = np.array(hourly_ds.XLAT), np.array(hourly_ds.XLONG)
 cmap = plt.cm.jet
 
 
-ffmc = np.array(hourly_ds.F[18])
+ffmc = np.array(hourly_ds.F[18, :, 50:400])
 title = "FFMC"
-C = ax[0][0].pcolormesh(lons, lats, ffmc, cmap = cmap, vmin = 70, vmax = 100)
+C = ax[0][0].pcolormesh(lons[:, 50:400], lats[:, 50:400], ffmc, cmap = cmap, vmin = 70, vmax = 100)
 clb = fig.colorbar(C, ax = ax[0][0], fraction=0.054, pad=0.04)
 ax[0][0].set_title(title + f" max {round(np.nanmax(ffmc),1)}  min {round(np.nanmin(ffmc),1)} mean {round(np.nanmean(ffmc),1)}")
 

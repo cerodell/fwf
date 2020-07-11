@@ -23,6 +23,14 @@ def contourf_to_geojson(cmaps, var, ds, index, folderdate):
     timestamp = datetime.strptime(str(timestamp), '%Y-%m-%dT%H').strftime('%Y%m%d%H')
     vmin, vmax = cmaps[var]["vmin"], cmaps[var]["vmax"]
     name, colors = str(cmaps[var]["name"]), cmaps[var]["colors15"]
+    if name == 'dmc':
+        timestamp = timestamp[:-2]
+    elif name == 'dc':
+        timestamp = timestamp[:-2]
+    elif name == 'bui':
+        timestamp = timestamp[:-2]
+    else:
+        pass
     geojson_filepath = str(name + "-" + timestamp)
     levels = len(colors)
     contourf = plt.contourf(np.array(ds.XLONG), np.array(ds.XLAT), np.round(np.array(ds[var][index]),3), levels = levels, \
@@ -78,3 +86,32 @@ def jsonmask(ds_unmasked, wrf_file_dir):
     ds = ds.transpose("time", "south_north", "west_east")
     ds['Time'] = ds_unmasked['Time']
     return ds
+
+
+def latlngmask(array, wrf_file_dir):
+    LANDMASK, LAKEMASK, SNOWC = wrfmasks(wrf_file_dir)
+    SNOWC[:,:600]   = 0
+    arraymasked = np.where(LANDMASK == 1, array, '')
+    arraymasked = np.where(SNOWC == 0, arraymasked, '')
+    return arraymasked
+
+
+def delete3D(array3D):
+    x = array3D.shape
+    array2D = np.reshape(array3D, (x[0],(x[1]*x[2])))
+    y_list = []
+    for i in range(x[0]):
+        index = np.argwhere(array2D[i,:]=='')
+        y = np.delete(array2D[i,:], index)
+        y_list.append(y)
+    final = np.stack(y_list)
+    # final = np.float32(final)
+    return final
+
+def delete2D(array2D):
+    x = array2D.shape
+    array1D = np.reshape(array2D, (x[0]*x[1]))
+    index = np.argwhere(array1D=='')
+    final = np.delete(array1D, index)
+    # final = np.float32(final)
+    return final

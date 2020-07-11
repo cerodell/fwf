@@ -34,22 +34,22 @@ with open(fcst_template, 'r') as fin:
     line_plot = f"fwf-all-{files_datetime}.json"
     fcst = fcst.replace('{%FWFLineForecast%}', line_plot)
     ## update ffmc geo dir
-    ffmc = f"FFMC-{files_datetime}.geojson"
+    ffmc = f"ffmc-{files_datetime}.geojson"
     fcst = fcst.replace('{%FirstFFMCForecast%}', ffmc)
     ## update dmc geo dir
-    dmc = f"DMC-{files_datetime}.geojson"
+    dmc = f"dmc-{files_datetime}.geojson"
     fcst = fcst.replace('{%FirstDMCForecast%}', dmc)
     ## update dc geo dir
-    dc = f"DC-{files_datetime}.geojson"
+    dc = f"dc-{files_datetime}.geojson"
     fcst = fcst.replace('{%FirstDCForecast%}', dc)
     ## update isi geo dir
-    isi = f"ISI-{files_datetime}.geojson"
+    isi = f"isi-{files_datetime}.geojson"
     fcst = fcst.replace('{%FirstISIForecast%}', isi)
     ## update bui geo dir
-    bui = f"BUI-{files_datetime}.geojson"
+    bui = f"bui-{files_datetime}.geojson"
     fcst = fcst.replace('{%FirstBUIForecast%}', bui)
     ## update fwi geo dir
-    fwi = f"FWI-{files_datetime}.geojson"
+    fwi = f"fwi-{files_datetime}.geojson"
     fcst = fcst.replace('{%FirstFWIForecast%}', fwi)
 
     make_dir = Path(str(ops_dir) + '/' + str(folderdate))

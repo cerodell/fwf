@@ -66,64 +66,64 @@ day = np.array(daily_ds.Time.dt.strftime('%Y-%m-%d'))
 
 
 xlat = np.round(np.array(daily_ds.XLAT),5)
+xlat = latlngmask(xlat,wrf_file_dir)
 xlong = np.round(np.array(daily_ds.XLONG),5)
+xlong = latlngmask(xlong,wrf_file_dir)
 
 print(f"{str(datetime.now())} ---> end of convert datasets to np arrays" )
 
-
-
-# ### set skip to make file size smaller
-skip = 8
-
-print(f"{str(datetime.now())} ---> build fwf skip 16 dictonary" )
-fwfskip32 = {
-        'FFMC': ffmc[:,0::skip,0::skip].tolist(),
-        'DMC': dmc[:,0::skip,0::skip].tolist(),
-        'DC': dc[:,0::skip,0::skip].tolist(),
-        'ISI': isi[:,0::skip,0::skip].tolist(),
-        'BUI': bui[:,0::skip,0::skip].tolist(),
-        'FWI': fwi[:,0::skip,0::skip].tolist(),
-        'DSR': dsr[:,0::skip,0::skip].tolist(),
-        'XLAT': xlat[0::skip,0::skip].tolist(),
-        'XLONG': xlong[0::skip,0::skip].tolist(),
-        'Time': time.tolist(),
-        'Day':  day.tolist()
-        }
-
-
 # ### set skip to make file size smaller
 skip = 4
+ffmc_skip = delete3D(ffmc[:,0::skip,0::skip])
+isi_skip = delete3D(isi[:,0::skip,0::skip])
+fwi_skip = delete3D(fwi[:,0::skip,0::skip])
+dsr_skip = delete3D(dsr[:,0::skip,0::skip])
+dmc_skip = delete3D(dmc[:,0::skip,0::skip])
+dc_skip = delete3D(dc[:,0::skip,0::skip])
+bui_skip = delete3D(bui[:,0::skip,0::skip])
+xlat_skip = delete2D(xlat[0::skip,0::skip])
+xlong_skip = delete2D(xlong[0::skip,0::skip])
 
-print(f"{str(datetime.now())} ---> build fwf skip 16 dictonary" )
-fwfskip16 = {
-        'FFMC': ffmc[:,0::skip,0::skip].tolist(),
-        'DMC': dmc[:,0::skip,0::skip].tolist(),
-        'DC': dc[:,0::skip,0::skip].tolist(),
-        'ISI': isi[:,0::skip,0::skip].tolist(),
-        'BUI': bui[:,0::skip,0::skip].tolist(),
-        'FWI': fwi[:,0::skip,0::skip].tolist(),
-        'DSR': dsr[:,0::skip,0::skip].tolist(),
-        'XLAT': xlat[0::skip,0::skip].tolist(),
-        'XLONG': xlong[0::skip,0::skip].tolist(),
+
+print(f"{str(datetime.now())} ---> build fwf skip dictonary" )
+fwfskip = {
+        'FFMC': ffmc_skip.tolist(),
+        'DMC': dmc_skip.tolist(),
+        'DC': dc_skip.tolist(),
+        'ISI': isi_skip.tolist(),
+        'BUI': bui_skip.tolist(),
+        'FWI': fwi_skip.tolist(),
+        'DSR': dsr_skip.tolist(),
+        'XLAT': xlat_skip.tolist(),
+        'XLONG': xlong_skip.tolist(),
         'Time': time.tolist(),
         'Day':  day.tolist()
         }
 
 # ### truncate arrays to make file size smaller and only over bc
-east = 350
+east = 400
 west = 50
+ffmc_bc = delete3D(ffmc[:,west:east,west:east])
+isi_bc = delete3D(isi[:,west:east,west:east])
+fwi_bc = delete3D(fwi[:,west:east,west:east])
+dsr_bc = delete3D(dsr[:,west:east,west:east])
+dmc_bc = delete3D(dmc[:,west:east,west:east])
+dc_bc = delete3D(dc[:,west:east,west:east])
+bui_bc = delete3D(bui[:,west:east,west:east])
+xlat_bc = delete2D(xlat[west:east,west:east])
+xlong_bc = delete2D(xlong[west:east,west:east])
 
-print(f"{str(datetime.now())} ---> build fwf west dictonary" )
-fwfwest = {
-        'FFMC': ffmc[:,west:east,west:east].tolist(),
-        'DMC': dmc[:,west:east,west:east].tolist(),
-        'DC': dc[:,west:east,west:east].tolist(),
-        'ISI': isi[:,west:east,west:east].tolist(),
-        'BUI': bui[:,west:east,west:east].tolist(),
-        'FWI': fwi[:,west:east,west:east].tolist(),
-        'DSR': dsr[:,west:east,west:east].tolist(),
-        'XLAT': xlat[west:east,west:east].tolist(),
-        'XLONG': xlong[west:east,west:east].tolist(),
+print(f"{str(datetime.now())} ---> build fwf bc dictonary" )
+fwfbc = {
+        'FFMC': ffmc_bc.tolist(),
+        'DMC': dmc_bc.tolist(),
+        'DC': dc_bc.tolist(),
+        'ISI': isi_bc.tolist(),
+        'BUI': bui_bc.tolist(),
+        'FWI': fwi_bc.tolist(),
+        'DSR': dsr_bc.tolist(),
+        'XLAT': xlat_bc.tolist(),
+        'XLONG': xlong_bc.tolist(),
         'Time': time.tolist(),
         'Day':  day.tolist()
         }
@@ -143,30 +143,21 @@ make_dir = str("/bluesky/archive/fireweather/test/json/plotly")
 
 
 
-print(f"{str(datetime.now())} ---> write fwfskip 32 dictonary to json" )
+print(f"{str(datetime.now())} ---> write fwfskip dictonary to json" )
 ### Write json file to defind dir 
-with open(str(make_dir) + f"/fwf-32km-{timestamp}.json","w") as f:
-    json.dump(fwfskip32,f, default=json_util.default, separators=(',', ':'), indent=None)
+with open(str(make_dir) + f"/fwf-all-{timestamp}.json","w") as f:
+    json.dump(fwfskip,f, default=json_util.default, separators=(',', ':'), indent=None)
 
-print(f"{str(datetime.now())} ---> wrote json fwfskip 32 to:  " + str(make_dir) + f"/fwf-32km-{timestamp}.json")
+print(f"{str(datetime.now())} ---> wrote json fwfskip to:  " + str(make_dir) + f"/fwf-all-{timestamp}.json")
 
 
 
-print(f"{str(datetime.now())} ---> write fwfskip 16 dictonary to json" )
+print(f"{str(datetime.now())} ---> write fwfbc dictonary to json" )
 ### Write json file to defind dir 
-with open(str(make_dir) + f"/fwf-16km-{timestamp}.json","w") as f:
-    json.dump(fwfskip16,f, default=json_util.default, separators=(',', ':'), indent=None)
+with open(str(make_dir) + f"/fwf-bc-{timestamp}.json","w") as f:
+    json.dump(fwfbc,f, default=json_util.default, separators=(',', ':'), indent=None)
 
-print(f"{str(datetime.now())} ---> wrote json fwfskip 16 to:  " + str(make_dir) + f"/fwf-16km-{timestamp}.json")
-
-
-
-print(f"{str(datetime.now())} ---> write fwfwest dictonary to json" )
-### Write json file to defind dir 
-with open(str(make_dir) + f"/fwf-west-{timestamp}.json","w") as f:
-    json.dump(fwfwest,f, default=json_util.default, separators=(',', ':'), indent=None)
-
-print(f"{str(datetime.now())} ---> wrote fwfbc json ffwfwest to:  " + str(make_dir) + f"/fwf-west-{timestamp}.json")
+print(f"{str(datetime.now())} ---> wrote fwfbc json fwfskip to:  " + str(make_dir) + f"/fwf-bc-{timestamp}.json")
 
 
 # ### Timer
