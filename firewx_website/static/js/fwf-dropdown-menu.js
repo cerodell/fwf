@@ -18,6 +18,8 @@ function myFunction() {
 
   window.onload = function() {
     makeplots(json_fwf_ca32);
+
+    // fwfTimeLayers(topo_file, 'styler15')
   };
 
 
@@ -31,12 +33,14 @@ function selectRegion() {
     var note = "Canada Wide 32 km";
     console.log(note);
     map.removeLayer(fwflocation);
+    map.flyTo([53.684414, -98.44137],3);
     makeplots(json_fwf_ca32);
   }
   else if (value=="Canada Wide 16 km") {
     var note = "Canada Wide 16 km";
     console.log(note);
     map.removeLayer(fwflocation);
+    map.flyTo([53.684414, -98.44137],3);
     makeplots(json_fwf_ca16);
   }
   else if (value=="British Columbia 4 km") {

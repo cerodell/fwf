@@ -4,7 +4,7 @@ import xarray as xr
 from pathlib import Path
 from netCDF4 import Dataset
 from datetime import datetime
-from geoutils import mask, contourf_to_geojson
+from geoutils import mask, mycontourf_to_geojson
 from context import data_dir, xr_dir, wrf_dir, root_dir
 from datetime import datetime, date, timedelta
 startTime = datetime.now()
@@ -65,11 +65,15 @@ fig.suptitle(Plot_Title + day, fontsize=16)
 fig.subplots_adjust(hspace=0.8)
 lats, lons = np.array(hourly_ds.XLAT), np.array(hourly_ds.XLONG)
 cmap = plt.cm.jet
+levels = np.linspace(80,100,30)
 
+Cnorm = matplotlib.colors.Normalize(vmin= 80, vmax =100)
 
-ffmc = np.array(hourly_ds.F[18, :, 50:400])
+west, east = 50, 350
+south, north = 100,400
+ffmc = np.array(hourly_ds.F[18, south:north, west:east])
 title = "FFMC"
-C = ax[0][0].pcolormesh(lons[:, 50:400], lats[:, 50:400], ffmc, cmap = cmap, vmin = 70, vmax = 100)
+C = ax[0][0].contourf(lons[south:north, west:east], lats[south:north, west:east], ffmc, cmap = cmap, norm = Cnorm, levels=levels, extend="neither")
 clb = fig.colorbar(C, ax = ax[0][0], fraction=0.054, pad=0.04)
 ax[0][0].set_title(title + f" max {round(np.nanmax(ffmc),1)}  min {round(np.nanmin(ffmc),1)} mean {round(np.nanmean(ffmc),1)}")
 

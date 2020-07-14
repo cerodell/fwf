@@ -8,13 +8,8 @@ L.TimeDimension.Layer.LayerGroup = L.TimeDimension.Layer.extend({
         this._getUrlFunction = this.options.getUrlFunction;
         this._thisFileDir = this.options.getFileDir;
         this._thisVar    = this.options.getVar;
+        this._thisStyler    = this.options.getStyler;
 
-        this._baseLayer.on('load', (function() {
-            this._baseLayer.setLoaded(true);
-            this.fire('timeload', {
-                time: this._defaultTime
-            });
-        }).bind(this));
     },
 
     eachLayer: function(method, context) {
@@ -26,17 +21,6 @@ L.TimeDimension.Layer.LayerGroup = L.TimeDimension.Layer.extend({
         return L.TimeDimension.Layer.prototype.eachLayer.call(this, method, context);
     },
 
-    _onNewTimeLoading: function(ev) {
-        var layer = this._getLayerForTime(ev.time);
-        if (!this._map.hasLayer(layer)) {
-            this._map.addLayer(layer);
-        }
-    },
-
-    isReady: function(time) {
-        var layer = this._getLayerForTime(time);
-        return layer.isLoaded();
-    },
 
     _update: function() {
         if (!this._map)
@@ -45,14 +29,18 @@ L.TimeDimension.Layer.LayerGroup = L.TimeDimension.Layer.extend({
         var layer = this._getLayerForTime(time);
         if (this._currentLayer == null) {
             this._currentLayer = layer;
+            // this._showLayer(layer, time);
+
         }
         if (!this._map.hasLayer(layer)) {
             this._map.addLayer(layer);
+            this._showLayer(layer, time);
+
         } else {
             this._showLayer(layer, time);
+
         }
     },
-
     _showLayer: function(layer, time) {
         if (this._currentLayer && this._currentLayer !== layer) {
             this._currentLayer.hide();
@@ -71,7 +59,7 @@ L.TimeDimension.Layer.LayerGroup = L.TimeDimension.Layer.extend({
         // remove times before current time
         if (this._timeCacheBackward > -1) {
             var objectsToRemove = index - this._timeCacheBackward;
-            if (objectsToRemove > 0) {
+            if (objectsToRemove > -1) {
                 remove = times.splice(0, objectsToRemove);
                 this._removeLayers(remove);
             }
@@ -79,12 +67,14 @@ L.TimeDimension.Layer.LayerGroup = L.TimeDimension.Layer.extend({
         if (this._timeCacheForward > -1) {
             index = times.indexOf(strTime);
             var objectsToRemove = times.length - index - this._timeCacheForward - 1;
+            console.log(objectsToRemove);
             if (objectsToRemove > 0) {
                 remove = times.splice(index + this._timeCacheForward + 1, objectsToRemove);
                 this._removeLayers(remove);
             }
         }
     },
+
 
     _getLayerForTime: function(time) {
         if (time == 0 || time == this._defaultTime) {
@@ -101,79 +91,90 @@ L.TimeDimension.Layer.LayerGroup = L.TimeDimension.Layer.extend({
         const varibale = this._thisVar;
         console.log(varibale);
 
-        //// I have that i had to do this but for some reason i cant get varibale to be referencsed within fetch
-        if (this._thisVar == 'FFMC'){
-        fetch(url).then(function(response){
-            return response.json();
-        }).then(function(json){
-            newLayer.addLayer(L.vectorGrid.slicer( json, {
-                rendererFactory: L.canvas.tile,
-                vectorTileLayerStyles:{
-                    'FFMC': geo_json_styler
-                        }
-                    }
-                ).setZIndex(500)
-            )
-        })};
 
-        if (this._thisVar == 'DMC'){
+            if (this._thisVar == 'FFMC'){
             fetch(url).then(function(response){
                 return response.json();
             }).then(function(json){
                 newLayer.addLayer(L.vectorGrid.slicer( json, {
+                    minZoom: 2,
+                    maxzoom: 10,
                     rendererFactory: L.canvas.tile,
                     vectorTileLayerStyles:{
-                        'DMC': geo_json_styler
+                        'FFMC': geo_json_styler15
                             }
                         }
                     ).setZIndex(500)
                 )
             })};
 
-        
-        if (this._thisVar == 'DC'){
-            fetch(url).then(function(response){
-                return response.json();
-            }).then(function(json){
-                newLayer.addLayer(L.vectorGrid.slicer( json, {
-                    rendererFactory: L.canvas.tile,
-                    vectorTileLayerStyles:{
-                        'DC': geo_json_styler
+            if (this._thisVar == 'DMC'){
+                fetch(url).then(function(response){
+                    return response.json();
+                }).then(function(json){
+                    newLayer.addLayer(L.vectorGrid.slicer( json, {
+                        minZoom: 2,
+                        maxzoom: 12,
+                        rendererFactory: L.canvas.tile,
+                        vectorTileLayerStyles:{
+                            'DMC': geo_json_styler15
+                                }
                             }
-                        }
-                    ).setZIndex(500)
-                )
-            })};
+                        ).setZIndex(500)
+                    )
+                })};
 
             
-        if (this._thisVar == 'ISI'){
-            fetch(url).then(function(response){
-                return response.json();
-            }).then(function(json){
-                newLayer.addLayer(L.vectorGrid.slicer( json, {
-                    rendererFactory: L.canvas.tile,
-                    vectorTileLayerStyles:{
-                        'ISI': geo_json_styler
+            if (this._thisVar == 'DC'){
+                fetch(url).then(function(response){
+                    return response.json();
+                }).then(function(json){
+                    newLayer.addLayer(L.vectorGrid.slicer( json, {
+                        minZoom: 2,
+                        maxzoom: 12,
+                        rendererFactory: L.canvas.tile,
+                        vectorTileLayerStyles:{
+                            'DC': geo_json_styler15
+                                }
                             }
-                        }
-                    ).setZIndex(500)
-                )
-            })};
+                        ).setZIndex(500)
+                    )
+                })};
 
-        
-        if (this._thisVar == 'BUI'){
-            fetch(url).then(function(response){
-                return response.json();
-            }).then(function(json){
-                newLayer.addLayer(L.vectorGrid.slicer( json, {
-                    rendererFactory: L.canvas.tile,
-                    vectorTileLayerStyles:{
-                        'BUI': geo_json_styler
+                
+            if (this._thisVar == 'ISI'){
+                fetch(url).then(function(response){
+                    return response.json();
+                }).then(function(json){
+                    newLayer.addLayer(L.vectorGrid.slicer( json, {
+                        minZoom: 2,
+                        maxzoom: 12,
+                        rendererFactory: L.canvas.tile,
+                        vectorTileLayerStyles:{
+                            'ISI': geo_json_styler15
+                                }
                             }
-                        }
-                    ).setZIndex(500)
-                )
-            })};
+                        ).setZIndex(500)
+                    )
+                })};
+
+            
+            if (this._thisVar == 'BUI'){
+                fetch(url).then(function(response){
+                    return response.json();
+                }).then(function(json){
+                    newLayer.addLayer(L.vectorGrid.slicer( json, {
+                        minZoom: 2,
+                        maxzoom: 12,
+                        rendererFactory: L.canvas.tile,
+                        vectorTileLayerStyles:{
+                            'BUI': geo_json_styler15
+                                }
+                            }
+                        ).setZIndex(500)
+                    )
+                })};
+       
 
             
         if (this._thisVar == 'FWI'){
@@ -181,9 +182,11 @@ L.TimeDimension.Layer.LayerGroup = L.TimeDimension.Layer.extend({
                 return response.json();
             }).then(function(json){
                 newLayer.addLayer(L.vectorGrid.slicer( json, {
+                    minZoom: 2,
+                    maxzoom: 10,
                     rendererFactory: L.canvas.tile,
                     vectorTileLayerStyles:{
-                        'FWI': geo_json_styler
+                        'FWI': geo_json_styler15
                             }
                         }
                     ).setZIndex(500)
@@ -191,17 +194,9 @@ L.TimeDimension.Layer.LayerGroup = L.TimeDimension.Layer.extend({
             })};
         
         this._layers[time] = newLayer;
-        newLayer.on('load', (function(layer, time) {
-            layer.setLoaded(true);
-            if (map.timeDimension && time == map.timeDimension.getCurrentTime() && !map.timeDimension.isLoading()) {
-                this._showLayer(layer, time);
-            }
-            this.fire('timeload', {
-                time: time
-            });
-        }).bind(this, newLayer, time));
 
         return newLayer;
+
     },
 
     _getLoadedTimes: function() {
@@ -217,6 +212,7 @@ L.TimeDimension.Layer.LayerGroup = L.TimeDimension.Layer.extend({
     _removeLayers: function(times) {
         for (var i = 0, l = times.length; i < l; i++) {
             this._map.removeLayer(this._layers[times[i]]);
+            console.log(times[i]);
             delete this._layers[times[i]];
         }
     },
@@ -232,7 +228,7 @@ L.LayerGroup.include({
     _visible: true,
     _loaded: false,
 
-    _originalUpdate: L.VectorGrid.Slicer.prototype._update,
+    _originalUpdate: L.LayerGroup.prototype._update,
 
     _update: function() {
         if (!this._visible && this._loaded) {
@@ -241,13 +237,13 @@ L.LayerGroup.include({
         this._originalUpdate();
     },
 
-    setLoaded: function(loaded) {
-        this._loaded = loaded;
-    },
+    // setLoaded: function(loaded) {
+    //     this._loaded = loaded;
+    // },
 
-    isLoaded: function() {
-        return this._loaded;
-    },
+    // isLoaded: function() {
+    //     return this._loaded;
+    // },
 
     hide: function() {
         this._visible = false;
@@ -289,17 +285,17 @@ dateTimeFileName = function (time) {
 
 getHourlyForecast = function(baseUrl, time) {
     var beginUrl = baseUrl.substring(0, baseUrl.lastIndexOf("/"));
-    var initFileUrl = baseUrl.substring(baseUrl.lastIndexOf("/"), baseUrl.length - 19);
+    var initFileUrl = baseUrl.substring(baseUrl.lastIndexOf("/"), baseUrl.length - 16);
     var strTime = dateTimeFileName(new Date(time));
-    url = beginUrl + initFileUrl + '-' + strTime + '.geojson';
+    url = beginUrl + initFileUrl + '-' + strTime + '.json';
     console.log(url);
     return url;
 };
 
 getDailyForecast = function(baseUrl, time) {
     var beginUrl = baseUrl.substring(0, baseUrl.lastIndexOf("/"));
-    var initFileUrl = baseUrl.substring(baseUrl.lastIndexOf("/"), baseUrl.length - 19);
+    var initFileUrl = baseUrl.substring(baseUrl.lastIndexOf("/"), baseUrl.length - 14);
     var strTime = dateFileName(new Date(time));
-    url = beginUrl + initFileUrl + '-' + strTime + '.geojson';
+    url = beginUrl + initFileUrl + '-' + strTime + '.json';
     return url;
 };

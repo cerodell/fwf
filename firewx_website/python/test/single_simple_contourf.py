@@ -4,7 +4,7 @@ import xarray as xr
 from pathlib import Path
 from netCDF4 import Dataset
 from datetime import datetime
-from geoutils import mask, contourf_to_geojson
+# from geoutils import mask, contourf_to_geojson
 from context import data_dir, xr_dir, wrf_dir, root_dir
 from datetime import datetime, date, timedelta
 startTime = datetime.now()
@@ -80,9 +80,9 @@ cmap = plt.cm.jet
 level = np.arange(70,100.5,0.1)
 
 
-ax.contourf(lons, lats, ffmc, cmap = cmap, vmin = 70, vmax = 100, extend = 'both', levels = level)
+ax.contourf(lons, lats, ffmc, cmap = cmap, vmin =90, vmax = 100, extend = 'both', levels = level)
 ax.axis('off')
-fig.savefig("/bluesky/archive/fireweather/test/images/" + day  + ".png", transparent=True, bbox_inches='tight', pad_inches=0)
+fig.savefig("/bluesky/fireweather/fwf/Images/" + day  + ".png", transparent=True, bbox_inches='tight', pad_inches=0)
 
 # clb = fig.colorbar(C, ax = ax, fraction=0.054, pad=0.04)
 # plt.title(title + f" max {round(np.nanmax(ffmc),1)}  min {round(np.nanmin(ffmc),1)} mean {round(np.mean(ffmc),1)}")

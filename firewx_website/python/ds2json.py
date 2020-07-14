@@ -110,20 +110,20 @@ fwfskip16 = {
         }
 
 # ### truncate arrays to make file size smaller and only over bc
-east = 350
-west = 50
+west, east = 50, 350
+south, north = 100,400
 
 print(f"{str(datetime.now())} ---> build fwf west dictonary" )
-fwfwest = {
-        'FFMC': ffmc[:,west:east,west:east].tolist(),
-        'DMC': dmc[:,west:east,west:east].tolist(),
-        'DC': dc[:,west:east,west:east].tolist(),
-        'ISI': isi[:,west:east,west:east].tolist(),
-        'BUI': bui[:,west:east,west:east].tolist(),
-        'FWI': fwi[:,west:east,west:east].tolist(),
-        'DSR': dsr[:,west:east,west:east].tolist(),
-        'XLAT': xlat[west:east,west:east].tolist(),
-        'XLONG': xlong[west:east,west:east].tolist(),
+fwfskip0 = {
+        'FFMC': ffmc[:,south:north,west:east].tolist(),
+        'DMC': dmc[:,south:north,west:east].tolist(),
+        'DC': dc[:,south:north,west:east].tolist(),
+        'ISI': isi[:,south:north,west:east].tolist(),
+        'BUI': bui[:,south:north,west:east].tolist(),
+        'FWI': fwi[:,south:north,west:east].tolist(),
+        'DSR': dsr[:,south:north,west:east].tolist(),
+        'XLAT': xlat[south:north,west:east].tolist(),
+        'XLONG': xlong[south:north,west:east].tolist(),
         'Time': time.tolist(),
         'Day':  day.tolist()
         }
@@ -134,13 +134,12 @@ fwfwest = {
 timestamp = datetime.strptime(str(time[0]), '%Y-%m-%dT%H').strftime('%Y%m%d%H')
 
 
-# ### make dir for that days forecast files to be sotred...along woth index.html etc!!!!!
-# make_dir = Path("/bluesky/archive/fireweather/forecasts/" + str(timestamp))
-# make_dir.mkdir(parents=True, exist_ok=True)
+### make dir for that days forecast files to be sotred...along woth index.html etc!!!!!
+make_dir = Path("/bluesky/archive/fireweather/forecasts/" + str(timestamp))
+make_dir.mkdir(parents=True, exist_ok=True)
 
 # ### this is for testing....
-make_dir = str("/bluesky/archive/fireweather/test/json/plotly")
-
+# make_dir = str("/bluesky/archive/fireweather/test/json/plotly")
 
 
 print(f"{str(datetime.now())} ---> write fwfskip 32 dictonary to json" )
@@ -161,12 +160,12 @@ print(f"{str(datetime.now())} ---> wrote json fwfskip 16 to:  " + str(make_dir) 
 
 
 
-print(f"{str(datetime.now())} ---> write fwfwest dictonary to json" )
+print(f"{str(datetime.now())} ---> write fwf4km dictonary to json" )
 ### Write json file to defind dir 
-with open(str(make_dir) + f"/fwf-west-{timestamp}.json","w") as f:
-    json.dump(fwfwest,f, default=json_util.default, separators=(',', ':'), indent=None)
+with open(str(make_dir) + f"/fwf-4km-{timestamp}.json","w") as f:
+    json.dump(fwfskip0,f, default=json_util.default, separators=(',', ':'), indent=None)
 
-print(f"{str(datetime.now())} ---> wrote fwfbc json ffwfwest to:  " + str(make_dir) + f"/fwf-west-{timestamp}.json")
+print(f"{str(datetime.now())} ---> wrote fwfbc json fwf4km to:  " + str(make_dir) + f"/fwf-4km-{timestamp}.json")
 
 
 # ### Timer

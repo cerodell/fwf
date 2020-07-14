@@ -30,26 +30,32 @@ with open(fcst_template, 'r') as fin:
     ## update timedim start and end
     fcst = fcst.replace('{%FirstDateTime%}', forecast_start_date)
     fcst = fcst.replace('{%LastDateTime%}', forecast_end_date)
-    ## update line plot dir
-    line_plot = f"fwf-all-{files_datetime}.json"
-    fcst = fcst.replace('{%FWFLineForecast%}', line_plot)
+    ## update line plot dir for fwf32km
+    line_plot = f"fwf-32km-{files_datetime}.json"
+    fcst = fcst.replace('{%FWFLineForecast32km%}', line_plot)
+    ## update line plot dir for fwf32km
+    line_plot = f"fwf-16km-{files_datetime}.json"
+    fcst = fcst.replace('{%FWFLineForecast16km%}', line_plot)
+    ## update line plot dir for fwf32km
+    line_plot = f"fwf-4km-{files_datetime}.json"
+    fcst = fcst.replace('{%FWFLineForecast4km%}', line_plot)
     ## update ffmc geo dir
-    ffmc = f"ffmc-{files_datetime}.geojson"
+    ffmc = f"ffmc-{files_datetime}.json"
     fcst = fcst.replace('{%FirstFFMCForecast%}', ffmc)
     ## update dmc geo dir
-    dmc = f"dmc-{files_datetime}.geojson"
+    dmc = f"dmc-{files_datetime[:-2]}.json"
     fcst = fcst.replace('{%FirstDMCForecast%}', dmc)
     ## update dc geo dir
-    dc = f"dc-{files_datetime}.geojson"
+    dc = f"dc-{files_datetime[:-2]}.json"
     fcst = fcst.replace('{%FirstDCForecast%}', dc)
     ## update isi geo dir
-    isi = f"isi-{files_datetime}.geojson"
+    isi = f"isi-{files_datetime}.json"
     fcst = fcst.replace('{%FirstISIForecast%}', isi)
     ## update bui geo dir
-    bui = f"bui-{files_datetime}.geojson"
+    bui = f"bui-{files_datetime[:-2]}.json"
     fcst = fcst.replace('{%FirstBUIForecast%}', bui)
     ## update fwi geo dir
-    fwi = f"fwi-{files_datetime}.geojson"
+    fwi = f"fwi-{files_datetime}.json"
     fcst = fcst.replace('{%FirstFWIForecast%}', fwi)
 
     make_dir = Path(str(ops_dir) + '/' + str(folderdate))
