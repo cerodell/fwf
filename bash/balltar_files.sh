@@ -12,6 +12,7 @@ echo "fwf-daily tgz made and mv at: --> $(date '+%Y-%m-%dT%H')"
 echo "making fwf-hourly tgz at: --> $(date '+%Y%m%dT%H')"
 tar -czvf fwf-hourly-$(date '+%Y%m%d00').tgz fwf-hourly-$(date '+%Y%m%d00').zarr
 mv fwf-hourly-$(date '+%Y%m%d00').tgz /bluesky/archive/fireweather/data/
-rm -r fwf-hourly-$(date -d "yesterday" '+%Y%m%d00').zarr
+rm -r fwf-hourly-$(date  -d "2 days ago" '+%Y%m%d00').zarr
 echo "fwf-hourly tgz made and mv at: --> $(date '+%Y%m%dT%H')"
+
 

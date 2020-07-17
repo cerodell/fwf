@@ -4,10 +4,17 @@
 <head>    
     <meta http-equiv="content-type" content="text/html; charset=UTF-8" />
     
-        <script>
-            L_NO_TOUCH = false;
+    <script type="text/javascript">
+        if ( /Android|webOS|iPhone|iPod|iPad|BlackBerry/i.test(navigator.userAgent)) {
+            console.log("Moblie")
+            L_DISABLE_3D = true; 
+            } else {
             L_DISABLE_3D = false;
-        </script>
+            console.log("Desktop")      
+            }
+            L_NO_TOUCH = false;
+    </script>
+
     <title>Fire Weather Forecast</title>
 
     <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.8.1/css/all.css"
@@ -33,8 +40,8 @@
     <script src="https://unpkg.com/geojson-vt@3.2.0/geojson-vt.js"></script>
     <script src='https://api.mapbox.com/mapbox.js/plugins/leaflet-fullscreen/v1.0.1/Leaflet.fullscreen.min.js'></script>
     <script src="https://cdn.plot.ly/plotly-1.54.6.min.js"></script>
-    <link rel="stylesheet" href="static/css/fwf-leaflet.zoomhome.css"/>
-    <link rel="stylesheet" href="static/css/fwf-map-style.css"/>
+    <link rel="stylesheet" href="/static/css/fwf-leaflet.zoomhome.css"/>
+    <link rel="stylesheet" href="/static/css/fwf-map-style.css"/>
 
 </head>
 
@@ -72,12 +79,12 @@
     <script src="//cdnjs.cloudflare.com/ajax/libs/jqueryui-touch-punch/0.2.2/jquery.ui.touch-punch.min.js"></script>
     <script src="https://cdn.rawgit.com/nezasa/iso8601-js-period/master/iso8601.min.js"></script>
     <script src="https://cdn.rawgit.com/socib/Leaflet.TimeDimension/master/dist/leaflet.timedimension.min.js"></script>
-    <script src="static/js/fwf-leaflet.zoomhome.min.js"></script>
-    <script src="static/js/fwf-leaflet.groupedlayercontrol.min.js"></script>
-    <script src="static/js/fwf-leaflet.ajax.min.js"></script>
-    <script src="static/js/fwf-leaflet-opacity.js"></script>
-    <script src="static/js/fwf-time-layer-group.js"></script>
-    <script src="static/js/fwf-kdbush.min.js"></script>
+    <script src="/static/js/fwf-leaflet.zoomhome.min.js"></script>
+    <script src="/static/js/fwf-leaflet.groupedlayercontrol.min.js"></script>
+    <script src="/static/js/fwf-leaflet.ajax.min.js"></script>
+    <script src="/static/js/fwf-leaflet-opacity.js"></script>
+    <script src="/static/js/fwf-time-layer-group.js"></script>
+    <script src="/static/js/fwf-kdbush.min.js"></script>
 
 
 <script>    
@@ -148,11 +155,11 @@
     </script> 
 
 
-        <script src="static/js/fwf-plotly.js"></script>
-        <script src="static/js/fwf-basemaps.js"></script>
-        <script src="static/js/fwf-colorbars.js"></script>
-        <script src="static/js/fwf-layer-controler.js"></script>
-        <script src="static/js/fwf-dropdown-menu.js"></script>
+        <script src="/static/js/fwf-plotly.js"></script>
+        <script src="/static/js/fwf-basemaps.js"></script>
+        <script src="/static/js/fwf-colorbars.js"></script>
+        <script src="/static/js/fwf-layer-controler.js"></script>
+        <script src="/static/js/fwf-dropdown-menu.js"></script>
 
     
         <!-- Google analytics -->
