@@ -1,3 +1,5 @@
+#!/bluesky/fireweather/miniconda3/envs/fwf/bin/python
+
 import context
 import math
 import errno
@@ -92,6 +94,8 @@ class FWF:
         ### Read then open WRF dataset
         wrf_ds, xy_np = readwrf(wrf_file_dir)
         self.attrs    = wrf_ds.attrs
+
+
         ############ Mathematical Constants and Usefull Arrays ################ 
         ### Math Constants
         e = math.e

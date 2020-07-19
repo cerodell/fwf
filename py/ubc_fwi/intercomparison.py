@@ -15,38 +15,79 @@ from context import data_dir, xr_dir, wrf_dir, root_dir
 from wrf import ll_to_xy
 
 
-### Get All Stations CSV
-url = 'https://cwfis.cfs.nrcan.gc.ca/downloads/fwi_obs/cwfis_allstn2019.csv'
-stations_df = pd.read_csv(url, sep = ',')
-stations_df = stations_df.drop_duplicates()
-
-### Get Daily observations CSV
-obs_date = date.today().strftime('%Y%m%d')
-obs_date = '20200715'
-url2 = f'https://cwfis.cfs.nrcan.gc.ca/downloads/fwi_obs/current/cwfis_fwi_{obs_date}.csv'
-headers = list(pd.read_csv(url2,nrows=0))
-daily_df = pd.read_csv(url2,  sep = ',', names=headers)
-daily_df = daily_df.drop_duplicates()
-# if daily_df.iloc[0,0] == "NAME":
-#     daily_df.drop(index=0)
-
-
-# daily_df['lat'] = df.lookup(df.index, df.names, skiprows=1)
-
+comparison_date = '20200717'
 
 ### Get Path to most recent FWI forecast and open 
-hourly_file_dir = str(xr_dir) + str("/current/hourly.zarr") 
-daily_file_dir = str(xr_dir) + str("/current/daily.zarr") 
+# hourly_file_dir = str(xr_dir) + str("/current/hourly.zarr") 
+# daily_file_dir = str(xr_dir) + str("/current/daily.zarr") 
+hourly_file_dir = str(xr_dir) + str(f"/fwf-hourly-{comparison_date}00.zarr") 
+daily_file_dir = str(xr_dir) + str(f"/fwf-daily-{comparison_date}00.zarr") 
+
 hourly_ds = xr.open_zarr(hourly_file_dir)
 daily_ds = xr.open_zarr(daily_file_dir)
 
 
 ### Get Path to most recent WRF run for most uptodate snowcover info
 # wrf_folder = date.today().strftime('/%y%m%d00/')
-wrf_folder = "/200714/"
+wrf_folder = f"/{comparison_date[2:]}00/"
 filein = str(wrf_dir) + wrf_folder
 wrf_file_dir = sorted(Path(filein).glob('wrfout_d03_*'))
+wrf_file = Dataset(wrf_file_dir[0],'r')
+
+### Get All Stations CSV
+url = 'https://cwfis.cfs.nrcan.gc.ca/downloads/fwi_obs/cwfis_allstn2019.csv'
+stations_df = pd.read_csv(url, sep = ',')
+stations_df = stations_df.drop_duplicates()
+stations_df = stations_df.rename({'wmo': 'WMO', 'name': 'NAME'}, axis=1)
+stations_df = stations_df.drop(columns=['tmm','ua', 'the_geom', 'h_bul','s_bul','hly','syn'])
+# stations_df['WMO'] = stations_df['WMO'].astype(str).astype(int)
+blah = len(np.array(stations_df['WMO']))
+
+
+### Get Daily observations CSV
+# obs_date = date.today().strftime('%Y%m%d')
+url2 = f'https://cwfis.cfs.nrcan.gc.ca/downloads/fwi_obs/current/cwfis_fwi_{comparison_date}.csv'
+headers = list(pd.read_csv(url2,nrows=0))
+daily_df = pd.read_csv(url2,  sep = ',', names=headers)
+daily_df = daily_df.drop_duplicates()
+daily_df = daily_df.drop(daily_df.index[[0]])
+daily_df['WMO'] = daily_df['WMO'].astype(str).astype(int)
 
 
 
+inter_df = stations_df.merge(daily_df, on='WMO', how='inner')
 
+
+calstat = inter_df['CALCSTATUS'].to_numpy()
+calstat = calstat.astype(int)
+inter_df = inter_df.drop(inter_df.index[np.where(calstat<-1)])
+
+
+xy_np  = np.array(ll_to_xy(wrf_file, np.array(inter_df['lat']), np.array(inter_df['lon'])))
+inter_df['x'] = xy_np[0]
+inter_df['y'] = xy_np[1]
+shape = np.shape(daily_ds.T[0,:,:])
+inter_df = inter_df.drop(inter_df.index[np.where(inter_df['x'].to_numpy()>(shape[1]-1))])
+inter_df = inter_df.drop(inter_df.index[np.where(inter_df['y'].to_numpy()>(shape[0]-1))])
+inter_df = inter_df.drop(inter_df.index[np.where(inter_df['x'].to_numpy()<-1)])
+inter_df = inter_df.drop(inter_df.index[np.where(inter_df['y'].to_numpy()<-1)])
+# inter_df = inter_df.drop(inter_df.index[np.where(xy_np[0]<-1)])
+
+
+daily_ds_locs = daily_ds.isel(south_north=inter_df['y'], west_east=inter_df['x'])
+daily_ds_locs = daily_ds_locs.isel(south_north=0)
+
+for var in daily_ds_locs.data_vars:
+    timestamp  = str(np.array(daily_ds_locs.Time[0], dtype ='datetime64[h]'))
+    day = datetime.strptime(str(timestamp), '%Y-%m-%dT%H').strftime('_%Y%m%d')
+    var_day = var + day
+    inter_df[var_day] = daily_ds_locs[var][0,:]
+
+    timestamp  = str(np.array(daily_ds_locs.Time[1], dtype ='datetime64[h]'))
+    day = datetime.strptime(str(timestamp), '%Y-%m-%dT%H').strftime('_%Y%m%d')
+    var_day = var + day
+    inter_df[var_day] = daily_ds_locs[var][1,:]
+
+
+# hourly_ds_locs = hourly_ds.isel(south_north=inter_df['y'], west_east=inter_df['x'])
+# houlry_ds_locs = hourly_ds_locs.isel(south_north=0)
