@@ -85,7 +85,7 @@ class FWF:
     """########################################################################"""
     """ ######################## Initialize FWI model #########################"""
     """########################################################################"""
-    def __init__(self, wrf_file_dir, hourly_file_dir):
+    def __init__(self, wrf_file_dir, hourly_file_dir, daily_file_dir):
         """
         Initialize Fire Weather Index Model
 
@@ -94,6 +94,8 @@ class FWF:
         ### Read then open WRF dataset
         # wrf_ds, xy_np = readwrf(wrf_file_dir)
         wrf_ds = xr.open_zarr(wrf_file_dir)
+        wrf_ds = wrf_ds.drop_vars(['F', 'S', 'R'])
+
         self.attrs    = wrf_ds.attrs
 
 
@@ -136,8 +138,24 @@ class FWF:
 
         # ### Create an hourly datasets for use with their respected codes/indices 
         self.hourly_ds = wrf_ds
+        r_oi = np.array(self.hourly_ds.r_o)
+        r_o_pluse1 = np.dstack((self.zero_full.T,r_oi.T)).T
+
+        ### Solve for hourly rain totals in mm..will be used in ffmc calculation 
+        r_hourly_list = []
+        for i in range(len(self.hourly_ds.Time)):
+            r_hour =  self.hourly_ds.r_o[i] - r_o_pluse1[i]
+            r_hourly_list.append(r_hour)
+        r_hourly = np.stack(r_hourly_list)
+        r_hourly = xr.DataArray(r_hourly, name='r_o_hourly', dims=('time','south_north', 'west_east'))
+        self.hourly_ds['r_o_hourly'] = r_hourly
+
 
         ### Create an hourly and daily datasets for use with their respected codes/indices 
+        self.daily_ds = xr.open_zarr(daily_file_dir)
+        self.U = self.daily_ds.U
+
+
         # self.daily_ds = self.create_daily_ds(wrf_ds)
         # for var in self.hourly_ds.data_vars:
         #     # print(var)
@@ -152,9 +170,10 @@ class FWF:
             F_o      = 85.0   #Previous day's F becomes F_o
             F_o_full = np.full(shape,F_o, dtype=float)
 
-            ### (1)
+            ### (1a)
             ### Solve for fine fuel moisture content (m_o)
-            m_o = 205.2 * (101 - F_o_full) / (82.9 + F_o_full)  
+            # m_o = (205.2 * (101 - F_o_full)) / (82.9 + F_o_full)  ## Van 1977
+            m_o = (147.27723 * (101 - F_o_full))/(59.5 + F_o_full)  ## Van 1985
 
             ### Create dataarrays for F and m_m
             F = xr.DataArray(F_o_full, name='F', dims=('south_north', 'west_east'))
@@ -290,10 +309,47 @@ class FWF:
         """
 
         ### Call on initial conditions
-        W, T, H, m_o, F = hourly_ds.W, hourly_ds.T, hourly_ds.H, hourly_ds.m_o, hourly_ds.F
+        W, T, H, r_o, m_o, F = hourly_ds.W, hourly_ds.T, hourly_ds.H, hourly_ds.r_o_hourly, hourly_ds.m_o, hourly_ds.F
 
         e_full, zero_full = self.e_full, self.zero_full
 
+        ########################################################################
+        ### (1b) Solve for the effective rain (r_f) 
+        ## Van/Pick define as 0.5
+        r_limit = 0.5 
+        r_fi  = xr.where(r_o < r_limit, r_o, (r_o - r_limit))
+        # print(np.nanmin(r_fi))
+        # print(np.nanmax(r_fi))
+
+        r_f    = xr.where(r_fi > 1e-7, r_fi, 1e-7)
+        # print(np.nanmin(r_f))
+        # print(np.nanmax(r_f))
+
+
+        ########################################################################
+        ### (1c) Solve the Rainfall routine as defiend in  Van Wagner 1985 (m_r)
+        m_o_limit = 150
+        a = -(100 / (251 - m_o))
+        b = -(6.93 / r_f)
+        m_r_low = xr.where(m_o >= m_o_limit, zero_full, m_o + \
+                            (42.5 * r_f * np.power(e_full,a) * (1- np.power(e_full,b))))
+
+
+        ########################################################################
+        ### (1d) Solve the RainFall routine as defiend in  Van Wagner 1985 (m_r)
+        m_r_high = xr.where(m_o < m_o_limit, zero_full, m_o + \
+                            (42.5 * r_f * np.power(e_full, a) * (1 - np.power(e_full, b))) + \
+                                (0.0015 * np.power((m_o - 150),2) * np.power(r_f, 0.5)))
+
+
+        ########################################################################
+        ### (1e) Set new m_o with the rainfall routine (m_o)
+        m_o = m_r_low + m_r_high
+
+        m_o = np.where(m_o < 250, m_o, 250)  # Set upper limit of 250 
+        # print(np.nanmax(m_o), "Afer upper lim of 250")
+        m_o = np.where(m_o > 0, m_o, 1e4)    # Set lower limit of 0 
+        # print(np.nanmin(m_o), "Afer lower lim of 0")
 
         ########################################################################
         ### (2a) Solve Equilibrium Moisture content for drying (E_d)
@@ -372,11 +428,12 @@ class FWF:
         m = xr.where(m<=250,m, 250)
         
         ### Solve for FFMC 
-        F = (82.9 * (250 - m)) / (205.2 + m)
+        # F = (82.9 * (250 - m)) / (205.2 + m)    ## Van 1977
+        F =  (59.5 * (250 - m)) / (147.27723 + m)  ## Van 1985
 
         ### Recast initial moisture code for next time stamp  
-        m_o = (205.2 * (101 - F)) / (82.9 + F)  
-
+        # m_o = (205.2 * (101 - F)) / (82.9 + F)  ## Van 1977
+        m_o = (147.27723 * (101 - F))/(59.5 + F)  ## Van 1985
 
         self.hourly_ds['F']   = F
         self.hourly_ds['m_o'] = m_o
@@ -1009,8 +1066,11 @@ class FWF:
         del hourly_ds.DSR.attrs['units']
         hourly_ds.DSR.attrs['description'] = "DAILY SEVERITY RATING"
 
+        hourly_ds.r_o_hourly.attrs   = hourly_ds.r_o.attrs
+        hourly_ds.r_o_hourly.attrs['description'] = "HOURLY PRECIPITATION TOTALS"
+
         for var in hourly_ds.data_vars:
-            del hourly_ds[var].attrs['coordinates']
+            # del hourly_ds[var].attrs['coordinates']
             hourly_ds[var].attrs['projection'] = str(hourly_ds[var].projection)
 
 
@@ -1020,15 +1080,18 @@ class FWF:
         print("Hourly zarr initialized at :", file_name)
 
         # # ## Write and save DataArray (.zarr) file
-        make_dir = Path(str(xr_dir) + str('/fwf-hourly-') + file_name + str(f".zarr"))
+        re_run = '/Volumes/cer/fireweather/data/new_xr'
+
+        make_dir = Path(str(re_run) + str('/fwf-hourly-') + file_name + str(f".zarr"))
         make_dir.mkdir(parents=True, exist_ok=True)
-        # hourly_ds.compute()
+        hourly_ds = hourly_ds.compute()
         hourly_ds.to_zarr(make_dir, "w")
         print(f"wrote archive {make_dir}")
     
-        current_dir_hourly = str(xr_dir) + str('/current/hourly.zarr')
-        hourly_ds.to_zarr(current_dir_hourly, "w")
-        print(f"wrote working {current_dir_hourly}")
+
+        # current_dir_hourly = str(re_run) + str('/current/hourly.zarr')
+        # hourly_ds.to_zarr(current_dir_hourly, "w")
+        # print(f"wrote working {current_dir_hourly}")
 
         # ## return path to hourly_ds file to open
         return str(make_dir)

@@ -1,30 +1,39 @@
-#!/bluesky/fireweather/miniconda3/envs/fwf/bin/python
-
-#Hack to fix missing PROJ4 env var
-# import os
-# import conda
-
-# conda_file_dir = conda.__file__
-# conda_dir = conda_file_dir.split('lib')[0]
-# proj_lib = os.path.join(os.path.join(conda_dir, 'share'), 'proj')
-# os.environ["PROJ_LIB"] = proj_lib
-
 import context
+import sys
+import json
 import numpy as np
+import pandas as pd
 import xarray as xr
+import geojsoncontour
 from pathlib import Path
 from netCDF4 import Dataset
-from datetime import datetime
-from context import data_dir, xr_dir, wrf_dir
 import matplotlib.pyplot as plt
+from datetime import datetime, date, timedelta
+startTime = datetime.now()
+
+from context import data_dir, xr_dir, wrf_dir, root_dir
+from wrf import ll_to_xy
 
 
-from wrf import (getvar, g_uvmet, ll_to_xy)
-# 
-### BRing in zarr FWF forecast data 
-hourly_file_dir = str(xr_dir) + str("/current/hourly.zarr") 
-daily_file_dir = str(xr_dir) + str("/current/daily.zarr") 
+comparison_date = '20200716'
 
-hourly_ds = xr.open_zarr(hourly_file_dir)
-daily_ds = xr.open_zarr(daily_file_dir)
+### Get Path to most recent FWI forecast and open 
+# hourly_file_dir = str(xr_dir) + str("/current/hourly.zarr") 
+# daily_file_dir = str(xr_dir) + str("/current/daily.zarr") 
 
+re_run = '/Volumes/cer/fireweather/data/'
+
+wrf_file_dir = re_run + 'wrf/wrfout_d03_2020-07-17_02:00:00'
+wrf_file = Dataset(wrf_file_dir,'r')
+                                 
+hourly_file_dir = str(re_run) + str(f"xr/fwf-hourly-{comparison_date}00.zarr") 
+new_hourly_file_dir = str(re_run) + str(f"new_xr/fwf-hourly-{comparison_date}00.zarr") 
+
+old_hourly_ds = xr.open_zarr(hourly_file_dir)
+new_hourly_ds = xr.open_zarr(new_hourly_file_dir)
+
+
+
+xy  = ll_to_xy(wrf_file,53.8660, -123.0840 )
+
+print(float(new_hourly_ds.F[34,xy[1],xy[0]]))

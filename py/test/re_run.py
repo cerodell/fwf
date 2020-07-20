@@ -47,4 +47,3 @@ hourly_file_dir  = coeff.hourly()
 
 ### Timer
 print("Run Time: ", datetime.now() - startTime)
-
