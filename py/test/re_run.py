@@ -1,3 +1,5 @@
+#!/bluesky/fireweather/miniconda3/envs/fwf/bin/python
+
 import context
 import math
 import numpy as np
@@ -16,14 +18,17 @@ from context import data_dir, xr_dir, wrf_dir, tzone_dir, root_dir
 # # zarr_filein = "2020-06-02T00.zarr"
 # hourly_file_dir = str(xr_dir) + str("/hourly/") + zarr_filein
 # daily_file_dir = str(xr_dir) + str("/daily/") + zarr_filein
-xr_dir = '/bluesky/archive/fireweather/data'
-hourly_file_dir = str(xr_dir) + str("/fwf-hourly-2020071600.zarr") 
-daily_file_dir = str(xr_dir) + str("/fwf-daily-2020071600.zarr") 
+# xr_dir = '/bluesky/archive/fireweather/data'
+
+hourly_file_dir = str(xr_dir) + str("/fwf-hourly-2020071800.zarr") 
+daily_file_dir = str(xr_dir) + str("/fwf-daily-2020071800.zarr") 
+daily_ds = xr.open_zarr(daily_file_dir)
+hourly_ds = xr.open_zarr(hourly_file_dir)
 
 """######### get directory to todays wrf_out .nc files.  #############"""
 # wrf_filein = date.today().strftime('/%y%m%d00/')
-wrf_filein = str('/nfs/kitsault/archives/forecasts/WAN00CP-04/20071700/')
-wrf_file_dir =  wrf_filein
+wrf_filein = str('/20071900/')
+wrf_file_dir = str(wrf_dir) + wrf_filein
 
 
 """######### Open wrf_out.nc and write  new hourly/daily .zarr files #############"""
