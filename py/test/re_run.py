@@ -16,12 +16,13 @@ from context import data_dir, xr_dir, wrf_dir, tzone_dir, root_dir
 # # zarr_filein = "2020-06-02T00.zarr"
 # hourly_file_dir = str(xr_dir) + str("/hourly/") + zarr_filein
 # daily_file_dir = str(xr_dir) + str("/daily/") + zarr_filein
-hourly_file_dir = str(xr_dir) + str("/fwf-hourly-2020-07-02T00.zarr") 
-daily_file_dir = str(xr_dir) + str("/fwf-daily-2020-07-02T00.zarr") 
+xr_dir = '/bluesky/archive/fireweather/data'
+hourly_file_dir = str(xr_dir) + str("/fwf-hourly-2020071600.zarr") 
+daily_file_dir = str(xr_dir) + str("/fwf-daily-2020071600.zarr") 
 
 """######### get directory to todays wrf_out .nc files.  #############"""
 # wrf_filein = date.today().strftime('/%y%m%d00/')
-wrf_filein = str('/nfs/kitsault/archives/forecasts/WAN00CP-04/20070300/')
+wrf_filein = str('/nfs/kitsault/archives/forecasts/WAN00CP-04/20071700/')
 wrf_file_dir =  wrf_filein
 
 

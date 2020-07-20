@@ -1021,7 +1021,7 @@ class FWF:
         # # ## Write and save DataArray (.zarr) file
         make_dir = Path(str(xr_dir) + str('/fwf-hourly-') + file_name + str(f".zarr"))
         make_dir.mkdir(parents=True, exist_ok=True)
-        # hourly_ds.compute()
+        hourly_ds = hourly_ds.compute()
         hourly_ds.to_zarr(make_dir, "w")
         print(f"wrote archive {make_dir}")
     
@@ -1075,7 +1075,7 @@ class FWF:
         # # ## Write and save DataArray (.zarr) file
         make_dir = Path(str(xr_dir) + str('/fwf-daily-') + file_name + str(f".zarr"))
         make_dir.mkdir(parents=True, exist_ok=True)
-        # daily_ds.compute()
+        daily_ds = daily_ds.compute()
         daily_ds.to_zarr(make_dir, "w")
         print(f"wrote archive {make_dir}")
 
