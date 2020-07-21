@@ -20,9 +20,10 @@ from wrf import (to_np, getvar, get_cartopy, latlon_coords, g_uvmet, ALL_TIMES)
 
 
 ### BRing in zarr FWF forecast data 
-hourly_file_dir = str(xr_dir) + str("/current/hourly.zarr") 
-daily_file_dir = str(xr_dir) + str("/current/daily.zarr") 
-
+# hourly_file_dir = str(xr_dir) + str("/current/hourly.zarr") 
+# daily_file_dir = str(xr_dir) + str("/current/daily.zarr") 
+hourly_file_dir = str(xr_dir) + str("/fwf-hourly-2020071700.zarr") 
+daily_file_dir = str(xr_dir) + str("/fwf-daily-2020071700.zarr")
 hourly_ds = xr.open_zarr(hourly_file_dir)
 daily_ds = xr.open_zarr(daily_file_dir)
 
@@ -65,13 +66,16 @@ fig.suptitle(Plot_Title + day, fontsize=16)
 fig.subplots_adjust(hspace=0.8)
 lats, lons = np.array(hourly_ds.XLAT), np.array(hourly_ds.XLONG)
 cmap = plt.cm.jet
-levels = np.linspace(74,100,80)
+vmin, vmax = 60, 100
 
-Cnorm = matplotlib.colors.Normalize(vmin= 74, vmax =100)
+levels = np.linspace(vmin,vmax,15)
+
+Cnorm = matplotlib.colors.Normalize(vmin= vmin, vmax =vmax)
+# Cnorm = matplotlib.colors.LogNorm(vmin=74, vmax=100)
 
 # west, east = 50, 350
 # south, north = 100,400
-ffmc = np.array(hourly_ds.F[18])
+ffmc = np.array(hourly_ds.F[0])
 title = "FFMC"
 C = ax[0][0].contourf(lons, lats, ffmc, cmap = cmap, norm = Cnorm, levels=levels, extend="both")
 clb = fig.colorbar(C, ax = ax[0][0], fraction=0.054, pad=0.04)
