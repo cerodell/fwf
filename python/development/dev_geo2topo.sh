@@ -1,7 +1,7 @@
 #!/bin/bash
 
-# /bluesky/fireweather/fwf/node_modules/topojson-server/bin/geo2topo -q 1e4 FFMC=ffmc-2020071700.geojson > /bluesky/archive/fireweather/forecasts/2020071700/ffmc-2020071700.json
-
+/bluesky/fireweather/fwf/node_modules/topojson-server/bin/geo2topo -q 1e4 FFMC=ffmc-2020071700.geojson > /bluesky/archive/fireweather/forecasts/2020071700/ffmc-2020071700.json
+gzip -9 < ffmc-2020071700.json > ffmc-2020071700.json.gz
 # ### Convert FFMC to topojson and move to website directory
 # for filename in /bluesky/fireweather/fwf/data/geojson/2020071700/ffmc*.geojson; do
 #     /bluesky/fireweather/fwf/node_modules/topojson-server/bin/geo2topo -q 1e4 FFMC="$filename" > "/bluesky/archive/fireweather/forecasts/2020071700/$(basename "$filename" .geojson).json"

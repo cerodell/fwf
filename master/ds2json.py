@@ -152,9 +152,9 @@ print(f"{str(datetime.now())} ---> wrote json fwfskip 16 to:  " + str(make_dir) 
 
 
 print(f"{str(datetime.now())} ---> write fwf4km dictonary to json" )
-### Write json file to defind dir 
-# with open(str(make_dir) + f"/fwf-4km-{timestamp}.json","w") as f:
-#     json.dump(fwfskip0,f, default=json_util.default, separators=(',', ':'), indent=None)
+## Write json file to defind dir 
+with open(str(make_dir) + f"/fwf-4km-{timestamp}.json","w") as f:
+    json.dump(fwfskip0,f, default=json_util.default, separators=(',', ':'), indent=None)
 
 print(f"{str(datetime.now())} ---> wrote fwfbc json fwf4km to:  " + str(make_dir) + f"/fwf-4km-{timestamp}.json")
 

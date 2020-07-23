@@ -9,16 +9,18 @@ import geojsoncontour
 from pathlib import Path
 from netCDF4 import Dataset
 import matplotlib.pyplot as plt
-from geoutils import mask, mycontourf_to_geojson
+from dev_geoutils import mask, mycontourf_to_geojson
 from datetime import datetime, date, timedelta
 startTime = datetime.now()
 
 from context import data_dir, xr_dir, wrf_dir, root_dir
 
+import warnings
+warnings.filterwarnings("ignore", message="invalid value encountered in true_divide")
 
 
 ### Open color map json
-with open('/bluesky/fireweather/fwf/firewx_website/json/colormaps.json') as f:
+with open('/bluesky/fireweather/fwf/json/colormaps.json') as f:
   cmaps = json.load(f)
 
 
@@ -31,10 +33,6 @@ daily_file_dir = str(xr_dir) + str("/fwf-daily-2020071700.zarr")
 ############################################################
 hourly_ds = xr.open_zarr(hourly_file_dir)
 daily_ds = xr.open_zarr(daily_file_dir)
-
-
-
-
 
 
 hourly_vars = ['F','R','S','DSR']

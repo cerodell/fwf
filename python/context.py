@@ -16,7 +16,7 @@ from pathlib import Path
 path = Path(__file__).resolve()  # this file
 this_dir = path.parent  # this folder
 notebooks_dir = this_dir
-root_dir = notebooks_dir.parents[1]
+root_dir = notebooks_dir.parents[0]
 data_dir = root_dir / Path("data")
 tzone_dir = root_dir / Path("data/tzone/")
 html_dir = root_dir / Path("firewx_website/html/")
