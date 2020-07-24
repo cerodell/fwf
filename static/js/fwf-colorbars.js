@@ -16,7 +16,7 @@ color_map_ffmc.x = d3.scale.linear()
 
 color_map_ffmc.legend = L.control({position: 'topright'});
 color_map_ffmc.legend.onAdd = function (map) {var div = L.DomUtil.create('div', 'legend'); return div};
-color_map_ffmc.legend.addTo(map_ad1f4806517b42aaa34af6e73fd9a579);
+color_map_ffmc.legend.addTo(map);
 
 color_map_ffmc.xAxis = d3.svg.axis()
     .scale(color_map_ffmc.x)
