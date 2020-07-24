@@ -12,12 +12,12 @@ from datetime import datetime, date, timedelta
 startTime = datetime.now()
 
 from context import data_dir, xr_dir, wrf_dir, root_dir
-from wrf import ll_to_xy
+from wrf import ll_to_xy, xy_to_ll
 
 
+
+### Get Path to TODAYS FWI forecast and open 
 comparison_date = '20200717'
-
-### Get Path to most recent FWI forecast and open 
 # hourly_file_dir = str(xr_dir) + str("/current/hourly.zarr") 
 # daily_file_dir = str(xr_dir) + str("/current/daily.zarr") 
 hourly_file_dir = str(xr_dir) + str(f"/fwf-hourly-{comparison_date}00.zarr") 
@@ -25,6 +25,14 @@ daily_file_dir = str(xr_dir) + str(f"/fwf-daily-{comparison_date}00.zarr")
 
 hourly_ds = xr.open_zarr(hourly_file_dir)
 daily_ds = xr.open_zarr(daily_file_dir)
+
+### Get Path to YESTERDAYS FWI forecast and open 
+yesterday_date = '20200716'
+hourly_file_dir_yesterday = str(xr_dir) + str(f"/fwf-hourly-{yesterday_date}00.zarr") 
+daily_file_dir_yesterday = str(xr_dir) + str(f"/fwf-daily-{yesterday_date}00.zarr") 
+
+hourly_ds_yesterday = xr.open_zarr(hourly_file_dir_yesterday)
+daily_ds_yesterday = xr.open_zarr(daily_file_dir_yesterday)
 
 
 ### Get Path to most recent WRF run for most uptodate snowcover info
@@ -54,71 +62,65 @@ daily_df = daily_df.drop(daily_df.index[[0]])
 daily_df['WMO'] = daily_df['WMO'].astype(str).astype(int)
 
 
+### Merge daily_df and stations_df and drop stations with no data
+inter_df = stations_df.merge(daily_df, on='WMO', how='outer')
 
-inter_df = stations_df.merge(daily_df, on='WMO', how='inner')
-
-
-calstat = inter_df['CALCSTATUS'].to_numpy()
-calstat = calstat.astype(int)
-inter_df = inter_df.drop(inter_df.index[np.where(calstat<-1)])
-
-
-xy_np  = ll_to_xy(wrf_file, np.array(inter_df['lat']), np.array(inter_df['lon']))
-
-# stnloc = [np.array(inter_df['lat']), np.array(inter_df['lon'])]
-# xlat, xlon = np.array(daily_ds.XLAT), np.array(daily_ds.XLONG)
-
-# from scipy.spatial import cKDTree
-# gridTree = cKDTree(list(zip(xlon.ravel(), xlat.ravel())))
-# grid_shape = xlon.shape
-
-# xy_kd = []
-# for i in range(len(np.array(inter_df['lat']))):
-#     dist, inds = gridTree.query((stnloc[0][i], stnloc[1][i]))
-#     xy_kd.append(np.unravel_index(inds, grid_shape))
+### replace NULL with np.nan
+for column in inter_df:
+    mask = inter_df[column] == ' NULL'
+    inter_df[column][mask] = np.nan
 
 
-
-# inter_df['x'] = xy_np[0]
-# inter_df['y'] = xy_np[1]
-# shape = np.shape(daily_ds.T[0,:,:])
-# inter_df = inter_df.drop(inter_df.index[np.where(inter_df['x'].to_numpy()>(shape[1]-1))])
-# inter_df = inter_df.drop(inter_df.index[np.where(inter_df['y'].to_numpy()>(shape[0]-1))])
-# inter_df = inter_df.drop(inter_df.index[np.where(inter_df['x'].to_numpy()<-1)])
-# inter_df = inter_df.drop(inter_df.index[np.where(inter_df['y'].to_numpy()<-1)])
-# # inter_df = inter_df.drop(inter_df.index[np.where(xy_np[0]<-1)])
-
-
-# # daily_ds_locs = daily_ds.isel(south_north=slice([inter_df['y'],inter_df['x']])
-# # daily_ds_locs = daily_ds_locs.isel(south_north=0)
-
-# # for var in daily_ds.data_vars:
+### Drop stations out sie of model domain
+xy_np  = ll_to_xy(wrf_file, inter_df['lat'], inter_df['lon'])
+inter_df['x'] = xy_np[0]
+inter_df['y'] = xy_np[1]
+shape = np.shape(daily_ds.T[0,:,:])
+inter_df = inter_df.drop(inter_df.index[np.where(inter_df['x']>(shape[1]-1))])
+inter_df = inter_df.drop(inter_df.index[np.where(inter_df['y']>(shape[0]-1))])
+inter_df = inter_df.drop(inter_df.index[np.where(inter_df['x']<-1)])
+inter_df = inter_df.drop(inter_df.index[np.where(inter_df['y']<-1)])
 
 
-# #     # timestamp  = str(np.array(daily_ds.Time[0], dtype ='datetime64[h]'))
-# #     # day = datetime.strptime(str(timestamp), '%Y-%m-%dT%H').strftime('_%Y%m%d')
-# #     var_day = var 
-# #     inter_df[var_day] = daily_ds[var][0,inter_df['y'],inter_df['x']]
+### Get point forecasts for Wxstation locations from model domain...then add to inter_df
+for var in daily_ds.data_vars:
+    today = np.array(daily_ds[var][0])
+    today = today[inter_df['y'],inter_df['x']]
+    var_today = var + '_today'
+    inter_df[var_today] = today
 
-#     # timestamp  = str(np.array(daily_ds_locs.Time[1], dtype ='datetime64[h]'))
-#     # # day = datetime.strptime(str(timestamp), '%Y-%m-%dT%H').strftime('_%Y%m%d')
-#     # var_day = var + '_day2'
-#     # inter_df[var_day] = daily_ds_locs[var][1,:]
+    yesterday = np.array(daily_ds_yesterday[var][1])
+    yesterday = yesterday[inter_df['y'],inter_df['x']]
+    var_yesterday = var + '_yesterday'
+    inter_df[var_yesterday] = yesterday
 
 
-# # hourly_ds_locs = hourly_ds.isel(south_north=inter_df['y'], west_east=inter_df['x'])
-# # houlry_ds_locs = hourly_ds_locs.isel(south_north=0, time = 18)
+# for var in daily_ds.data_vars:
 
-# # for var in hourly_ds_locs.data_vars:
-# #     # timestamp  = str(np.array(hourly_ds_locs.Time[0], dtype ='datetime64[h]'))
-# #     # day = datetime.strptime(str(timestamp), '%Y-%m-%dT%H').strftime('_%Y%m%d')
-# #     var_day = var + '_day1'
-# # inter_df['F_day1'] = hourly_ds_locs['F']
 
-# markers = "o"
-# markercolor = "y"
+test = inter_df['tz_correct']
 
-# test = daily_ds['P'][0,inter_df['y'].to_numpy(),inter_df['x'].to_numpy()]
+
+
+
+
+
+
+
+
+
+
+
+
+
+# ### Convert specific colums to float64
+# inter_df = inter_df.astype({'lon':float, 'lat':float,'TEMP':float, 'RH': float, \
+#     'WS': float, 'WG': float, 'WDIR': float, 'PRES': float, 'PRECIP': float, 'FFMC': float,\
+#         'DMC': float, 'DC': float, 'BUI': float, 'ISI': float, 'FWI': float, 'DSR': float})
+
+# ### Drop bad data
+# calstat = inter_df['CALCSTATUS'].to_numpy(dtype = int)
+# inter_df = inter_df.drop(inter_df.index[np.where(calstat<-1)])
 
 # fig, ax = plt.subplots(figsize=(14,8))
 # # fig.suptitle(Plot_Title + '\n CRESTON, BC (CWJR 116.5 \N{DEGREE SIGN}W, 49.083 \N{DEGREE SIGN}N)', fontsize=16)
