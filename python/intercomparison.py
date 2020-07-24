@@ -20,6 +20,7 @@ from wrf import ll_to_xy, xy_to_ll
 comparison_date = '20200717'
 # hourly_file_dir = str(xr_dir) + str("/current/hourly.zarr") 
 # daily_file_dir = str(xr_dir) + str("/current/daily.zarr") 
+xr_dir = '/Volumes/cer/fireweather/data/xr'
 hourly_file_dir = str(xr_dir) + str(f"/fwf-hourly-{comparison_date}00.zarr") 
 daily_file_dir = str(xr_dir) + str(f"/fwf-daily-{comparison_date}00.zarr") 
 
@@ -37,8 +38,9 @@ daily_ds_yesterday = xr.open_zarr(daily_file_dir_yesterday)
 
 ### Get Path to most recent WRF run for most uptodate snowcover info
 # wrf_folder = date.today().strftime('/%y%m%d00/')
-wrf_folder = f"/{comparison_date[2:]}00/"
-filein = str(wrf_dir) + wrf_folder
+# wrf_folder = f"/{comparison_date[2:]}00/"
+# filein = str(wrf_dir) + wrf_folder
+filein = '/Volumes/cer/fireweather/data/wrf/'
 wrf_file_dir = sorted(Path(filein).glob('wrfout_d03_*'))
 wrf_file = Dataset(wrf_file_dir[0],'r')
 
@@ -95,10 +97,33 @@ for var in daily_ds.data_vars:
     inter_df[var_yesterday] = yesterday
 
 
-# for var in daily_ds.data_vars:
+### Get point forecasts for Wxstation locations from model domain...then add to inter_df
+for var in hourly_ds.data_vars:
+    ### Loop each var and get avg of 11-13 local avg time from todays forecast
+    today = np.array(hourly_ds[var])
+    noon_today = np.array(12+abs(inter_df['tz_correct']), dtype = int)
+    before_noon = today[noon_today-1,inter_df['y'],inter_df['x']]
+    after_noon = today[noon_today,inter_df['y'],inter_df['x']]
+    noon = today[noon_today+1,inter_df['y'],inter_df['x']]
+    today = (before_noon + after_noon + noon) / 3
+    var_today = var + '_today'
+    inter_df[var_today] = today
+    # time_check = np.array(hourly_ds.Time[noon_today])
+    # inter_df['time_check'] = time_check
+
+    ### Loop each var and get avg of 11-13 local avg time from yesterdays forecast
+    yesterday = np.array(hourly_ds_yesterday[var])
+    noon_yesterday = np.array(36+abs(inter_df['tz_correct']), dtype = int)
+    before_noon = yesterday[noon_yesterday-1,inter_df['y'],inter_df['x']]
+    after_noon = yesterday[noon_yesterday,inter_df['y'],inter_df['x']]
+    noon = yesterday[noon_yesterday+1,inter_df['y'],inter_df['x']]
+    yesterday = (before_noon + after_noon + noon) / 3
+    var_yesterday = var + '_yesterday'
+    inter_df[var_yesterday] = yesterday
+    # time_check_yesterday = np.array(hourly_ds_yesterday.Time[noon_yesterday])
+    # inter_df['time_check_yesterday'] = time_check_yesterday
 
 
-test = inter_df['tz_correct']
 
 
 
@@ -112,15 +137,27 @@ test = inter_df['tz_correct']
 
 
 
+### Convert specific colums to float64
+inter_df = inter_df.astype({'lon':float, 'lat':float,'TEMP':float, 'RH': float, \
+    'WS': float, 'WG': float, 'WDIR': float, 'PRES': float, 'PRECIP': float, 'FFMC': float,\
+        'DMC': float, 'DC': float, 'BUI': float, 'ISI': float, 'FWI': float, 'DSR': float})
 
-# ### Convert specific colums to float64
-# inter_df = inter_df.astype({'lon':float, 'lat':float,'TEMP':float, 'RH': float, \
-#     'WS': float, 'WG': float, 'WDIR': float, 'PRES': float, 'PRECIP': float, 'FFMC': float,\
-#         'DMC': float, 'DC': float, 'BUI': float, 'ISI': float, 'FWI': float, 'DSR': float})
+### Drop bad data
+calstat = inter_df['CALCSTATUS'].to_numpy(dtype = float)
+inter_df = inter_df.drop(inter_df.index[np.where(calstat<-1)])
 
-# ### Drop bad data
-# calstat = inter_df['CALCSTATUS'].to_numpy(dtype = int)
-# inter_df = inter_df.drop(inter_df.index[np.where(calstat<-1)])
+
+import seaborn as sns
+import scipy.stats as stats
+
+
+# plt.scatter(inter_df["FFMC"],inter_df['F_today'])
+# plt.scatter(inter_df["FFMC"],inter_df['F_yesterday'])
+
+sns.jointplot(x=inter_df["FFMC"], y=inter_df['F_today'], kind='scatter')
+sns.jointplot(x=inter_df["FFMC"], y=inter_df['F_today'], kind='hex')
+sns.jointplot(x=inter_df["TEMP"], y=inter_df['T_today'], kind='kde', data=inter_df).annotate(stats.pearsonr)
+# j.annotate(stats.pearsonr)
 
 # fig, ax = plt.subplots(figsize=(14,8))
 # # fig.suptitle(Plot_Title + '\n CRESTON, BC (CWJR 116.5 \N{DEGREE SIGN}W, 49.083 \N{DEGREE SIGN}N)', fontsize=16)
