@@ -17,31 +17,10 @@ import warnings
 
 warnings.filterwarnings("ignore", message="elementwise comparison failed")
 
-### Get Path to TODAYS FWI forecast and open 
-# todays_date = '20200525'
-# yesterday_date = '20200524'
+
 
 """######### get directory to yesterdays hourly/daily .zarr files.  #############"""
-# re_run = '/Volumes/cer/fireweather/data/'
 
-# start = datetime.strptime("20200525", "%Y%m%d")
-# end = datetime.strptime("20200721", "%Y%m%d")
-# todays_date_range = [start + timedelta(days=x) for x in range(0, (end-start).days)]
-
-# start = datetime.strptime("20200524", "%Y%m%d")
-# end = datetime.strptime("20200720", "%Y%m%d")
-# yesterday_date_range = [start + timedelta(days=x) for x in range(0, (end-start).days)]
-
-# for i in range(len(todays_date_range)):
-#     todays_date = todays_date_range[i].strftime("%Y%m%d")
-
-#     yesterday_date = yesterday_date_range[i].strftime("%Y%m%d")
-#     if int(todays_date) > 20200718:
-#         exit
-#     else:
-#         print(todays_date, "today")
-#         print(yesterday_date, "yesterday")
-#         intercomparison_make_csv(True, todays_date, yesterday_date)
 
 todays_date = '20200723'
 yesterday_date = '20200722'
@@ -104,13 +83,7 @@ intercomparison_make_csv(None, todays_date, yesterday_date)
 # sns.jointplot(x=inter_df["FFMC"], y=inter_df['F_today'], kind='hex').annotate(stats.pearsonr)
 # sns.jointplot(x=inter_df["TEMP"], y=inter_df['T_today'], kind='kde', data=inter_df).annotate(stats.pearsonr)
 
-# fig, ax = plt.subplots(figsize=(14,8))
-# # fig.suptitle(Plot_Title + '\n CRESTON, BC (CWJR 116.5 \N{DEGREE SIGN}W, 49.083 \N{DEGREE SIGN}N)', fontsize=16)
-# fig.subplots_adjust(hspace=0.1)
-# ax.scatter(inter_df['lat'].to_numpy(dtype=float), test.XLAT[1], color = 'purple', 
-#                     marker = markers, linewidth= 5, zorder =10, label = "Observations")
-# ax.set_ylabel('Model')
-# ax.set_xlabel('Observed')
+
 
 # plt.show()
 

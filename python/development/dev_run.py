@@ -18,13 +18,13 @@ warnings.filterwarnings("ignore", message="invalid value encountered in log")
 
 """######### get directory to yesterdays hourly/daily .zarr files.  #############"""
 # re_run = '/Volumes/cer/fireweather/data/'
-forecast_day = '/20072200/'
+forecast_day = '/20072300/'
 
 # wrf_filein = date.today().strftime(f'/{forecast_day}/')
 wrf_file_dir = str(wrf_dir) + forecast_day
 
 #### SHOULD BE THE DAY BEFORE THE OTHERS!!!
-forecast_yesterday = '2020072100'
+forecast_yesterday = '2020072200'
 hourly_file_dir = str(xr_dir) + str(f"/fwf-hourly-{forecast_yesterday}.zarr")   
 daily_file_dir = str(xr_dir) + str(f"/fwf-daily-{forecast_yesterday}.zarr") 
 print(wrf_file_dir)
