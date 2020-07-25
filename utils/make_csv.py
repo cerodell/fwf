@@ -9,26 +9,25 @@ from pathlib import Path
 from netCDF4 import Dataset
 from datetime import datetime, date, timedelta
 
-from context import data_dir, xr_dir, wrf_dir, root_dir
+from context import data_dir, wrf_dir, root_dir, xr_dir
 from wrf import ll_to_xy, xy_to_ll
-
 
 
 
 
 def intercomparison_make_csv(local, todays_date, yesterday_date):
 
-    ### Get Path to TODAYS FWI forecast and open 
-    if local == True:
-        xr_dir = '/Volumes/cer/fireweather/data/xr'
-        filein = '/Volumes/cer/fireweather/data/wrf/'
-        write_to_dir = '/Volumes/cer/fireweather/data/csv/'
+    # ### Get Path to TODAYS FWI forecast and open 
+    # if local == True:
+    #     # xr_dir = '/Volumes/cer/fireweather/data/xr'
+    #     filein = '/Volumes/cer/fireweather/data/wrf/'
+    #     write_to_dir = '/Volumes/cer/fireweather/data/csv/'
 
-    else:
-        xr_dir = xr_dir
-        wrf_folder = date.today().strftime('/%y%m%d00/')
-        filein = str(wrf_dir) + wrf_folder
-        write_to_dir = str(data_dir) + '/csv/'
+    # else:
+
+    wrf_folder = date.today().strftime(f'/{todays_date[2:]}00/')
+    filein = str(wrf_dir) + wrf_folder
+    write_to_dir = str(data_dir) + '/csv/'
 
     hourly_file_dir = str(xr_dir) + str(f"/fwf-hourly-{todays_date}00.zarr") 
     daily_file_dir = str(xr_dir) + str(f"/fwf-daily-{todays_date}00.zarr") 
@@ -137,7 +136,7 @@ def intercomparison_make_csv(local, todays_date, yesterday_date):
 
     file_name_today  = str(np.array(hourly_ds.Time[0], dtype ='datetime64[h]'))
     file_name_today = datetime.strptime(str(file_name_today), '%Y-%m-%dT%H').strftime('%Y%m%d%H')
-    csv_dir_today = write_to_dir + f'fwf-intermoparison-{file_name_today}.csv'
+    csv_dir_today = write_to_dir + f'fwf-intercomparison-{file_name_today}.csv'
 
 
         
@@ -149,7 +148,7 @@ def intercomparison_make_csv(local, todays_date, yesterday_date):
     else:
         file_name_yesterday  = str(np.array(hourly_ds_yesterday.Time[0], dtype ='datetime64[h]'))
         file_name_yesterday = datetime.strptime(str(file_name_yesterday), '%Y-%m-%dT%H').strftime('%Y%m%d%H')
-        csv_dir_yesterday = write_to_dir + f'fwf-intermoparison-{file_name_yesterday}.csv'
+        csv_dir_yesterday = write_to_dir + f'fwf-intercomparison-{file_name_yesterday}.csv'
         inter_df_yesterday = pd.read_csv(csv_dir_yesterday)
         final_inter_df = pd.concat([inter_df,inter_df_yesterday])
         final_inter_df.to_csv(csv_dir_today, sep=',', encoding='utf-8')

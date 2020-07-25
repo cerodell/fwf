@@ -7,42 +7,67 @@ from datetime import datetime, date, timedelta
 startTime = datetime.now()
 print("RUN STARTED AT: ", str(startTime))
 from dev_fwf import FWF
-from context import data_dir, wrf_dir, tzone_dir, root_dir
+from context import data_dir, xr_dir, wrf_dir, tzone_dir, root_dir
+
+import warnings
+
+#ignore by message
+warnings.filterwarnings("ignore", message="invalid value encountered in power")
+warnings.filterwarnings("ignore", message="invalid value encountered in log")
 
 
 """######### get directory to yesterdays hourly/daily .zarr files.  #############"""
-re_run = '/Volumes/cer/fireweather/data/'
+# re_run = '/Volumes/cer/fireweather/data/'
+forecast_day = '/20072200/'
 
-start = datetime.strptime("2020053000", "%Y%m%d00")
-end = datetime.strptime("2020072000", "%Y%m%d00")
-solve_forecast_range = [start + timedelta(days=x) for x in range(0, (end-start).days)]
+# wrf_filein = date.today().strftime(f'/{forecast_day}/')
+wrf_file_dir = str(wrf_dir) + forecast_day
 
-start = datetime.strptime("2020052900", "%Y%m%d00")
-end = datetime.strptime("2020071900", "%Y%m%d00")
-yesterdays_forecast_range = [start + timedelta(days=x) for x in range(0, (end-start).days)]
+#### SHOULD BE THE DAY BEFORE THE OTHERS!!!
+forecast_yesterday = '2020072100'
+hourly_file_dir = str(xr_dir) + str(f"/fwf-hourly-{forecast_yesterday}.zarr")   
+daily_file_dir = str(xr_dir) + str(f"/fwf-daily-{forecast_yesterday}.zarr") 
+print(wrf_file_dir)
+print(hourly_file_dir)
 
-for i in range(len(solve_forecast_range)):
-    solve_forecast = solve_forecast_range[i].strftime("%Y%m%d00")
+coeff = FWF(wrf_file_dir, hourly_file_dir, daily_file_dir)
 
-    yesterdays_forecast = yesterdays_forecast_range[i].strftime("%Y%m%d00")
-    if int(solve_forecast) > 2020071800:
-        exit
-    else:
-        print(solve_forecast, "today")
-        print(yesterdays_forecast, "yesterday")
-
-        wrf_file_dir = str(re_run) + str(f"xr/fwf-hourly-{solve_forecast}.zarr") 
-        hourly_file_dir = str(re_run) + str(f"new_xr/fwf-hourly-{yesterdays_forecast}.zarr")   #### SHOULD BE THE DAY BEFORE THE OTHERS!!!
-        daily_file_dir = str(re_run) + str(f"xr/fwf-daily-{solve_forecast}.zarr") 
-        print(wrf_file_dir)
-        print(hourly_file_dir)
-
-        coeff = FWF(wrf_file_dir, hourly_file_dir, daily_file_dir) 
-        hourly_file_dir  = coeff.hourly()
+daily_file_dir  = coeff.daily()
+hourly_file_dir  = coeff.hourly()
 
 
+        # coeff = FWF(wrf_file_dir, hourly_file_dir, daily_file_dir) 
+        # hourly_file_dir  = coeff.hourly()
+# start = datetime.strptime("2020071800", "%Y%m%d00")
+# end = datetime.strptime("2020072400", "%Y%m%d00")
+# solve_forecast_range = [start + timedelta(days=x) for x in range(0, (end-start).days)]
 
-"""######### Open wrf_out.nc and write  new hourly/daily .zarr files #############"""
+# start = datetime.strptime("2020071700", "%Y%m%d00")
+# end = datetime.strptime("2020072400", "%Y%m%d00")
+# yesterdays_forecast_range = [start + timedelta(days=x) for x in range(0, (end-start).days)]
+
+# for i in range(len(solve_forecast_range)):
+#     solve_forecast = solve_forecast_range[i].strftime("%Y%m%d00")
+
+#     yesterdays_forecast = yesterdays_forecast_range[i].strftime("%Y%m%d00")
+#     if int(solve_forecast) > 2020072300:
+#         exit
+#     else:
+#         print(solve_forecast, "today")
+#         print(yesterdays_forecast, "yesterday")
+
+#         wrf_file_dir = str(re_run) + str(f"xr/fwf-hourly-{solve_forecast}.zarr") 
+#         hourly_file_dir = str(re_run) + str(f"new_xr/fwf-hourly-{yesterdays_forecast}.zarr")   #### SHOULD BE THE DAY BEFORE THE OTHERS!!!
+#         daily_file_dir = str(re_run) + str(f"xr/fwf-daily-{solve_forecast}.zarr") 
+#         print(wrf_file_dir)
+#         print(hourly_file_dir)
+
+#         # coeff = FWF(wrf_file_dir, hourly_file_dir, daily_file_dir) 
+#         # hourly_file_dir  = coeff.hourly()
+
+
+
+# """######### Open wrf_out.nc and write  new hourly/daily .zarr files #############"""
 # coeff = FWF(wrf_file_dir, None, daily_file_dir) 
 
 # hourly_file_dir  = coeff.hourly()

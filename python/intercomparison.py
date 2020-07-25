@@ -43,12 +43,13 @@ warnings.filterwarnings("ignore", message="elementwise comparison failed")
 #         print(yesterday_date, "yesterday")
 #         intercomparison_make_csv(True, todays_date, yesterday_date)
 
+todays_date = '20200723'
+yesterday_date = '20200722'
+intercomparison_make_csv(None, todays_date, yesterday_date)
 
-
-
-filecsv = '/Volumes/cer/fireweather/data/csv/fwf-intermoparison-2020071800.csv'
-
-inter_df = pd.read_csv(filecsv)
+# filecsv = '/Volumes/cer/fireweather/data/csv/fwf-intermoparison-2020071900.csv'
+# filecsv = str(data_dir) + '/csv/fwf-intercomparison-2020071900.csv'
+# inter_df = pd.read_csv(filecsv)
 
 
 # hourly_file_dir = str(xr_dir) + str("/current/hourly.zarr") 
