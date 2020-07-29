@@ -142,7 +142,7 @@ def intercomparison_make_csv(local, todays_date, yesterday_date):
         
     if yesterday_date == None:
         print('No inter_df from yesterday')
-        inter_df.to_csv(csv_dir_today, sep=',', encoding='utf-8')
+        inter_df.to_csv(csv_dir_today, sep=',', encoding='utf-8', index=False)
         print(f"{str(datetime.now())} ---> wrote {csv_dir_today}" )
 
     else:
@@ -151,5 +151,6 @@ def intercomparison_make_csv(local, todays_date, yesterday_date):
         csv_dir_yesterday = write_to_dir + f'fwf-intercomparison-{file_name_yesterday}.csv'
         inter_df_yesterday = pd.read_csv(csv_dir_yesterday)
         final_inter_df = pd.concat([inter_df,inter_df_yesterday])
-        final_inter_df.to_csv(csv_dir_today, sep=',', encoding='utf-8')
+        final_inter_df.drop(final_inter_df.columns[-1],axis=1,inplace=True)  
+        final_inter_df.to_csv(csv_dir_today, sep=',', encoding='utf-8', index=False)
         print(f"{str(datetime.now())} ---> wrote {csv_dir_today}" )

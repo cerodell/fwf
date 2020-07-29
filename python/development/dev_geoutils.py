@@ -7,6 +7,7 @@ import geojsoncontour
 from pathlib import Path
 from netCDF4 import Dataset
 import branca.colormap as cm
+import scipy.ndimage as ndimage
 
 import matplotlib.pyplot as plt
 import matplotlib.colors 
@@ -51,16 +52,16 @@ def mycontourf_to_geojson(cmaps, var, ds, index, folderdate, colornumber):
         lngs = np.array(ds.XLONG)
         lats = np.array(ds.XLAT)
         fillarray = np.round(np.array(ds[var][index]),3)
+        # fillarray = ndimage.gaussian_filter(fillarray, sigma=.5, order =0)
+
         geojson_filepath = str(name + "-" + timestamp)
         lenght = len(colors)
     
-    # if cmaps[var]["levels"] == True:
-    #     levels = cmaps[var]["levels"]
-    #     print(levels)
-    # else:
-    #     pass
 
-    levels = cmaps[var]["levels"]
+    # levels = np.linspace(vmin,vmax+1,lenght)
+    # levels = cmaps[var]["levels"]
+    levels = np.linspace(50,100,29)
+    levels[0] = 0
     print(levels)
     Cnorm = matplotlib.colors.Normalize(vmin= vmin, vmax =vmax+1)
     contourf = plt.contourf(lngs, lats, fillarray, levels = levels, \
@@ -69,7 +70,7 @@ def mycontourf_to_geojson(cmaps, var, ds, index, folderdate, colornumber):
 
     geojsoncontour.contourf_to_geojson(
         contourf=contourf,
-        min_angle_deg=3.0,
+        min_angle_deg=None,
         ndigits=2,
         stroke_width=0.2,
         fill_opacity=0.95,
@@ -77,7 +78,11 @@ def mycontourf_to_geojson(cmaps, var, ds, index, folderdate, colornumber):
         geojson_filepath = f'/bluesky/fireweather/fwf/data/geojson/{folderdate}/{geojson_filepath}.geojson')
 
     print(f'wrote geojson to: /bluesky/fireweather/fwf/data/geojson/{folderdate}/{geojson_filepath}.geojson')
+    
     return
+
+
+
 
 def mask(ds_unmasked, wrf_file_dir):
     LANDMASK, LAKEMASK, SNOWC = wrfmasks(wrf_file_dir)
@@ -149,7 +154,7 @@ def delete2D(array2D):
 def colormaps(cmaps, var):
     vmin, vmax = cmaps[var]["vmin"], cmaps[var]["vmax"]
     name, colors = cmaps[var]["name"], cmaps[var]["colors15"]
-    levels = len(colors)
+    levels = cmaps[var]["levels"]
     # cmap  = cm.LinearColormap(colors, vmin = vmin, vmax = vmax, caption = name).to_step(levels)
     cmap  = cm.StepColormap(colors, index = cmaps[var]["levels"], vmin = vmin, vmax = vmax, caption = name)
     cmap.caption = cmaps[var]["title"]

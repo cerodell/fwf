@@ -54,7 +54,8 @@ def mycontourf_to_geojson(cmaps, var, ds, index, folderdate, colornumber):
         geojson_filepath = str(name + "-" + timestamp)
         lenght = len(colors)
         
-    levels = np.linspace(vmin,vmax+1,lenght)
+    # levels = np.linspace(vmin,vmax+1,lenght)
+    levels = cmaps[var]["levels"]
     Cnorm = matplotlib.colors.Normalize(vmin= vmin, vmax =vmax+1)
     contourf = plt.contourf(lngs, lats, fillarray, levels = levels, \
                             linestyles = 'None', norm = Cnorm, colors = colors, extend = 'both')
@@ -62,7 +63,7 @@ def mycontourf_to_geojson(cmaps, var, ds, index, folderdate, colornumber):
 
     geojsoncontour.contourf_to_geojson(
         contourf=contourf,
-        min_angle_deg=3.0,
+        min_angle_deg=None,
         ndigits=2,
         stroke_width=0.2,
         fill_opacity=0.95,

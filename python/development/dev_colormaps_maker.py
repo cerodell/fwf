@@ -33,8 +33,8 @@ with open('/bluesky/fireweather/fwf/json/colormaps.json') as f:
 # hourly_file_dir = str(xr_dir) + str("/current/hourly.zarr") 
 # daily_file_dir = str(xr_dir) + str("/current/daily.zarr") 
 ############################################################
-hourly_file_dir = str(xr_dir) + str("/fwf-hourly-2020071700.zarr") 
-daily_file_dir = str(xr_dir) + str("/fwf-daily-2020071700.zarr")
+hourly_file_dir = str(xr_dir) + str("/fwf-hourly-2020072500.zarr") 
+daily_file_dir = str(xr_dir) + str("/fwf-daily-2020072500.zarr")
 ############################################################
 hourly_ds = xr.open_zarr(hourly_file_dir)
 daily_ds = xr.open_zarr(daily_file_dir)
@@ -52,7 +52,7 @@ for var in daily_vars:
 
 ### Get Path to most recent WRF run for most uptodate snowcover info
 # wrf_folder = date.today().strftime('/%y%m%d00/')
-wrf_folder = '/20071700/'
+wrf_folder = '/20072500/'
 filein = str(wrf_dir) + wrf_folder
 wrf_file_dir = sorted(Path(filein).glob('wrfout_d03_*'))
 

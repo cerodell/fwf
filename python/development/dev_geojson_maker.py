@@ -28,8 +28,8 @@ with open('/bluesky/fireweather/fwf/json/colormaps.json') as f:
 # hourly_file_dir = str(xr_dir) + str("/current/hourly.zarr") 
 # daily_file_dir = str(xr_dir) + str("/current/daily.zarr") 
 ############################################################
-hourly_file_dir = str(xr_dir) + str("/fwf-hourly-2020071700.zarr") 
-daily_file_dir = str(xr_dir) + str("/fwf-daily-2020071700.zarr")
+hourly_file_dir = str(xr_dir) + str("/fwf-hourly-2020072400.zarr") 
+daily_file_dir = str(xr_dir) + str("/fwf-daily-2020072400.zarr")
 ############################################################
 hourly_ds = xr.open_zarr(hourly_file_dir)
 daily_ds = xr.open_zarr(daily_file_dir)
@@ -65,7 +65,12 @@ make_dir.mkdir(parents=True, exist_ok=True)
 ## Make geojson of ffmc, isi, fwf every 6 hours
 print(f"{str(datetime.now())} ---> start loop of hourly fwf products" )
 
-mycontourf_to_geojson(cmaps, 'F', hourly_ds, 0, folderdate, "colors15")
+mycontourf_to_geojson(cmaps, 'F', hourly_ds, 0, folderdate, "colors30")
+# mycontourf_to_geojson(cmaps, 'R', hourly_ds, 0, folderdate, "colors15")
+# mycontourf_to_geojson(cmaps, 'S', hourly_ds, 0, folderdate, "colors15")
+# mycontourf_to_geojson(cmaps, 'P', daily_ds, 0, folderdate, "colors15")
+# mycontourf_to_geojson(cmaps, 'D', daily_ds, 0, folderdate, "colors15")
+# mycontourf_to_geojson(cmaps, 'U', daily_ds, 0, folderdate, "colors15")
 
 
 # index = np.arange(0,66,6)
