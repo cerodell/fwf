@@ -4,6 +4,7 @@ data
 .DS_Store
 *.DS_Store
 images
+web_dev/data
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
