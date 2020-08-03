@@ -17,16 +17,24 @@ from wrf import (getvar, g_uvmet,get_cartopy, ll_to_xy)
 
 def readwrf(filein, *args):
     """
-    This function reads wrfout files and grabs variables of interest and writes/outputs as an xarray
+    This function reads wrfout files and grabs required met variables for fire weather index calculations.  Writes/outputs as a xarray    
     
+        - wind speed (km h-1)
+        - temp (degC)
+        - rh (%)
+        - qpf (mm)
+
     Parameters
     ----------
     
-    files: netcdf files
+    files: str
+        - File directory to NetCDF files
+
     Returns
     -------
     
-    ds_wrf: an xarray of wind speed (km h-1), temp (degC), rh (%) & qpf (mm)
+    ds_wrf: DataSet
+        xarray DataSet
     """
    
     ds_list, time_list, attributes = [], [], []
