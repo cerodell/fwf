@@ -12,6 +12,7 @@ File Directories
 ------------------
 master
 ******
+
 ``/bluesky/fireweather/fwf/master`` is the operational directory, its where the code to run the model resides.
     - all_fwf_run.sh 
     - run.py 
@@ -34,19 +35,19 @@ data
     - the current fwf zarr forecast data is broken up into two groups ``hourly`` and ``daily`` the table below shows whats in each group.
 
 
-+----------------------------------+------------------------------------------------------------+
-| **Hourly Dataset** ``hourly_ds`` | **Daily Dataset** ``daily_ds``                             | 
-+==================================+============================================================+
-| Fine Fuel Moisture Code **FFMC** | Duff Moisture Code **DMC**                                 |
-+----------------------------------+------------------------------------------------------------+
-| Initial Spread INdex **ISI**     | Drought Moisture Code **DC**                               |
-+----------------------------------+------------------------------------------------------------+
-| Fire Weather Index **FWI**       | Build Up Index **BUI**                                     |
-+----------------------------------+------------------------------------------------------------+
-| - *WRF*: Temp, RH,               | - *WRF*: Average Temp, RH,                                 |
-| - Wind Speed/Direction           | - Wind Speed/Direction                                     |
-| - Hourly Rain Fall Totals        | - 24 hour Rain Fall Totals between (1100-1300) local time  |
-+----------------------------------+------------------------------------------------------------+
++---------------------------------------------------+-------------------------------------------------+
+| **Hourly Dataset** ``fwf-hourly-YYYYMMDDHH.zarr`` | **Daily Dataset** ``fwf-hourly-YYYYMMDDHH.zarr``| 
++===================================================+=================================================+
+| Fine Fuel Moisture Code **FFMC**                  | Duff Moisture Code **DMC**                      |
++---------------------------------------------------+-------------------------------------------------+
+| Initial Spread INdex **ISI**                      | Drought Moisture Code **DC**                    |
++---------------------------------------------------+-------------------------------------------------+
+| Fire Weather Index **FWI**                        | Build Up Index **BUI**                          |
++---------------------------------------------------+-------------------------------------------------+
+| - *WRF*: Temp, RH,                                | - *WRF*: Average Temp, RH,                      |
+| - Wind Speed/Direction                            | - Wind Speed/Direction                          |
+| - Hourly Rain Fall Totals                         | - 24 hour Rain Fall between (1100-1300) local   |
++---------------------------------------------------+-------------------------------------------------+
 
 
 archive
@@ -80,8 +81,8 @@ Website
 
 To visualize the data on leaflet several steps are made to simplify and reduce the file as much as possible. 
 
-Data
-********
+Visualization Steps
+*******************
 #. zarr file data is first masked to remove all lakes, oceans, and snow cover.
     * see ``/bluesky/fireweather/fwf/utils/geoutils.py``
 #. after mask is applied fire weather indices/codes are made into contourf
@@ -99,5 +100,5 @@ Data
     * reference: https://github.com/topojson/topojson-simplify 
 
 #. topojsons are stored as json files: ``/bluesky/archive/fireweather/forecast/YYYYMMDDHH`` 
-    * stored as .json extension so serve can gzip and send file to client
+    * stored as .json extension so server can gzip and send file to client
 

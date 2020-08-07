@@ -4,20 +4,22 @@ Welcome to Fire Weather Forecast Model
 Overview:
 #########
 
-    The FWF model is built off a preexisting fire-weather model,
-    the Fire Weather Index System (FWI). The FWI system developed 
-    by Van Wanger and Pickett estimates how past/current/future weather
-    conditions affect the moisture content within varied forest fuel layers
-    across Canada. Knowing the fuel moisture content at all locations enables
-    the fires management agencies to understand where fires may occur and
-    how fast they may grow/spread. 
+   The Fire Weather Forecast (FWF) model is built off a preexisting fire-weather model,
+   the Fire Weather Index System (FWI). The FWI system developed 
+   by Van Wanger and Pickett estimates how past/current/future weather
+   conditions affect the moisture content within varied forest fuel layers
+   across Canada. Knowing the fuel moisture content at all locations enables
+   fires management agencies to understand where fires may occur and
+   how fast they may grow/spread. 
 
-    The FWF model differs from the current FWI systems by calculating the moisture
-    codes/indices at every grid point within the model domain at a one-hour temporal 
-    and 4 km spatial resolution. The current FWI system calculates the moisture 
-    codes/indices once daily at noon local at 900 point locations across Canada. 
-    The current model then interpolates the weather between those stations to create
-    a spatial forecast. 
+   The new FWF model differs from current FWI models by fully utilizing a numerical
+   weather prediction (NWP) model.  Fuel moisture codes/indices are calculated at every 
+   grid point within the NWP model at a 4 km spatial resolution.  The Fine Fuel Moisture
+   Code, Initial Spread Index, and Fire Weather Index are resolved at a one-hour temporal
+   resolution while the Duff Moisture Code, Drought Code and Build up Index are solved
+   once daily at noon local.  This idffers from current FWI models that calculate all moisture
+   codes/indices once daily on noon local at 900 point locations across Canada and interpolate
+   to fill the void.
 
 | For the current FWF forecast check out:
 | https://firesmoke.ca/forecasts/fireweather/current/
@@ -25,7 +27,7 @@ Overview:
 
 
 .. image:: _static/images/fwf_example.png    
-   :scale: 50%
+   :scale: 30%
    :align: center
 
 Documentation
@@ -34,9 +36,11 @@ Documentation
    :maxdepth: 2
    :caption: Model:
 
+   ms
+
    api
    
-   ms
+   
 
 Indices and tables
 ==================

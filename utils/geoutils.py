@@ -19,7 +19,38 @@ from wrf import getvar
 
 def mycontourf_to_geojson(cmaps, var, ds, index, folderdate, colornumber):
     """
-    This makes a gejson file from a matplot lib countourf
+    This makes a geojson file from a matplot lib countourf
+
+    Parameters
+    ----------
+    cmaps: dictionary
+        contains variable attributes from ``colormaps.json``
+            - variable name
+            - variable title 
+            - contour levels/range
+            - color palette
+        
+    var: str
+        - variable name
+    
+    ds: DataSet
+        - either daily_ds or houlry_ds
+
+    index: int
+        - time index
+
+    folderdate: str
+        - file directory to geojson files
+        - ``../fwf/data/geojson/YYYYMMDDHH``
+
+    colornumber: str
+        - colors30 or colors15 
+        - will provide either 30 or 15 contour levels
+
+    Returns
+    -------
+    file: geojson
+        - ``../fwf/data/geojson/YYYYMMDDHH``
 
     """
     timestamp  = str(np.array(ds.Time[index], dtype ='datetime64[h]'))
@@ -74,6 +105,24 @@ def mycontourf_to_geojson(cmaps, var, ds, index, folderdate, colornumber):
     return
 
 def mask(ds_unmasked, wrf_file_dir):
+    """
+    This masks out all lakes, oceans, and snow cover from model domain.
+
+    Parameters
+    ----------
+    ds_unmasked: DataSet
+        - either daily_ds or houlry_ds
+    
+    wrf_file_dir: str
+        - file directory to wrf NetCDF files
+        - ``/nfs/kitsault/archives/forecasts/WAN00CP-04/YYMMDD00/``
+    
+    Returns
+    -------
+    ds: DataSet
+        -  masked daily_ds or houlry_ds
+
+    """
     LANDMASK, LAKEMASK, SNOWC = wrfmasks(wrf_file_dir)
     SNOWC[:,:600]   = 0
     ds = xr.where(LANDMASK == 1, ds_unmasked, np.nan)

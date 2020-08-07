@@ -32,8 +32,13 @@ release = '0.0.1'
 # ones.
 extensions = ['sphinx.ext.autodoc', 'sphinx.ext.coverage', \
     'sphinx.ext.napoleon', 'sphinx_automodapi.automodapi', 'recommonmark', \
-        'sphinx_markdown_tables']
+        'sphinx_markdown_tables', 'sphinxcontrib.inlinesyntaxhighlight']
 
+# use language set by highlight directive if no language is set by role
+inline_highlight_respect_highlight = False
+
+# use language set by highlight directive if no role is set
+inline_highlight_literals = False
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
@@ -49,13 +54,13 @@ exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
 #
-html_theme = 'rtcat_sphinx_theme'
-import rtcat_sphinx_theme
-html_theme_path = [rtcat_sphinx_theme.get_html_theme_path()]
+html_theme = 'sphinx_rtd_theme'
+# import rtcat_sphinx_theme
+# html_theme_path = [rtcat_sphinx_theme.get_html_theme_path()]
 
-# Add any paths that contain custom static files (such as style sheets) here,
-# relative to this directory. They are copied after the builtin static files,
-# so a file named "default.css" will overwrite the builtin "default.css".
+# # Add any paths that contain custom static files (such as style sheets) here,
+# # relative to this directory. They are copied after the builtin static files,
+# # so a file named "default.css" will overwrite the builtin "default.css".
 html_static_path = ['_static']
 
 

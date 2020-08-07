@@ -1,8 +1,7 @@
 
 
 <!DOCTYPE html>
-<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
-<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<html class="writer-html5" lang="en" >
 <head>
   <meta charset="utf-8">
   
@@ -12,50 +11,47 @@
   
 
   
+  <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="_static/graphviz.css" type="text/css" />
+
+  
+  
+  
   
 
   
-
-  
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
   
     
+      <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+        <script src="_static/jquery.js"></script>
+        <script src="_static/underscore.js"></script>
+        <script src="_static/doctools.js"></script>
+        <script src="_static/language_data.js"></script>
+    
+    <script type="text/javascript" src="_static/js/theme.js"></script>
 
-  
-
-  
-  
-    <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
-  
-
-  
-    <link rel="stylesheet" href="_static/graphviz.css" type="text/css" />
-  
-
-  
-        <link rel="index" title="Index"
-              href="genindex.html"/>
-        <link rel="search" title="Search" href="search.html"/>
-    <link rel="top" title="Fire Weather Forecast Model 0.0.1 documentation" href="#"/>
-        <link rel="next" title="API" href="api.html"/> 
-
-  
-  <script src="_static/js/modernizr.min.js"></script>
-
+    
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Structure" href="ms.html" /> 
 </head>
 
-<body class="wy-body-for-nav" role="document">
+<body class="wy-body-for-nav">
 
    
   <div class="wy-grid-for-nav">
-
     
     <nav data-toggle="wy-nav-shift" class="wy-nav-side">
       <div class="wy-side-scroll">
-        <div class="wy-side-nav-search">
+        <div class="wy-side-nav-search" >
           
 
           
-            <a href="#" class="icon icon-home"> Fire Weather Forecast Model
+            <a href="#" class="icon icon-home" alt="Documentation Home"> Fire Weather Forecast Model
           
 
           
@@ -78,26 +74,31 @@
           
         </div>
 
+        
         <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
           
             
             
-                <p class="caption"><span class="caption-text">Model:</span></p>
+              
+            
+            
+              <p class="caption"><span class="caption-text">Model:</span></p>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="api.html">API</a></li>
 <li class="toctree-l1"><a class="reference internal" href="ms.html">Structure</a></li>
+<li class="toctree-l1"><a class="reference internal" href="api.html">API</a></li>
 </ul>
 
             
           
         </div>
+        
       </div>
     </nav>
 
     <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
 
       
-      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+      <nav class="wy-nav-top" aria-label="top navigation">
         
           <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
           <a href="#">Fire Weather Forecast Model</a>
@@ -105,10 +106,13 @@
       </nav>
 
 
-      
       <div class="wy-nav-content">
+        
         <div class="rst-content">
+        
           
+
+
 
 
 
@@ -123,9 +127,10 @@
 
 
 <div role="navigation" aria-label="breadcrumbs navigation">
+
   <ul class="wy-breadcrumbs">
     
-      <li><a href="#">Docs</a> &raquo;</li>
+      <li><a href="#" class="icon icon-home"></a> &raquo;</li>
         
       <li>Welcome to Fire Weather Forecast Model</li>
     
@@ -139,6 +144,8 @@
       </li>
     
   </ul>
+
+  
   <hr/>
 </div>
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
@@ -149,26 +156,28 @@
 <div class="section" id="overview">
 <h2>Overview:<a class="headerlink" href="#overview" title="Permalink to this headline">¶</a></h2>
 <blockquote>
-<div><p>The FWF model is built off a preexisting fire-weather model,
+<div><p>The Fire Weather Forecast (FWF) model is built off a preexisting fire-weather model,
 the Fire Weather Index System (FWI). The FWI system developed
 by Van Wanger and Pickett estimates how past/current/future weather
 conditions affect the moisture content within varied forest fuel layers
 across Canada. Knowing the fuel moisture content at all locations enables
-the fires management agencies to understand where fires may occur and
+fires management agencies to understand where fires may occur and
 how fast they may grow/spread.</p>
-<p>The FWF model differs from the current FWI systems by calculating the moisture
-codes/indices at every grid point within the model domain at a one-hour temporal
-and 4 km spatial resolution. The current FWI system calculates the moisture
-codes/indices once daily at noon local at 900 point locations across Canada.
-The current model then interpolates the weather between those stations to create
-a spatial forecast.</p>
+<p>The new FWF model differs from current FWI models by fully utilizing a numerical
+weather prediction (NWP) model.  Fuel moisture codes/indices are calculated at every
+grid point within the NWP model at a 4 km spatial resolution.  The Fine Fuel Moisture
+Code, Initial Spread Index, and Fire Weather Index are resolved at a one-hour temporal
+resolution while the Duff Moisture Code, Drought Code and Build up Index are solved
+once daily at noon local.  This idffers from current FWI models that calculate all moisture
+codes/indices once daily on noon local at 900 point locations across Canada and interpolate
+to fill the void.</p>
 </div></blockquote>
 <div class="line-block">
 <div class="line">For the current FWF forecast check out:</div>
 <div class="line"><a class="reference external" href="https://firesmoke.ca/forecasts/fireweather/current/">https://firesmoke.ca/forecasts/fireweather/current/</a></div>
 <div class="line"><br /></div>
 </div>
-<a class="reference internal image-reference" href="_images/fwf_example.png"><img alt="_images/fwf_example.png" class="align-center" src="_images/fwf_example.png" style="width: 1906.0px; height: 885.0px;" /></a>
+<a class="reference internal image-reference" href="_images/fwf_example.png"><img alt="_images/fwf_example.png" class="align-center" src="_images/fwf_example.png" style="width: 618.0px; height: 435.59999999999997px;" /></a>
 </div>
 </div>
 <div class="section" id="documentation">
@@ -176,16 +185,17 @@ a spatial forecast.</p>
 <div class="toctree-wrapper compound">
 <p class="caption"><span class="caption-text">Model:</span></p>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="api.html">API</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="api.html#module-utils.fwf">FWF</a></li>
-<li class="toctree-l2"><a class="reference internal" href="api.html#module-utils.read_wrfout">Read WRF NetCDF</a></li>
-</ul>
-</li>
 <li class="toctree-l1"><a class="reference internal" href="ms.html">Structure</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="ms.html#flow-chart">Flow Chart</a></li>
 <li class="toctree-l2"><a class="reference internal" href="ms.html#file-directories">File Directories</a></li>
 <li class="toctree-l2"><a class="reference internal" href="ms.html#required-packages">Required packages</a></li>
 <li class="toctree-l2"><a class="reference internal" href="ms.html#website">Website</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="api.html">API</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="api.html#module-utils.fwf">FWF</a></li>
+<li class="toctree-l2"><a class="reference internal" href="api.html#module-utils.read_wrfout">Read WRF NetCDF</a></li>
+<li class="toctree-l2"><a class="reference internal" href="api.html#module-utils.geoutils">Geoutils</a></li>
 </ul>
 </li>
 </ul>
@@ -202,12 +212,13 @@ a spatial forecast.</p>
 
 
            </div>
+           
           </div>
           <footer>
   
     <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
       
-        <a href="api.html" class="btn btn-neutral float-right" title="API" accesskey="n">Next →</a>
+        <a href="ms.html" class="btn btn-neutral float-right" title="Structure" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
       
       
     </div>
@@ -217,11 +228,19 @@ a spatial forecast.</p>
 
   <div role="contentinfo">
     <p>
-        &copy; Copyright 2020, Christopher Rodell.
+        
+        &copy; Copyright 2020, Christopher Rodell
 
     </p>
   </div>
-  Built with <a href="http://sphinx-doc.org/">Sphinx</a>. 
+    
+    
+    
+    Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a
+    
+    <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a>
+    
+    provided by <a href="https://readthedocs.org">Read the Docs</a>. 
 
 </footer>
 
@@ -233,37 +252,15 @@ a spatial forecast.</p>
   </div>
   
 
-
-  
-
-    <script type="text/javascript">
-        var DOCUMENTATION_OPTIONS = {
-            URL_ROOT:'./',
-            VERSION:'0.0.1',
-            COLLAPSE_INDEX:false,
-            FILE_SUFFIX:'.html',
-            HAS_SOURCE: 'true'
-        };
-    </script>
-      <script type="text/javascript" src="_static/jquery.js"></script>
-      <script type="text/javascript" src="_static/underscore.js"></script>
-      <script type="text/javascript" src="_static/doctools.js"></script>
-      <script type="text/javascript" src="_static/language_data.js"></script>
-
-  
-
-  
-  
-    <script type="text/javascript" src="_static/js/theme.js"></script>
-  
-
-  
-  
   <script type="text/javascript">
       jQuery(function () {
-          SphinxRtdTheme.StickyNav.enable();
+          SphinxRtdTheme.Navigation.enable(true);
       });
   </script>
+
+  
+  
+    
    
 
 </body>
