@@ -69,7 +69,11 @@ var groupedOverlays = {
         "ISI"  : isiTimeLayer,
         "BUI"  : buiTimeLayer,
         "FWI"  : fwiTimeLayer,
-    }
+    },
+
+    "Overlays": {
+        "WxStations": wx_station,
+    }, 
 
 };
 

@@ -118,3 +118,78 @@ text-align: left !important;
         /* Below 480px the width will be 100% and the images will come in stakced view. */
     }
 }
+
+
+/* .popup_content {
+    background:#2c3e50;
+    color:#fff;
+} */
+
+
+/* Style the marker popup html */
+.popup_title {
+    margin: 0 0 1.6em 0;
+    font-size: 1.6em;
+
+}
+
+.wmo {
+    font-size: 1.4em;
+    /* font-size: 12px; */
+
+}
+
+.fwi_stats {
+    max-width: 16em;
+}
+
+.fwi_stats ul {
+    padding: 0;
+    margin: 0 0 1.5em;
+    list-style: none;
+}
+
+.fwi_stats ul li {
+    margin-bottom: .8em;
+}
+
+/* Property name */
+.fwi_stats ul li span {
+    font-size: 1.4em;
+    font-weight: bold;
+    line-height: 1.5;
+}
+
+/* Property value (icon)
+.site__availability__icon {
+    width: 2em;
+    float: right;
+} */
+
+
+
+
+
+
+
+
+
+
+
+/* css to customize Leaflet default styles 
+.custom-popup .leaflet-popup-tip,
+.custom-popup .leaflet-popup-content-wrapper {
+    background: #e93434;
+    color: #ffffff;
+} */
+
+/* .custom-popup .leaflet-popup-tip-container {
+    width:30px;
+    height:15px;
+}
+.custom-popup .leaflet-popup-tip {
+    border-left:15px solid transparent;
+    border-right:15px solid transparent;
+    border-top:15px solid #2c3e50;
+} */
+

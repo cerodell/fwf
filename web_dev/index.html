@@ -3,7 +3,6 @@
 
 <head>    
     <meta http-equiv="content-type" content="text/html; charset=UTF-8" />
-
     
     <script type="text/javascript">
         if ( /Android|webOS|iPhone|iPod|iPad|BlackBerry/i.test(navigator.userAgent)) {
@@ -37,8 +36,8 @@
                 initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
     
     <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/3.5.5/d3.min.js"></script>
-    <!-- <script src="https://unpkg.com/leaflet.vectorgrid@latest/dist/Leaflet.VectorGrid.bundled.js"></script> -->
-    <!-- <script src="https://unpkg.com/geojson-vt@3.2.0/geojson-vt.js"></script> -->
+    <script src="https://unpkg.com/leaflet.vectorgrid@latest/dist/Leaflet.VectorGrid.bundled.js"></script>
+    <script src="https://unpkg.com/geojson-vt@3.2.0/geojson-vt.js"></script>
     <script src='https://api.mapbox.com/mapbox.js/plugins/leaflet-fullscreen/v1.0.1/Leaflet.fullscreen.min.js'></script>
     <script src="https://cdn.plot.ly/plotly-1.54.6.min.js"></script>
     <link rel="stylesheet" href="static/css/fwf-leaflet.zoomhome.css"/>
@@ -79,8 +78,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Leaflet.awesome-markers/2.0.2/leaflet.awesome-markers.js"></script>
     <script src="//cdnjs.cloudflare.com/ajax/libs/jqueryui-touch-punch/0.2.2/jquery.ui.touch-punch.min.js"></script>
     <script src="https://cdn.rawgit.com/nezasa/iso8601-js-period/master/iso8601.min.js"></script>
-    <script src="https://cdn.rawgit.com/socib/Leaflet.TimeDimension/master/dist/leaflet.timedimension.min.js"></script>
-    <!-- <script src="static/js/fwf-Leaflet.VectorGrid.bundled.min.js"></script> -->
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/leaflet-timedimension@1.1.1/dist/leaflet.timedimension.min.js"></script>
     <script src="static/js/fwf-leaflet.zoomhome.min.js"></script>
     <script src="static/js/fwf-leaflet.groupedlayercontrol.min.js"></script>
     <script src="static/js/fwf-leaflet.ajax.min.js"></script>
@@ -104,9 +102,9 @@
                 timeDimension: true,
                 timeDimensionOptions: {
                     // format should be "yyyy-mm-ddThh:mm:ssZ"
-                    timeInterval: "2020-07-28T00:00:00Z/2020-07-29T00:00:00Z",
+                    timeInterval: "2020-08-11T00:00:00Z/2020-08-13T00:00:00Z",
                     period: "PT6H",
-                    currentTime: Date.parse("2020-07-28T00:00:00Z"),
+                    currentTime: Date.parse("2020-08-11T00:00:00Z"),
                 },
                 timeDimensionControl: true,
                 timeDimensionControlOptions: {
@@ -124,34 +122,34 @@
             });
 
 
-        var json_fwf_ca32 = 'fwf-32km-2020072800.json';
+        var json_fwf_ca32 = 'data/fwf-32km-2020081100.json';
 
-        var json_fwf_ca16 = 'fwf-16km-2020072800.json';
+        var json_fwf_ca16 = 'data/fwf-16km-2020081100.json';
 
-        var json_fwf_bc4 = 'fwf-4km-2020072800.json';
+        var json_fwf_bc4 = 'data/fwf-4km-2020081100.json';
 
 
-        var ffmc_topo_file = 'ffmc-2020072800.json';
+        var ffmc_topo_file = 'data/ffmc-2020081100.json';
         var geo_json_ffmc = L.layerGroup().addTo(map);
 
 
-        var dmc_topo_file = 'dmc-20200728.json';
+        var dmc_topo_file = 'data/dmc-20200811.json';
         var geo_json_dmc = L.layerGroup().addTo(map);
 
 
-        var dc_topo_file = 'dc-20200728.json';
+        var dc_topo_file = 'data/dc-20200811.json';
         var geo_json_dc = L.layerGroup().addTo(map);
 
 
-        var isi_topo_file = 'isi-2020072800.json';
+        var isi_topo_file = 'data/isi-2020081100.json';
         var geo_json_isi = L.layerGroup().addTo(map);
 
 
-        var bui_topo_file = 'bui-20200728.json';
+        var bui_topo_file = 'data/bui-20200811.json';
         var geo_json_bui = L.layerGroup().addTo(map);
 
 
-        var fwi_topo_file = 'fwi-2020072800.json';
+        var fwi_topo_file = 'data/fwi-2020081100.json';
         var geo_json_fwi = L.layerGroup().addTo(map);
 
     </script> 
