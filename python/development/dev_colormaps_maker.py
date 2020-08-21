@@ -30,11 +30,11 @@ with open('/bluesky/fireweather/fwf/json/colormaps.json') as f:
 
 
 ### Get Path to most recent FWI forecast and open 
-# hourly_file_dir = str(xr_dir) + str("/current/hourly.zarr") 
-# daily_file_dir = str(xr_dir) + str("/current/daily.zarr") 
+hourly_file_dir = str(xr_dir) + str("/current/hourly.zarr") 
+daily_file_dir = str(xr_dir) + str("/current/daily.zarr") 
 ############################################################
-hourly_file_dir = str(xr_dir) + str("/fwf-hourly-2020072500.zarr") 
-daily_file_dir = str(xr_dir) + str("/fwf-daily-2020072500.zarr")
+# hourly_file_dir = str(xr_dir) + str("/fwf-hourly-2020072500.zarr") 
+# daily_file_dir = str(xr_dir) + str("/fwf-daily-2020072500.zarr")
 ############################################################
 hourly_ds = xr.open_zarr(hourly_file_dir)
 daily_ds = xr.open_zarr(daily_file_dir)
@@ -52,14 +52,14 @@ for var in daily_vars:
 
 ### Get Path to most recent WRF run for most uptodate snowcover info
 # wrf_folder = date.today().strftime('/%y%m%d00/')
-wrf_folder = '/20072500/'
-filein = str(wrf_dir) + wrf_folder
-wrf_file_dir = sorted(Path(filein).glob('wrfout_d03_*'))
+# wrf_folder = '/20072500/'
+# filein = str(wrf_dir) + wrf_folder
+# wrf_file_dir = sorted(Path(filein).glob('wrfout_d03_*'))
 
 
 ### Mask out oceans, lakes and snow cover
-hourly_ds = mask(hourly_ds, wrf_file_dir)
-daily_ds  = mask(daily_ds, wrf_file_dir)
+# hourly_ds = mask(hourly_ds, wrf_file_dir)
+# daily_ds  = mask(daily_ds, wrf_file_dir)
 
 
 ## Get first timestamp of forecast and make dir to store files
@@ -81,19 +81,34 @@ F_cmap = colormaps(cmaps, 'F')
 
 
 ### Convert matplotlib contourf to geojson
-# ffmc = mycontourf_to_geojson(cmaps, 'F', hourly_ds, 0, folderdate, "colors15")
+# mycontourf_to_geojson(cmaps, 'F', hourly_ds, 0, folderdate, "colors15")
+
 # dmc  = contourf_to_geojson(P, cmaps['P']['name'])
 # dc   = contourf_to_geojson(D, cmaps['D']['name'])
 # isi  = contourf_to_geojson(R, cmaps['R']['name'])
 # bui  = contourf_to_geojson(U, cmaps['U']['name'])
 # fwi  = contourf_to_geojson(S, cmaps['S']['name'])
 
-
+with open('/bluesky/fireweather/fwf/data/geojson/2020081700/ffmc-2020081700.geojson') as f:
+  geojson = json.load(f)
 
 
 fwimap = folium.Map(
          location=[CEN_LAT, CEN_LON], 
          zoom_start = 3)
+
+
+folium.GeoJson(
+    geojson
+    # style_function=lambda x: {
+    #     # 'color':     x['properties']['stroke'],
+    #     'weight':    x['properties']['stroke-width'],
+    #     'fillColor': x['properties']['fill'],
+    #     'opacity':   0.9,
+    ).add_to(fwimap)
+
+
+
 # for key in basemaps.keys():
 #     folium.TileLayer(basemaps[key]["tiles"], attr = basemaps[key]["attrs"], name = key).add_to(fwimap)
     
@@ -109,8 +124,8 @@ fwimap.add_child(F_cmap)
 
 
 
-# # # Plot the data
+# # # # Plot the data
 fwimap.save('/bluesky/fireweather/fwf/html/colormaps.html')
 
-# ### Timer
+# # ### Timer
 print("Run Time: ", datetime.now() - startTime)

@@ -13,8 +13,6 @@ var dmcTimeLayer = L.timeDimension.layer.layerGroup(geo_json_dmc, {
     getVar: 'DMC'
 
 });
-dmcTimeLayer.addTo(map);
-
 
 var dcTimeLayer = L.timeDimension.layer.layerGroup(geo_json_dc, {
     getUrlFunction: getDailyForecast,
@@ -22,8 +20,6 @@ var dcTimeLayer = L.timeDimension.layer.layerGroup(geo_json_dc, {
     getVar: 'DC'
 
 });
-dcTimeLayer.addTo(map);
-
 
 
 var isiTimeLayer = L.timeDimension.layer.layerGroup(geo_json_isi, {
@@ -32,8 +28,6 @@ var isiTimeLayer = L.timeDimension.layer.layerGroup(geo_json_isi, {
     getVar: 'ISI'
 
 });
-isiTimeLayer.addTo(map);
-
 
 
 var buiTimeLayer = L.timeDimension.layer.layerGroup(geo_json_bui, {
@@ -41,8 +35,6 @@ var buiTimeLayer = L.timeDimension.layer.layerGroup(geo_json_bui, {
     getFileDir: bui_topo_file,
     getVar: 'BUI'
 });
-buiTimeLayer.addTo(map);
-
 
 var fwiTimeLayer = L.timeDimension.layer.layerGroup(geo_json_fwi, {
     getUrlFunction: getHourlyForecast,
@@ -50,15 +42,10 @@ var fwiTimeLayer = L.timeDimension.layer.layerGroup(geo_json_fwi, {
     getVar: 'FWI'
 
 });
-fwiTimeLayer.addTo(map);
-
 
 
 var baseLayers = {
-    "Carto Light"       : CartoDB_PositronNoLabels,
-    "Stamen Toner"      : Stamen_TonerBackground,
-    "Esri WorldImagery" : Esri_WorldImagery,
-    "Esri WorldTerrain" : Esri_WorldTerrain,
+    "Topography"       : gl,
 };
 
 var groupedOverlays = {   
@@ -71,10 +58,6 @@ var groupedOverlays = {
         "FWI"  : fwiTimeLayer,
     },
 
-    "Overlays": {
-        "WxStations": wx_station,
-    }, 
-
 };
 
 var groupedOptions = {
@@ -83,15 +66,6 @@ var groupedOptions = {
 };
 L.control.groupedLayers(baseLayers, groupedOverlays, groupedOptions).addTo(map);
 
-// remove layers and basemaps options 
-dmcTimeLayer.remove();
-dcTimeLayer.remove();
-isiTimeLayer.remove();
-buiTimeLayer.remove();
-fwiTimeLayer.remove();
-
-Esri_WorldImagery.remove()
-Esri_WorldTerrain.remove();
 
 
 // Move zoom and full screen controls to top-right
@@ -104,9 +78,9 @@ var zoomHome = L.Control.zoomHome({position: 'topright'});
 zoomHome.addTo(map);
 
 // Opacity control
-// var multiLayers = [ffmcTimeLayer, dmcTimeLayer, dcTimeLayer, isiTimeLayer, buiTimeLayer, fwiTimeLayer],
-//     layerGroup = L.layerGroup(multiLayers),
-//     opacitySliderGroup = new L.Control.opacitySliderGroup().addTo(map);
-// opacitySliderGroup.setOpacityLayerGroup(layerGroup);
+var multiLayers = [ffmcTimeLayer, dmcTimeLayer, dcTimeLayer, isiTimeLayer, buiTimeLayer, fwiTimeLayer],
+    layerGroup = L.layerGroup(multiLayers),
+    opacitySliderGroup = new L.Control.opacitySliderGroup().addTo(map);
+opacitySliderGroup.setOpacityLayerGroup(layerGroup);
 
 

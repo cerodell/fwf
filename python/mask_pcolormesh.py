@@ -30,7 +30,7 @@ daily_ds = xr.open_zarr(daily_file_dir)
 ### Bring in WRF Data and open
 # 
 # wrf_folder = date.today().strftime('/%y%m%d00/')
-wrf_folder = '/20071700/'
+wrf_folder = '/20081400/'
 filein = str(wrf_dir) + wrf_folder
 wrf_file_dir = sorted(Path(filein).glob('wrfout_d03_*'))
 
@@ -45,17 +45,22 @@ SNOWC           = getvar(wrf_file, "SNOWC")
 SNOWC[:,:600]   = 0
 
 def mask(ds_unmasked, LANDMASK, LAKEMASK, SNOWC):
-    ds = xr.where(LANDMASK == 1, ds_unmasked, np.nan)
-    ds = ds.transpose("time", "south_north", "west_east")
-    # ds = xr.where(LAKEMASK == 0, ds, np.nan)
+    ds = ds_unmasked 
+    ds = xr.where(LANDMASK == 1, ds, np.nan)
     # ds = ds.transpose("time", "south_north", "west_east")
-    ds = xr.where(SNOWC == 0, ds, np.nan)
+    # ds = xr.where(LAKEMASK == 0, ds, np.nan)
+    ds = ds.transpose("time", "south_north", "west_east")
+    # ds = xr.where(SNOWC == 0, ds, np.nan)
     ds = ds.transpose("time", "south_north", "west_east")
     ds['Time'] = ds_unmasked['Time']
     return ds
 
 hourly_ds = mask(hourly_ds, LANDMASK, LAKEMASK, SNOWC)
 daily_ds  = mask(daily_ds, LANDMASK, LAKEMASK, SNOWC)
+
+
+
+
 
 
 # %%
@@ -66,18 +71,23 @@ fig.suptitle(Plot_Title + day, fontsize=16)
 fig.subplots_adjust(hspace=0.8)
 lats, lons = np.array(hourly_ds.XLAT), np.array(hourly_ds.XLONG)
 cmap = plt.cm.jet
-Cnorm = matplotlib.colors.Normalize(vmin= 50, vmax =100)
-# levels = np.linspace(50,100,29)
-levels = np.array([0, 50, 60, 70, 76, 78, 80, 82, 84, 86, 88, 90, 92, 94, 100 ])
+Cnorm = matplotlib.colors.Normalize(vmin= 40, vmax =100)
+levels = np.arange(40,100,0.01)
+# levels = np.array([0, 50, 60, 70, 76, 78, 80, 82, 84, 86, 88, 90, 92, 94, 100 ])
 
-# levels[0] = 0
 ffmc = np.array(hourly_ds.F[0])
+
+ffmc = ffmc[40:,50:1200]
+lons, lats = lons[40:,50:1200], lats[40:,50:1200]
+# levels[0] = 0
 title = "FFMC"
 C = ax.contourf(lons, lats, ffmc, cmap = cmap, norm = Cnorm, levels=levels, extend="both")
 clb = fig.colorbar(C, ax = ax, fraction=0.054, pad=0.04)
 ax.set_title(title + f" max {round(np.nanmax(ffmc),1)}  min {round(np.nanmin(ffmc),1)} mean {round(np.nanmean(ffmc),1)}")
 
 fig.savefig(str(root_dir) + "/images/ffmc/" + day  + "-ffmc.png", dpi = 300)
+
+
 
 
 # %%

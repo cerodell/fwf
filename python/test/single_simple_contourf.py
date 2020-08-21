@@ -65,24 +65,24 @@ daily_ds  = mask(daily_ds, LANDMASK, LAKEMASK, SNOWC)
 
 
 
-
 fig = plt.figure(frameon=False)
-ax = plt.axes(projection=proj_)
+ax = plt.axes()
 day  = str(np.array(daily_ds.Time[0], dtype ='datetime64[D]'))
 
+ffmc = np.array(hourly_ds.F[18])
 lats, lons = np.array(hourly_ds.XLAT), np.array(hourly_ds.XLONG)
 cmap = plt.cm.jet
+Cnorm = matplotlib.colors.Normalize(vmin= 50, vmax =100)
+levels = np.linspace(49,100,50)
+levels[0] = 0
 
-
-ffmc = np.array(hourly_ds.F[18])
-
-cmap = plt.cm.jet
-level = np.arange(70,100.5,0.1)
-
-
-ax.contourf(lons, lats, ffmc, cmap = cmap, vmin =90, vmax = 100, extend = 'both', levels = level)
+cs = ax.contourf(lons, lats, ffmc, cmap = cmap, norm = Cnorm, \
+     levels=levels, extend="both")
+for c in cs.collections:
+    c.set_rasterized(True)
 ax.axis('off')
-fig.savefig("/bluesky/fireweather/fwf/Images/" + day  + ".png", transparent=True, bbox_inches='tight', pad_inches=0)
+fig.savefig(str(root_dir) + "/web_dev/" + day  + "-ffmc-raster.svg", \
+     transparent=True, bbox_inches='tight', pad_inches=0, dpi = 300)
 
 # clb = fig.colorbar(C, ax = ax, fraction=0.054, pad=0.04)
 # plt.title(title + f" max {round(np.nanmax(ffmc),1)}  min {round(np.nanmin(ffmc),1)} mean {round(np.mean(ffmc),1)}")

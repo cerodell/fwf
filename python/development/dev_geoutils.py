@@ -8,6 +8,7 @@ from pathlib import Path
 from netCDF4 import Dataset
 import branca.colormap as cm
 import scipy.ndimage as ndimage
+from scipy.ndimage.filters import gaussian_filter
 
 import matplotlib.pyplot as plt
 import matplotlib.colors 
@@ -36,33 +37,30 @@ def mycontourf_to_geojson(cmaps, var, ds, index, folderdate, colornumber):
     else:
         pass
 
-    if colornumber == 'colors30':
-        west, east = 50, 350
-        south, north = 100,400
-        name = name + str('4km')
-        lngs = np.array(ds.XLONG)
-        lngs = lngs[south:north,west:east]
-        lats = np.array(ds.XLAT)
-        lats = lats[south:north,west:east]
-        fillarray = np.round(np.array(ds[var][index]),3)
-        fillarray = fillarray[south:north,west:east]
-        geojson_filepath = str(name + "-" + timestamp)
-        lenght = len(colors)
-    else:
-        lngs = np.array(ds.XLONG)
-        lats = np.array(ds.XLAT)
-        fillarray = np.round(np.array(ds[var][index]),3)
-        # fillarray = ndimage.gaussian_filter(fillarray, sigma=.5, order =0)
+    # if colornumber == 'colors30':
+    #     west, east = 50, 350
+    #     south, north = 100,400
+    #     name = name + str('4km')
+    #     lngs = np.array(ds.XLONG)
+    #     lngs = lngs[south:north,west:east]
+    #     lats = np.array(ds.XLAT)
+    #     lats = lats[south:north,west:east]
+    #     fillarray = np.round(np.array(ds[var][index]),3)
+    #     fillarray = fillarray[south:north,west:east]
+    #     geojson_filepath = str(name + "-" + timestamp)
+    #     lenght = len(colors)
+    # else:
+    lngs = np.array(ds.XLONG)
+    lats = np.array(ds.XLAT)
+    fillarray = np.round(np.array(ds[var][index]),0)
+    fillarray = ndimage.gaussian_filter(fillarray, sigma=2.4)
 
-        geojson_filepath = str(name + "-" + timestamp)
-        lenght = len(colors)
-    
-
+    geojson_filepath = str(name + "-" + timestamp)
+    lenght = len(colors)
+        # lngs, lats = lngs[40:,50:1200], lats[40:,50:1200]
+        # fillarray = fillarray[40:,50:1200]
     # levels = np.linspace(vmin,vmax+1,lenght)
-    # levels = cmaps[var]["levels"]
-    levels = np.linspace(50,100,29)
-    levels[0] = 0
-    print(levels)
+    levels = cmaps[var]["levels"]
     Cnorm = matplotlib.colors.Normalize(vmin= vmin, vmax =vmax+1)
     contourf = plt.contourf(lngs, lats, fillarray, levels = levels, \
                             linestyles = 'None', norm = Cnorm, colors = colors, extend = 'both')
@@ -79,19 +77,19 @@ def mycontourf_to_geojson(cmaps, var, ds, index, folderdate, colornumber):
 
     print(f'wrote geojson to: /bluesky/fireweather/fwf/data/geojson/{folderdate}/{geojson_filepath}.geojson')
     
-    return
+    return 
 
 
 
 
 def mask(ds_unmasked, wrf_file_dir):
     LANDMASK, LAKEMASK, SNOWC = wrfmasks(wrf_file_dir)
-    SNOWC[:,:600]   = 0
+    # SNOWC[:,:600]   = 0
     ds = xr.where(LANDMASK == 1, ds_unmasked, np.nan)
     ds = ds.transpose("time", "south_north", "west_east")
     # ds = xr.where(LAKEMASK == 0, ds, np.nan)
     # ds = ds.transpose("time", "south_north", "west_east")
-    ds = xr.where(SNOWC == 0, ds, np.nan)
+    # ds = xr.where(SNOWC == 0, ds, np.nan)
     ds = ds.transpose("time", "south_north", "west_east")
     ds['Time'] = ds_unmasked['Time']
     return ds
