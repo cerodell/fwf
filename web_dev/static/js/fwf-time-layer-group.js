@@ -136,12 +136,12 @@ L.TimeDimension.Layer.LayerGroup = L.TimeDimension.Layer.extend({
 
 
             if (this._thisVar == 'FFMC'){
-            fetch(url).then(function(response){
+            fetch(url, {cache: "force-cache"}).then(function(response){
                 return response.json();
             }).then(function(json){
                 newLayer.addLayer(L.vectorGrid.slicer( json, {
                     minZoom: 2,
-                    maxZoom: 16,
+                    maxZoom: 18,
                     rendererFactory: L.canvas.tile,
                     vectorTileLayerStyles:{
                         'FFMC': geo_json_styler18
@@ -152,12 +152,12 @@ L.TimeDimension.Layer.LayerGroup = L.TimeDimension.Layer.extend({
             })};
 
             if (this._thisVar == 'DMC'){
-                fetch(url).then(function(response){
+                fetch(url, {cache: "force-cache"}).then(function(response){
                     return response.json();
                 }).then(function(json){
                     newLayer.addLayer(L.vectorGrid.slicer( json, {
                         minZoom: 2,
-                        maxzoom: 16,
+                        maxZoom: 18,
                         rendererFactory: L.canvas.tile,
                         vectorTileLayerStyles:{
                             'DMC': geo_json_styler18
@@ -169,12 +169,12 @@ L.TimeDimension.Layer.LayerGroup = L.TimeDimension.Layer.extend({
 
             
             if (this._thisVar == 'DC'){
-                fetch(url).then(function(response){
+                fetch(url, {cache: "force-cache"}).then(function(response){
                     return response.json();
                 }).then(function(json){
                     newLayer.addLayer(L.vectorGrid.slicer( json, {
                         minZoom: 2,
-                        maxzoom: 16,
+                        maxZoom: 18,
                         rendererFactory: L.canvas.tile,
                         vectorTileLayerStyles:{
                             'DC': geo_json_styler18
@@ -186,12 +186,12 @@ L.TimeDimension.Layer.LayerGroup = L.TimeDimension.Layer.extend({
 
                 
             if (this._thisVar == 'ISI'){
-                fetch(url).then(function(response){
+                fetch(url, {cache: "force-cache"}).then(function(response){
                     return response.json();
                 }).then(function(json){
                     newLayer.addLayer(L.vectorGrid.slicer( json, {
                         minZoom: 2,
-                        maxzoom: 16,
+                        maxZoom: 18,
                         rendererFactory: L.canvas.tile,
                         vectorTileLayerStyles:{
                             'ISI': geo_json_styler18
@@ -203,12 +203,12 @@ L.TimeDimension.Layer.LayerGroup = L.TimeDimension.Layer.extend({
 
             
             if (this._thisVar == 'BUI'){
-                fetch(url).then(function(response){
+                fetch(url, {cache: "force-cache"}).then(function(response){
                     return response.json();
                 }).then(function(json){
                     newLayer.addLayer(L.vectorGrid.slicer( json, {
                         minZoom: 2,
-                        maxzoom: 16,
+                        maxZoom: 18,
                         rendererFactory: L.canvas.tile,
                         vectorTileLayerStyles:{
                             'BUI': geo_json_styler18
@@ -221,15 +221,31 @@ L.TimeDimension.Layer.LayerGroup = L.TimeDimension.Layer.extend({
 
             
         if (this._thisVar == 'FWI'){
-            fetch(url).then(function(response){
+            fetch(url, {cache: "force-cache"}).then(function(response){
                 return response.json();
             }).then(function(json){
                 newLayer.addLayer(L.vectorGrid.slicer( json, {
                     minZoom: 2,
-                    maxzoom: 16,
+                    maxZoom: 18,
                     rendererFactory: L.canvas.tile,
                     vectorTileLayerStyles:{
                         'FWI': geo_json_styler18
+                            }
+                        }
+                    ).setZIndex(500)
+                )
+            })};
+
+        if (this._thisVar == 'wsp'){
+            fetch(url, {cache: "force-cache"}).then(function(response){
+                return response.json();
+            }).then(function(json){
+                newLayer.addLayer(L.vectorGrid.slicer( json, {
+                    minZoom: 2,
+                    maxZoom: 18,
+                    rendererFactory: L.canvas.tile,
+                    vectorTileLayerStyles:{
+                        'wsp': geo_json_styler_wsp
                             }
                         }
                     ).setZIndex(500)

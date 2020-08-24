@@ -35,7 +35,7 @@ hourly_ds = xr.open_zarr(hourly_file_dir)
 daily_ds = xr.open_zarr(daily_file_dir)
 
 
-hourly_vars = ['F','R','S','DSR']
+hourly_vars = ['F','R','S','DSR', 'W']
 for var in hourly_vars:
   hourly_ds[var] = xr.where(hourly_ds[var]< cmaps[var]['vmax'], hourly_ds[var], int(cmaps[var]['vmax'] + 1))
 
@@ -63,11 +63,16 @@ print(f"{str(datetime.now())} ---> start loop of hourly fwf products" )
 # mycontourf_to_geojson(cmaps, 'U', daily_ds, 0, folderdate, "colors18")
 
 
-# index = np.arange(0,63,3)
-# for i in index:
+# mycontourf_to_geojson(cmaps, 'W', hourly_ds, 0, folderdate, "colors18")
+
+
+index = np.arange(0,63,3)
+for i in index:
 #   mycontourf_to_geojson(cmaps, 'F', hourly_ds, i, folderdate, "colors18")
 #   mycontourf_to_geojson(cmaps, 'R', hourly_ds, i, folderdate, "colors18")
 #   mycontourf_to_geojson(cmaps, 'S', hourly_ds, i, folderdate, "colors18")
+    mycontourf_to_geojson(cmaps, 'W', hourly_ds, i, folderdate, "colors18")
+
 
 # print(f"{str(datetime.now())} ---> end loop of hourly fwf products" )
 
@@ -76,12 +81,12 @@ print(f"{str(datetime.now())} ---> start loop of hourly fwf products" )
 # print(f"{str(datetime.now())} ---> start loop of daily fwf products" )
 
 
-for i in range(len(daily_ds.Time)):
-  mycontourf_to_geojson(cmaps, 'P', daily_ds, i, folderdate, "colors18")
-  mycontourf_to_geojson(cmaps, 'D', daily_ds, i, folderdate, "colors18")
-  mycontourf_to_geojson(cmaps, 'U', daily_ds, i, folderdate, "colors18")
+# for i in range(len(daily_ds.Time)):
+#   mycontourf_to_geojson(cmaps, 'P', daily_ds, i, folderdate, "colors18")
+#   mycontourf_to_geojson(cmaps, 'D', daily_ds, i, folderdate, "colors18")
+#   mycontourf_to_geojson(cmaps, 'U', daily_ds, i, folderdate, "colors18")
 
-print(f"{str(datetime.now())} ---> end loop of daily fwf products" )
+# print(f"{str(datetime.now())} ---> end loop of daily fwf products" )
 
 
 

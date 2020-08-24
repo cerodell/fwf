@@ -1,25 +1,38 @@
 
 var gl = L.mapboxGL({
 	attribution: '<a href="https://www.maptiler.com/copyright/" target="_blank">© MapTiler</a> <a href="https://www.openstreetmap.org/copyright" target="_blank">© OpenStreetMap contributors</a>',
-	style: 'topo.json',
+	style: 'topo-notab.json',
 }).addTo(map)
 
 
+        
+	var searchboxControl=createSearchboxControl();
+	var control = new searchboxControl({
+		sidebarTitleText: 'Header',
+		sidebarMenuItems: {
+			Items: [
+				{ type: "link", name: "Link 1 (github.com)", href: "http://github.com", icon: "icon-local-carwash" },
+				{ type: "link", name: "Link 2 (google.com)", href: "http://google.com", icon: "icon-cloudy" },
+				{ type: "button", name: "Button 1", onclick: "alert('button 1 clicked !')", icon: "icon-potrait" },
+				{ type: "button", name: "Button 2", onclick: "button2_click();", icon: "icon-local-dining" },
+				{ type: "link", name: "Link 3 (stackoverflow.com)", href: 'http://stackoverflow.com', icon: "icon-bike" },
 
+			]
+		}
+	});
 
-L.control.scale({position: 'bottomright'}).addTo(map);
-// Move zoom and full screen controls to top-right
-// map.zoomControl.setPosition('topright');
-map.fullscreenControl.setPosition('topright');
-// 
-// Replace default zoom controls with controls that re-center & reset zoom level
-// map.zoomControl.remove();
-// var zoomHome = L.Control.zoomHome({position: 'topright'});
-// zoomHome.addTo(map);
+	control._searchfunctionCallBack = function (searchkeywords)
+	{
+		if (!searchkeywords) {
+			searchkeywords = "The search call back is clicked !!"
+		}
+		// alert(searchkeywords);
+	}
 
+	map.addControl(control);
 
-// // // Opacity control
-// var multiLayers = [ffmcTimeLayer],
-// layerGroup = L.layerGroup(multiLayers),
-// opacitySliderGroup = new L.Control.opacitySliderGroup().addTo(map);
-// opacitySliderGroup.setOpacityLayerGroup(layerGroup);
+function button2_click()
+{
+	alert('button 2 clicked !!!');
+
+}

@@ -237,4 +237,5 @@ fetch(json_dir).then(function(response){
   
   window.onresize = function () {
     Plotly.Plots.resize(plot_fwi);
-  };}
+  };
+}

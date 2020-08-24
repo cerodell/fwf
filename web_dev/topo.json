@@ -1899,10 +1899,10 @@
         "visibility": "visible"
       },
       "paint": {
-        "text-color": "rgba(69, 66, 68, 1)",
+        "text-color": "rgba(181, 129, 100, 1)",
         "text-halo-blur": 0.2,
         "text-halo-color": "rgba(255,255,255,1)",
-        "text-halo-width": 0.8
+        "text-halo-width": 0.4
       }
     },
     {
@@ -1929,10 +1929,10 @@
         "visibility": "visible"
       },
       "paint": {
-        "text-color": "rgba(69, 66, 68, 1)",
+        "text-color": "rgba(181, 129, 100, 1)",
         "text-halo-blur": 0.2,
         "text-halo-color": "rgba(255,255,255,1)",
-        "text-halo-width": 0.8
+        "text-halo-width": 0.4
       }
     },
     {

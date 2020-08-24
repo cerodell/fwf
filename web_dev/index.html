@@ -1,13 +1,8 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>    
     <meta http-equiv="content-type" content="text/html; charset=UTF-8" />
-    
-
     <title>Fire Weather Forecast</title>
-
-
     <script src="https://cdn.jsdelivr.net/npm/leaflet@1.6.0/dist/leaflet.js"></script>
     <script src="https://cdn.maptiler.com/mapbox-gl-js/v1.5.1/mapbox-gl.js"></script>
     <script src="https://cdn.maptiler.com/mapbox-gl-leaflet/latest/leaflet-mapbox-gl.js"></script>
@@ -15,66 +10,37 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.6.0/dist/leaflet.css"/>
     <link rel="stylesheet" href="https://cdn.rawgit.com/socib/Leaflet.TimeDimension/master/dist/leaflet.timedimension.control.min.css">
     <link rel='stylesheet' href='https://api.mapbox.com/mapbox.js/plugins/leaflet-fullscreen/v1.0.1/leaflet.fullscreen.css'>
-
     <style>html, body {width: 100%;height: 100%;margin: 0;padding: 0;}</style>
     <style>#map {position:absolute;top:0;bottom:0;right:0;left:0;}</style>
-    
     <style>#map_fwi {width: 100.0%;height: 100.0%;left: 0.0%;top: 0.0%;}</style>
-
     <script src='https://api.mapbox.com/mapbox.js/plugins/leaflet-fullscreen/v1.0.1/Leaflet.fullscreen.min.js'></script>
     <script src="https://cdn.plot.ly/plotly-1.54.6.min.js"></script>
     <link rel="stylesheet" href="static/css/fwf-leaflet.zoomhome.css"/>
-    <!-- <link rel="stylesheet" href="static/css/fwf-map-style.css"/> -->
+    <link rel="stylesheet" href="static/css/fwf-map-style.css"/>
     <link rel="stylesheet" href="static/css/fwf-opacity.css"/>
-
     <link rel="stylesheet" href="static/js/Control.Opacity.css" />
-
     <link rel="stylesheet" href="static/css/jquery-ui-1.10.3.custom.min.css" />
-
     <script src="static/js/Control.Opacity.js"></script>
-
-
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/3.5.5/d3.min.js"></script>
     <script src="static/js/jquery-1.9.1.js"></script>
     <script src="static/js/jquery-ui-1.10.3.custom.min.js"></script>
 
+    <script src="static/js/fwf-customsearchbox.js"></script>
+    <link href="static/css/fwf-searchbox.css" rel="stylesheet" />
 </head>
-
-
 <body>
-
     <div class="fwi-map" id="map_fwi"></div>
-    <!-- <div class="fwi-plot" id="plot_fwi"></div> -->
-
+    <div class="fwi-plot" id="plot_fwi"></div>
     <link href="https://maxcdn.bootstrapcdn.com/font-awesome/4.2.0/css/font-awesome.min.css" rel="stylesheet">
-
-    <!-- <script src="https://code.jquery.com/jquery-3.4.1.min.js"
-    integrity="sha256-CSXorXvZcTkaix6Yvo6HppcZGetbYMGWSFlBw8HfCJo="
-    crossorigin="anonymous"></script>
-    <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.min.js"
-    integrity="sha256-VazP97ZCwtekAsvgPBSUwPFKdrwD3unUfSGVYrahUqU="
-    crossorigin="anonymous"></script> -->
     <script src="https://cdn.rawgit.com/nezasa/iso8601-js-period/master/iso8601.min.js"></script>
-    <!-- <script src="https://cdnjs.cloudflare.com/ajax/libs/Leaflet.awesome-markers/2.0.2/leaflet.awesome-markers.js"></script> -->
-    <!-- <script src="//cdnjs.cloudflare.com/ajax/libs/jqueryui-touch-punch/0.2.2/jquery.ui.touch-punch.min.js"></script> -->
-    <!-- <script src="https://cdn.rawgit.com/nezasa/iso8601-js-period/master/iso8601.min.js"></script> -->
     <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/leaflet-timedimension@1.1.1/dist/leaflet.timedimension.min.js"></script>
     <script src="static/js/fwf-leaflet.zoomhome.min.js"></script>
     <script src="static/js/fwf-Leaflet.VectorGrid.bundled.min.js"></script>
-    <!-- <script src="https://unpkg.com/leaflet.vectorgrid@latest/dist/Leaflet.VectorGrid.bundled.js"></script> -->
-
-
     <script src="static/js/fwf-leaflet.groupedlayercontrol.min.js"></script>
     <!-- <script src="static/js/fwf-leaflet.ajax.min.js"></script> -->
     <!-- <script src="static/js/fwf-leaflet-opacity.js"></script> -->
-    <!-- <script src="static/js/fwf-time-layer-group.js"></script> -->
-    <!-- <script src="static/js/fwf-kdbush.min.js"></script> -->
-    <script src="https://d3js.org/d3-color.v1.min.js"></script>
-    <script src="https://d3js.org/d3-interpolate.v1.min.js"></script>
-
-    <script src="static/js/fwf-colorbars.js"></script>
+    <script src="static/js/fwf-kdbush.min.js"></script>
     <script src="static/js/fwf-time-layer-group.js"></script>
-    <script src="static/js/interpolate.js"></script>
-
     <script>
         var map = L.map(
             "map_fwi",
@@ -83,11 +49,9 @@
                 crs: L.CRS.EPSG3857,
                 zoom: 3,
                 minZoom: 3,
-                maxZoom: 16,
+                maxZoom: 18,
                 maxBounds: [
-                //south west
                 [-80, 360],
-                //north east
                 [80,-360]
                 ], 
                 zoomControl: true,
@@ -95,53 +59,37 @@
                 fullscreenControl: true,
                 timeDimension: true,
                 timeDimensionOptions: {
-                    // format should be "yyyy-mm-ddThh:mm:ssZ"
-                    timeInterval: "2020-08-20T00:00:00Z/2020-08-22T00:00:00Z",
+                    timeInterval: "2020-08-23T00:00:00Z/2020-08-25T00:00:00Z",
                     period: "PT3H",
-                    currentTime: Date.parse("2020-08-20T00:00:00Z"),
+                    currentTime: Date.parse("2020-08-23T00:00:00Z"),
                 },
                 timeDimensionControl: true,
                 timeDimensionControlOptions: {
                     autoPlay: false,
                     playButton: false,
                     speedSlider: false,
-                    // timeSteps: 1,
                     timeZones: ["UTC", "Local"],
                     playerOptions: {
-                        // loop: true,
                         transitionTime: 10,
                     },
                 },
             });
 
+        var json_fwf  = 'data/plot/fwf-db-2020082300.json';
 
-        var ffmc_topo_file = 'data/ffmc-2020081700.json';
-        var geo_json_ffmc = L.layerGroup().addTo(map);
-
-        var dmc_topo_file = 'data/dmc-20200814.json';
-        var geo_json_dmc = L.layerGroup().addTo(map);
-
-
-        var dc_topo_file = 'data/dc-20200814.json';
-        var geo_json_dc = L.layerGroup().addTo(map);
+        // searchControl.on('search:locationfound', function(e) {
+        //     var locLat = e.latlng.lat;
+        //     var locLng = e.latlng.lng;
+        //     console.log(locLat+', '+locLng);
+        // });
 
 
-        var isi_topo_file = 'data/isi-2020081400.json';
-        var geo_json_isi = L.layerGroup().addTo(map);
-
-
-        var bui_topo_file = 'data/bui-20200814.json';
-        var geo_json_bui = L.layerGroup().addTo(map);
-
-
-        var fwi_topo_file = 'data/fwi-2020081400.json';
-        var geo_json_fwi = L.layerGroup().addTo(map);
-
-  
     </script>
 
+<script src="static/js/fwf-plotly.js"></script>
 <script src="static/js/fwf-basemaps.js"></script>
 <script src="static/js/fwf-layer-controler.js"></script>
+<script src="static/js/fwf-colors-manager.js"></script>
 
 
 
