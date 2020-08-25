@@ -66,12 +66,47 @@ daily_ds = xr.open_zarr(daily_file_dir)
 # daily_ds  = mask(daily_ds, LANDMASK, LAKEMASK, SNOWC)
 
 
-var = 'W'
+
+
+
+# %%
+# ### Wind SPeed
+# var = 'W'
+# vmin, vmax = cmaps[var]["vmin"], cmaps[var]["vmax"]
+# name, colors = str(cmaps[var]["name"]), cmaps[var]["colors18"]
+# levels = cmaps[var]["levels"]
+# title = cmaps[var]["title"]
+
+# Cnorm = matplotlib.colors.Normalize(vmin= vmin, vmax =vmax+1)
+
+# Plot_Title = title
+# day  = str(np.array(daily_ds.Time[0], dtype ='datetime64[D]'))
+# fig, ax = plt.subplots()
+# fig.suptitle(Plot_Title + day, fontsize=16)
+# fig.subplots_adjust(hspace=0.8)
+
+# lats, lons = np.array(hourly_ds.XLAT), np.array(hourly_ds.XLONG)
+# wsp = np.array(hourly_ds.W[0])
+# wsp = wsp[:,50:1210]
+# lons, lats = lons[:,50:1210], lats[:,50:1210]
+# title = "WSP"
+
+# C = ax.contourf(lons, lats, wsp, levels = levels, \
+#                             linestyles = 'None', norm = Cnorm, colors = colors, extend = 'both')
+# clb = fig.colorbar(C, ax = ax, fraction=0.054, pad=0.04)
+# ax.set_title(title + f" max {round(np.nanmax(wsp),1)}  min {round(np.nanmin(wsp),1)} mean {round(np.nanmean(wsp),1)}")
+
+# fig.savefig(str(root_dir) + "/images/weather/" + day  + "-wsp.png", dpi = 300)
+
+
+
+# %%
+### 2 m temperature
+var = 'T'
 vmin, vmax = cmaps[var]["vmin"], cmaps[var]["vmax"]
 name, colors = str(cmaps[var]["name"]), cmaps[var]["colors18"]
 levels = cmaps[var]["levels"]
 title = cmaps[var]["title"]
-
 Cnorm = matplotlib.colors.Normalize(vmin= vmin, vmax =vmax+1)
 
 Plot_Title = title
@@ -81,22 +116,26 @@ fig.suptitle(Plot_Title + day, fontsize=16)
 fig.subplots_adjust(hspace=0.8)
 
 lats, lons = np.array(hourly_ds.XLAT), np.array(hourly_ds.XLONG)
-wsp = np.array(hourly_ds.W[0])
-wsp = wsp[:,50:1210]
-lons, lats = lons[:,50:1210], lats[:,50:1210]
-title = "WSP"
+temp = np.array(hourly_ds.T[12])
+temp = temp[10:,50:1210]
+lons, lats = lons[10:,50:1210], lats[10:,50:1210]
+title = "Temp C"
 
-C = ax.contourf(lons, lats, wsp, levels = levels, \
+C = ax.contourf(lons, lats, temp, levels = levels, \
                             linestyles = 'None', norm = Cnorm, colors = colors, extend = 'both')
 clb = fig.colorbar(C, ax = ax, fraction=0.054, pad=0.04)
-ax.set_title(title + f" max {round(np.nanmax(wsp),1)}  min {round(np.nanmin(wsp),1)} mean {round(np.nanmean(wsp),1)}")
+ax.set_title(title + f" max {round(np.nanmax(temp),1)}  min {round(np.nanmin(temp),1)} mean {round(np.nanmean(temp),1)}")
 
-fig.savefig(str(root_dir) + "/images/weather/" + day  + "-wsp.png", dpi = 300)
+fig.savefig(str(root_dir) + "/images/weather/" + day  + "-temp.png", dpi = 300)
 
-
-
-
-
+# %%
+### total accumulated precip 
+var = 'r_o'
+vmin, vmax = cmaps[var]["vmin"], cmaps[var]["vmax"]
+name, colors = str(cmaps[var]["name"]), cmaps[var]["colors18"]
+levels = cmaps[var]["levels"]
+title = cmaps[var]["title"]
+Cnorm = matplotlib.colors.Normalize(vmin= vmin, vmax =vmax+1)
 
 Plot_Title = title
 day  = str(np.array(daily_ds.Time[0], dtype ='datetime64[D]'))
@@ -105,16 +144,66 @@ fig.suptitle(Plot_Title + day, fontsize=16)
 fig.subplots_adjust(hspace=0.8)
 
 lats, lons = np.array(hourly_ds.XLAT), np.array(hourly_ds.XLONG)
-wdir = np.array(hourly_ds.WD[0])
-wdir = wdir[:,50:1210]
-lons, lats = lons[:,50:1210], lats[:,50:1210]
-title = "WDIR"
+qpf = np.array(hourly_ds.r_o[-1])
+qpf = qpf[10:,50:1210]
+lons, lats = lons[10:,50:1210], lats[10:,50:1210]
+title = "QPF mm"
 
-ax.contour(lons, lats, wdir)
+C = ax.contourf(lons, lats, qpf, levels = levels, \
+                            linestyles = 'None', norm = Cnorm, colors = colors, extend = 'both')
+clb = fig.colorbar(C, ax = ax, fraction=0.054, pad=0.04)
+ax.set_title(title + f" max {round(np.nanmax(qpf),1)}  min {round(np.nanmin(qpf),1)} mean {round(np.nanmean(qpf),1)}")
+
+fig.savefig(str(root_dir) + "/images/weather/" + day  + "-qpf.png", dpi = 300)
+# %%
+# ### Relavtive Humidity
+# var = 'H'
+# vmin, vmax = cmaps[var]["vmin"], cmaps[var]["vmax"]
+# name, colors = str(cmaps[var]["name"]), cmaps[var]["colors18"]
+# levels = cmaps[var]["levels"]
+# title = cmaps[var]["title"]
+# Cnorm = matplotlib.colors.Normalize(vmin= vmin, vmax =vmax+1)
+
+# Plot_Title = title
+# day  = str(np.array(daily_ds.Time[0], dtype ='datetime64[D]'))
+# fig, ax = plt.subplots()
+# fig.suptitle(Plot_Title + day, fontsize=16)
+# fig.subplots_adjust(hspace=0.8)
+
+# lats, lons = np.array(hourly_ds.XLAT), np.array(hourly_ds.XLONG)
+# rh = np.array(hourly_ds.H[0])
+# rh = rh[10:,50:1210]
+# lons, lats = lons[10:,50:1210], lats[10:,50:1210]
+# title = "RH"
+
+# C = ax.contourf(lons, lats, rh, levels = levels, \
+#                             linestyles = 'None', norm = Cnorm, colors = colors, extend = 'both')
 # clb = fig.colorbar(C, ax = ax, fraction=0.054, pad=0.04)
-ax.set_title(title + f" max {round(np.nanmax(wsp),1)}  min {round(np.nanmin(wsp),1)} mean {round(np.nanmean(wsp),1)}")
+# ax.set_title(title + f" max {round(np.nanmax(rh),1)}  min {round(np.nanmin(rh),1)} mean {round(np.nanmean(rh),1)}")
 
-fig.savefig(str(root_dir) + "/images/weather/" + day  + "-wdir.png", dpi = 300)
+# fig.savefig(str(root_dir) + "/images/weather/" + day  + "-rh.png", dpi = 300)
+
+
+
+# %%
+### Wind Direction
+# Plot_Title = title
+# day  = str(np.array(daily_ds.Time[0], dtype ='datetime64[D]'))
+# fig, ax = plt.subplots()
+# fig.suptitle(Plot_Title + day, fontsize=16)
+# fig.subplots_adjust(hspace=0.8)
+
+# lats, lons = np.array(hourly_ds.XLAT), np.array(hourly_ds.XLONG)
+# wdir = np.array(hourly_ds.WD[0])
+# wdir = wdir[:,50:1210]
+# lons, lats = lons[:,50:1210], lats[:,50:1210]
+# title = "WDIR"
+
+# ax.contour(lons, lats, wdir)
+# # clb = fig.colorbar(C, ax = ax, fraction=0.054, pad=0.04)
+# ax.set_title(title + f" max {round(np.nanmax(wsp),1)}  min {round(np.nanmin(wsp),1)} mean {round(np.nanmean(wsp),1)}")
+
+# fig.savefig(str(root_dir) + "/images/weather/" + day  + "-wdir.png", dpi = 300)
 
 # %%
 # Plot_Title = "ALL FWI:  "

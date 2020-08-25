@@ -49,19 +49,31 @@ function makeplotly(n, o) {
         _ = y[0],
         w = n.XLAT[x][_],
         v = n.XLONG[x][_],
-        F = n.Time,
+        time = n.Time,
         z = n.Day,
         C = document.getElementById("plot_fwi"),
-        D = n.FFMC.map(function (n, o) {
+        F = n.FFMC.map(function (n, o) {
             return n[x][_];
         }),
-        I = n.ISI.map(function (n, o) {
+        R = n.ISI.map(function (n, o) {
             return n[x][_];
         }),
         L = n.FWI.map(function (n, o) {
             return n[x][_];
         }),
-        M = n.DSR.map(function (n, o) {
+        M = n.temp.map(function (n, o) {
+            return n[x][_];
+        }),
+        rh = n.rh.map(function (n, o) {
+            return n[x][_];
+        }),
+        wsp = n.wsp.map(function (n, o) {
+            return n[x][_];
+        }),
+        wdir = n.wdir.map(function (n, o) {
+            return n[x][_];
+        }),
+        qpf = n.qpf.map(function (n, o) {
             return n[x][_];
         }),
         j = n.DMC.map(function (n, o) {
@@ -79,10 +91,14 @@ function makeplotly(n, o) {
             [j[1], b[1], k[1]],
         ],
         N =
-            ((D = { x: F, y: D, type: "scatter", line: { color: "ff8500" }, yaxis: "y4", name: "FFMC" }),
-            (I = { x: F, y: I, type: "scatter", line: { color: "9900cc" }, yaxis: "y3", name: "ISI" }),
-            (L = { x: F, y: L, type: "scatter", line: { color: "0052cc" }, yaxis: "y2", name: "FWI" }),
-            (M = { x: F, y: M, type: "scatter", line: { color: "CD2C0A" }, yaxis: "y1", name: "DSR" }),
+            ((F = { x: time, y: F, type: "scatter", line: { color: "ff7f0e" }, yaxis: "y7", name: "FFMC" }),
+            (R = { x: time, y: R, type: "scatter", line: { color: "9467bd" }, yaxis: "y6", name: "ISI" }),
+            (M = { x: time, y: M, type: "scatter", line: { color: "d62728" }, yaxis: "y5", name: "Temp (C)" }),
+            (rh = { x: time, y: rh, type: "scatter", line: { color: "1f77b4" }, yaxis: "y4", name: "RH (%)" }),
+            (wsp = { x: time, y: wsp, type: "scatter", line: { color: "202020" }, yaxis: "y3", name: "WSP (km/hr)" }),
+            (wdir = { x: time, y: wdir, type: "scatter", line: { color: "7f7f7f" }, yaxis: "y2", name: "WDIR (deg)" }),
+            (qpf = { x: time, y: qpf, type: "scatter", line: { color: "2ca02c" }, yaxis: "y1", name: "QPF (mm)" }),
+
             [
                 {
                     type: "table",
@@ -90,21 +106,27 @@ function makeplotly(n, o) {
                     cells: { values: T, align: "center", line: { color: "616161", width: 1 }, fill: { color: [["white", "white", "white", "white", "white"]] }, font: { family: "inherit", size: 11, color: ["616161"] } },
                     xaxis: "x",
                     yaxis: "y",
-                    domain: { x: [0, 1], y: [0.8, 1] },
+                    domain: { x: [0, 1], y: [0.77, 1] },
                 },
-                D,
-                I,
-                L,
+                F,
+                R,
+                rh,
                 M,
+                wsp,
+                wdir,
+                qpf,
             ]),
         S = {
             title: "Fire Weather Forecast <br> Lat: " + w.toFixed(3) + ", Long: " + v.toFixed(3),
             titlefont: { color: "#7f7f7f", autosize: !0 },
             showlegend: !1,
-            yaxis4: { domain: [0.6, 0.8], title: { text: "FFMC", font: { color: "ff8500" } } },
-            yaxis3: { domain: [0.4, 0.6], title: { text: "ISI", font: { color: "9900cc" } } },
-            yaxis2: { domain: [0.2, 0.4], title: { text: "FWI", font: { color: "0052cc" } } },
-            yaxis1: { domain: [0, 0.2], title: { text: "DSR", font: { color: "CD2C0A" } } },
+            yaxis7: { domain: [0.67, 0.77], title: { text: "FFMC", font: { color: "ff7f0e" } }, tickfont: {color: "ff7f0e"}},
+            yaxis6: { domain: [0.56, 0.66], title: { text: "ISI", font: { color: "9467bd" } }, tickfont: {color: "9467bd"}},
+            yaxis5: { domain: [0.45, 0.55], title: { text: "Temp", font: { color: "d62728" } }, tickfont: {color: "d62728"}},
+            yaxis4: { domain: [0.34, 0.44],  title: { text: "RH", font: { color: "1f77b4" } }, tickfont: {color: "1f77b4"}},
+            yaxis3: { domain: [0.23, 0.33], title: { text: "WSP", font: { color: "202020" } } , tickfont: {color: "202020"}},
+            yaxis2: { domain: [0.12, 0.22], title: { text: "WDIR", font: { color: "7f7f7f" } }, tickfont: {color: "7f7f7f"}},
+            yaxis1: { domain: [0, 0.11], title: { text: "QPF", font: { color: "2ca02c" } }, tickfont: {color: "2ca02c"}},
             xaxis: { title: "Date (UTC)" },
         };
     Plotly.react(C, N, S);
@@ -119,7 +141,7 @@ function makeplots(n) {
                 var o = [50.632, -120.3333];
                 fwflocation.setLatLng(o).addTo(map), makeplotly(n, o), console.log(n);
             }),
-        fetch(json_dir, { cache: "force-cache" })
+        fetch(json_dir, { cache: "force-cache"})
             .then(function (n) {
                 return n.json();
             })
@@ -192,6 +214,91 @@ function makeplots(n) {
                             loaded_zones.push(_),
                             console.log(loaded_zones);
                     });
+                    function searchcontrol(o) {
+                        map.flyTo(o)
+                        fwflocation.setLatLng(o).addTo(map);
+                        var e = [parseFloat(o[0]), parseFloat(o[1])];
+                        const l = u.range(e[0], e[1], e[0] + 0.5, e[1] + 0.5).map((n) => s[n]);
+                        (ll_diff = []),
+                            (function (n, o) {
+                                for (var t = 0; t < n.length; t++) {
+                                    var e = Math.abs(n[t][0] - o[0]) + Math.abs(n[t][1] - o[1]);
+                                    ll_diff.push(e);
+                                }
+                            })(l, e);
+                        for (var a = 0, r = ll_diff[0], i = 1; i < ll_diff.length; i++) ll_diff[i] < r && ((r = ll_diff[i]), (a = i));
+                        const h = u.range(e[0], e[1], e[0] + 0.5, e[1] + 0.5);
+                        var d, m;
+                        f =
+                            ((m = (d = c).reduce(
+                                function (n, o) {
+                                    return n.concat(n[n.length - 1] * o);
+                                },
+                                [1]
+                            )),
+                            function (n) {
+                                return (function (n, o, t) {
+                                    return n.map(function (n, e) {
+                                        return Math.floor(o / t[e]) % n;
+                                    });
+                                })(d, n, m);
+                            });
+                        var g = (function (n, o) {
+                                var t = n.reduce(
+                                    function (n, o) {
+                                        return n.concat(n[n.length - 1] * o);
+                                    },
+                                    [1]
+                                );
+                                return n.map(function (n, e) {
+                                    return Math.floor(o / t[e]) % n;
+                                });
+                            })(c, h[a], f(h[a])),
+                            p = g[1],
+                            y = g[0],
+                            x = [p, y];
+                        console.log(x);
+                        var _ = t[p][y];
+                        console.log(_),
+                            (zone_json = n.slice(0, 14)),
+                            (zone_json = zone_json + _ + n.slice(16, 32)),
+                            console.log(zone_json),
+                            fetch(zone_json, { cache: "force-cache"})
+                                .then(function (n) {
+                                    return n.json();
+                                })
+                                .then(function (n) {
+                                    makeplotly(n, e);
+                                }),
+                            -1 == loaded_zones.indexOf(_) ? console.log("item not exist") : console.log("item exist"),
+                            loaded_zones.push(_),
+                            console.log(loaded_zones)
+                        };
+                        var searchboxControl=createSearchboxControl();
+                        var control = new searchboxControl({
+                            sidebarTitleText: 'Information',
+                            sidebarMenuItems: {
+                                Items: [
+                                    { type: "link", name: "Smoke Forecasts", href: "https://firesmoke.ca/", icon: "icon-fire" },
+                                    { type: "link", name: "Weather Research Forecast Team", href: "https://weather.eos.ubc.ca/cgi-bin/index.cgi", icon: "icon-cloudy" },
+                                    { type: "link", name: "Contact Inforamtion", href: "https://firesmoke.ca/contact/", icon: "icon-phone" },
+
+                                ]
+                            }
+                        });
+
+                        control._searchfunctionCallBack = function (searchkeywords){
+                            if (!searchkeywords) {
+                                searchkeywords = "The search call back is clicked !!"
+                            }
+                            // alert(searchkeywords);
+                            var o = searchkeywords.split(',').map(Number);
+                            searchcontrol(o);
+                            console.log(o);
+                        }
+
+                        map.addControl(control);
+
             }),
         (window.onresize = function () {
             Plotly.Plots.resize(plot_fwi);
@@ -200,3 +307,5 @@ function makeplots(n) {
 window.onload = function () {
     makeplots(json_fwf);
 };
+
+

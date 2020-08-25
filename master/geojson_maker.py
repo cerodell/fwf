@@ -65,8 +65,8 @@ make_dir.mkdir(parents=True, exist_ok=True)
 ## Make geojson of ffmc, isi, fwf every 6 hours
 print(f"{str(datetime.now())} ---> start loop of hourly fwf products" )
 
-
-index = np.arange(0,66,6)
+lenght = len(hourly_ds.F)
+index = np.arange(0,lenght,6, dtype = int)
 for i in index:
   mycontourf_to_geojson(cmaps, 'F', hourly_ds, i, folderdate, "colors15")
   mycontourf_to_geojson(cmaps, 'R', hourly_ds, i, folderdate, "colors15")

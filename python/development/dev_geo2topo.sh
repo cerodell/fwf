@@ -4,7 +4,7 @@
 # geobuf decode < ffmc-2020082300.pbf > example.pbf.json
 # geobuf encode < ffmc-2020082300-test.geojson > ffmc-2020082300-test.pbf
 # # cd /bluesky/fireweather/fwf/data/geojson/2020082300/
-/bluesky/fireweather/fwf/node_modules/topojson-server/bin/geo2topo -q 1e4 FFMC=ffmc-2020082300.geojson > /bluesky/fireweather/fwf/web_dev/data/ffmc-2020082300.json
+# /bluesky/fireweather/fwf/node_modules/topojson-server/bin/geo2topo -q 1e4 FFMC=ffmc-2020082300.geojson > /bluesky/fireweather/fwf/web_dev/data/ffmc-2020082300.json
 # # /bluesky/fireweather/fwf/node_modules/topojson-server/bin/geo2topo -q 1e4 ISI=isi-2020082300.geojson > /bluesky/fireweather/fwf/web_dev/data/isi-2020082300.json
 # # /bluesky/fireweather/fwf/node_modules/topojson-server/bin/geo2topo -q 1e4 FWI=fwi-2020082300.geojson > /bluesky/fireweather/fwf/web_dev/data/fwi-2020082300.json
 
@@ -19,7 +19,9 @@
 # tippecanoe -zg -o ffmc-2020082300-blah.mbtiles --drop-densest-as-needed ffmc-2020082300.json
 # tippecanoe -o ffmc-2020082300-blah.mbtiles --detect-shared-borders ffmc-2020082300.json
 ## Convert FFMC to topojson and move to website directory
-/bluesky/fireweather/fwf/node_modules/topojson-server/bin/geo2topo -q 1e4 wsp=wsp-2020082300.geojson > /bluesky/fireweather/fwf/web_dev/data/wsp-2020082300.json
+# /bluesky/fireweather/fwf/node_modules/topojson-server/bin/geo2topo -q 1e4 wsp=wsp-2020082300.geojson > /bluesky/fireweather/fwf/web_dev/data/wsp-2020082300.json
+# /bluesky/fireweather/fwf/node_modules/topojson-server/bin/geo2topo -q 1e4 temp=temp-2020082300.geojson > /bluesky/fireweather/fwf/web_dev/data/temp-2020082300.json
+# /bluesky/fireweather/fwf/node_modules/topojson-server/bin/geo2topo -q 1e4 rh=rh-2020082300.geojson > /bluesky/fireweather/fwf/web_dev/data/rh-2020082300.json
 
 
 for filename in /bluesky/fireweather/fwf/data/geojson/2020082300/ffmc*.geojson; do
@@ -51,21 +53,34 @@ for filename in /bluesky/fireweather/fwf/data/geojson/2020082300/fwi*.geojson; d
     /bluesky/fireweather/fwf/node_modules/topojson-server/bin/geo2topo -q 1e4 FWI="$filename" > "/bluesky/fireweather/fwf/web_dev/data/$(basename "$filename" .geojson).json"
 done
 
-
+## Convert Wind Speed to topojson and move to website directory
 for filename in /bluesky/fireweather/fwf/data/geojson/2020082300/wsp*.geojson; do
     /bluesky/fireweather/fwf/node_modules/topojson-server/bin/geo2topo -q 1e4 wsp="$filename" > "/bluesky/fireweather/fwf/web_dev/data/$(basename "$filename" .geojson).json"
 done
+
+## Convert Temperautre to topojson and move to website directory
+for filename in /bluesky/fireweather/fwf/data/geojson/2020082300/temp*.geojson; do
+    /bluesky/fireweather/fwf/node_modules/topojson-server/bin/geo2topo -q 1e4 temp="$filename" > "/bluesky/fireweather/fwf/web_dev/data/$(basename "$filename" .geojson).json"
+done
+
+## Convert Relative Humidity to topojson and move to website directory
+for filename in /bluesky/fireweather/fwf/data/geojson/2020082300/rh*.geojson; do
+    /bluesky/fireweather/fwf/node_modules/topojson-server/bin/geo2topo -q 1e4 rh="$filename" > "/bluesky/fireweather/fwf/web_dev/data/$(basename "$filename" .geojson).json"
+done
+
+## Convert total accumulated precip to topojson and move to website directory
+for filename in /bluesky/fireweather/fwf/data/geojson/2020082300/qpf*.geojson; do
+    /bluesky/fireweather/fwf/node_modules/topojson-server/bin/geo2topo -q 1e4 qpf="$filename" > "/bluesky/fireweather/fwf/web_dev/data/$(basename "$filename" .geojson).json"
+done
+
+gzip < fwf-aj-2020082300.json > fwf-aj-2020082300.json.gz
 
 # ### Gzip (with max compression) every new topojson in website directory
 # for filename in /bluesky/fireweather/fwf/web_dev/data/*.json; do
 #     gzip < "$filename" > "$filename".gz
 # done
 
-# # # Gzip (with max compression) json file..used in plotly lines plots
-# # cd /bluesky/archive/fireweather/forecasts/2020082300
-# # gzip -9 < fwf-32km-2020082300.json > fwf-32km-2020082300.json.gz
-# # gzip -9 < fwf-16km-2020082300.json > fwf-16km-2020082300.json.gz
-# gzip < fwf-zone.json > fwf-zone.json.gz
+
 
 
 

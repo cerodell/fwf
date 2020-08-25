@@ -37,8 +37,6 @@
     <script src="static/js/fwf-leaflet.zoomhome.min.js"></script>
     <script src="static/js/fwf-Leaflet.VectorGrid.bundled.min.js"></script>
     <script src="static/js/fwf-leaflet.groupedlayercontrol.min.js"></script>
-    <!-- <script src="static/js/fwf-leaflet.ajax.min.js"></script> -->
-    <!-- <script src="static/js/fwf-leaflet-opacity.js"></script> -->
     <script src="static/js/fwf-kdbush.min.js"></script>
     <script src="static/js/fwf-time-layer-group.js"></script>
     <script>
@@ -59,7 +57,7 @@
                 fullscreenControl: true,
                 timeDimension: true,
                 timeDimensionOptions: {
-                    timeInterval: "2020-08-23T00:00:00Z/2020-08-25T00:00:00Z",
+                    timeInterval: "2020-08-23T00:00:00Z/2020-08-25T12:00:00Z",
                     period: "PT3H",
                     currentTime: Date.parse("2020-08-23T00:00:00Z"),
                 },
@@ -76,18 +74,22 @@
             });
 
         var json_fwf  = 'data/plot/fwf-db-2020082300.json';
-
-        // searchControl.on('search:locationfound', function(e) {
-        //     var locLat = e.latlng.lat;
-        //     var locLng = e.latlng.lng;
-        //     console.log(locLat+', '+locLng);
-        // });
+        var ffmc_topo_file = 'data/ffmc-2020082300.json';
+        var dmc_topo_file = 'data/dmc-20200823.json';
+        var dc_topo_file = 'data/dc-20200823.json';
+        var isi_topo_file = 'data/isi-2020082300.json';
+        var bui_topo_file = 'data/bui-20200823.json';
+        var fwi_topo_file = 'data/fwi-2020082300.json';
+        var wsp_topo_file = 'data/wsp-2020082300.json';
+        var temp_topo_file = 'data/temp-2020082300.json';
+        var rh_topo_file = 'data/rh-2020082300.json';
+        var qpf_topo_file = 'data/qpf-2020082300.json';
 
 
     </script>
-
-<script src="static/js/fwf-plotly.js"></script>
 <script src="static/js/fwf-basemaps.js"></script>
+<script src="static/js/fwf-plotly.js"></script>
+<!-- <script src="static/js/fwf-basemaps.js"></script> -->
 <script src="static/js/fwf-layer-controler.js"></script>
 <script src="static/js/fwf-colors-manager.js"></script>
 

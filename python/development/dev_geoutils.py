@@ -29,7 +29,7 @@ def mycontourf_to_geojson(cmaps, var, ds, index, folderdate, colornumber):
     timestamp  = str(np.array(ds.Time[index], dtype ='datetime64[h]'))
     timestamp = datetime.strptime(str(timestamp), '%Y-%m-%dT%H').strftime('%Y%m%d%H')
     vmin, vmax = cmaps[var]["vmin"], cmaps[var]["vmax"]
-    name, colors = str(cmaps[var]["name"]), cmaps[var][colornumber]
+    name, colors, sigma = str(cmaps[var]["name"]), cmaps[var][colornumber], cmaps[var]["sigma"]
     if name == 'dmc':
         timestamp = timestamp[:-2]
     elif name == 'dc':
@@ -39,29 +39,15 @@ def mycontourf_to_geojson(cmaps, var, ds, index, folderdate, colornumber):
     else:
         pass
 
-    # if colornumber == 'colors30':
-    #     west, east = 50, 350
-    #     south, north = 100,400
-    #     name = name + str('4km')
-    #     lngs = np.array(ds.XLONG)
-    #     lngs = lngs[south:north,west:east]
-    #     lats = np.array(ds.XLAT)
-    #     lats = lats[south:north,west:east]
-    #     fillarray = np.round(np.array(ds[var][index]),3)
-    #     fillarray = fillarray[south:north,west:east]
-    #     geojson_filepath = str(name + "-" + timestamp)
-    #     lenght = len(colors)
-    # else:
     lngs = np.array(ds.XLONG)
     lats = np.array(ds.XLAT)
     fillarray = np.round(np.array(ds[var][index]),0)
-    fillarray = ndimage.gaussian_filter(fillarray, sigma=1.2)
+    fillarray = ndimage.gaussian_filter(fillarray, sigma=sigma)
     
     geojson_filepath = str(name + "-" + timestamp)
     lenght = len(colors)
-        # lngs, lats = lngs[40:,50:1200], lats[40:,50:1200]
-        # fillarray = fillarray[40:,50:1200]
-    # levels = np.linspace(vmin,vmax+1,lenght)
+    lngs, lats = lngs[10:,47:], lats[10:,47:]
+    fillarray = fillarray[10:,47:]
     levels = cmaps[var]["levels"]
     Cnorm = matplotlib.colors.Normalize(vmin= vmin, vmax =vmax+1)
     contourf = plt.contourf(lngs, lats, fillarray, levels = levels, \

@@ -1,18 +1,13 @@
-var ffmc_topo_file = 'data/ffmc-2020011100.json';
 var geo_json_ffmc = L.layerGroup()
-var dmc_topo_file = 'data/dmc-20200111.json';
 var geo_json_dmc = L.layerGroup()
-var dc_topo_file = 'data/dc-20200111.json';
 var geo_json_dc = L.layerGroup()
-var isi_topo_file = 'data/isi-2020011100.json';
 var geo_json_isi = L.layerGroup()
-var bui_topo_file = 'data/bui-20200111.json';
 var geo_json_bui = L.layerGroup()
-var fwi_topo_file = 'data/fwi-2020011100.json';
 var geo_json_fwi = L.layerGroup()
-
-var wsp_topo_file = 'data/wsp-2020011100.json';
 var geo_json_wsp = L.layerGroup()
+var geo_json_temp = L.layerGroup()
+var geo_json_rh = L.layerGroup()
+var geo_json_qpf = L.layerGroup()
 
 var ffmcTimeLayer = L.timeDimension.layer.layerGroup(geo_json_ffmc, {
     getUrlFunction: getHourlyForecast,
@@ -66,6 +61,27 @@ var wspTimeLayer = L.timeDimension.layer.layerGroup(geo_json_wsp, {
 
 });
 
+var tempTimeLayer = L.timeDimension.layer.layerGroup(geo_json_temp, {
+    getUrlFunction: getHourlyForecast,
+    getFileDir: temp_topo_file,
+    getVar: 'temp'
+
+});
+
+var rhTimeLayer = L.timeDimension.layer.layerGroup(geo_json_rh, {
+    getUrlFunction: getHourlyForecast,
+    getFileDir: rh_topo_file,
+    getVar: 'rh'
+
+});
+
+var qpfTimeLayer = L.timeDimension.layer.layerGroup(geo_json_qpf, {
+    getUrlFunction: getHourlyForecast,
+    getFileDir: qpf_topo_file,
+    getVar: 'qpf'
+
+});
+
 
 var baseLayers = {
     "Topography"       : gl,
@@ -80,6 +96,12 @@ var groupedOverlays = {
         "BUI"  : buiTimeLayer,
         "FWI"  : fwiTimeLayer,
         "Wind Speed"  : wspTimeLayer,
+        "Temperature 2m"  : tempTimeLayer,
+        "Relative Humidity 2m"  : rhTimeLayer,
+        "Total Accumulated Precipitation"  : qpfTimeLayer,
+
+
+
     },
 };
 
@@ -103,9 +125,9 @@ zoomHome.addTo(map);
 
 // Opacity control
 // var multiLayers = [ffmcTimeLayer, dmcTimeLayer, dcTimeLayer, isiTimeLayer, buiTimeLayer, fwiTimeLayer],
-layerGroup = L.layerGroup();
-layerGroup.addLayer(ffmcTimeLayer);
-opacitySliderGroup = new L.Control.opacitySliderGroup().addTo(map);
-opacitySliderGroup.setOpacityLayerGroup(layerGroup);
+// layerGroup = L.layerGroup();
+// layerGroup.addLayer(ffmcTimeLayer);
+// opacitySliderGroup = new L.Control.opacitySliderGroup().addTo(map);
+// opacitySliderGroup.setOpacityLayerGroup(layerGroup);
 
 

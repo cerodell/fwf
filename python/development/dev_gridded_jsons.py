@@ -21,14 +21,23 @@ import cartopy.crs as crs
 import matplotlib.pyplot as plt
 # from wrf import (getvar, g_uvmet)
 
+### Time Zone classification method
+tzdict  = {"AKDT": {'zone_id':8, 'noon':20 , 'plus': 21, 'minus':19},
+            "PDT": {'zone_id':7, 'noon':19 , 'plus': 20, 'minus':18},
+            "MDT": {'zone_id':6, 'noon':18 , 'plus': 19, 'minus':17},
+            "CDT": {'zone_id':5, 'noon':17 , 'plus': 18, 'minus':16},
+            "EDT": {'zone_id':4, 'noon':16 , 'plus': 17, 'minus':15},
+            "ADT": {'zone_id':3, 'noon':15 , 'plus': 16, 'minus':14}}
 
+### Open time zones dataset
+# tzone_ds = xr.open_zarr(str(tzone_dir) + "/ds_tzone.zarr")
 
 ### Get Path to most recent FWI forecast and open 
-hourly_file_dir = str(xr_dir) + str("/current/hourly.zarr") 
-daily_file_dir = str(xr_dir) + str("/current/daily.zarr") 
+# hourly_file_dir = str(xr_dir) + str("/current/hourly.zarr") 
+# daily_file_dir = str(xr_dir) + str("/current/daily.zarr") 
 
-# hourly_file_dir = str(xr_dir) + str("/fwf-hourly-2020082000.zarr") 
-# daily_file_dir = str(xr_dir) + str("/fwf-daily-2020082000.zarr")
+hourly_file_dir = str(xr_dir) + str("/fwf-hourly-2020082300.zarr") 
+daily_file_dir = str(xr_dir) + str("/fwf-daily-2020082300.zarr")
 
 ### Open datasets
 hourly_ds = xr.open_zarr(hourly_file_dir)
@@ -41,7 +50,7 @@ wrf_folder = date.today().strftime('/%y%m%d00/')
 filein = str(wrf_dir) + wrf_folder
 wrf_file_dir = sorted(Path(filein).glob('wrfout_d03_*'))
 
-### Round all vars to third decimal...save on file size
+### Round all vars to second decimal...save on file size...maybe make everything ints? idk 
 hourly_ds = hourly_ds.round(2)
 daily_ds = daily_ds.round(2)
 
@@ -50,48 +59,59 @@ hourly_ds = jsonmask(hourly_ds, wrf_file_dir)
 daily_ds  = jsonmask(daily_ds, wrf_file_dir)
 
 
+DSR = wrf_ds['DSR'][minus+i:plus+i].mean(axis=0)
+var_da = xr.where(tzone_ds != zone_id, zero_full, var_mean)
+var_da = np.array(var_da.Zone)
+
 print(f"{str(datetime.now())} ---> start to convert datasets to np arrays" )
 
 ### Convert from xarry to np array and cutt off ocean data on the east west
 time = np.array(hourly_ds.Time.dt.strftime('%Y-%m-%dT%H'))
 ffmc = hourly_ds.F.values
-ffmc = ffmc[:,:,50:1210]
-# ffmc = np.array(ffmc,dtype = '<U6')
+ffmc = ffmc[:,10:,47:]
 
 isi = hourly_ds.R.values
-isi = isi[:,:,50:1210]
-# isi = np.array(isi, dtype = '<U8')
+isi = isi[:,10:,47:]
 
 fwi = hourly_ds.S.values
-fwi = fwi[:,:,50:1210]
-# fwi = np.array(fwi, dtype = '<U8')
+fwi = fwi[:,10:,47:]
 
-dsr = hourly_ds.DSR.values
-dsr = dsr[:,:,50:1210]
-# dsr = np.array(dsr, dtype = '<U8')
+# dsr = hourly_ds.DSR.values
+# dsr = dsr[:,:,47:]
 
 dmc = daily_ds.P.values
-dmc = dmc[:,:,50:1210]
-# dmc = np.array(dmc, dtype = '<U8')
+dmc = dmc[:,10:,47:]
 
 dc = daily_ds.D.values
-dc = dc[:,:,50:1210]
-# dc = np.array(dc, dtype = '<U8')
+dc = dc[:,10:,47:]
 
 bui = daily_ds.U.values
-bui = bui[:,:,50:1210]
-# bui = np.array(bui, dtype = '<U8')
+bui = bui[:,10:,47:]
 
+wsp = hourly_ds.W.values
+wsp = wsp[:,10:,47:]
+
+wdir = hourly_ds.WD.values
+wdir = wdir[:,10:,47:]
+
+temp = hourly_ds.T.values
+temp = temp[:,10:,47:]
+
+rh = hourly_ds.H.values
+rh = rh[:,10:,47:]
+
+qpf = hourly_ds.r_o.values
+qpf = qpf[:,10:,47:]
 
 day = np.array(daily_ds.Time.dt.strftime('%Y-%m-%d'))
 
 
 xlat = np.round(daily_ds.XLAT.values,5)
-xlat= xlat[:,50:1210]
+xlat= xlat[10:,47:]
 # xlat = np.array(xlat, dtype = '<U8')
 
 xlong = np.round(daily_ds.XLONG.values,5)
-xlong= xlong[:,50:1210]
+xlong= xlong[10:,47:]
 # xlong = np.array(xlong, dtype = '<U8')
 
 print(f"{str(datetime.now())} ---> end of convert datasets to np arrays" )
@@ -107,7 +127,7 @@ make_dir = Path("/bluesky/fireweather/fwf/web_dev/data/plot/")
 
 
 abc = list(string.ascii_lowercase)
-ff = np.arange(0,10)
+ff = np.arange(0,25)
 for i in ff:
     # print(i)
     for j in ff:
@@ -120,7 +140,12 @@ for i in ff:
                 'ISI': isi[:,x1:x2,y1:y2].tolist(),
                 'BUI': bui[:,x1:x2,y1:y2].tolist(),
                 'FWI': fwi[:,x1:x2,y1:y2].tolist(),
-                'DSR': dsr[:,x1:x2,y1:y2].tolist(),
+                'wsp': wsp[:,x1:x2,y1:y2].tolist(),
+                'wdir': wdir[:,x1:x2,y1:y2].tolist(),
+                'temp': temp[:,x1:x2,y1:y2].tolist(),
+                'rh': rh[:,x1:x2,y1:y2].tolist(),
+                'qpf': qpf[:,x1:x2,y1:y2].tolist(),
+
                 'XLAT': xlat[x1:x2,y1:y2].tolist(),
                 'XLONG': xlong[x1:x2,y1:y2].tolist(),
                 'Time': time.tolist(),

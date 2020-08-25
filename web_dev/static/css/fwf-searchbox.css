@@ -189,10 +189,10 @@ li:hover {
 button:hover {
     color: #00f;
 }
-.icon-folder {
+/* .icon-folder {
     background: url(../images/ic_folder_black_24dp_2x.png);
     background-size: 100%;
-}
+} */
 .icon-cloudy {
     background: url(../images/ic_wb_cloudy_black_24dp_2x.png);
     background-size: 100%;
@@ -201,15 +201,15 @@ button:hover {
     background: url(../images/ic_portrait_black_24dp_2x.png);
     background-size: 100%;
 }
-.icon-local-dining {
+/* .icon-local-dining {
     background: url(../images/ic_local_dining_black_24dp_2x.png);
     background-size: 100%;
-}
-.icon-bike {
-    background: url(../images/ic_directions_bike_black_24dp_2x.png);
+} */
+.icon-phone {
+    background: url(../images/phone.png);
     background-size: 100%;
 }
-.icon-local-carwash {
-    background: url(../images/ic_local_car_wash_black_24dp_2x.png);
+.icon-fire {
+    background: url(../images/fire.png);
     background-size: 100%;
 }

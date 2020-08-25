@@ -136,7 +136,7 @@ L.TimeDimension.Layer.LayerGroup = L.TimeDimension.Layer.extend({
 
 
             if (this._thisVar == 'FFMC'){
-            fetch(url, {cache: "force-cache"}).then(function(response){
+            fetch(url, {cache: "default"}).then(function(response){
                 return response.json();
             }).then(function(json){
                 newLayer.addLayer(L.vectorGrid.slicer( json, {
@@ -152,7 +152,7 @@ L.TimeDimension.Layer.LayerGroup = L.TimeDimension.Layer.extend({
             })};
 
             if (this._thisVar == 'DMC'){
-                fetch(url, {cache: "force-cache"}).then(function(response){
+                fetch(url, {cache: "default"}).then(function(response){
                     return response.json();
                 }).then(function(json){
                     newLayer.addLayer(L.vectorGrid.slicer( json, {
@@ -169,7 +169,7 @@ L.TimeDimension.Layer.LayerGroup = L.TimeDimension.Layer.extend({
 
             
             if (this._thisVar == 'DC'){
-                fetch(url, {cache: "force-cache"}).then(function(response){
+                fetch(url, {cache: "default"}).then(function(response){
                     return response.json();
                 }).then(function(json){
                     newLayer.addLayer(L.vectorGrid.slicer( json, {
@@ -186,7 +186,7 @@ L.TimeDimension.Layer.LayerGroup = L.TimeDimension.Layer.extend({
 
                 
             if (this._thisVar == 'ISI'){
-                fetch(url, {cache: "force-cache"}).then(function(response){
+                fetch(url, {cache: "default"}).then(function(response){
                     return response.json();
                 }).then(function(json){
                     newLayer.addLayer(L.vectorGrid.slicer( json, {
@@ -203,7 +203,7 @@ L.TimeDimension.Layer.LayerGroup = L.TimeDimension.Layer.extend({
 
             
             if (this._thisVar == 'BUI'){
-                fetch(url, {cache: "force-cache"}).then(function(response){
+                fetch(url, {cache: "default"}).then(function(response){
                     return response.json();
                 }).then(function(json){
                     newLayer.addLayer(L.vectorGrid.slicer( json, {
@@ -221,7 +221,7 @@ L.TimeDimension.Layer.LayerGroup = L.TimeDimension.Layer.extend({
 
             
         if (this._thisVar == 'FWI'){
-            fetch(url, {cache: "force-cache"}).then(function(response){
+            fetch(url, {cache: "default"}).then(function(response){
                 return response.json();
             }).then(function(json){
                 newLayer.addLayer(L.vectorGrid.slicer( json, {
@@ -237,7 +237,7 @@ L.TimeDimension.Layer.LayerGroup = L.TimeDimension.Layer.extend({
             })};
 
         if (this._thisVar == 'wsp'){
-            fetch(url, {cache: "force-cache"}).then(function(response){
+            fetch(url, {cache: "default"}).then(function(response){
                 return response.json();
             }).then(function(json){
                 newLayer.addLayer(L.vectorGrid.slicer( json, {
@@ -251,6 +251,57 @@ L.TimeDimension.Layer.LayerGroup = L.TimeDimension.Layer.extend({
                     ).setZIndex(500)
                 )
             })};
+
+        if (this._thisVar == 'temp'){
+            fetch(url, {cache: "default"}).then(function(response){
+                return response.json();
+            }).then(function(json){
+                newLayer.addLayer(L.vectorGrid.slicer( json, {
+                    minZoom: 2,
+                    maxZoom: 18,
+                    rendererFactory: L.canvas.tile,
+                    vectorTileLayerStyles:{
+                        'temp': geo_json_styler_temp
+                            }
+                        }
+                    ).setZIndex(500)
+                )
+            })};
+
+        if (this._thisVar == 'rh'){
+            fetch(url, {cache: "default"}).then(function(response){
+                return response.json();
+            }).then(function(json){
+                newLayer.addLayer(L.vectorGrid.slicer( json, {
+                    minZoom: 2,
+                    maxZoom: 18,
+                    rendererFactory: L.canvas.tile,
+                    vectorTileLayerStyles:{
+                        'rh': geo_json_styler_rh
+                            }
+                        }
+                    ).setZIndex(500)
+                )
+            })};
+
+            if (this._thisVar == 'qpf'){
+                fetch(url, {cache: "default"}).then(function(response){
+                    return response.json();
+                }).then(function(json){
+                    newLayer.addLayer(L.vectorGrid.slicer( json, {
+                        minZoom: 2,
+                        maxZoom: 18,
+                        rendererFactory: L.canvas.tile,
+                        vectorTileLayerStyles:{
+                            'qpf': geo_json_styler_qpf
+                                }
+                            }
+                        ).setZIndex(500)
+                    )
+                })};
+
+
+
         
         this._layers[time] = newLayer;
 

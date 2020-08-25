@@ -24,11 +24,11 @@ import matplotlib.pyplot as plt
 
 
 ### Get Path to most recent FWI forecast and open 
-# hourly_file_dir = str(xr_dir) + str("/current/hourly.zarr") 
-# daily_file_dir = str(xr_dir) + str("/current/daily.zarr") 
+hourly_file_dir = str(xr_dir) + str("/current/hourly.zarr") 
+daily_file_dir = str(xr_dir) + str("/current/daily.zarr") 
 
-hourly_file_dir = str(xr_dir) + str("/fwf-hourly-2020082000.zarr") 
-daily_file_dir = str(xr_dir) + str("/fwf-daily-2020082000.zarr")
+# hourly_file_dir = str(xr_dir) + str("/fwf-hourly-2020082000.zarr") 
+# daily_file_dir = str(xr_dir) + str("/fwf-daily-2020082000.zarr")
 
 ### Open datasets
 hourly_ds = xr.open_zarr(hourly_file_dir)
@@ -40,19 +40,19 @@ make_dir = Path("/bluesky/fireweather/fwf/web_dev/")
 # # # make_dir.mkdir(parents=True, exist_ok=True)
 
 xlat = np.round(daily_ds.XLAT.values,5)
-xlat= xlat[:,50:1210]
+xlat= xlat[10:,47:]
 shape = xlat.shape
 
 xlat = np.array(xlat, dtype = '<U8')
 # xlat = xlat.ravel()
 
 xlong = np.round(daily_ds.XLONG.values,5)
-xlong= xlong[:,50:1210]
+xlong= xlong[10:,47:]
 xlong = np.array(xlong, dtype = '<U8')
 # xlong = xlong.ravel()
 
 abc = list(string.ascii_lowercase)
-ff = np.arange(0,10)
+ff = np.arange(0,20)
 
 empty = np.empty([shape[0],shape[1]], dtype = '<U2')
 
@@ -66,7 +66,6 @@ for i in ff:
         # print(zone)
         empty[x1:x2,y1:y2] = zone
 
-# empty = empty.ravel()
 
 
 fwf = {
@@ -75,7 +74,7 @@ fwf = {
         'XLONG': xlong.tolist(),
         }
 
-## Write json file to defind dir 
+# Write json file to defind dir 
 with open(str(make_dir) + f"/fwf-zone.json","w") as f:
     json.dump(fwf,f, default=json_util.default, separators=(',', ':'), indent=None)
 

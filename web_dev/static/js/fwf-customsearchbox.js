@@ -1,5 +1,5 @@
 function getControlHrmlContent() {
-    return '<div id="controlbox" ><div id="boxcontainer" class="searchbox searchbox-shadow" contentEditable=true placeholder="Enter some text"> <div class="searchbox-menu-container"><button aria-label="Menu" id="searchbox-menubutton" class="searchbox-menubutton"></button> <span aria-hidden="true" style="display:none">Menu</span> </div><div><input id="searchboxinput" type="text" contentEditable=true placeholder="Latitude, Longitude" style="position: relative;"/></div><div class="searchbox-searchbutton-container"><button aria-label="search" id="searchbox-searchbutton" class="searchbox-searchbutton"></button> <span aria-hidden="true" style="display:none;">search</span> </div></div></div><div class="panel"> <div class="panel-header"> <div class="panel-header-container"> <span class="panel-header-title"></span> <button aria-label="Menu" id="panelbutton" class="panel-close-button"></button> </div></div><div class="panel-content"> </div></div>';
+    return '<div id="controlbox" ><div id="boxcontainer" class="searchbox searchbox-shadow" > <div class="searchbox-menu-container"><button aria-label="Menu" id="searchbox-menubutton" class="searchbox-menubutton"></button> <span aria-hidden="true" style="display:none">Menu</span> </div><div><input id="searchboxinput" type="text" contentEditable=true placeholder="Latitude, Longitude [ex 49.88, -119.49]" style="position: relative;"/></div><div class="searchbox-searchbutton-container"><button aria-label="search" id="searchbox-searchbutton" class="searchbox-searchbutton"></button> <span aria-hidden="true" style="display:none;">search</span> </div></div></div><div class="panel"> <div class="panel-header"> <div class="panel-header-container"> <span class="panel-header-title"></span> <button aria-label="Menu" id="panelbutton" class="panel-close-button"></button> </div></div><div class="panel-content"> </div></div>';
 }
 function generateHtmlContent(a) {
     for (var b = '<ul class="panel-list">', d = 0; d < a.Items.length; d++) {
@@ -17,11 +17,9 @@ function createSearchboxControl() {
         _sideBarHeaderTitle: "Sample Title",
         _sideBarMenuItems: {
             Items: [
-                { type: "link", name: "Link 1 (github.com)", href: "http://github.com", icon: "icon-local-carwash" },
-                { type: "link", name: "Link 2 (google.com)", href: "http://google.com", icon: "icon-cloudy" },
-                { type: "button", name: "Button 1", onclick: "alert('button 1 clicked !')", icon: "icon-potrait" },
-                { type: "button", name: "Button 2", onclick: "alert('button 2 clicked !')", icon: "icon-local-dining" },
-                { type: "link", name: "Link 3 (stackoverflow.com)", href: "http://stackoverflow.com", icon: "icon-bike" },
+                { type: "link", name: "BlueSky Canada Smoke Forecasts", href: "https://firesmoke.ca/", icon: "icon-fire" },
+                { type: "link", name: "Weather Research Forecast Team", href: "https://weather.eos.ubc.ca/cgi-bin/index.cgi", icon: "icon-cloudy" },
+                { type: "link", name: "Contact Inforamtion", href: "https://firesmoke.ca/contact/", icon: "icon-phone" },
             ],
             _searchfunctionCallBack: function (a) {
                 alert("calling the default search call back");
