@@ -7,11 +7,10 @@ var redIcon = new L.Icon({
     shadowSize: [41, 41]
   });
 console.log(redIcon);
-const fwfmodellocation = L.marker({icon: redIcon }).bindPopup("<b>Hello!</b><br />I am the closet model grid point<br /> to where you clicked on the map.");
+const fwfmodellocation = L.marker({icon: redIcon }).bindPopup("<b>Hello!</b><br />I am the closest model grid point to <br /> where you clicked or searched on the map.");
 const fwfclicklocation = L.marker().bindPopup("<b>Hello!</b><br />I am where you clicked <br /> or searched on the map.");
 
-var blah = Math.floor((new Date()).getTime() / 1000)
-console.log(blah)
+const buffer = 0.06
 
 function makeplotly(n, o) {
     for (var t = n.XLAT, e = n.XLONG, l = [], a = [], r = [(r = [t.length, t[0].length])[1], r[0]], c = 0; c < t.length; c++) l = l.concat(t[c]);
@@ -22,20 +21,20 @@ function makeplotly(n, o) {
     const s = new KDBush(i);
     console.log('Start')
     console.log(s), console.log(o);
-    const u = s.range(o[0], o[1], o[0] + 0.5, o[1] + 0.5).map((n) => i[n]);
+    const u = s.range(o[0] - buffer, o[1] - buffer, o[0] + buffer, o[1] + buffer).map((n) => i[n]);
 
     console.log(u);
     (ll_diff = []),
         (function (n, o) {
             for (var t = 0; t < n.length; t++) {
-                var e = (n[t][0] - o[0]) + (n[t][1] - o[1]);
+                var e = Math.abs(n[t][0] - o[0]) + Math.abs(n[t][1] - o[1]);
                 ll_diff.push(e);
             }
         })(u, o);
     var h = 0,
         d = ll_diff[0];
     for (c = 1; c < ll_diff.length; c++) ll_diff[c] < d && ((d = ll_diff[c]), (h = c));
-    const m = s.range(o[0], o[1], o[0] + 0.5, o[1] + 0.5);
+    const m = s.range(o[0] - buffer, o[1] - buffer, o[0] + buffer, o[1] + buffer);
     var g, p;
     f =
         ((p = (g = r).reduce(
@@ -47,7 +46,7 @@ function makeplotly(n, o) {
         function (n) {
             return (function (n, o, t) {
                 return n.map(function (n, e) {
-                    return Math.floor(o / t[e]) % n;
+                    return Math.round(o / t[e]) % n;
                 });
             })(g, n, p);
         });
@@ -59,9 +58,10 @@ function makeplotly(n, o) {
                 [1]
             );
             return n.map(function (n, e) {
-                return Math.floor(o / t[e]) % n;
+                return Math.round(o / t[e]) % n;
             });
         })(r, m[h], f(m[h])),
+
         x = y[1],
         _ = y[0],
         w = n.XLAT[x][_],
@@ -114,6 +114,7 @@ function makeplotly(n, o) {
             [j[0], b[0], k[0], fwi[0], dsr[0]],
             [j[1], b[1], k[1], fwi[1], dsr[1]],
         ],
+
         N =
             ((F = { x: time, y: F, type: "scatter", line: { color: "ff7f0e" }, yaxis: "y7", name: "FFMC" }),
             (R = { x: time, y: R, type: "scatter", line: { color: "9467bd" }, yaxis: "y6", name: "ISI" }),
@@ -154,6 +155,7 @@ function makeplotly(n, o) {
             yaxis1: { domain: [0, 0.09], title: { text: "QPF", font: { color: "2ca02c" } }, tickfont: {color: "2ca02c"}},
             xaxis: { title: "Date (UTC)" },
         };
+
         fwfmodellocation.setLatLng([w.toFixed(3), v.toFixed(3)]).addTo(map)
     Plotly.react(C, N, S);
 }
@@ -184,16 +186,16 @@ function makeplots(n) {
                     map.on("click", function (o) {
                         fwfclicklocation.setLatLng(o.latlng).addTo(map);
                         var e = [parseFloat(o.latlng.lat.toFixed(4)), parseFloat(o.latlng.lng.toFixed(4))];
-                        const l = u.range(e[0], e[1], e[0] + 0.5, e[1] + 0.5).map((n) => s[n]);
+                        const l = u.range(e[0] - buffer, e[1] - buffer, e[0] + buffer, e[1] + buffer).map((n) => s[n]);
                         (ll_diff = []),
                             (function (n, o) {
                                 for (var t = 0; t < n.length; t++) {
-                                    var e = (n[t][0] - o[0]) + (n[t][1] - o[1]);
+                                    var e = Math.abs(n[t][0] - o[0]) + Math.abs(n[t][1] - o[1]);
                                     ll_diff.push(e);
                                 }
                             })(l, e);
                         for (var a = 0, r = ll_diff[0], i = 1; i < ll_diff.length; i++) ll_diff[i] < r && ((r = ll_diff[i]), (a = i));
-                        const h = u.range(e[0], e[1], e[0] + 0.5, e[1] + 0.5);
+                        const h = u.range(e[0]- buffer, e[1] - buffer, e[0] + buffer, e[1] + buffer);
                         var d, m;
                         f =
                             ((m = (d = c).reduce(
@@ -205,7 +207,7 @@ function makeplots(n) {
                             function (n) {
                                 return (function (n, o, t) {
                                     return n.map(function (n, e) {
-                                        return Math.floor(o / t[e]) % n;
+                                        return Math.round(o / t[e]) % n;
                                     });
                                 })(d, n, m);
                             });
@@ -217,7 +219,7 @@ function makeplots(n) {
                                     [1]
                                 );
                                 return n.map(function (n, e) {
-                                    return Math.floor(o / t[e]) % n;
+                                    return Math.round(o / t[e]) % n;
                                 });
                             })(c, h[a], f(h[a])),
                             p = g[1],
@@ -244,16 +246,16 @@ function makeplots(n) {
                         map.flyTo(o)
                         fwfclicklocation.setLatLng(o).addTo(map);
                         var e = [parseFloat(o[0]), parseFloat(o[1])];
-                        const l = u.range(e[0]-0.25, e[1]-0.25, e[0] + 0.25, e[1] + 0.25).map((n) => s[n]);
+                        const l = u.range(e[0]- buffer, e[1] - buffer, e[0] + buffer, e[1] + buffer).map((n) => s[n]);
                         (ll_diff = []),
                             (function (n, o) {
                                 for (var t = 0; t < n.length; t++) {
-                                    var e = (n[t][0] - o[0]) + (n[t][1] - o[1]);
+                                    var e = Math.abs(n[t][0] - o[0]) + Math.abs(n[t][1] - o[1]);
                                     ll_diff.push(e);
                                 }
                             })(l, e);
                         for (var a = 0, r = ll_diff[0], i = 1; i < ll_diff.length; i++) ll_diff[i] < r && ((r = ll_diff[i]), (a = i));
-                        const h = u.range(e[0], e[1], e[0] + 0.5, e[1] + 0.5);
+                        const h = u.range(e[0] - buffer, e[1] - buffer, e[0] + buffer, e[1] + buffer);
                         var d, m;
                         f =
                             ((m = (d = c).reduce(
@@ -265,7 +267,7 @@ function makeplots(n) {
                             function (n) {
                                 return (function (n, o, t) {
                                     return n.map(function (n, e) {
-                                        return Math.floor(o / t[e]) % n;
+                                        return Math.round(o / t[e]) % n;
                                     });
                                 })(d, n, m);
                             });
@@ -277,7 +279,7 @@ function makeplots(n) {
                                     [1]
                                 );
                                 return n.map(function (n, e) {
-                                    return Math.floor(o / t[e]) % n;
+                                    return Math.round(o / t[e]) % n;
                                 });
                             })(c, h[a], f(h[a])),
                             p = g[1],
