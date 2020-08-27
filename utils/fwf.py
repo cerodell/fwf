@@ -155,9 +155,13 @@ class FWF:
             previous_hourly_ds = xr.open_zarr(hourly_file_dir)
             print("Found previous FFMC, will merge with hourly_ds")
             
-            ### Get last time step of F and m_m
-            F = np.array(previous_hourly_ds.F[24])
-            m_o = np.array(previous_hourly_ds.m_o[24])
+            ### Get time step of F and m_o that coincides with the initialization time of current model run
+            current_time = np.datetime_as_string(self.hourly_ds.Time[0], unit='h')
+            previous_times = np.datetime_as_string(previous_hourly_ds.Time, unit='h')
+            index, = np.where(previous_times == current_time)
+            index = int(index[0]-1)
+            F = np.array(previous_hourly_ds.F[index])
+            m_o = np.array(previous_hourly_ds.m_o[index])
 
             ### Create dataarrays for F and m_m
             F = xr.DataArray(F, name='F', dims=('south_north', 'west_east'))
@@ -201,8 +205,14 @@ class FWF:
             print("Found previous DMC, will merge with daily_ds")
 
             ### Get last time step of P and r_o_previous (carry over rain)
-            P = np.array(previous_daily_ds.P[-1])
-            r_o_previous = np.array(previous_daily_ds.r_o_tomorrow[0])
+            ### that coincides with the initialization time of current model run
+            current_time = np.datetime_as_string(self.daily_ds.Time[0], unit='D')
+            previous_times = np.datetime_as_string(previous_daily_ds.Time, unit='D')
+            index, = np.where(previous_times == current_time)
+            index = int(index[0]-1)
+
+            P = np.array(previous_daily_ds.P[index])
+            r_o_previous = np.array(previous_daily_ds.r_o_tomorrow[index])
 
             ### Create dataarrays for P
             P = xr.DataArray(P, name='P', dims=('south_north', 'west_east'))
@@ -210,25 +220,14 @@ class FWF:
             ### Add dataarrays to daily dataset
             self.daily_ds['P']  = P
              ### Add carry over rain to first time step
-            self.daily_ds['r_o'][0] = self.daily_ds['r_o'][0] + np.array(r_o_previous)
+            self.daily_ds['r_o'][index] = self.daily_ds['r_o'][index] + np.array(r_o_previous)
             
             # """ #####################     Drought Code (DC)       ########################### """
             print("Found previous DC, will merge with daily_ds")
 
-            ### Get last time step of D
-            D = np.array(previous_daily_ds.D[-1])
-
-            ### Create dataarrays for D
-            D = xr.DataArray(D, name='D', dims=('south_north', 'west_east'))
-
-            ### Add dataarrays to daily dataset
-            self.daily_ds['D'] = D
-
-            # """ #####################     Drought Code (DC)       ########################### """
-            print("Found previous BUI, will merge with daily_ds")
-
-            ### Get last time step of D
-            D = np.array(previous_daily_ds.D[-1])
+            ### Get last time step of D that coincides with the
+            ### initialization time of current model run
+            D = np.array(previous_daily_ds.D[index])
 
             ### Create dataarrays for D
             D = xr.DataArray(D, name='D', dims=('south_north', 'west_east'))

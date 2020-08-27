@@ -10,7 +10,7 @@ console.log(redIcon);
 const fwfmodellocation = L.marker({icon: redIcon }).bindPopup("<b>Hello!</b><br />I am the closest model grid point to <br /> where you clicked or searched on the map.");
 const fwfclicklocation = L.marker().bindPopup("<b>Hello!</b><br />I am where you clicked <br /> or searched on the map.");
 
-const buffer = 0.06
+const buffer = 0.1
 
 function makeplotly(n, o) {
     for (var t = n.XLAT, e = n.XLONG, l = [], a = [], r = [(r = [t.length, t[0].length])[1], r[0]], c = 0; c < t.length; c++) l = l.concat(t[c]);

@@ -29,10 +29,28 @@ with open('/bluesky/fireweather/fwf/json/dev_colormaps.json') as f:
 ### BRing in zarr FWF forecast data 
 hourly_file_dir = str(xr_dir) + str("/current/hourly.zarr") 
 daily_file_dir = str(xr_dir) + str("/current/daily.zarr") 
-# hourly_file_dir = str(xr_dir) + str("/fwf-hourly-2020071700.zarr") 
-# daily_file_dir = str(xr_dir) + str("/fwf-daily-2020071700.zarr")
+
 hourly_ds = xr.open_zarr(hourly_file_dir)
 daily_ds = xr.open_zarr(daily_file_dir)
+hourly_ds['r_o_06'] = hourly_ds.r_o - hourly_ds.r_o[0:7].sum(dim ='time')
+day  = str(np.array(hourly_ds.Time[0:7], dtype ='datetime64[h]'))
+wrf_ds = daily_ds
+
+
+hourly_file_dir = str(xr_dir) + str("/current/hourly.zarr") 
+previous_daily_ds_dir = str(xr_dir) + str("/fwf-daily-2020082600.zarr") 
+previous_daily_ds = xr.open_zarr(previous_daily_ds_dir)
+
+
+current_time = np.datetime_as_string(wrf_ds.Time[0], unit='D')
+previous_times = np.datetime_as_string(previous_daily_ds.Time, unit='D')
+index, = np.where(previous_times == current_time) 
+index = int(index[0]-1)
+
+F = np.array(previous_daily_ds.D[index])
+
+
+
 
 ### Bring in WRF Data and open
 # 
@@ -130,7 +148,8 @@ fig.savefig(str(root_dir) + "/images/weather/" + day  + "-temp.png", dpi = 300)
 
 # %%
 ### total accumulated precip 
-var = 'r_o'
+
+var = 'r_o_06'
 vmin, vmax = cmaps[var]["vmin"], cmaps[var]["vmax"]
 name, colors = str(cmaps[var]["name"]), cmaps[var]["colors18"]
 levels = cmaps[var]["levels"]
@@ -144,7 +163,7 @@ fig.suptitle(Plot_Title + day, fontsize=16)
 fig.subplots_adjust(hspace=0.8)
 
 lats, lons = np.array(hourly_ds.XLAT), np.array(hourly_ds.XLONG)
-qpf = np.array(hourly_ds.r_o[-1])
+qpf = np.array(hourly_ds.r_o_06[1])
 qpf = qpf[10:,50:1210]
 lons, lats = lons[10:,50:1210], lats[10:,50:1210]
 title = "QPF mm"
@@ -234,68 +253,68 @@ fig.savefig(str(root_dir) + "/images/weather/" + day  + "-qpf.png", dpi = 300)
 
 # %%
 
-# Plot_Title = "ALL FWI:  "
-# day  = str(np.array(daily_ds.Time[0], dtype ='datetime64[D]'))
-# fig, ax = plt.subplots(3,2, figsize=(12,8))
-# fig.suptitle(Plot_Title + day, fontsize=16)
-# fig.subplots_adjust(hspace=0.8)
-# lats, lons = np.array(hourly_ds.XLAT), np.array(hourly_ds.XLONG)
-# cmap = plt.cm.jet
+Plot_Title = "ALL FWI:  "
+day  = str(np.array(daily_ds.Time[0], dtype ='datetime64[D]'))
+fig, ax = plt.subplots(3,2, figsize=(12,8))
+fig.suptitle(Plot_Title + day, fontsize=16)
+fig.subplots_adjust(hspace=0.8)
+lats, lons = np.array(hourly_ds.XLAT), np.array(hourly_ds.XLONG)
+cmap = plt.cm.jet
 
-# Cnorm = matplotlib.colors.Normalize(vmin= 60, vmax =100)
-# levels = np.array([0, 60, 68, 72, 76, 78, 80, 82, 84, 86, 88, 90, 92, 94, 100 ])
+Cnorm = matplotlib.colors.Normalize(vmin= 60, vmax =100)
+levels = np.array([0, 60, 68, 72, 76, 78, 80, 82, 84, 86, 88, 90, 92, 94, 100 ])
 
-# ffmc = np.array(hourly_ds.F[18])
-# title = "FFMC"
-# C = ax[0][0].contourf(lons, lats, ffmc, cmap = cmap, norm = Cnorm, levels=levels, extend="both")
-# clb = fig.colorbar(C, ax = ax[0][0], fraction=0.054, pad=0.04)
-# ax[0][0].set_title(title + f" max {round(np.nanmax(ffmc),1)}  min {round(np.nanmin(ffmc),1)} mean {round(np.nanmean(ffmc),1)}")
-
-
+ffmc = np.array(hourly_ds.F[18])
+title = "FFMC"
+C = ax[0][0].contourf(lons, lats, ffmc, cmap = cmap, norm = Cnorm, levels=levels, extend="both")
+clb = fig.colorbar(C, ax = ax[0][0], fraction=0.054, pad=0.04)
+ax[0][0].set_title(title + f" max {round(np.nanmax(ffmc),1)}  min {round(np.nanmin(ffmc),1)} mean {round(np.nanmean(ffmc),1)}")
 
 
-# vmin, vmax = 0, 15
-# levels = np.linspace(vmin,vmax,15)
-# Cnorm = matplotlib.colors.Normalize(vmin= vmin, vmax =vmax)
-# isi = np.array(hourly_ds.R[18])
-# title = "ISI"
-# C = ax[1][0].contourf(lons, lats, isi, cmap = cmap,  norm = Cnorm, levels=levels, extend="both")
-# clb = fig.colorbar(C, ax = ax[1][0], fraction=0.054, pad=0.04)
-# ax[1][0].set_title(title + f" max {round(np.nanmax(isi),1)}  min {round(np.nanmin(isi),1)} mean {round(np.nanmean(isi),1)}")
 
 
-# fwi = np.array(hourly_ds.S[18])
-# title = "FWI"
-# vmin, vmax = 0, 30
-# levels = np.linspace(vmin,vmax,15)
-# Cnorm = matplotlib.colors.Normalize(vmin= vmin, vmax =vmax)
-# # levels = np.array([0, 4, 8, 12, 16, 20, 24, 26, 28, 30, 45, 65, 80 ])
-# C = ax[2][0].contourf(lons, lats, fwi, cmap = cmap, norm = Cnorm, levels=levels, extend="both")
-# clb = fig.colorbar(C, ax = ax[2][0], fraction=0.054, pad=0.04)
-# ax[2][0].set_title(title + f" max {round(np.nanmax(fwi),1)}  min {round(np.nanmin(fwi),1)} mean {round(np.nanmean(fwi),1)}")
-
-# dmc = np.array(daily_ds.P[0])
-# title = "DMC"
-# C = ax[0][1].pcolormesh(lons, lats, dmc, cmap = cmap, vmin = 0, vmax = 60)
-# clb = fig.colorbar(C, ax = ax[0][1], fraction=0.054, pad=0.04)
-# ax[0][1].set_title(title + f" max {round(np.nanmax(dmc),1)}  min {round(np.nanmin(dmc),1)} mean {round(np.nanmean(dmc),1)}")
-
-# dc = np.array(daily_ds.D[0])
-# title = "DC"
-# C = ax[1][1].pcolormesh(lons, lats, dc, cmap = cmap, vmin = 40, vmax = 400)
-# clb = fig.colorbar(C, ax = ax[1][1], fraction=0.054, pad=0.04)
-# ax[1][1].set_title(title + f" max {round(np.nanmax(dc),1)}  min {round(np.nanmin(dc),1)} mean {round(np.nanmean(dc),1)}")
+vmin, vmax = 0, 15
+levels = np.linspace(vmin,vmax,15)
+Cnorm = matplotlib.colors.Normalize(vmin= vmin, vmax =vmax)
+isi = np.array(hourly_ds.R[18])
+title = "ISI"
+C = ax[1][0].contourf(lons, lats, isi, cmap = cmap,  norm = Cnorm, levels=levels, extend="both")
+clb = fig.colorbar(C, ax = ax[1][0], fraction=0.054, pad=0.04)
+ax[1][0].set_title(title + f" max {round(np.nanmax(isi),1)}  min {round(np.nanmin(isi),1)} mean {round(np.nanmean(isi),1)}")
 
 
-# bui = np.array(daily_ds.U[0])
-# title = "BUI"
-# C = ax[2][1].pcolormesh(lons, lats, bui, cmap = cmap, vmin = 0, vmax = 90)
-# clb = fig.colorbar(C, ax = ax[2][1], fraction=0.054, pad=0.04)
-# ax[2][1].set_title(title + f" max {round(np.nanmax(bui),1)}  min {round(np.nanmin(bui),1)} mean {round(np.nanmean(bui),1)}")
+fwi = np.array(hourly_ds.S[18])
+title = "FWI"
+vmin, vmax = 0, 30
+levels = np.linspace(vmin,vmax,15)
+Cnorm = matplotlib.colors.Normalize(vmin= vmin, vmax =vmax)
+# levels = np.array([0, 4, 8, 12, 16, 20, 24, 26, 28, 30, 45, 65, 80 ])
+C = ax[2][0].contourf(lons, lats, fwi, cmap = cmap, norm = Cnorm, levels=levels, extend="both")
+clb = fig.colorbar(C, ax = ax[2][0], fraction=0.054, pad=0.04)
+ax[2][0].set_title(title + f" max {round(np.nanmax(fwi),1)}  min {round(np.nanmin(fwi),1)} mean {round(np.nanmean(fwi),1)}")
 
-# fig.savefig(str(root_dir) + "/images/all_fwi/" + day  + ".png")
+dmc = np.array(daily_ds.P[0])
+title = "DMC"
+C = ax[0][1].pcolormesh(lons, lats, dmc, cmap = cmap, vmin = 0, vmax = 60)
+clb = fig.colorbar(C, ax = ax[0][1], fraction=0.054, pad=0.04)
+ax[0][1].set_title(title + f" max {round(np.nanmax(dmc),1)}  min {round(np.nanmin(dmc),1)} mean {round(np.nanmean(dmc),1)}")
 
-# plt.show()
+dc = np.array(daily_ds.D[0])
+title = "DC"
+C = ax[1][1].pcolormesh(lons, lats, dc, cmap = cmap, vmin = 40, vmax = 400)
+clb = fig.colorbar(C, ax = ax[1][1], fraction=0.054, pad=0.04)
+ax[1][1].set_title(title + f" max {round(np.nanmax(dc),1)}  min {round(np.nanmin(dc),1)} mean {round(np.nanmean(dc),1)}")
+
+
+bui = np.array(daily_ds.U[0])
+title = "BUI"
+C = ax[2][1].pcolormesh(lons, lats, bui, cmap = cmap, vmin = 0, vmax = 90)
+clb = fig.colorbar(C, ax = ax[2][1], fraction=0.054, pad=0.04)
+ax[2][1].set_title(title + f" max {round(np.nanmax(bui),1)}  min {round(np.nanmin(bui),1)} mean {round(np.nanmean(bui),1)}")
+
+fig.savefig(str(root_dir) + "/images/all_fwi/" + day  + ".png")
+
+plt.show()
 print("Run Time: ", datetime.now() - startTime)
 
 # %%
