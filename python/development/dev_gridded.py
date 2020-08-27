@@ -52,16 +52,18 @@ xlong = np.array(xlong, dtype = '<U8')
 # xlong = xlong.ravel()
 
 abc = list(string.ascii_lowercase)
-ff = np.arange(0,20)
-
+nfile = 25
+ff = np.arange(0,nfile)
+xx = int(shape[0]/nfile)
+yy = int(shape[1]/nfile)
 empty = np.empty([shape[0],shape[1]], dtype = '<U2')
 
 
 for i in ff:
     # print(i)
     for j in ff:
-        x1, y1 = (51 * i), (116 * j)
-        x2, y2 = (51 * ( i + 1)), (116 * ( j + 1))
+        x1, y1 = (xx * i), (yy * j)
+        x2, y2 = (xx * ( i + 1)), (yy * ( j + 1))
         zone = str((abc[i]+abc[j]))
         # print(zone)
         empty[x1:x2,y1:y2] = zone

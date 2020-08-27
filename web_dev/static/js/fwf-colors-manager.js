@@ -7,7 +7,7 @@ color_map_ffmc.color = d3.scale.threshold()
 
 
 color_map_ffmc.x = d3.scale.linear()
-          .domain([60.0, 100.0])
+          .domain([40.0, 100.0])
           .range([0, 400]);
 
 color_map_ffmc.legend = L.control({position: 'bottomleft'});
@@ -18,7 +18,7 @@ color_map_ffmc.xAxis = d3.svg.axis()
     .scale(color_map_ffmc.x)
     .orient("top")
     .tickSize(1)
-    .tickValues([0, '', 64, '', 68, '', 76, '', 80, '', 84, '', 88, '', 92, '', 96, '']);
+    .tickValues([0, '', 60, '', 75, '', 81, '', 83, '', 85, '', 87, '', 89, '', 95, '']);
 
 color_map_ffmc.svg = d3.select(".legend.leaflet-control").append("svg")
     .attr("id", 'legend')
@@ -612,7 +612,7 @@ if (eventLayer.layer == qpfTimeLayer) {
 }});
 
 function geo_json_styler18(properties, zoom) {
-    var fillOpacity = 0.8
+    var fillOpacity = 1
     var opacity = 1
     switch(properties.fill) {
         case "#000080": 
@@ -658,7 +658,7 @@ function geo_json_styler18(properties, zoom) {
 
 
 function geo_json_styler_wsp(properties, zoom) {
-    var fillOpacity = 0.8
+    var fillOpacity = 1
     var opacity = 1
     switch(properties.fill) {
         case "#ffffff": 
@@ -701,7 +701,7 @@ function geo_json_styler_wsp(properties, zoom) {
         }
         
 function geo_json_styler_temp(properties, zoom) {
-    var fillOpacity = 0.8
+    var fillOpacity = 1
     var opacity = 1
     switch(properties.fill) {
         case "#8200a0": 
@@ -744,7 +744,7 @@ function geo_json_styler_temp(properties, zoom) {
         }
 
 function geo_json_styler_rh(properties, zoom) {
-    var fillOpacity = 0.9
+    var fillOpacity = 1
     var opacity = 1
     switch(properties.fill) {
         case "#442d15": 
@@ -787,7 +787,7 @@ function geo_json_styler_rh(properties, zoom) {
         }
 
 function geo_json_styler_qpf(properties, zoom) {
-    var fillOpacity = 0.8
+    var fillOpacity = 1
     var opacity = 1
     switch(properties.fill) {
         case "#ffffff": 

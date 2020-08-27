@@ -96,17 +96,17 @@ var groupedOverlays = {
         "BUI"  : buiTimeLayer,
         "FWI"  : fwiTimeLayer,
         "Wind Speed"  : wspTimeLayer,
-        "Temperature 2m"  : tempTimeLayer,
-        "Relative Humidity 2m"  : rhTimeLayer,
-        "Total Accumulated Precipitation"  : qpfTimeLayer,
-
-
-
+        "Temperature"  : tempTimeLayer,
+        "Relative Humidity"  : rhTimeLayer,
+        "Accumulated Precipitation"  : qpfTimeLayer,
     },
 };
 
+
+
 var groupedOptions = {
     exclusiveGroups: ["Fire Weather Forecast"],
+
 
 };
 L.control.groupedLayers(baseLayers, groupedOverlays, groupedOptions).addTo(map);

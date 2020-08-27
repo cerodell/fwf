@@ -156,8 +156,8 @@ class FWF:
             print("Found previous FFMC, will merge with hourly_ds")
             
             ### Get last time step of F and m_m
-            F = np.array(previous_hourly_ds.F[-1])
-            m_o = np.array(previous_hourly_ds.m_o[-1])
+            F = np.array(previous_hourly_ds.F[24])
+            m_o = np.array(previous_hourly_ds.m_o[24])
 
             ### Create dataarrays for F and m_m
             F = xr.DataArray(F, name='F', dims=('south_north', 'west_east'))

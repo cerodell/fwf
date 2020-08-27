@@ -10,7 +10,7 @@ from datetime import datetime
 from dev_geoutils import jsonmask
 import string
 
-from context import data_dir, xr_dir, wrf_dir, root_dir
+from context import data_dir, xr_dir, wrf_dir, root_dir, tzone_dir
 from datetime import datetime, date, timedelta
 startTime = datetime.now()
 
@@ -30,20 +30,55 @@ tzdict  = {"AKDT": {'zone_id':8, 'noon':20 , 'plus': 21, 'minus':19},
             "ADT": {'zone_id':3, 'noon':15 , 'plus': 16, 'minus':14}}
 
 ### Open time zones dataset
-# tzone_ds = xr.open_zarr(str(tzone_dir) + "/ds_tzone.zarr")
+tzone_ds = xr.open_zarr(str(tzone_dir) + "/ds_tzone.zarr")
+zones = np.array(tzone_ds.Zone)
+
 
 ### Get Path to most recent FWI forecast and open 
-# hourly_file_dir = str(xr_dir) + str("/current/hourly.zarr") 
-# daily_file_dir = str(xr_dir) + str("/current/daily.zarr") 
+hourly_file_dir = str(xr_dir) + str("/current/hourly.zarr") 
+daily_file_dir = str(xr_dir) + str("/current/daily.zarr") 
 
-hourly_file_dir = str(xr_dir) + str("/fwf-hourly-2020082300.zarr") 
-daily_file_dir = str(xr_dir) + str("/fwf-daily-2020082300.zarr")
+# hourly_file_dir = str(xr_dir) + str("/fwf-hourly-2020082300.zarr") 
+# daily_file_dir = str(xr_dir) + str("/fwf-daily-2020082300.zarr")
 
 ### Open datasets
 hourly_ds = xr.open_zarr(hourly_file_dir)
 daily_ds = xr.open_zarr(daily_file_dir)
 
 
+hourly_ds['r_o_06'] = hourly_ds.r_o - hourly_ds.r_o[0:7].sum(dim ='time')
+
+fwi = np.array(hourly_ds.S)
+# for key in tzdict:
+#     zones[zones == tzdict[key]['zone_id']] = tzdict[key]['noon']
+
+zero_full = np.zeros_like(fwi[0,:,:])
+data_vars = ['S', 'DSR']
+files_ds = []
+for i in range(0,48,24):
+
+    sum_list = []
+    for key in tzdict.keys():
+        zone_id, noon, plus, minus = tzdict[key]['zone_id'], tzdict[key]['noon'], tzdict[key]['plus'], tzdict[key]['minus']
+
+        mean_da = []
+        for var in data_vars:
+            # print(hourly_ds[var])
+            var_mean = hourly_ds[var][minus+i:plus+i].mean(axis=0)
+            var_da = xr.where(tzone_ds != zone_id, zero_full, var_mean)
+            var_da = np.array(var_da.Zone)
+            day    = np.array(hourly_ds.Time[noon + i], dtype ='datetime64[D]')
+            var_da = xr.DataArray(var_da, name=var, 
+                    dims=('south_north', 'west_east'), coords= hourly_ds.isel(time = i).coords)
+            var_da["Time"] = day
+            mean_da.append(var_da)
+
+        mean_ds = xr.merge(mean_da)
+        sum_list.append(mean_ds)
+    sum_ds = sum(sum_list)
+    files_ds.append(sum_ds)
+
+    fwi_dsr_ds = xr.combine_nested(files_ds, 'time')
 
 ### Get Path to most recent WRF run for most uptodate snowcover info
 wrf_folder = date.today().strftime('/%y%m%d00/')
@@ -53,31 +88,50 @@ wrf_file_dir = sorted(Path(filein).glob('wrfout_d03_*'))
 ### Round all vars to second decimal...save on file size...maybe make everything ints? idk 
 hourly_ds = hourly_ds.round(2)
 daily_ds = daily_ds.round(2)
+fwi_dsr_ds = fwi_dsr_ds.round(2)
 
-## Mask out oceans, lakes and snow cover
+# ## Mask out oceans, lakes and snow cover
 hourly_ds = jsonmask(hourly_ds, wrf_file_dir)
 daily_ds  = jsonmask(daily_ds, wrf_file_dir)
+fwi_dsr_ds  = jsonmask(fwi_dsr_ds, wrf_file_dir)
 
 
-DSR = wrf_ds['DSR'][minus+i:plus+i].mean(axis=0)
-var_da = xr.where(tzone_ds != zone_id, zero_full, var_mean)
-var_da = np.array(var_da.Zone)
 
 print(f"{str(datetime.now())} ---> start to convert datasets to np arrays" )
 
 ### Convert from xarry to np array and cutt off ocean data on the east west
 time = np.array(hourly_ds.Time.dt.strftime('%Y-%m-%dT%H'))
+test = time[6:]
+
+### Hourly forecast products 
 ffmc = hourly_ds.F.values
-ffmc = ffmc[:,10:,47:]
+ffmc = ffmc[6:,10:,47:]
 
 isi = hourly_ds.R.values
-isi = isi[:,10:,47:]
+isi = isi[6:,10:,47:]
 
-fwi = hourly_ds.S.values
+wsp = hourly_ds.W.values
+wsp = wsp[6:,10:,47:]
+
+wdir = hourly_ds.WD.values
+wdir = wdir[6:,10:,47:]
+
+temp = hourly_ds.T.values
+temp = temp[6:,10:,47:]
+
+rh = hourly_ds.H.values
+rh = rh[6:,10:,47:]
+
+qpf = hourly_ds.r_o_06.values
+qpf = qpf[6:,10:,47:]
+
+
+### Daily forecast products 
+fwi = fwi_dsr_ds.S.values
 fwi = fwi[:,10:,47:]
 
-# dsr = hourly_ds.DSR.values
-# dsr = dsr[:,:,47:]
+dsr = fwi_dsr_ds.DSR.values
+dsr = dsr[:,10:,47:]
 
 dmc = daily_ds.P.values
 dmc = dmc[:,10:,47:]
@@ -88,26 +142,13 @@ dc = dc[:,10:,47:]
 bui = daily_ds.U.values
 bui = bui[:,10:,47:]
 
-wsp = hourly_ds.W.values
-wsp = wsp[:,10:,47:]
-
-wdir = hourly_ds.WD.values
-wdir = wdir[:,10:,47:]
-
-temp = hourly_ds.T.values
-temp = temp[:,10:,47:]
-
-rh = hourly_ds.H.values
-rh = rh[:,10:,47:]
-
-qpf = hourly_ds.r_o.values
-qpf = qpf[:,10:,47:]
-
 day = np.array(daily_ds.Time.dt.strftime('%Y-%m-%d'))
 
 
 xlat = np.round(daily_ds.XLAT.values,5)
 xlat= xlat[10:,47:]
+shape = xlat.shape
+print("Shape ", shape )
 # xlat = np.array(xlat, dtype = '<U8')
 
 xlong = np.round(daily_ds.XLONG.values,5)
@@ -127,12 +168,15 @@ make_dir = Path("/bluesky/fireweather/fwf/web_dev/data/plot/")
 
 
 abc = list(string.ascii_lowercase)
-ff = np.arange(0,25)
+nfile = 25
+ff = np.arange(0,nfile)
+xx = int(shape[0]/nfile)
+yy = int(shape[1]/nfile)
 for i in ff:
     # print(i)
     for j in ff:
-        x1, y1 = (51 * i), (116 * j)
-        x2, y2 = (51 * ( i + 1)), (116 * ( j + 1))
+        x1, y1 = (xx * i), (yy * j)
+        x2, y2 = (xx * ( i + 1)), (yy * ( j + 1))
         fwf = {
                 'FFMC': ffmc[:,x1:x2,y1:y2].tolist(),
                 'DMC': dmc[:,x1:x2,y1:y2].tolist(),
@@ -140,6 +184,7 @@ for i in ff:
                 'ISI': isi[:,x1:x2,y1:y2].tolist(),
                 'BUI': bui[:,x1:x2,y1:y2].tolist(),
                 'FWI': fwi[:,x1:x2,y1:y2].tolist(),
+                'DSR': dsr[:,x1:x2,y1:y2].tolist(),
                 'wsp': wsp[:,x1:x2,y1:y2].tolist(),
                 'wdir': wdir[:,x1:x2,y1:y2].tolist(),
                 'temp': temp[:,x1:x2,y1:y2].tolist(),
