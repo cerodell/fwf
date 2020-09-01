@@ -46,7 +46,6 @@ hourly_ds = xr.open_zarr(hourly_file_dir)
 daily_ds = xr.open_zarr(daily_file_dir)
 
 
-hourly_ds['r_o_06'] = hourly_ds.r_o - hourly_ds.r_o[0:7].sum(dim ='time')
 
 fwi = np.array(hourly_ds.S)
 # for key in tzdict:
@@ -101,29 +100,28 @@ print(f"{str(datetime.now())} ---> start to convert datasets to np arrays" )
 
 ### Convert from xarry to np array and cutt off ocean data on the east west
 time = np.array(hourly_ds.Time.dt.strftime('%Y-%m-%dT%H'))
-test = time[6:]
 
 ### Hourly forecast products 
 ffmc = hourly_ds.F.values
-ffmc = ffmc[6:,10:,47:]
+ffmc = ffmc[:,10:,47:]
 
 isi = hourly_ds.R.values
-isi = isi[6:,10:,47:]
+isi = isi[:,10:,47:]
 
 wsp = hourly_ds.W.values
-wsp = wsp[6:,10:,47:]
+wsp = wsp[:,10:,47:]
 
 wdir = hourly_ds.WD.values
-wdir = wdir[6:,10:,47:]
+wdir = wdir[:,10:,47:]
 
 temp = hourly_ds.T.values
-temp = temp[6:,10:,47:]
+temp = temp[:,10:,47:]
 
 rh = hourly_ds.H.values
-rh = rh[6:,10:,47:]
+rh = rh[:,10:,47:]
 
-qpf = hourly_ds.r_o_06.values
-qpf = qpf[6:,10:,47:]
+qpf = hourly_ds.r_o.values
+qpf = qpf[:,10:,47:]
 
 
 ### Daily forecast products 

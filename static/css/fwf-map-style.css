@@ -1,100 +1,3 @@
-
-.dropdown select{
-    background:transparent;
-    width: 297px;
-    padding: 10px;
-    font-family:Arial, Helvetica, sans-serif;
-    font-size:1.2em;
-    font-weight:600;
-    color:#fff;
-    line-height: 1;
-    border: 0;
-    border-radius: 0;
-    /*Hides the default arrows for Selects*/
-    -webkit-appearance: none;
-    -moz-appearance: none;
-        text-indent: 0.01px;
-        text-overflow: '';
-        position: relative;
-    }
-
-
-.dropdown{
-    width: 297px;
-    overflow: hidden;
-    background: no-repeat right #363636;
-    border-top:#575757 1px solid;
-    -webkit-border-radius: 4px 4px 4px 4px;
-    -moz-border-radius: 4px 4px 4px 4px;
-        border-radius: 4px 4px 4px 4px;
-    -webkit-box-shadow: inset 0 2px 4px rgba(107, 105, 105, 0.15), 0 1px 2px rgba(0, 0, 0, 0.05);
-    -moz-box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.15), 0 1px 2px rgba(0, 0, 0, 0.05);
-        box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.15), 0 1px 2px rgba(0, 0, 0, 0.05);
-        -moz-box-shadow:    0px 8px 3px -9px #000000;
-        -webkit-box-shadow: 0px 8px 3px -9px #000000;
-        box-shadow:         0px 8px 3px -9px #000000;  
-    
-
-}
-
-.dropdown {
-    float: left;
-    position: relative;
-}
-
-.dropdown:before {
-    content: "";
-    position: absolute;
-    right: 10px;
-    top: 14px;
-    width: 0; 
-    height: 0; 
-    border-left: 10px solid transparent;
-    border-right: 10px solid transparent;
-    border-top: 10px solid #f00;
-}
-
-.dropdown:after {
-    content: "";
-    position: absolute;
-    right: 10px;
-    top: 3px;
-    width: 0; 
-    height: 0; 
-    border-left: 10px solid transparent;
-    border-right: 10px solid transparent;
-    border-top: 10px solid #333;
-}
-
-
-.extra-info {
-display: none;
-line-height: 14px;
-font-size: 12px;
-position: absolute;
-top: 2px;
-left: 30px;
-z-index: 10;
-}
-
-.info:hover .extra-info {
-display: block;
-}
-
-.info {
-font-size: 20px;
-float: left;
-position: relative;
-left: 20px;
-}
-
-.info:hover {
-background-color: white;
-padding: 0 0 0 5px;
-width: 315px;
-text-align: left !important;
-}
-
 #map_fwi {
     float: right;
     width: 50.0%;
@@ -115,7 +18,6 @@ text-align: left !important;
     #map_fwi,
     #plot_fwi {
         width: 100%;
-        /* Below 480px the width will be 100% and the images will come in stakced view. */
     }
 }
 
@@ -176,8 +78,8 @@ text-align: left !important;
 
 
 
-/* css to customize Leaflet default styles 
-.custom-popup .leaflet-popup-tip,
+/* css to customize Leaflet default styles  */
+/* .custom-popup .leaflet-popup-tip,
 .custom-popup .leaflet-popup-content-wrapper {
     background: #e93434;
     color: #ffffff;

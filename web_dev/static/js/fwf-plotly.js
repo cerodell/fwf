@@ -1,27 +1,37 @@
 var redIcon = new L.Icon({
-    iconUrl: 'marker-icon-2x-red.png',
-    shadowUrl: 'marker-shadow.png',
+    iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png',
+    shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
     iconSize: [25, 41],
     iconAnchor: [12, 41],
     popupAnchor: [1, -34],
     shadowSize: [41, 41]
-  });
+});
+
 console.log(redIcon);
-const fwfmodellocation = L.marker({icon: redIcon }).bindPopup("<b>Hello!</b><br />I am the closest model grid point to <br /> where you clicked or searched on the map.");
+const fwfmodellocation = L.marker([51.5, -0.09],{icon: redIcon}).bindPopup("<b>Hello!</b><br />I am the closest model grid point to <br /> where you clicked or searched on the map.");
 const fwfclicklocation = L.marker().bindPopup("<b>Hello!</b><br />I am where you clicked <br /> or searched on the map.");
 
-const buffer = 0.1
+const buffer = 0.05
 
-function makeplotly(n, o) {
+var point_list = [];
+var file_list = [];
+
+
+function makeplotly(n, o, UTCTimeMap) {
+
     for (var t = n.XLAT, e = n.XLONG, l = [], a = [], r = [(r = [t.length, t[0].length])[1], r[0]], c = 0; c < t.length; c++) l = l.concat(t[c]);
     for (c = 0; c < e.length; c++) a = a.concat(e[c]);
     var i = l.map(function (n, o) {
         return [n, a[o]];
     });
-    const s = new KDBush(i);
+    var s = new KDBush(i);
     console.log('Start')
     console.log(s), console.log(o);
-    const u = s.range(o[0] - buffer, o[1] - buffer, o[0] + buffer, o[1] + buffer).map((n) => i[n]);
+    point_list.push(o);
+    console.log(point_list);
+    file_list.push(n);
+    console.log(file_list);
+    var u = s.range(o[0] - buffer, o[1] - buffer, o[0] + buffer, o[1] + buffer).map((n) => i[n]);
 
     console.log(u);
     (ll_diff = []),
@@ -34,7 +44,7 @@ function makeplotly(n, o) {
     var h = 0,
         d = ll_diff[0];
     for (c = 1; c < ll_diff.length; c++) ll_diff[c] < d && ((d = ll_diff[c]), (h = c));
-    const m = s.range(o[0] - buffer, o[1] - buffer, o[0] + buffer, o[1] + buffer);
+    var m = s.range(o[0] - buffer, o[1] - buffer, o[0] + buffer, o[1] + buffer);
     var g, p;
     f =
         ((p = (g = r).reduce(
@@ -115,6 +125,14 @@ function makeplotly(n, o) {
             [j[1], b[1], k[1], fwi[1], dsr[1]],
         ],
 
+        // tlabel = {
+        //     y: '2020-08-28T12:00:00',
+        //     x: '2020-08-28T12:00:00',
+        //     mode: 'text',
+        //     text: 'Current Time',
+        //     showlegend: false
+        //   }
+
         N =
             ((F = { x: time, y: F, type: "scatter", line: { color: "ff7f0e" }, yaxis: "y7", name: "FFMC" }),
             (R = { x: time, y: R, type: "scatter", line: { color: "9467bd" }, yaxis: "y6", name: "ISI" }),
@@ -154,6 +172,46 @@ function makeplotly(n, o) {
             yaxis2: { domain: [0.12, 0.21], title: { text: "WDIR", font: { color: "7f7f7f" } }, tickfont: {color: "7f7f7f"}},
             yaxis1: { domain: [0, 0.09], title: { text: "QPF", font: { color: "2ca02c" } }, tickfont: {color: "2ca02c"}},
             xaxis: { title: "Date (UTC)" },
+            shapes: [{
+                type: 'line',
+                x0: UTCTimeMap,
+                y0: 0,
+                x1: UTCTimeMap,
+                yref: 'paper',
+                y1: 0.8,
+                line: {
+                  color: 'grey',
+                  width: 1.5,
+                  dash: 'dot'
+                }},
+                {
+                    type: 'line',
+                    x0: UTCTimePlot,
+                    y0: 0,
+                    x1: UTCTimePlot,
+                    yref: 'paper',
+                    y1: 0.8,
+                    line: {
+                      color: 'grey',
+                      width: 0.8,
+                      dash: 'dot'
+                    }},
+                {
+                    type: 'rect',
+                    // x-reference is assigned to the x-values
+                    xref: 'x',
+                    // y-reference is assigned to the plot paper [0,1]
+                    yref: 'paper',
+                    x0: tinital,
+                    y0: 0,
+                    x1: UTCTimePlot,
+                    y1: 0.8,
+                    fillcolor: '#A7A7A7',
+                    opacity: 0.2,
+                    line: {
+                        width: 0
+                    }
+                },],
         };
 
         fwfmodellocation.setLatLng([w.toFixed(3), v.toFixed(3)]).addTo(map)
@@ -161,13 +219,13 @@ function makeplotly(n, o) {
 }
 function makeplots(n) {
     (json_dir = "fwf-zone.json"),
-        fetch(n, { cache: "default" })
+        fetch(n)
             .then(function (n) {
                 return n.json();
             })
             .then(function (n) {
                 var o = [50.6599, -120.3552];
-                fwfclicklocation.setLatLng(o).addTo(map), makeplotly(n, o), console.log(n);
+                fwfclicklocation.setLatLng(o).addTo(map), makeplotly(n, o, UTCTimeMap), console.log(n);
             }),
         fetch(json_dir, { cache: "default"})
             .then(function (n) {
@@ -231,12 +289,12 @@ function makeplots(n) {
                             (zone_json = n.slice(0, 14)),
                             (zone_json = zone_json + _ + n.slice(16, 32)),
                             console.log(zone_json),
-                            fetch(zone_json, { cache: "default" })
+                            fetch(zone_json)
                                 .then(function (n) {
                                     return n.json();
                                 })
                                 .then(function (n) {
-                                    makeplotly(n, e);
+                                    makeplotly(n, e, UTCTimeMap);
                                 }),
                             -1 == loaded_zones.indexOf(_) ? console.log("item not exist") : console.log("item exist"),
                             loaded_zones.push(_),
@@ -246,7 +304,7 @@ function makeplots(n) {
                         map.flyTo(o)
                         fwfclicklocation.setLatLng(o).addTo(map);
                         var e = [parseFloat(o[0]), parseFloat(o[1])];
-                        const l = u.range(e[0]- buffer, e[1] - buffer, e[0] + buffer, e[1] + buffer).map((n) => s[n]);
+                        var l = u.range(e[0]- buffer, e[1] - buffer, e[0] + buffer, e[1] + buffer).map((n) => s[n]);
                         (ll_diff = []),
                             (function (n, o) {
                                 for (var t = 0; t < n.length; t++) {
@@ -255,7 +313,7 @@ function makeplots(n) {
                                 }
                             })(l, e);
                         for (var a = 0, r = ll_diff[0], i = 1; i < ll_diff.length; i++) ll_diff[i] < r && ((r = ll_diff[i]), (a = i));
-                        const h = u.range(e[0] - buffer, e[1] - buffer, e[0] + buffer, e[1] + buffer);
+                        var h = u.range(e[0] - buffer, e[1] - buffer, e[0] + buffer, e[1] + buffer);
                         var d, m;
                         f =
                             ((m = (d = c).reduce(
@@ -291,12 +349,12 @@ function makeplots(n) {
                             (zone_json = n.slice(0, 14)),
                             (zone_json = zone_json + _ + n.slice(16, 32)),
                             console.log(zone_json),
-                            fetch(zone_json, { cache: "default"})
+                            fetch(zone_json)
                                 .then(function (n) {
                                     return n.json();
                                 })
                                 .then(function (n) {
-                                    makeplotly(n, e);
+                                    makeplotly(n, e, UTCTimeMap);
                                 }),
                             -1 == loaded_zones.indexOf(_) ? console.log("item not exist") : console.log("item exist"),
                             loaded_zones.push(_),

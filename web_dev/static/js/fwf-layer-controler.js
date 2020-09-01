@@ -1,13 +1,15 @@
-var geo_json_ffmc = L.layerGroup()
-var geo_json_dmc = L.layerGroup()
-var geo_json_dc = L.layerGroup()
-var geo_json_isi = L.layerGroup()
-var geo_json_bui = L.layerGroup()
-var geo_json_fwi = L.layerGroup()
-var geo_json_wsp = L.layerGroup()
-var geo_json_temp = L.layerGroup()
-var geo_json_rh = L.layerGroup()
-var geo_json_qpf = L.layerGroup()
+var geo_json_ffmc = L.layerGroup();
+var geo_json_dmc = L.layerGroup();
+var geo_json_dc = L.layerGroup();
+var geo_json_isi = L.layerGroup();
+var geo_json_bui = L.layerGroup();
+var geo_json_fwi = L.layerGroup();
+var geo_json_wsp = L.layerGroup();
+var geo_json_temp = L.layerGroup();
+var geo_json_rh = L.layerGroup();
+var geo_json_qpf = L.layerGroup();
+var geo_json_qpf_3h = L.layerGroup();
+
 
 var ffmcTimeLayer = L.timeDimension.layer.layerGroup(geo_json_ffmc, {
     getUrlFunction: getHourlyForecast,
@@ -82,6 +84,13 @@ var qpfTimeLayer = L.timeDimension.layer.layerGroup(geo_json_qpf, {
 
 });
 
+var qpf_3hTimeLayer = L.timeDimension.layer.layerGroup(geo_json_qpf_3h, {
+    getUrlFunction: getHourlyForecast,
+    getFileDir: qpf_3h_topo_file,
+    getVar: 'qpf_3h'
+
+});
+
 
 var baseLayers = {
     "Topography"       : gl,
@@ -99,18 +108,51 @@ var groupedOverlays = {
         "Temperature"  : tempTimeLayer,
         "Relative Humidity"  : rhTimeLayer,
         "Accumulated Precipitation"  : qpfTimeLayer,
+        "3 Hour Accumulated Precipitation"  : qpf_3hTimeLayer,
+
     },
 };
 
+// The tree containing the layers
+var groupedOverlays = [
+    {
+        label: 'Fire Weather Forecast',
+        children: [
+            {label: ' Fine Fuel Moisture Code', layer: ffmcTimeLayer, radioGroup: 'bc'},
+            {label: ' Duff Moisture Code', layer: dmcTimeLayer, radioGroup: 'bc'},
+            {label: ' Drought Code', layer: dcTimeLayer, radioGroup: 'bc'},
+            {label: ' Initial Spread Index', layer: isiTimeLayer, radioGroup: 'bc'},
+            {label: ' Build Up Index', layer: buiTimeLayer, radioGroup: 'bc'},
+            {label: ' Fire Weather Index', layer: fwiTimeLayer, radioGroup: 'bc'},
 
+        ]
+    },
+    {
+        label: 'Weather Forecast',
+        children: [
+            {label: ' Wind Spped (km/hr)', layer: wspTimeLayer, radioGroup: 'bc'},
+            {label: ' Temperature (C)', layer: tempTimeLayer, radioGroup: 'bc'},
+            {label: ' Relative Humidity (%)', layer: rhTimeLayer, radioGroup: 'bc'},
+            {label: ' Total Accumulated Precipitation (mm)', layer: qpfTimeLayer, radioGroup: 'bc'},
+            {label: ' 3 Hour Accumulated Precipitation (mm)', layer: qpf_3hTimeLayer, radioGroup: 'bc'},
+
+        ]
+    },
+    {
+        label: 'Weather Observations',
+        children: [
+            {label: ' Weather Stations', layer: wx_station},
+        ]
+    },
+];
 
 var groupedOptions = {
     exclusiveGroups: ["Fire Weather Forecast"],
 
-
 };
-L.control.groupedLayers(baseLayers, groupedOverlays, groupedOptions).addTo(map);
+// L.control.groupedLayers(baseLayers, groupedOverlays).addTo(map);
 
+L.control.layers.tree(baseLayers,groupedOverlays).addTo(map);
 
 
 // Move zoom and full screen controls to top-right

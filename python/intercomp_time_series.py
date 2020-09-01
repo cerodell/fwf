@@ -24,7 +24,7 @@ warnings.filterwarnings("ignore", message="elementwise comparison failed")
 """######### get directory to hourly/daily .zarr files.  #############"""
 
 
-todays_date = '20200809'
+todays_date = '20200830'
 
 
 # filecsv = f'/Volumes/cer/fireweather/data/csv/fwf-intermoparison-{todays_date}00.csv'
@@ -32,45 +32,71 @@ filecsv = str(data_dir) + f'/csv/fwf-intercomparison-{todays_date}00.csv'
 inter_df = pd.read_csv(filecsv)
 
 
-## replace NULL with np.nan
 for column in inter_df:
-    mask = inter_df[column] == '  NULL'
-    inter_df[column][mask] = np.nan
+    inter_df = inter_df[inter_df[column] != ' NULL']
+    inter_df = inter_df[inter_df[column] != '  NULL']
 
 
 ### Drop bad data
 calstat = inter_df['CALCSTATUS'].to_numpy(dtype = float)
 inter_df = inter_df.drop(inter_df.index[np.where(calstat<-1)])
 
-precip = inter_df['PRECIP'].to_numpy(dtype = float)
-inter_df = inter_df.drop(inter_df.index[np.where(precip>200)])
-u, indices = np.unique(inter_df['WMO'], return_index=True)
-bad_wx_wmo = inter_df.agg(['count', 'size', 'nunique'])
-
-
-wx_count = inter_df.WMO.value_counts()
-wx_count_to_small = wx_count.index[np.where(wx_count < 2)]
-inter_df = inter_df.loc[~inter_df['WMO'].isin(wx_count_to_small)]
-
-
 ### Convert specific colums to float64
 inter_df = inter_df.astype({'lon':float, 'lat':float,'TEMP':float, 'RH': float, \
     'WS': float, 'WG': float, 'WDIR': float, 'PRES': float, 'PRECIP': float, 'FFMC': float,\
         'DMC': float, 'DC': float, 'BUI': float, 'ISI': float, 'FWI': float, 'DSR': float})
 
-df = inter_df[inter_df['FFMC'].notna()]
-
-### Find all unique weather sations
+df = inter_df.dropna()
 wmo = sorted(df['WMO'].unique())
-wmo.remove(71203)
-wmo.remove(9114)
-wmo.remove(9113)
-wmo.remove(9213)
-wmo.remove(9513)
-wmo.remove(71520)
+wmo_array = df['WMO'].values
+unique, counts = np.unique(wmo_array, return_counts=True)
+unique_counts = np.asarray((unique, counts)).T
+low_count = np.where(counts<16)
+remove_wmo  = unique[low_count]
+for i in range(len(remove_wmo)):
+    # print(remove_wmo[i])
+    wmo.remove(remove_wmo[i])
 
-## Set weather sations as the index
 df = df.set_index('WMO')
+
+# for column in inter_df:
+#     inter_df = inter_df[inter_df[column] != ' NULL']
+#     inter_df = inter_df[inter_df[column] != '  NULL']
+
+
+# ### Drop bad data
+# calstat = inter_df['CALCSTATUS'].to_numpy(dtype = float)
+# inter_df = inter_df.drop(inter_df.index[np.where(calstat<-1)])
+
+# precip = inter_df['PRECIP'].to_numpy(dtype = float)
+# inter_df = inter_df.drop(inter_df.index[np.where(precip>200)])
+# u, indices = np.unique(inter_df['WMO'], return_index=True)
+# bad_wx_wmo = inter_df.agg(['count', 'size', 'nunique'])
+
+
+# wx_count = inter_df.WMO.value_counts()
+# wx_count_to_small = wx_count.index[np.where(wx_count < 2)]
+# inter_df = inter_df.loc[~inter_df['WMO'].isin(wx_count_to_small)]
+
+
+# ### Convert specific colums to float64
+# inter_df = inter_df.astype({'lon':float, 'lat':float,'TEMP':float, 'RH': float, \
+#     'WS': float, 'WG': float, 'WDIR': float, 'PRES': float, 'PRECIP': float, 'FFMC': float,\
+#         'DMC': float, 'DC': float, 'BUI': float, 'ISI': float, 'FWI': float, 'DSR': float})
+
+# df = inter_df[inter_df['FFMC'].notna()]
+
+# ### Find all unique weather sations
+# wmo = sorted(df['WMO'].unique())
+# wmo.remove(71203)
+# wmo.remove(9114)
+# wmo.remove(9113)
+# wmo.remove(9213)
+# wmo.remove(9513)
+# wmo.remove(71520)
+
+# ## Set weather sations as the index
+# df = df.set_index('WMO')
 
 ## Empty dictorary to append pearson's r values
 wmo_r_1day = {}
@@ -223,7 +249,7 @@ ax.set_ylabel("r", fontsize=14)
 
 ax.legend(loc='upper center', bbox_to_anchor=(.50,1.), shadow=True, ncol=6)
 
-fig.savefig(str(root_dir) + "/images/intercomparison/pearsons_time_series.png")
+fig.savefig(str(root_dir) + f"/images/intercomparison/pearsons_time_series-{todays_date}.png")
 
 
-
+print("Run Time: ", datetime.now() - startTime)

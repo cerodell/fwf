@@ -42,7 +42,7 @@
     <script src="static/js/fwf-kdbush.min.js"></script>
     <script src="static/js/fwf-time-layer-group.js"></script>
     <script>
-        var timeInterval = "2020-08-30T00:00:00Z/2020-09-01T00:00:00Z"
+        var timeInterval = "{%FirstDateTime%}/{%LastDateTime%}"
         var tinital = timeInterval.slice(0,20)
         var endtime = timeInterval.slice(21,)
         var now = new Date;
@@ -82,24 +82,23 @@
                 },
             });
 
-        var json_fwf  = 'data/plot/fwf-he-2020083000.json';
-        var ffmc_topo_file = 'data/ffmc-2020083000.json';
-        var dmc_topo_file = 'data/dmc-20200830.json';
-        var dc_topo_file = 'data/dc-20200830.json';
-        var isi_topo_file = 'data/isi-2020083000.json';
-        var bui_topo_file = 'data/bui-20200830.json';
-        var fwi_topo_file = 'data/fwi-2020083000.json';
-        var wsp_topo_file = 'data/wsp-2020083000.json';
-        var temp_topo_file = 'data/temp-2020083000.json';
-        var rh_topo_file = 'data/rh-2020083000.json';
-        var qpf_topo_file = 'data/qpf-2020083000.json';
-        var qpf_3h_topo_file = 'data/qpf_3h-2020083000.json';
-        var wxstations = 'data/fwf-wxstation-2020082900.json';
+        var json_fwf  = 'data/plot/fwf-he-{%FileDateTime%}00.json';
+        var ffmc_topo_file = 'data/ffmc-{%FileDateTime%}00.json';
+        var dmc_topo_file = 'data/dmc-{%FileDateTime%}.json';
+        var dc_topo_file = 'data/dc-{%FileDateTime%}.json';
+        var isi_topo_file = 'data/isi-{%FileDateTime%}00.json';
+        var bui_topo_file = 'data/bui-{%FileDateTime%}.json';
+        var fwi_topo_file = 'data/fwi-{%FileDateTime%}00.json';
+        var wsp_topo_file = 'data/wsp-{%FileDateTime%}00.json';
+        var temp_topo_file = 'data/temp-{%FileDateTime%}00.json';
+        var rh_topo_file = 'data/rh-{%FileDateTime%}00.json';
+        var qpf_topo_file = 'data/qpf-{%FileDateTime%}00.json';
+        var qpf_3h_topo_file = 'data/qpf_3h-{%FileDateTime%}00.json';
 
     </script>
 <script src="static/js/fwf-basemaps.js"></script>
 <script src="static/js/fwf-plotly.js"></script>
-<script src="static/js/fwf-wxstations.js"></script>
+<!-- <script src="static/js/fwf-basemaps.js"></script> -->
 <script src="static/js/fwf-layer-controler.js"></script>
 <script src="static/js/fwf-colors-manager.js"></script>
 

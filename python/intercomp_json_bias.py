@@ -28,12 +28,11 @@ warnings.filterwarnings("ignore")
 
 """######### get directory to hourly/daily .zarr files.  #############"""
 start_date_prearsons = date.today() - timedelta(days=62)
-stop_date_prearsons = date.today() - timedelta(days=2)
 
 start_date_bias = date.today() - timedelta(days=17)
-stop_date_bias = date.today() - timedelta(days=2)
+stop_date = date.today() - timedelta(days=1)
 
-todays_date = stop_date_prearsons.strftime("%Y%m%d")
+todays_date = stop_date.strftime("%Y%m%d")
 
 # filecsv = f'/Volumes/cer/fireweather/data/csv/fwf-intermoparison-{todays_date}00.csv'
 filecsv = str(data_dir) + f'/csv/fwf-intercomparison-{todays_date}00.csv'
@@ -42,8 +41,23 @@ inter_df = pd.read_csv(filecsv)
 inter_df['DateTime'] = pd.to_datetime(inter_df['DateTime'] ,format= '%Y%m%d%H')
 inter_df = inter_df.set_index('DateTime')
 
+stop = stop_date.strftime("%Y-%m-%d")
+last_df = inter_df.loc[stop]
+last_df['wmo']  = last_df["WMO"]
+drop_list = ["WMO", 'aes', 'id', 'NAME_x', 'instr', 'prov', 'lon', 'lat', 'elev', 'tz_correct', 'useindex', 'agency', 'NAME_y', 'AGENCY', 'AES', 'REPDATE', 'TD', 'WG', 'WDIR', 'PRES', 'SOG', 'DSR', 'OPTS', 'CALCSTATUS', 'x', 'y', 'D_today', 'D_yesterday', 'H_today', 'H_yesterday', 'P_today', 'P_yesterday', 'T_today', 'T_yesterday', 'U_today', 'U_yesterday', 'W_today', 'W_yesterday', 'WD_today', 'WD_yesterday', 'r_o_today', 'r_o_yesterday', 'r_o_tomorrow_today', 'r_o_tomorrow_yesterday', 'DSR_today', 'DSR_yesterday', 'F_today', 'F_yesterday', 'R_today', 'R_yesterday', 'S_today', 'S_yesterday', 'm_o_today', 'm_o_yesterday', 'r_o_hourly_today']
+for colume in drop_list:
+    last_df = last_df.drop(str(colume), 1)
 
-def dostats(inter_df,start_date, stop_date):
+last_df = last_df.dropna()
+last_df = last_df.reset_index()
+last_df = last_df.sort_values('wmo')
+# last_df = last_df.drop('DateTime', 1)
+
+last_df = last_df.astype({'TEMP':float, 'RH': float, \
+    'WS': float, 'PRECIP': float, 'FFMC': float,\
+        'DMC': float, 'DC': float, 'BUI': float, 'ISI': float, 'FWI': float})
+
+def dostats(inter_df,start_date, stop_date, statstodo):
 
     start = start_date.strftime("%Y-%m-%d")
     stop = stop_date.strftime("%Y-%m-%d")
@@ -91,29 +105,47 @@ def dostats(inter_df,start_date, stop_date):
             bias_ffmc = round(df_stats['F_today'].mean() / df_stats['FFMC'].mean(),2)
             bias_dmc = round(df_stats['P_today'].mean() / df_stats['DMC'].mean(),2)
             bias_dc = round(df_stats['D_today'].mean() / df_stats['DC'].mean(),2)
-            if df_stats['ISI'].mean() == 0.0:    
-                bias_isi = round(df_stats['R_today'].mean() / 0.00000001,2)
-            else: 
-                bias_isi = round(df_stats['R_today'].mean() / df_stats['ISI'].mean(),2)
-
             bias_bui = round(df_stats['U_today'].mean() / df_stats['BUI'].mean(),2)
-
-            if df_stats['FWI'].mean() == 0.0:    
-                bias_fwi = round(df_stats['S_today'].mean() / 0.00000001,2)
-            else: 
-                bias_fwi = round(df_stats['S_today'].mean() / df_stats['FWI'].mean(),2)
-
-            if df_stats['TEMP'].mean() == 0.0:    
-                bias_temp = round(df_stats['T_today'].mean() / 0.00000001,2)
-            else: 
-                bias_temp = round(df_stats['T_today'].mean() / df_stats['TEMP'].mean(),2)
-
             bias_rh = round(df_stats['H_today'].mean() / df_stats['RH'].mean(),2)
             bias_wsp = round(df_stats['W_today'].mean() / df_stats['WS'].mean(),2)
-            if df_stats['PRECIP'].mean() == 0.0:    
-                bias_qpf = round(df_stats['r_o_today'].mean() / 0.00000001,2)
+
+            ### ISI
+            if (df_stats['ISI'].mean() == 0.0 and df_stats['R_today'].mean() == 0.0):   
+                bias_isi = round(1 / 1,2)
+            elif df_stats['ISI'].mean() == 0.0:
+                bias_isi = round(df_stats['R_today'].mean() / 1,2)
+            elif df_stats['R_today'].mean() == 0.0:
+                bias_isi = round(1 / df_stats['ISI'].mean(),2)
             else: 
+                bias_isi = round(df_stats['R_today'].mean() / df_stats['ISI'].mean(),2)
+            ### FWI
+            if (df_stats['FWI'].mean() == 0.0 and df_stats['S_today'].mean() == 0.0):   
+                bias_fwi = round(1 / 1,2)
+            elif df_stats['FWI'].mean() == 0.0:    
+                bias_fwi = round(df_stats['S_today'].mean() / 1,2)
+            elif df_stats['S_today'].mean() == 0.0:
+                bias_fwi = round(1 / df_stats['FWI'].mean(),2)
+            else: 
+                bias_fwi = round(df_stats['S_today'].mean() / df_stats['FWI'].mean(),2)
+            ### TEMP
+            if (df_stats['TEMP'].mean() == 0.0 and df_stats['T_today'].mean() == 0.0):   
+                bias_temp = round(1 / 1,2)
+            elif df_stats['TEMP'].mean() == 0.0:    
+                bias_temp = round(df_stats['T_today'].mean() / 1,2)
+            elif df_stats['T_today'].mean() == 0.0:
+                bias_temp = round(1 / df_stats['TEMP'].mean(),2)
+            else: 
+                bias_temp = round(df_stats['T_today'].mean() / df_stats['TEMP'].mean(),2)
+            ### QPF
+            if (df_stats['PRECIP'].mean() == 0.0 and df_stats['r_o_today'].mean() == 0.0):   
+                bias_qpf = round(1 / 1,2)
+            elif df_stats['PRECIP'].mean() == 0.0:    
+                bias_qpf = round(df_stats['r_o_today'].mean() / 1,2)
+            elif df_stats['r_o_today'].mean() ==0.0:
+                bias_qpf = round(1 / df_stats['PRECIP'].mean(),2)
+            else:
                 bias_qpf = round(df_stats['r_o_today'].mean() / df_stats['PRECIP'].mean(),2)
+
 
             all_bias = round(np.mean([bias_ffmc, bias_dmc, bias_dc, bias_isi, bias_bui, bias_fwi, \
                         bias_temp, bias_rh, bias_wsp, bias_qpf]),2)
@@ -137,12 +169,13 @@ def dostats(inter_df,start_date, stop_date):
             prearson_wsp = round(df_stats['W_today'].corr(df_stats['WS']),2)
             prearson_qpf = round(df_stats['r_o_today'].corr(df_stats['PRECIP']),2)
 
+
             all_prearson = round(np.mean([prearson_ffmc, prearson_dmc, prearson_dc, prearson_isi, prearson_bui, prearson_fwi, \
                         prearson_temp, prearson_rh, prearson_wsp, prearson_qpf]),2)
 
 
             wmo_r_1day[str(loc)] = {'FFMC_c': prearson_ffmc, "DMC_c": prearson_dmc, "DC_c": prearson_dc, "ISI_c": prearson_isi,\
-                            "BUI_c": prearson_bui, "FWI_c": prearson_fwi, "TEMP_c": prearson_temp,"RH": prearson_rh,\
+                            "BUI_c": prearson_bui, "FWI_c": prearson_fwi, "TEMP_c": prearson_temp,"RH_c": prearson_rh,\
                             "WSP_c": prearson_wsp,"QPF_c": prearson_qpf, "prearsons": all_prearson}
         else:
             pass
@@ -156,13 +189,26 @@ def dostats(inter_df,start_date, stop_date):
     df_wmo = df_wmo.reset_index()
     # df_wmo = df_wmo.T
 
+    return df_wmo
 
 
-bias_df     = dostats(inter_df,start_date_bias, stop_date_bias, 'bias')
-prearson_df = dostats(inter_df,start_date_prearsons, stop_date_prearsons, 'prearsons')
+bias_df     = dostats(inter_df,start_date_bias, stop_date, 'bias')
+prearson_df = dostats(inter_df,start_date_prearsons, stop_date, 'prearsons')
 
 
-wmo_df = bias_df.merge(prearson_df, on='wmo')
+wmo_df = bias_df.merge(prearson_df, on='index')
+wmo_df = wmo_df.drop('wmo_y',1)
+wmo_df['wmo'] = wmo_df['wmo_x']
+wmo_df = wmo_df.drop('wmo_x',1)
+
+wmo_df = pd.merge(wmo_df.astype(str),last_df.astype(str), on='wmo')
+
+# inter_df = intwmo_dfer_df.astype({'lon':float, 'lat':float,'TEMP':float, 'RH': float, \
+#     'WS': float, 'WDIR': float, 'PRECIP': float, 'FFMC': float,\
+#     'DMC': float, 'DC': float, 'BUI': float, 'ISI': float, 'FWI': float, 'wmo': int})
+
+wmo_array = wmo_df['prearsons'].values
+unique, counts = np.unique(wmo_array, return_counts=True)
 wmo_df = wmo_df.T
 
 
@@ -172,7 +218,7 @@ wmo_r_1day = wmo_df.to_dict()
 print(f"{str(datetime.now())} ---> write fwf wxstation dictonary to json" )
 ### Write json file to defind dir 
 data_dir = "/bluesky/fireweather/fwf/web_dev/data"
-timestamp = stop_date_prearsons.strftime("%Y%m%d00")
+timestamp = stop_date.strftime("%Y%m%d00")
 with open(str(data_dir) + f"/fwf-wxstation-{timestamp}.json","w") as f:
     json.dump(wmo_r_1day,f, default=json_util.default, separators=(',', ':'), indent=None)
 

@@ -28,24 +28,11 @@ with open('/bluesky/fireweather/fwf/json/dev_colormaps.json') as f:
 hourly_file_dir = str(xr_dir) + str("/current/hourly.zarr") 
 daily_file_dir = str(xr_dir) + str("/current/daily.zarr") 
 ############################################################
-# hourly_file_dir = str(xr_dir) + str("/fwf-hourly-2020082300.zarr") 
-# daily_file_dir = str(xr_dir) + str("/fwf-daily-2020082300.zarr")
+# hourly_file_dir = str(xr_dir) + str("/fwf-hourly-2020082800.zarr") 
+# daily_file_dir = str(xr_dir) + str("/fwf-daily-2020082800.zarr")
 ############################################################
 hourly_ds = xr.open_zarr(hourly_file_dir)
 daily_ds = xr.open_zarr(daily_file_dir)
-hourly_ds['r_o_06'] = hourly_ds.r_o - hourly_ds.r_o[0:7].sum(dim ='time')
-
-
-hourly_vars = ['F','R','S','DSR', 'W', 'T', 'H', 'r_o_06']
-for var in hourly_vars:
-  hourly_ds[var] = xr.where(hourly_ds[var]< cmaps[var]['vmax'], hourly_ds[var], int(cmaps[var]['vmax'] + 1))
-
-daily_vars = ['D','P','U']
-for var in daily_vars:
-  daily_ds[var] = xr.where(daily_ds[var]< cmaps[var]['vmax'], daily_ds[var], int(cmaps[var]['vmax'] + 1))
-
-hourly_ds.r_o_hourly[0:3].sum(dim ='time')
-
 
 r_hourly_list = []
 for i in range(len(hourly_ds.Time)):
@@ -54,6 +41,17 @@ for i in range(len(hourly_ds.Time)):
 r_hourly = np.stack(r_hourly_list)
 r_hourly = xr.DataArray(r_hourly, name='r_o_hourly', dims=('time','south_north', 'west_east'))
 hourly_ds['r_o_3hour'] = r_hourly
+
+hourly_vars = ['F','R','S','DSR', 'W', 'T', 'H', 'r_o', 'r_o_3hour']
+for var in hourly_vars:
+  hourly_ds[var] = xr.where(hourly_ds[var]< cmaps[var]['vmax'], hourly_ds[var], int(cmaps[var]['vmax'] + 1))
+
+daily_vars = ['D','P','U']
+for var in daily_vars:
+  daily_ds[var] = xr.where(daily_ds[var]< cmaps[var]['vmax'], daily_ds[var], int(cmaps[var]['vmax'] + 1))
+
+# hourly_ds.r_o_hourly[0:3].sum(dim ='time')
+
 
 
 ## Get first timestamp of forecast and make dir to store files
@@ -66,36 +64,34 @@ make_dir.mkdir(parents=True, exist_ok=True)
 ## Make geojson of ffmc, isi, fwf every 6 hours
 print(f"{str(datetime.now())} ---> start loop of hourly fwf products" )
 
-# mycontourf_to_geojson(cmaps, 'F', hourly_ds, 0, folderdate, "colors18")
-# mycontourf_to_geojson(cmaps, 'R', hourly_ds, 0, folderdate, "colors18")
-# mycontourf_to_geojson(cmaps, 'S', hourly_ds, 0, folderdate, "colors18")
-# mycontourf_to_geojson(cmaps, 'P', daily_ds, 0, folderdate, "colors18")
-# mycontourf_to_geojson(cmaps, 'D', daily_ds, 0, folderdate, "colors18")
-# mycontourf_to_geojson(cmaps, 'U', daily_ds, 0, folderdate, "colors18")
-# mycontourf_to_geojson(cmaps, 'W', hourly_ds, 0, folderdate, "colors18")
-# mycontourf_to_geojson(cmaps, 'T', hourly_ds, -1, folderdate, "colors18")
+# mycontourf_to_geojson(cmaps, 'F', hourly_ds, -1, folderdate, "colors18")
+# mycontourf_to_geojson(cmaps, 'R', hourly_ds, -1, folderdate, "colors18")
+# mycontourf_to_geojson(cmaps, 'S', hourly_ds, -1, folderdate, "colors18")
+# mycontourf_to_geojson(cmaps, 'P', daily_ds, -1, folderdate, "colors18")
+# mycontourf_to_geojson(cmaps, 'D', daily_ds, -1, folderdate, "colors18")
+# mycontourf_to_geojson(cmaps, 'U', daily_ds, -1, folderdate, "colors18")
+# mycontourf_to_geojson(cmaps, 'W', hourly_ds, -1, folderdate, "colors18")
+# mycontourf_to_geojson(cmaps, 'T', hourly_ds, -1, folderdate, "colors26")
 # mycontourf_to_geojson(cmaps, 'H', hourly_ds, -1, folderdate, "colors18")
-# mycontourf_to_geojson(cmaps, 'r_o', hourly_ds, 0, folderdate, "colors18")
 # mycontourf_to_geojson(cmaps, 'r_o', hourly_ds, -1, folderdate, "colors18")
+# mycontourf_to_geojson(cmaps, 'r_o_3hour', hourly_ds, -1, folderdate, "colors18")
 
 
 
 lenght = len(hourly_ds.F)
-index = np.arange(6,lenght,3, dtype = int)
+index = np.arange(0,lenght,3, dtype = int)
 for i in index:
   mycontourf_to_geojson(cmaps, 'F', hourly_ds, i, folderdate, "colors18")
   mycontourf_to_geojson(cmaps, 'R', hourly_ds, i, folderdate, "colors18")
   mycontourf_to_geojson(cmaps, 'S', hourly_ds, i, folderdate, "colors18")
   mycontourf_to_geojson(cmaps, 'W', hourly_ds, i, folderdate, "colors18")
-  mycontourf_to_geojson(cmaps, 'T', hourly_ds, i, folderdate, "colors18")
+  mycontourf_to_geojson(cmaps, 'T', hourly_ds, i, folderdate, "colors26")
   mycontourf_to_geojson(cmaps, 'H', hourly_ds, i, folderdate, "colors18")
-  mycontourf_to_geojson(cmaps, 'r_o_06', hourly_ds, i, folderdate, "colors18")
+  mycontourf_to_geojson(cmaps, 'r_o', hourly_ds, i, folderdate, "colors18")
   mycontourf_to_geojson(cmaps, 'r_o_3hour', hourly_ds, i, folderdate, "colors18")
 
-
-
-
 print(f"{str(datetime.now())} ---> end loop of hourly fwf products" )
+
 
 
 # ## Make geojson of dmc, dc, bui at noon local for the two day forecast period

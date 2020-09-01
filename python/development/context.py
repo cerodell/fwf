@@ -19,7 +19,7 @@ notebooks_dir = this_dir
 root_dir = notebooks_dir.parents[1]
 data_dir = root_dir / Path("data")
 tzone_dir = root_dir / Path("data/tzone/")
-html_dir = root_dir / Path("firewx_website/html/")
+html_dir = root_dir / Path("html/")
 ops_dir = Path("/bluesky/archive/fireweather/forecasts/")
 xr_dir   = root_dir / Path("data/xr/")
 

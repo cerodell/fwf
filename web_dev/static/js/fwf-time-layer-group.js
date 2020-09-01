@@ -1,3 +1,47 @@
+function formatMapDate(date, endtime, starttime) {
+    if(Date.parse(date) < Date.parse(endtime)){
+    var d = new Date(date),
+        hour = '' + d.getUTCHours(),
+        day = '' + d.getUTCDate(),
+        month = '' + (d.getUTCMonth() + 1),
+        year = d.getUTCFullYear();
+    if (month.length < 2) 
+        month = '0' + month;
+    if (day.length < 2) 
+        day = '0' + day;
+    hour = 3.0*Math.floor(parseInt(hour)/3.0)
+    hour = hour.toString()
+    var UTCTimeMap = [year, month, day].join('-')
+    UTCTimeMap = [UTCTimeMap,hour].join('T')
+    UTCTimeMap = UTCTimeMap + ':00:00Z'
+    }else{
+    UTCTimeMap = starttime
+    }
+    return UTCTimeMap
+}
+
+function formatPlotDate(date, endtime, starttime) {
+    if(Date.parse(date) < Date.parse(endtime)){
+    var d = new Date(date),
+        hour = '' + d.getUTCHours(),
+        day = '' + d.getUTCDate(),
+        month = '' + (d.getUTCMonth() + 1),
+        year = d.getUTCFullYear();
+    if (month.length < 2) 
+        month = '0' + month;
+    if (day.length < 2) 
+        day = '0' + day;
+    var UTCTimePlot = [year, month, day].join('-')
+    UTCTimePlot = [UTCTimePlot,hour].join('T')
+    UTCTimePlot = UTCTimePlot + ':00:00Z'
+    }else{
+    UTCTimePlot = starttime
+    }
+    return UTCTimePlot
+}
+
+
+
 L.TimeDimension.Layer.LayerGroup = L.TimeDimension.Layer.extend({
     initialize: function(layer, options) {
         L.TimeDimension.Layer.prototype.initialize.call(this, layer, options);
@@ -114,7 +158,10 @@ L.TimeDimension.Layer.LayerGroup = L.TimeDimension.Layer.extend({
         this._currentLayer = layer;
         this._currentTime = time;
         console.log('Show layer with time: ' + new Date(time).toISOString());
-
+        UTCTimeMap = new Date(time).toISOString();
+        UTCTimeMap = UTCTimeMap.slice(0,19)
+        console.log(UTCTimeMap);
+        makeplotly(file_list.slice(-1)[0], point_list.slice(-1)[0], UTCTimeMap);
         this._evictCachedTimes(this._timeCacheForward, this._timeCacheBackward);
     },
 
@@ -299,7 +346,20 @@ L.TimeDimension.Layer.LayerGroup = L.TimeDimension.Layer.extend({
                         ).setZIndex(500)
                     )
                 })};
-
+            if (this._thisVar == 'qpf_3h'){
+                fetch(url, {cache: "default"}).then(function(response){
+                    return response.json();
+                }).then(function(json){
+                    newLayer.addLayer(L.vectorGrid.slicer( json, {
+                        minZoom: 2,
+                        maxZoom: 18,
+                        rendererFactory: L.canvas.tile,
+                        vectorTileLayerStyles:{
+                            'qpf': geo_json_styler_qpf
+                                }
+                            }
+                        ).setZIndex(500));
+                })};
 
 
         

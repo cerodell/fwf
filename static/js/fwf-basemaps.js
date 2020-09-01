@@ -3,12 +3,19 @@
 
 
 
-var Topo_GL = L.mapboxGL({
-	attribution: '<a href="https://www.maptiler.com/copyright/" target="_blank">© MapTiler</a> <a href="https://www.openstreetmap.org/copyright" target="_blank">© OpenStreetMap contributors</a>',
-	style: 'https://api.maptiler.com/maps/topo/style.json?key=fZr5k6bNjx3w1U2vFolS'
-  }).addTo(map);
+// var Topo_GL = L.mapboxGL({
+// 	attribution: '<a href="https://www.maptiler.com/copyright/" target="_blank">© MapTiler</a> <a href="https://www.openstreetmap.org/copyright" target="_blank">© OpenStreetMap contributors</a>',
+// 	style: 'https://api.maptiler.com/maps/topo/style.json?key=PquYEjaZQgGOArfxeoCO'
+//   }).addTo(map);
 
+  var openmaptilesUrl = "https://api.maptiler.com/tiles/v3/{z}/{x}/{y}.pbf?key={key}";
 
+  var Topo_GL = L.vectorGrid.protobuf(openMapTilesUrl, {
+	vectorTileLayerStyles: vectorStyles,
+	subdomains: '0123',
+	attribution: '© OpenStreetMap contributors, © MapTiler',
+	key: 'AcwSJSEdQL53EDd0mvwp' // Get yours at https://maptiler.com/cloud/
+  });
 
 // var CartoDB_PositronNoLabels = L.tileLayer('https://{s}.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}{r}.png', {
 // 	attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',

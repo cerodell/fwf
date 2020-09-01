@@ -143,11 +143,11 @@ def delete2D(array2D):
     return final
 
 
-def colormaps(cmaps, var):
+def colormaps(cmaps, var, colornumber):
     vmin, vmax = cmaps[var]["vmin"], cmaps[var]["vmax"]
-    name, colors = cmaps[var]["name"], cmaps[var]["colors18"]
+    name, colors = cmaps[var]["name"], cmaps[var][colornumber]
     levels = cmaps[var]["levels"]
     # cmap  = cm.LinearColormap(colors, vmin = vmin, vmax = vmax, caption = name).to_step(levels)
-    cmap  = cm.StepColormap(colors, index = cmaps[var]["levels"], vmin = vmin, vmax = vmax, caption = name)
+    cmap  = cm.StepColormap(colors, index = cmaps[var]["levels"],  caption = name)
     cmap.caption = cmaps[var]["title"]
     return cmap

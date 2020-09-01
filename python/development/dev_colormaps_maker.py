@@ -72,16 +72,16 @@ CEN_LAT, CEN_LON = float(daily_ds.CEN_LAT), float(daily_ds.CEN_LON)
 
 
 ### Make countourf and cmaps
-# F_cmap = colormaps(cmaps, 'F') 
+F_cmap = colormaps(cmaps, 'F', 'colors18') 
 # P_cmap = colormaps(cmaps, 'P')
 # D_cmap = colormaps(cmaps, 'D')
 # R_cmap = colormaps(cmaps, 'R')
 # U_cmap = colormaps(cmaps, 'U')
 # S_cmap = colormaps(cmaps, 'S')
 # W_cmap = colormaps(cmaps, 'W')
-T_cmap = colormaps(cmaps, 'T')
-H_cmap = colormaps(cmaps, 'H')
-r_o_cmap = colormaps(cmaps, 'r_o')
+# T_cmap = colormaps(cmaps, 'T', 'colors26')
+# H_cmap = colormaps(cmaps, 'H')
+# r_o_cmap = colormaps(cmaps, 'r_o')
 
 
 
@@ -120,12 +120,12 @@ fwimap = folium.Map(
     
 # fwimap.add_child(ffmc).add_child(dmc).add_child(dc).add_child(isi).add_child(bui).add_child(fwi)
 # fwimap.add_child(W_cmap)
-fwimap.add_child(T_cmap)
-fwimap.add_child(H_cmap)
-fwimap.add_child(r_o_cmap)
+# fwimap.add_child(T_cmap)
+# fwimap.add_child(H_cmap)
+# fwimap.add_child(r_o_cmap)
 
 # fwimap.add_child(folium.map.LayerControl())
-# fwimap.add_child(F_cmap)
+fwimap.add_child(F_cmap)
 # fwimap.add_child(F_cmap).add_child(P_cmap).add_child(D_cmap).add_child(R_cmap).add_child(U_cmap).add_child(S_cmap)
 # fwimap.add_child(BindColormap(ffmc, F_cmap)).add_child(BindColormap(dmc, P_cmap))
 # fwimap.add_child(BindColormap(dc, D_cmap)).add_child(BindColormap(isi, R_cmap))
