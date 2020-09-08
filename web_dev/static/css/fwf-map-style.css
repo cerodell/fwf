@@ -24,80 +24,82 @@
 
 
 .search-input {
-    font-family: Courier
-  }
-  
-  .search-input,
-  .leaflet-control-search {
-    max-width: 400px;
-  }
+  font-family: Courier
+}
+
+.search-input,
+.leaflet-control-search {
+  max-width: 400px;
+}
 
 
 
 /* Legend */
 .fcst-legend {
-    padding-top: 8px;
-    padding-bottom: 3px;
-    padding-left: 2px;
-    padding-right: 8px;
-    background: white;
+  padding-top: 8px;
+  padding-bottom: 3px;
+  padding-left: 4px;
+  padding-right: 8px;
+  background: white;
 
 }
 .fcst-legend table {
-    margin: 0;
-    border-collapse: collapse;
+  margin: 0;
+  border-collapse: collapse;
 }
 .fcst-legend #values td {
-    width: 10px;
-    border-left: 1px solid silver;
+  width: 12px;
+  border-left: 1px solid silver;
 }
 .fcst-legend #values.first-cell td {
-    width: 10px;
-    border-left: none;
+  width: 10px;
+  border-left: none;
 }
 .fcst-legend #colours td {
-    height: 10px;
+  height: 10px;
 }
 .fcst-legend #ticks td {
-    height: 4px;
-    background: #ffffff;
+  height: 4px;
+  background: #ffffff;
 }
 .fcst-legend #labels td {
-    text-align: center;
-    font-size: 80%;
+  text-align: center;
+  font-size: 80%;
 }
 .fcst-legend .legend-title {
-    text-align: center;
-    font-weight: bold;
-    font-size: 80%;
-    clear: both;
+  text-align: center;
+  font-weight: bold;
+  font-size: 80%;
+  clear: both;
 }
 
 
 
 .info {
-    padding: 6px 8px; 
-    background: white;
-    box-shadow: 0 0 15px rgb(0,0,0);
-    border-radius: 5px;
+  padding: 6px 8px; 
+  background: white;
+  box-shadow: 0 0 15px rgb(0,0,0);
+  border-radius: 5px;
 } 
 .info h4 {
-    margin: 0 0 5px;
-    color: black;
+  margin: 0 0 5px;
+  color: black;
 }
 
 .legend { 
-    text-align: left;
-    line-height: 18px;
-    color: black;
+  text-align: left;
+  line-height: 18px;
+  color: black;
 } 
 .legend i {
-    width: 18px;
-    height: 18px; 
-    float: left; 
-    margin-right: 8px;
-    opacity: 0.7;
- }
+  width: 18px;
+  height: 18px; 
+  float: left; 
+  margin-right: 8px;
+  opacity: 0.7;
+}
+
+
 
 
  
@@ -108,7 +110,7 @@
 
  .table-title body {
     background-color: #3e94ec;
-    font-family: Courier
+    font-family: Courier;
     font-size: 12px;
     font-weight: 300;
     text-rendering: optimizeLegibility;
@@ -116,18 +118,24 @@
 
 div.table-title {
   margin: auto;
-  max-width: 200px;
+  max-width: 300px;
   padding:3px;
   width: 100%;
 }
 
+
+
+.table-title a {
+  float: right;
+  margin-right: 10px;
+}
+
+
 .table-title h3 {
    color: #616161;
-   font-size: 14px;
+   font-size: 16px;
    font-weight: 400;
    font-style:Courier;
-   /* font-family: "Roboto", helvetica, arial, sans-serif; */
-   text-shadow: -1px -1px 1px rgba(0, 0, 0, 0.1);
    text-transform:uppercase;
 }
 
@@ -140,7 +148,7 @@ div.table-title {
   border-collapse: collapse;
   height: 100px;
   margin: auto;
-  max-width: 200px;
+  max-width: 300px;
   padding:2px;
   width: 100%;
   box-shadow: 0 5px 10px rgba(0, 0, 0, 0.1);
@@ -148,15 +156,15 @@ div.table-title {
 }
 
 .table-fill th {
-    color:#D5DDE5;;
+    color:white;
     background:#616161;
     border-bottom:4px solid #9ea7af;
     border-right: 1px solid #343a45;
-    font-size:12px;
-    font-weight: 100;
-    padding:2px;
+    font-style:Courier;
+    font-size:14px;
+    font-weight: 280;
+    padding:10px;
     text-align:left;
-    text-shadow: 0 1px 1px rgba(0, 0, 0, 0.1);
     vertical-align:middle;
   }
 
@@ -172,10 +180,10 @@ div.table-title {
 .table-fill tr {
   border-top: 1px solid #C1C3D1;
   border-bottom: 1px solid #C1C3D1;
-  color:#666B85;
-  font-size:11px;
-  font-weight:normal;
-  text-shadow: 0 1px 1px rgba(256, 256, 256, 0.1);
+  color:#343a45;
+  font-style:Courier;
+  font-size:12px;
+  font-weight: 240;
 }
  
 .table-fill tr:hover td {
@@ -214,8 +222,8 @@ div.table-title {
   text-align:left;
   vertical-align:middle;
   font-weight:300;
-  font-size:11px;
-  text-shadow: -1px -1px 1px rgba(0, 0, 0, 0.1);
+  font-size:12px;
+  font-style:Courier;
   border-right: 1px solid #C1C3D1;
 }
 
@@ -248,3 +256,19 @@ td.text-left {
 .table-fill td.text-right {
   text-align: right;
 }
+
+
+
+.leaflet-control-velocity {
+  background-color: rgba(255, 255, 255, 0.7);
+  padding: 0 5px;
+  margin: 0 !important;
+  color: #333;
+  font: 11px/1.5 "Helvetica Neue", Arial, Helvetica, sans-serif;
+}
+
+.velocity-overlay {
+  position: absolute;
+  z-index: 1;
+}
+

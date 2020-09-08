@@ -207,11 +207,11 @@ fig, ax = plt.subplots()
 ax.set_title(Plot_Title , fontsize=20, weight='bold')
 fig.subplots_adjust(hspace=0.8)
 lats, lons = np.array(hourly_ds.XLAT), np.array(hourly_ds.XLONG)
+
+## skip every few indexe
 skip = 8
 lats, lons = lats[0::skip,0::skip], lons[0::skip,0::skip] 
-# buf = 20
-# lats = lats[int(xy1[1]-buf):int(xy2[1]+buf),int(xy1[0]-buf):int(xy2[0]+buf)]
-# lons = lons[int(xy1[1]-buf):int(xy2[1]+buf),int(xy1[0]-buf):int(xy2[0]+buf)]
+
 png = str(data_dir) + '/images/canada_nasa.png'
 img = mpimg.imread(png)
 # Plot map

@@ -27,9 +27,9 @@ import warnings
 warnings.filterwarnings("ignore")
 
 """######### get directory to hourly/daily .zarr files.  #############"""
-start_date_prearsons = date.today() - timedelta(days=62)
+start_date_prearsons = date.today() - timedelta(days=61)
 
-start_date_bias = date.today() - timedelta(days=17)
+start_date_bias = date.today() - timedelta(days=16)
 stop_date = date.today() - timedelta(days=1)
 
 todays_date = stop_date.strftime("%Y%m%d")

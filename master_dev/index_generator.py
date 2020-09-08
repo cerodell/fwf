@@ -14,11 +14,8 @@ forecast_start_date = date.today()
 forecast_end_date   = forecast_start_date + timedelta(days=2)
 folderdate = forecast_start_date.strftime('%Y%m%d')
 
-observations   = forecast_start_date - timedelta(days=1)
-observations   = observations.strftime('%Y%m%d')
-
 forecast_start_date = forecast_start_date.strftime('%Y-%m-%dT00:00:00Z')
-forecast_end_date   = forecast_end_date.strftime('%Y-%m-%dT12:00:00Z')
+forecast_end_date   = forecast_end_date.strftime('%Y-%m-%dT00:00:00Z')
 
 files_datetime    = folderdate
 print(f"{str(datetime.now())} ---> open/read html template" )
@@ -29,10 +26,8 @@ with open(fcst_template, 'r') as fin:
     fcst = fcst.replace('{%FirstDateTime%}', forecast_start_date)
     fcst = fcst.replace('{%LastDateTime%}', forecast_end_date)
     fcst = fcst.replace('{%FileDateTime%}', files_datetime)
-    fcst = fcst.replace('{%FileDateTimeYesterday%}', observations)
 
-    # make_dir = Path(str(ops_dir) + '/' + str(folderdate))
-    make_dir = Path("/bluesky/fireweather/fwf/web_dev")
+    make_dir = Path(str(ops_dir) + '/' + str(folderdate))
 
     make_dir.mkdir(parents=True, exist_ok=True)
     out_dir = str(make_dir) + '/index.html' 

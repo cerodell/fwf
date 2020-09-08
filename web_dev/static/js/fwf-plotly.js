@@ -166,11 +166,11 @@ function makeplotly(n, o, UTCTimeMap) {
             showlegend: !1,
             yaxis7: { domain: [0.67, 0.78], title: { text: "FFMC", font: { color: "ff7f0e" } }, tickfont: {color: "ff7f0e"}},
             yaxis6: { domain: [0.56, 0.65], title: { text: "ISI", font: { color: "9467bd" } }, tickfont: {color: "9467bd"}},
-            yaxis5: { domain: [0.45, 0.54], title: { text: "Temp", font: { color: "d62728" } }, tickfont: {color: "d62728"}},
-            yaxis4: { domain: [0.34, 0.43],  title: { text: "RH", font: { color: "1f77b4" } }, tickfont: {color: "1f77b4"}},
-            yaxis3: { domain: [0.23, 0.32], title: { text: "WSP", font: { color: "202020" } } , tickfont: {color: "202020"}},
-            yaxis2: { domain: [0.12, 0.21], title: { text: "WDIR", font: { color: "7f7f7f" } }, tickfont: {color: "7f7f7f"}},
-            yaxis1: { domain: [0, 0.09], title: { text: "QPF", font: { color: "2ca02c" } }, tickfont: {color: "2ca02c"}},
+            yaxis5: { domain: [0.45, 0.54], title: { text: "Temp<br>(C)", font: { color: "d62728" } }, tickfont: {color: "d62728"}},
+            yaxis4: { domain: [0.34, 0.43],  title: { text: "RH<br>(%)", font: { color: "1f77b4" } }, tickfont: {color: "1f77b4"}},
+            yaxis3: { domain: [0.23, 0.32], title: { text: "WSP<br>(km/hr)", font: { color: "202020" } } , tickfont: {color: "202020"}},
+            yaxis2: { domain: [0.12, 0.21], title: { text: "WDIR<br>(deg)", font: { color: "7f7f7f" } }, tickfont: {color: "7f7f7f"}},
+            yaxis1: { domain: [0, 0.09], title: { text: "QPF<br>(mm)", font: { color: "2ca02c" } }, tickfont: {color: "2ca02c"}},
             xaxis: { title: "Date (UTC)" },
             shapes: [{
                 type: 'line',
@@ -184,18 +184,6 @@ function makeplotly(n, o, UTCTimeMap) {
                   width: 1.5,
                   dash: 'dot'
                 }},
-                {
-                    type: 'line',
-                    x0: UTCTimePlot,
-                    y0: 0,
-                    x1: UTCTimePlot,
-                    yref: 'paper',
-                    y1: 0.8,
-                    line: {
-                      color: 'grey',
-                      width: 0.8,
-                      dash: 'dot'
-                    }},
                 {
                     type: 'rect',
                     // x-reference is assigned to the x-values
@@ -368,6 +356,7 @@ function makeplots(n) {
                                     { type: "link", name: "Smoke Forecasts", href: "https://firesmoke.ca/", icon: "icon-fire" },
                                     { type: "link", name: "Weather Research Forecast Team", href: "https://weather.eos.ubc.ca/cgi-bin/index.cgi", icon: "icon-cloudy" },
                                     { type: "link", name: "Contact Inforamtion", href: "https://firesmoke.ca/contact/", icon: "icon-phone" },
+                                    { type: "link", name: "Documentation", href: "https://cerodell.github.io/fwf-docs/index.html", icon: "icon-git" },
 
                                 ]
                             }

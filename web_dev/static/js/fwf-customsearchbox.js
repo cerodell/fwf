@@ -6,7 +6,7 @@ function generateHtmlContent(a) {
         var c = a.Items[d],
             b = b + '<li class="panel-list-item"><div>';
         "link" == c.type
-            ? ((b += '<span class="panel-list-item-icon ' + c.icon + '" ></span>'), (b += '<a href="' + c.href + '">' + c.name + "</a>"))
+            ? ((b += '<span class="panel-list-item-icon ' + c.icon + '" ></span>'), (b += '<a href="' + c.href + '"target="_blank">' + c.name + "</a>"))
             : "button" == c.type && ((b += '<span class="panel-list-item-icon ' + c.icon + '" ></span>'), (b += '<button onclick="' + c.onclick + '">' + c.name + "</button>"));
         b += "</li></div>";
     }
@@ -20,6 +20,8 @@ function createSearchboxControl() {
                 { type: "link", name: "BlueSky Canada Smoke Forecasts", href: "https://firesmoke.ca/", icon: "icon-fire" },
                 { type: "link", name: "Weather Research Forecast Team", href: "https://weather.eos.ubc.ca/cgi-bin/index.cgi", icon: "icon-cloudy" },
                 { type: "link", name: "Contact Inforamtion", href: "https://firesmoke.ca/contact/", icon: "icon-phone" },
+                { type: "link", name: "Documentation", href: "https://cerodell.github.io/fwf-docs/index.html", icon: "icon-git" },
+
             ],
             _searchfunctionCallBack: function (a) {
                 alert("calling the default search call back");
