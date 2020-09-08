@@ -178,7 +178,7 @@ L.TimeDimension.Layer.LayerGroup = L.TimeDimension.Layer.extend({
         console.log(url);
 
         var newLayer = L.layerGroup();
-        const varibale = this._thisVar;
+        var varibale = this._thisVar;
         console.log(varibale);
 
 
