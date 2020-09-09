@@ -5,6 +5,7 @@ data
 *.DS_Store
 images
 fwf-docs
+fwf-docs/
 web_dev/data
 
 # Byte-compiled / optimized / DLL files
