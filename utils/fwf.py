@@ -796,7 +796,6 @@ class FWF:
         """
         Calculates the hourly fire weather index and daily severity rating
         
-        
         ----------
             W: datarray     
                 - Wind speed, km/hr
