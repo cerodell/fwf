@@ -1,3 +1,16 @@
+var geo_json_ffmc = L.layerGroup();
+var geo_json_dmc = L.layerGroup();
+var geo_json_dc = L.layerGroup();
+var geo_json_isi = L.layerGroup();
+var geo_json_bui = L.layerGroup();
+var geo_json_fwi = L.layerGroup();
+var geo_json_wsp = L.layerGroup();
+var geo_json_temp = L.layerGroup();
+var geo_json_rh = L.layerGroup();
+var geo_json_qpf = L.layerGroup();
+var geo_json_qpf_3h = L.layerGroup();
+
+
 var ffmcTimeLayer = L.timeDimension.layer.layerGroup(geo_json_ffmc, {
     getUrlFunction: getHourlyForecast,
     getFileDir: ffmc_topo_file,
@@ -13,8 +26,6 @@ var dmcTimeLayer = L.timeDimension.layer.layerGroup(geo_json_dmc, {
     getVar: 'DMC'
 
 });
-// dmcTimeLayer.addTo(map);
-
 
 var dcTimeLayer = L.timeDimension.layer.layerGroup(geo_json_dc, {
     getUrlFunction: getDailyForecast,
@@ -22,8 +33,6 @@ var dcTimeLayer = L.timeDimension.layer.layerGroup(geo_json_dc, {
     getVar: 'DC'
 
 });
-// dcTimeLayer.addTo(map);
-
 
 
 var isiTimeLayer = L.timeDimension.layer.layerGroup(geo_json_isi, {
@@ -32,8 +41,6 @@ var isiTimeLayer = L.timeDimension.layer.layerGroup(geo_json_isi, {
     getVar: 'ISI'
 
 });
-// isiTimeLayer.addTo(map);
-
 
 
 var buiTimeLayer = L.timeDimension.layer.layerGroup(geo_json_bui, {
@@ -41,8 +48,6 @@ var buiTimeLayer = L.timeDimension.layer.layerGroup(geo_json_bui, {
     getFileDir: bui_topo_file,
     getVar: 'BUI'
 });
-// buiTimeLayer.addTo(map);
-
 
 var fwiTimeLayer = L.timeDimension.layer.layerGroup(geo_json_fwi, {
     getUrlFunction: getHourlyForecast,
@@ -50,41 +55,104 @@ var fwiTimeLayer = L.timeDimension.layer.layerGroup(geo_json_fwi, {
     getVar: 'FWI'
 
 });
-// fwiTimeLayer.addTo(map);
 
+var wspTimeLayer = L.timeDimension.layer.layerGroup(geo_json_wsp, {
+    getUrlFunction: getHourlyForecast,
+    getFileDir: wsp_topo_file,
+    getVar: 'wsp'
+
+});
+
+var tempTimeLayer = L.timeDimension.layer.layerGroup(geo_json_temp, {
+    getUrlFunction: getHourlyForecast,
+    getFileDir: temp_topo_file,
+    getVar: 'temp'
+
+});
+
+var rhTimeLayer = L.timeDimension.layer.layerGroup(geo_json_rh, {
+    getUrlFunction: getHourlyForecast,
+    getFileDir: rh_topo_file,
+    getVar: 'rh'
+
+});
+
+var qpfTimeLayer = L.timeDimension.layer.layerGroup(geo_json_qpf, {
+    getUrlFunction: getHourlyForecast,
+    getFileDir: qpf_topo_file,
+    getVar: 'qpf'
+
+});
+
+var qpf_3hTimeLayer = L.timeDimension.layer.layerGroup(geo_json_qpf_3h, {
+    getUrlFunction: getHourlyForecast,
+    getFileDir: qpf_3h_topo_file,
+    getVar: 'qpf_3h'
+
+});
 
 
 var baseLayers = {
-    "Topography"       : Topo_GL,
+    "Topography"       : gl,
 };
 
 var groupedOverlays = {   
-    "Forecasts" :  {
+    "Fire Weather Forecast" :  {
         "FFMC" : ffmcTimeLayer,
         "DMC"  : dmcTimeLayer,
         "DC"   : dcTimeLayer,
         "ISI"  : isiTimeLayer,
         "BUI"  : buiTimeLayer,
         "FWI"  : fwiTimeLayer,
-    },
+        "Wind Speed"  : wspTimeLayer,
+        "Temperature"  : tempTimeLayer,
+        "Relative Humidity"  : rhTimeLayer,
+        "Accumulated Precipitation"  : qpfTimeLayer,
+        "3 Hour Accumulated Precipitation"  : qpf_3hTimeLayer,
 
+    },
 };
+
+// The tree containing the layers
+var groupedOverlays = [
+    {
+        label: 'Fire Weather Forecast',
+        children: [
+            {label: ' Fine Fuel Moisture Code', layer: ffmcTimeLayer, radioGroup: 'bc'},
+            {label: ' Duff Moisture Code', layer: dmcTimeLayer, radioGroup: 'bc'},
+            {label: ' Drought Code', layer: dcTimeLayer, radioGroup: 'bc'},
+            {label: ' Initial Spread Index', layer: isiTimeLayer, radioGroup: 'bc'},
+            {label: ' Build Up Index', layer: buiTimeLayer, radioGroup: 'bc'},
+            {label: ' Fire Weather Index', layer: fwiTimeLayer, radioGroup: 'bc'},
+
+        ]
+    },
+    {
+        label: 'Weather Forecast',
+        children: [
+            {label: ' Wind Spped (km/hr)', layer: wspTimeLayer, radioGroup: 'bc'},
+            {label: ' Temperature (C)', layer: tempTimeLayer, radioGroup: 'bc'},
+            {label: ' Relative Humidity (%)', layer: rhTimeLayer, radioGroup: 'bc'},
+            {label: ' Total Accumulated Precipitation (mm)', layer: qpfTimeLayer, radioGroup: 'bc'},
+            {label: ' 3 Hour Accumulated Precipitation (mm)', layer: qpf_3hTimeLayer, radioGroup: 'bc'},
+
+        ]
+    },
+    {
+        label: 'Weather Observations',
+        children: [
+            {label: ' Weather Stations', layer: wx_station},
+        ]
+    },
+];
 
 var groupedOptions = {
-    exclusiveGroups: ["Forecasts"],
+    exclusiveGroups: ["Fire Weather Forecast"],
 
 };
-L.control.groupedLayers(baseLayers, groupedOverlays, groupedOptions).addTo(map);
+// L.control.groupedLayers(baseLayers, groupedOverlays).addTo(map);
 
-// remove layers and basemaps options 
-dmcTimeLayer.remove();
-dcTimeLayer.remove();
-isiTimeLayer.remove();
-buiTimeLayer.remove();
-fwiTimeLayer.remove();
-
-// Esri_WorldImagery.remove()
-// Esri_WorldTerrain.remove();
+L.control.layers.tree(baseLayers,groupedOverlays).addTo(map);
 
 
 // Move zoom and full screen controls to top-right
@@ -96,10 +164,12 @@ map.zoomControl.remove();
 var zoomHome = L.Control.zoomHome({position: 'topright'});
 zoomHome.addTo(map);
 
+
 // Opacity control
 // var multiLayers = [ffmcTimeLayer, dmcTimeLayer, dcTimeLayer, isiTimeLayer, buiTimeLayer, fwiTimeLayer],
-//     layerGroup = L.layerGroup(multiLayers),
-//     opacitySliderGroup = new L.Control.opacitySliderGroup().addTo(map);
+// layerGroup = L.layerGroup();
+// layerGroup.addLayer(ffmcTimeLayer);
+// opacitySliderGroup = new L.Control.opacitySliderGroup().addTo(map);
 // opacitySliderGroup.setOpacityLayerGroup(layerGroup);
 
 

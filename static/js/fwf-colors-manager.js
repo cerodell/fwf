@@ -25,7 +25,6 @@ legend_wx.onAdd = function (map) {
     for (var i = 0; i < grades.length; i++) {
         from = grades[i];
         to = grades[i + 1];
-        console.log(to);
         labels.push(
             '<i style="background:' + getColor(from + 0.001) + '"></i> ' +
             from + (to ? '      &ndash;       ' + to : ''));
