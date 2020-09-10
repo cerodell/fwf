@@ -156,15 +156,15 @@ xlong= xlong[10:,47:]
 print(f"{str(datetime.now())} ---> end of convert datasets to np arrays" )
 
 
-# # ### Get first timestamp of forecast and make dir to store files
+# ### Get first timestamp of forecast and make dir to store files
 timestamp = datetime.strptime(str(time[0]), '%Y-%m-%dT%H').strftime('%Y%m%d%H')
 
+# ### make dir for that days forecast files to be sotred...along woth index.html etc!!!!!
+# make_dir = Path("/bluesky/archive/fireweather/forecasts/" + str(timestamp))
+# make_dir.mkdir(parents=True, exist_ok=True)
 
-# # ### make dir for that days forecast files to be sotred...along woth index.html etc!!!!!
-### make dir for that days forecast files to be sotred...along woth index.html etc!!!!!
-make_dir = Path("/bluesky/archive/fireweather/forecasts/" + str(timestamp))
+make_dir = Path("/bluesky/archive/fireweather/forecasts/" + str(timestamp) + "data/plot")
 make_dir.mkdir(parents=True, exist_ok=True)
-
 
 abc = list(string.ascii_lowercase)
 nfile = 25
