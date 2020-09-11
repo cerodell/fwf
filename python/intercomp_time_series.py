@@ -24,7 +24,7 @@ warnings.filterwarnings("ignore", message="elementwise comparison failed")
 """######### get directory to hourly/daily .zarr files.  #############"""
 
 
-todays_date = '20200830'
+todays_date = '20200910'
 
 
 # filecsv = f'/Volumes/cer/fireweather/data/csv/fwf-intermoparison-{todays_date}00.csv'

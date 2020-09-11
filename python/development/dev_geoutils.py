@@ -4,8 +4,6 @@ import context
 import numpy as np
 import xarray as xr
 import geojsoncontour
-# from cr_geocontour.contour import contourf_to_geojson
-import geojsoncontour
 from pathlib import Path
 from netCDF4 import Dataset
 import branca.colormap as cm
