@@ -93,7 +93,14 @@ def dostats(inter_df,start_date, stop_date, statstodo):
     elif statstodo == 'bias':
         low_count = np.where(counts<4)
 
+    wmo_map_remove = np.array([720945,72677, 722095, 721832, 72644, 721434, 721543, 720892, 720669 ]) 
     remove_wmo  = unique[low_count]
+    print(remove_wmo)
+    print(remove_wmo.shape)
+    remove_wmo = np.concatenate([remove_wmo,wmo_map_remove])
+    print(remove_wmo)
+    print(remove_wmo.shape)
+
     for i in range(len(remove_wmo)):
         # print(remove_wmo[i])
         wmo.remove(remove_wmo[i])
