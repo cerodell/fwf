@@ -95,11 +95,7 @@ def dostats(inter_df,start_date, stop_date, statstodo):
 
     wmo_map_remove = np.array([720945,72677, 722095, 721832, 72644, 721434, 721543, 720892, 720669 ]) 
     remove_wmo  = unique[low_count]
-    print(remove_wmo)
-    print(remove_wmo.shape)
     remove_wmo = np.concatenate([remove_wmo,wmo_map_remove])
-    print(remove_wmo)
-    print(remove_wmo.shape)
 
     for i in range(len(remove_wmo)):
         # print(remove_wmo[i])
@@ -158,8 +154,7 @@ def dostats(inter_df,start_date, stop_date, statstodo):
                 bias_qpf = round(df_stats['r_o_today'].mean() / df_stats['PRECIP'].mean(),2)
 
 
-            all_bias = round(np.mean([bias_ffmc, bias_dmc, bias_dc, bias_isi, bias_bui, bias_fwi, \
-                        bias_temp, bias_rh, bias_wsp, bias_qpf]),2)
+            all_bias = round(np.mean([bias_temp, bias_rh, bias_wsp, bias_qpf]),2)
 
             wmo_r_1day[str(loc)] = {'FFMC_b': bias_ffmc, "DMC_b": bias_dmc, \
                     "DC_b": bias_dc, "ISI_b": bias_isi, "BUI_b": bias_bui, "FWI_b": bias_fwi, \
@@ -181,8 +176,7 @@ def dostats(inter_df,start_date, stop_date, statstodo):
             prearson_qpf = round(df_stats['r_o_today'].corr(df_stats['PRECIP']),2)
 
 
-            all_prearson = round(np.mean([prearson_ffmc, prearson_dmc, prearson_dc, prearson_isi, prearson_bui, prearson_fwi, \
-                        prearson_temp, prearson_rh, prearson_wsp, prearson_qpf]),2)
+            all_prearson = round(np.mean([prearson_temp, prearson_rh, prearson_wsp, prearson_qpf]),2)
 
 
             wmo_r_1day[str(loc)] = {'FFMC_c': prearson_ffmc, "DMC_c": prearson_dmc, "DC_c": prearson_dc, "ISI_c": prearson_isi,\

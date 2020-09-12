@@ -10,13 +10,13 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.6.0/dist/leaflet.css"/>
     <link rel="stylesheet" href="https://cdn.rawgit.com/socib/Leaflet.TimeDimension/master/dist/leaflet.timedimension.control.min.css">
     <link rel='stylesheet' href='https://api.mapbox.com/mapbox.js/plugins/leaflet-fullscreen/v1.0.1/leaflet.fullscreen.css'>
-    <style>html, body {width: 100%;height: 100%;margin: 0;padding: 0;}</style>
-    <style>#map {position:absolute;top:0;bottom:0;right:0;left:0;}</style>
-    <style>#map_fwi {width: 100.0%;height: 100.0%;left: 0.0%;top: 0.0%;}</style>
     <script src='https://api.mapbox.com/mapbox.js/plugins/leaflet-fullscreen/v1.0.1/Leaflet.fullscreen.min.js'></script>
     <script src="https://cdn.plot.ly/plotly-1.54.6.min.js"></script>
     <link rel="stylesheet" href="/static/css/fwf-leaflet.zoomhome-0.0.1.min.css"/>
     <link rel="stylesheet" href="/static/css/fwf-map-style-0.0.1.min.css"/>
+    <style>html, body {width: 100%;height: 100%;margin: 0;padding: 0;}</style>
+    <style>#map {position:absolute;top:0;bottom:0;right:0;left:0;}</style>
+    <style>#map_fwi{float:right;width:58.0%;height:100.0%;left:0.0%;top:0.0%}#plot_fwi{float:left;width:42.0%;height:100.0%;left:0.0%;top:0.0%}</style>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/3.5.5/d3.min.js"></script>
     <script src="/static/js/fwf-jquery-1.9.1.min.js"></script>
     <script src="/static/js/fwf-jquery-ui-1.10.3.custom.min.js"></script>
@@ -49,9 +49,9 @@
         var map = L.map(
             "map_fwi",
             {
-                center: [53.684414, -98.44137],
+                center: [53.684414, -100.44137],
                 crs: L.CRS.EPSG3857,
-                zoom: 3,
+                zoom: 4,
                 minZoom: 3,
                 maxZoom: 18,
                 maxBounds: [
