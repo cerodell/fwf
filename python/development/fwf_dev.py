@@ -13,70 +13,43 @@ from pathlib import Path
 from netCDF4 import Dataset
 from datetime import datetime
 from utils.read_wrfout import readwrf
-from context import xr_dir, wrf_dir, tzone_dir
+from context import wrf_dir, tzone_dir
 
-
+xr_dir = "/Volumes/cer/fireweather/data/rerun"
 
  
 
 class FWF:
     """
-    Class to solve the Fire Weather Indices 
+    Class to solve the Fire Weather Indices using output from a numerical weather model
 
-    ...
-    Attributes
+    Parameters
     ----------
+
     wrf_file_dir: str
-    directory pathway to xarray dataset (.zarr) file of need
-    WRF met variables to calculate FWI
-    
+        - File directory to (zarr) file of WRF met variables to calculate FWI
     hourly_file_dir: str
-    directory pathway xarray dataset (.zarr) file of yestersdays hourly 
-    FWI codes, needed for carry over to intilaze the model
-
+        - File directory to (zarr) file of yestersdays hourly FWI codes
+        - Needed for carry over to intilaze the model
     daily_file_dir: str
-    directory pathway xarray dataset (.zarr) file of yestersdays daily
-    FWI codes, needed for carry over to intilaze the model
+        - File directory to (zarr) file of yestersdays daily FWI codes
+        - Needed for carry over to intilaze the model
 
-    Methods
+
+    Returns
     -------
-    solve_ffmc()
-        Calculates the Fine Fuel Moisture Code at a one-hour interval writes/outputs as an xarray
-    
-    solve_dmc()
-        Calculates the Duff Moisture Code at noon local daily and outputs as an xarray
-    
-    solve_dc()
-        Calculates the Drought Code at noon local daily and outputs as an xarray
+        
+    daily_ds: DataSet 
+        Writes a DataSet (zarr) of daily FWI indeces/codes 
+        - Duff Moisture Code
+        - Drought Code
+        - Build Up Index
 
-    solve_isi()
-        Calculates the hourly initial spread index
-
-    solve_bui()
-        Calculates the Build up Index at noon local daily and outputs as an xarray
-
-    solve_fwi()
-        Calculates the hourly fire weather index and daily severity rating
-
-    create_daily_ds()
-        Creates a dataset of forecast variables averaged from
-        (1100-1300) local to act as the noon local conditions for daily index/codes 
-        calculations
-
-    hourly_loop()
-        Loops through each hourly time step and solves hourly fwi(s)
-
-    daily_loop()
-        Loops through each daily time step and solves daily fwi(s)
-
-    combine_by_time()
-        Combine datsets by time coordinate
-
-    hourly()
-        Writes hourly_ds (.zarr) and adds the appropriate attributes to each variable 
-
-    daily()
-        Writes daily_ds (.zarr) and adds the appropriate attributes to each variable
+    hourly_ds: DataSet 
+        Writes a DataSet (zarr) of daily FWI indeces/codes 
+        - Fine Fuel Moisture Code
+        - Initial Spread index
+        - Fire Weather Index
 
     """
 
@@ -92,9 +65,16 @@ class FWF:
 
         """
         ### Read then open WRF dataset
-        wrf_ds, xy_np = readwrf(wrf_file_dir)
-        self.attrs    = wrf_ds.attrs
+        # wrf_ds, xy_np = readwrf(wrf_file_dir)
 
+        wrf_ds = xr.open_zarr(wrf_file_dir)
+        remove = ['DSR', 'F', 'R', 'S', 'm_o']
+        for var in remove:
+            del wrf_ds[var]
+
+        # print('After deleting vars')
+        # print(wrf_ds)
+        self.attrs    = wrf_ds.attrs
 
         ############ Mathematical Constants and Usefull Arrays ################ 
         ### Math Constants
@@ -182,9 +162,13 @@ class FWF:
             previous_hourly_ds = xr.open_zarr(hourly_file_dir)
             print("Found previous FFMC, will merge with hourly_ds")
             
-            ### Get last time step of F and m_m
-            F = np.array(previous_hourly_ds.F[-1])
-            m_o = np.array(previous_hourly_ds.m_o[-1])
+            ### Get time step of F and m_o that coincides with the initialization time of current model run
+            current_time = np.datetime_as_string(self.hourly_ds.Time[0], unit='h')
+            previous_times = np.datetime_as_string(previous_hourly_ds.Time, unit='h')
+            index, = np.where(previous_times == current_time)
+            index = int(index[0])
+            F = np.array(previous_hourly_ds.F[index])
+            m_o = np.array(previous_hourly_ds.m_o[index])
 
             ### Create dataarrays for F and m_m
             F = xr.DataArray(F, name='F', dims=('south_north', 'west_east'))
@@ -228,8 +212,14 @@ class FWF:
             print("Found previous DMC, will merge with daily_ds")
 
             ### Get last time step of P and r_o_previous (carry over rain)
-            P = np.array(previous_daily_ds.P[-1])
-            r_o_previous = np.array(previous_daily_ds.r_o_tomorrow[0])
+            ### that coincides with the initialization time of current model run
+            current_time = np.datetime_as_string(self.daily_ds.Time[0], unit='D')
+            previous_times = np.datetime_as_string(previous_daily_ds.Time, unit='D')
+            index, = np.where(previous_times == current_time)
+            index = int(index[0])
+
+            P = np.array(previous_daily_ds.P[index])
+            r_o_previous = np.array(previous_daily_ds.r_o_tomorrow[index])
 
             ### Create dataarrays for P
             P = xr.DataArray(P, name='P', dims=('south_north', 'west_east'))
@@ -237,25 +227,14 @@ class FWF:
             ### Add dataarrays to daily dataset
             self.daily_ds['P']  = P
              ### Add carry over rain to first time step
-            self.daily_ds['r_o'][0] = self.daily_ds['r_o'][0] + np.array(r_o_previous)
+            self.daily_ds['r_o'][index] = self.daily_ds['r_o'][index] + np.array(r_o_previous)
             
             # """ #####################     Drought Code (DC)       ########################### """
             print("Found previous DC, will merge with daily_ds")
 
-            ### Get last time step of D
-            D = np.array(previous_daily_ds.D[-1])
-
-            ### Create dataarrays for D
-            D = xr.DataArray(D, name='D', dims=('south_north', 'west_east'))
-
-            ### Add dataarrays to daily dataset
-            self.daily_ds['D'] = D
-
-            # """ #####################     Drought Code (DC)       ########################### """
-            print("Found previous BUI, will merge with daily_ds")
-
-            ### Get last time step of D
-            D = np.array(previous_daily_ds.D[-1])
+            ### Get last time step of D that coincides with the
+            ### initialization time of current model run
+            D = np.array(previous_daily_ds.D[index])
 
             ### Create dataarrays for D
             D = xr.DataArray(D, name='D', dims=('south_north', 'west_east'))
@@ -277,28 +256,41 @@ class FWF:
         
         Parameters
         ----------
-        hourly_ds: dataset of hourly forecast variables
 
-        Variables
-        ----------
-        m_o:    initial fine fuel moisture content
-        m:      final fine fuel moisture content
-        F_o:    initial FFMC
-        F:      final FFMC
-        E_d:    Equilibrium Moisture content for drying
-        E_w:    Equilibrium Moisture content for wetting 
-        k_a:    intermediate steps to k_d 
-        k_b:    intermediate steps to k_w
-        k_d:    log drying rate for hourly computation, log to base 10
-        k_w:    log wetting rate for hourly computation, log to base 10
-        H:      relative humidity, %
-        W:      wind speed km/hr
-        T:      temperature, C    
+        hourly_ds: DataSet 
+            Dataset of hourly forecast variables
+                - m_o: float
+                    - Initial fine fuel moisture content
+                - m: float
+                    - Final fine fuel moisture content
+                - F_o: float
+                    - Initial FFMC
+                - F: float
+                    - Final FFMC
+                - E_d: float
+                    - Equilibrium Moisture content for drying
+                - E_w: float    
+                    - Equilibrium Moisture content for wetting 
+                - k_a: float
+                    - Intermediate steps to k_d 
+                - k_b:float
+                    - Intermediate steps to k_w
+                - k_d:float
+                    - Log drying rate for hourly computation, log to base 10
+                - k_w: float
+                    - Log wetting rate for hourly computation, log to base 10
+                - H: float
+                    - Relative humidity, %
+                - W: float
+                    - Wind speed km/hr
+                - T: float
+                    - Temperature, C    
 
         Returns
         -------
         
-        hourly_ds: a dataset of FFMC and m_o
+        hourly_ds: DataSet
+            - Adds FFMC and m_o dataset
         """
 
         ### Call on initial conditions
@@ -436,33 +428,48 @@ class FWF:
         """
         Calculates the Duff Moisture Code at noon local daily and outputs as an xarray
         
+        Notes
+        -----
+        The dataset of daily variables at noon local are averaged from (1100-1300) local 
+        the averageing was done as a buffer for any frontal passage.
+        
         Parameters
         ----------
-        daily_ds: dataset of daily variables at noon local averaged from (1100-1300) local 
-                    the averageing was done as a buffer for any frontal passage.
-
-
-        Variables
-        ----------
-        M_o:    initial duff moisture content
-        M_r:    duff moisture content after rain
-        M:      final duff moisture content
-        P_o:    initial DMC
-        P_r:    DMC after rain
-        P:      final DMC
-        b:      three coefficient with their own empirical equation for diff range of P_o
-        K:      Log drying rate
-        H:      noon local relative humidity, %
-        W:      noon local wind, km/hr
-        T:      noon local temperature, C    
-        r_o:    noon local 24 hour accumulated precipitation
-        r_e:    effective rain
-        L_e:    effective day-lengths 
+        daily_ds: DataSet
+            dataset of daily forecast variables
+                - M_o: DataArray
+                    - Initial duff moisture content
+                - M_r: DataArray
+                    - Duff moisture content after rain
+                - M: DataArray
+                    - Final duff moisture content
+                - P_o: DataArray
+                    - Initial DMC
+                - P_r: DataArray
+                    - DMC after rain
+                - P: DataArray
+                    - Final DMC
+                - b: DataArray
+                    - Three coefficient with their own empirical equation for diff range of P_o
+                - K: DataArray
+                    - Log drying rate
+                - H: DataArray
+                    - Noon local relative humidity, %
+                - W: DataArray
+                    - Noon local wind, km/hr
+                - T: DataArray
+                    - Noon local temperature, C    
+                - r_o: DataArray
+                    - Noon local 24 hour accumulated precipitation
+                - r_e: DataArray
+                    - Effective rain
+                - L_e: DataArray
+                    - Effective day-lengths 
 
         Returns
         -------
-        
-        ds_P: an dataarray of DMC
+        dialy_ds: DataSet
+            - Adds DMC to DataSet
         """
 
         W, T, H, r_o, P_o, L_e = daily_ds.W, daily_ds.T, daily_ds.H, daily_ds.r_o, daily_ds.P, self.L_e
@@ -582,30 +589,46 @@ class FWF:
         """
         Calculates the Drought Code at noon local daily and outputs as an xarray
         
+        Notes
+        -----
+        The dataset of daily variables at noon local are averaged from (1100-1300) local 
+        the averageing was done as a buffer for any frontal passage.
+        
         Parameters
         ----------
-        daily_ds: dataset of daily variables at noon local averaged from (1100-1300) local 
-                    the averageing was done as a buffer for any frontal passage.
-        Variables
-        ----------
-        Q_o:    initial moisture equivalent of DC, units 0.254 mm 
-        Q:      moisture equivalent of DC, units 0.254 mm 
-        Q_r:    moisture equivalent of DC after rain, units 0.254 mm 
-        V:      potential evapotranspiration, units of 0.254 mm water/day
-        D_o:    initial DC
-        D_r:    DC after rain
-        D:      final DC
-        H:      noon local relative humidity, %
-        W:      noon local wind, km/hr
-        T:      noon local temperature, C    
-        r_o:    noon local 24 hour accumulated precipitation
-        r_d:    effective rain
-        L_f:    day-length factor
+        daily_ds: DataSet
+            dataset of daily forecast variables
+                Q_o: DataArray
+                    - Initial moisture equivalent of DC, units 0.254 mm 
+                Q: DataArray
+                    - Moisture equivalent of DC, units 0.254 mm 
+                Q_r: DataArray
+                    - Moisture equivalent of DC after rain, units 0.254 mm 
+                V: DataArray
+                    - Potential evapotranspiration, units of 0.254 mm water/day
+                D_o: DataArray
+                    - Initial DC
+                D_r: DataArray
+                    - DC after rain
+                D: DataArray
+                    - Final DC
+                H: DataArray
+                    - Noon local relative humidity, %
+                W: DataArray 
+                    - Noon local wind, km/hr
+                T: DataArray 
+                    - Noon local temperature, C    
+                r_o: DataArray
+                    - Noon local 24 hour accumulated precipitation
+                r_d: DataArray
+                    - Effective rain
+                L_f: DataArray
+                    - Day-length factor
 
         Returns
         -------
-        
-        daily_ds: an dataset of DC
+        daily_ds: DataSet
+            - Adds DC dataset
         """
         ### Call on initial conditions
         W, T, H, r_o, D_o, L_f = daily_ds.W, daily_ds.T, daily_ds.H, daily_ds.r_o, daily_ds.D, self.L_f
@@ -669,18 +692,19 @@ class FWF:
         
         Parameters
         ----------
-        hourly_ds: dataset of hourly forecast variables
-
-        Variables
-        ----------
-        W:      wind speed, km/hr
-        F:      fine fuel moisture code    
-        R:      initial spread index
-
+        hourly_ds: DataSet
+            - Dataset of hourly forecast variables
+                - W: DataArray
+                    - Wind speed, km/hr
+                - F: DataArray
+                    - Fine fuel moisture code    
+                - R: DataArray
+                    - Initial spread index
 
         Returns
         -------
-        R: an datarray of R
+        R: DataArray
+            - Datarray of ISI
         """
         ### Call on initial conditions
         W, F, m_o = hourly_ds.W, hourly_ds.F, hourly_ds.m_o
@@ -717,21 +741,27 @@ class FWF:
 
         """
         Calculates the Build up Index at noon local daily and outputs as an xarray
+
+        Notes
+        -----
+        The dataset of daily variables at noon local are averaged from (1100-1300) local 
+        the averageing was done as a buffer for any frontal passage.
         
         Parameters
         ----------
-        daily_ds: dataset of daily variables at noon local averaged from (1100-1300) local 
-                    the averageing was done as a buffer for any frontal passage.
-        Variables
-        ----------
-        P:      duff moisture code
-        D:      drought code  
-        U:      build up index
-
+        daily_ds: DataSet
+            dataset of daily forecast variables
+                - P: DataArray
+                    - Duff moisture code
+                - D: DataArray
+                    - Drought code  
+                - U: DataArray
+                    - Build up index
 
         Returns
         -------
-        U: an datarray of the build up index (U)
+        U: DataArray
+            - An DataArray of BUI
         """
         zero_full  =  self.zero_full
 
@@ -773,21 +803,24 @@ class FWF:
         """
         Calculates the hourly fire weather index and daily severity rating
         
-        Parameters
         ----------
-
-        Variables
-        ----------
-        W:      wind speed, km/hr
-        F:      fine fuel moisture code    
-        R:      initial spread index
-        S:      fire weather index
-        DSR:    daily severity rating
+            W: datarray     
+                - Wind speed, km/hr
+            F: datarray
+                - Fine fuel moisture code    
+            R: datarray    
+                - Initial spread index
+            S: datarray
+                - Fire weather index
+            DSR: datarray
+                - Daily severity rating
 
         Returns
         -------
-        S:   an datarray of S
-        DSR: an datarray of DSR
+        S: datarray
+            - An datarray of FWI
+        DSR datarray
+            - An datarray of DSR
         """
         ### Call on initial conditions
 
@@ -861,25 +894,28 @@ class FWF:
         (1100-1300) local to act as the noon local conditions for daily index/codes 
         calculations
         
-        
         Parameters
         ----------
-        wrf_ds: WRF dataset at 4-km spatial resolution and one hour tempolar resolution
-
-        Variables
-        ----------
-        tzdict: time zone dictionary
-            zone_id: numerical ID (hours off set from UTC)
-            noon:    1200 local index based on ID
-            plus:    1300 local index based on ID
-            minus:   1100 local index based on ID
-        
-        tzone_ds: dataset with 2D array of numerical ID's
+            wrf_ds: DataSet
+                WRF dataset at 4-km spatial resolution and one hour tempolar resolution
+                    - tzdict:  dictionary
+                        - Dictionary of all times zones in North America and their respective offsets to UTC
+                    - zone_id: in
+                        - ID of model domain with hours off set from UTC
+                    - noon: int
+                        - 1200 local index based on ID
+                    - plus: int
+                        - 1300 local index based on ID
+                    - minus: int
+                        - 1100 local index based on ID
+                    - tzone_ds: dataset 
+                        - Gridded 2D array of zone_id 
 
         Returns
         -------
-        daily_ds: dataset of daily variables at noon local averaged from (1100-1300) local 
-                    the averageing was done as a buffer for any frontal passage.
+            daily_ds: DataSet
+                Dataset of daily variables at noon local averaged from (1100-1300)
+                local the averageing was done as a buffer for any frontal passage.
         """
         
         print("Create Daily ds")
@@ -942,6 +978,10 @@ class FWF:
         """
         Loops through each hourly time step and solves hourly fwi(s)
 
+        Returns
+        -------
+        daily_ds: DataSet
+            A xarray DataSet with all the houlry FWI codes/indices solved
         """
 
         length = len(self.hourly_ds.time)
@@ -968,6 +1008,11 @@ class FWF:
     def daily_loop(self):
         """
         Loops through each daily time step and solves daily fwi(s)
+
+        Returns
+        -------
+        daily_ds: DataSet
+            A xarray DataSet with all the daily FWI codes/indices solved
 
         """
 
@@ -1002,6 +1047,15 @@ class FWF:
         """
         Combine datsets by time coordinate
 
+        Parameters
+        ----------
+        dict_list: list
+            List of xarray datasets
+
+        Returns
+        -------
+        combined_ds: DataSet
+            Single xarray DataSet with a dimension time
         """
         files_ds = []
         for index in dict_list:
@@ -1028,6 +1082,11 @@ class FWF:
         """
         Writes hourly_ds (.zarr) and adds the appropriate attributes to each variable 
 
+        Returns
+        -------
+        make_dir: str
+            - File directory to (zarr) file of todays hourly FWI codes
+            - Needed for carry over to intilaze tomorrow's model run
         """
         hourly_ds = self.hourly_loop()
         hourly_ds.attrs = self.attrs
@@ -1056,7 +1115,7 @@ class FWF:
         hourly_ds.r_o_hourly.attrs['description'] = "HOURLY PRECIPITATION TOTALS"
 
         for var in hourly_ds.data_vars:
-            del hourly_ds[var].attrs['coordinates']
+            # del hourly_ds[var].attrs['coordinates']
             hourly_ds[var].attrs['projection'] = str(hourly_ds[var].projection)
 
 
@@ -1065,14 +1124,16 @@ class FWF:
         file_name = datetime.strptime(str(file_name), '%Y-%m-%dT%H').strftime('%Y%m%d%H')
         print("Hourly zarr initialized at :", file_name)
 
-        # # ## Write and save DataArray (.zarr) file
+        # ## Write and save DataArray (.zarr) file
         make_dir = Path(str(xr_dir) + str('/fwf-hourly-') + file_name + str(f".zarr"))
         make_dir.mkdir(parents=True, exist_ok=True)
         hourly_ds = hourly_ds.compute()
         hourly_ds.to_zarr(make_dir, "w")
         print(f"wrote archive {make_dir}")
     
-
+        # current_dir_hourly = str(xr_dir) + str('/current/hourly.zarr')
+        # hourly_ds.to_zarr(current_dir_hourly, "w")
+        # print(f"wrote working {current_dir_hourly}")
 
         # ## return path to hourly_ds file to open
         return str(make_dir)
@@ -1085,6 +1146,11 @@ class FWF:
         """
         Writes daily_ds (.zarr) and adds the appropriate attributes to each variable
 
+        Returns
+        -------
+        make_dir: str
+            - File directory to (zarr) file of todays daily FWI codes
+            - Needed for carry over to intilaze tomorrow's model run
         """
         daily_ds = self.daily_loop()
         daily_ds.attrs = self.attrs
@@ -1104,7 +1170,7 @@ class FWF:
 
         for var in daily_ds.data_vars:
         #     print(var)
-            del daily_ds[var].attrs['coordinates']
+            # del daily_ds[var].attrs['coordinates']
             daily_ds[var].attrs['projection'] = str(daily_ds[var].projection)
 
         daily_ds.r_o.attrs['description'] = "24 HOUR ACCUMULATED PRECIPITATION"
@@ -1116,13 +1182,16 @@ class FWF:
 
         print("Daily zarr initialized at :", file_name)
 
-        # # ## Write and save DataArray (.zarr) file
+        # ## Write and save DataArray (.zarr) file
         make_dir = Path(str(xr_dir) + str('/fwf-daily-') + file_name + str(f".zarr"))
         make_dir.mkdir(parents=True, exist_ok=True)
         daily_ds = daily_ds.compute()
         daily_ds.to_zarr(make_dir, "w")
         print(f"wrote archive {make_dir}")
 
+        # current_dir_daily = str(xr_dir) + str('/current/daily.zarr')
+        # daily_ds.to_zarr(current_dir_daily, "w")
+        # print(f"wrote working {current_dir_daily}")
 
         ## return path to daily_ds file to open
         return str(make_dir)

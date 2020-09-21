@@ -24,11 +24,11 @@ warnings.filterwarnings("ignore", message="elementwise comparison failed")
 """######### get directory to hourly/daily .zarr files.  #############"""
 
 
-todays_date = '20200910'
+todays_date = '20200918'
 
 
-# filecsv = f'/Volumes/cer/fireweather/data/csv/fwf-intermoparison-{todays_date}00.csv'
-filecsv = str(data_dir) + f'/csv/fwf-intercomparison-{todays_date}00.csv'
+filecsv = f'/Volumes/cer/fireweather/data/csv_rerun/fwf-intercomparison-{todays_date}00.csv'
+# filecsv = str(data_dir) + f'/csv/fwf-intercomparison-{todays_date}00.csv'
 inter_df = pd.read_csv(filecsv)
 
 
