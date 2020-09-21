@@ -19,20 +19,21 @@ warnings.filterwarnings("ignore", message="invalid value encountered in log")
 re_run = '/Volumes/cer/fireweather/data/'
 
 
-"""######### get directory to yesterdays hourly/daily .zarr files.  #############"""
-start = datetime.strptime("2020062700", "%Y%m%d00")
-end = datetime.strptime("2020091900", "%Y%m%d00")
+"""######### get directory to todays forecast hourly/daily .zarr files.  #############"""
+start = datetime.strptime("2020091900", "%Y%m%d00")
+end = datetime.strptime("2020092100", "%Y%m%d00")
 solve_forecast_range = [start + timedelta(days=x) for x in range(0, (end-start).days)]
 
-start = datetime.strptime("2020062600", "%Y%m%d00")
-end = datetime.strptime("2020091800", "%Y%m%d00")
+"""######### get directory to yesterdays hourly/daily .zarr files.  #############"""
+start = datetime.strptime("2020091800", "%Y%m%d00")
+end = datetime.strptime("2020092000", "%Y%m%d00")
 yesterdays_forecast_range = [start + timedelta(days=x) for x in range(0, (end-start).days)]
 
 for i in range(len(solve_forecast_range)):
     solve_forecast = solve_forecast_range[i].strftime("%Y%m%d00")
 
     yesterdays_forecast = yesterdays_forecast_range[i].strftime("%Y%m%d00")
-    if int(solve_forecast) > 2020091800:
+    if int(solve_forecast) > 2020092100:
         exit
     else:
         print(solve_forecast, "today")

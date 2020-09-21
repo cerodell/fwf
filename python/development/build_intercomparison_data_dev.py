@@ -23,14 +23,14 @@ warnings.filterwarnings("ignore", message="elementwise comparison failed")
 
 
 
-"""######### get today/yesterday dates.  #############"""
-"""######### get directory to yesterdays hourly/daily .zarr files.  #############"""
-start = datetime.strptime("20200831", "%Y%m%d")
-end = datetime.strptime("20200919", "%Y%m%d")
+"""######### get directory to todays forecast hourly/daily .zarr files.  #############"""
+start = datetime.strptime("20200919", "%Y%m%d")
+end = datetime.strptime("20200921", "%Y%m%d")
 todays_date_range = [start + timedelta(days=x) for x in range(0, (end-start).days)]
 
-start = datetime.strptime("20200830", "%Y%m%d")
-end = datetime.strptime("20200918", "%Y%m%d")
+"""######### get directory to yesterdays hourly/daily .zarr files.  #############"""
+start = datetime.strptime("20200918", "%Y%m%d")
+end = datetime.strptime("20200920", "%Y%m%d")
 yesterdays_range = [start + timedelta(days=x) for x in range(0, (end-start).days)]
 
 # df_list = []
@@ -38,7 +38,7 @@ for i in range(len(todays_date_range)):
     todays_date = todays_date_range[i].strftime("%Y%m%d")
     yesterdays_date = yesterdays_range[i].strftime("%Y%m%d")
 
-    if int(todays_date) > 20200919:
+    if int(todays_date) > 20200921:
         exit
     else:
         print(todays_date, "today")
