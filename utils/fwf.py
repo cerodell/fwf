@@ -159,7 +159,7 @@ class FWF:
             current_time = np.datetime_as_string(self.hourly_ds.Time[0], unit='h')
             previous_times = np.datetime_as_string(previous_hourly_ds.Time, unit='h')
             index, = np.where(previous_times == current_time)
-            index = int(index[0]-1)
+            index = int(index[0])
             F = np.array(previous_hourly_ds.F[index])
             m_o = np.array(previous_hourly_ds.m_o[index])
 
@@ -209,7 +209,7 @@ class FWF:
             current_time = np.datetime_as_string(self.daily_ds.Time[0], unit='D')
             previous_times = np.datetime_as_string(previous_daily_ds.Time, unit='D')
             index, = np.where(previous_times == current_time)
-            index = int(index[0]-1)
+            index = int(index[0])
 
             P = np.array(previous_daily_ds.P[index])
             r_o_previous = np.array(previous_daily_ds.r_o_tomorrow[index])
@@ -1124,7 +1124,7 @@ class FWF:
         hourly_ds.to_zarr(make_dir, "w")
         print(f"wrote archive {make_dir}")
     
-        current_dir_hourly = str(xr_dir) + str('/current/hourly.zarr')
+        current_dir_hourly = str(xr_dir) + str('/current/fwf-hourly-current.zarr')
         hourly_ds.to_zarr(current_dir_hourly, "w")
         print(f"wrote working {current_dir_hourly}")
 
@@ -1182,7 +1182,7 @@ class FWF:
         daily_ds.to_zarr(make_dir, "w")
         print(f"wrote archive {make_dir}")
 
-        current_dir_daily = str(xr_dir) + str('/current/daily.zarr')
+        current_dir_daily = str(xr_dir) + str('/current/fwf-daily-current.zarr')
         daily_ds.to_zarr(current_dir_daily, "w")
         print(f"wrote working {current_dir_daily}")
 

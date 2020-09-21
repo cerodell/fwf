@@ -26,8 +26,8 @@ with open('/bluesky/fireweather/fwf/json/colormaps.json') as f:
 
 
 ### Get Path to most recent FWI forecast and open 
-hourly_file_dir = str(xr_dir) + str("/current/hourly.zarr") 
-daily_file_dir = str(xr_dir) + str("/current/daily.zarr") 
+hourly_file_dir = str(xr_dir) + str("/current/fwf-hourly-current.zarr") 
+daily_file_dir = str(xr_dir) + str("/current/fwf-daily-current.zarr") 
 
 hourly_ds = xr.open_zarr(hourly_file_dir)
 daily_ds = xr.open_zarr(daily_file_dir)

@@ -18,8 +18,8 @@ warnings.filterwarnings("ignore", message="invalid value encountered in log")
 
 
 """######### get directory to yesterdays hourly/daily .zarr files.  #############"""
-hourly_file_dir = str(xr_dir) + str("/current/hourly.zarr") 
-daily_file_dir = str(xr_dir) + str("/current/daily.zarr") 
+hourly_file_dir = str(xr_dir) + str("/current/fwf-hourly-current.zarr") 
+daily_file_dir = str(xr_dir) + str("/current/fwf-daily-current.zarr") 
 
 """######### get directory to todays wrf_out .nc files.  #############"""
 wrf_filein = date.today().strftime('/%y%m%d00/')

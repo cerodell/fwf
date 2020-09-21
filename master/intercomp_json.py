@@ -39,7 +39,9 @@ todays_date = date.today()
 todays_date = todays_date.strftime("%Y%m%d")
 
 
-filecsv = str(data_dir) + f'/csv/fwf-intercomparison-{file_date}00.csv'
+# filecsv = str(data_dir) + f'/csv/fwf-intercomparison-{file_date}00.csv'
+filecsv = str(data_dir) + f'/csv/current/fwf-intercomparison-current.csv'
+
 inter_df = pd.read_csv(filecsv)
 
 inter_df['DateTime'] = pd.to_datetime(inter_df['DateTime'] ,format= '%Y%m%d%H')

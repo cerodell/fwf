@@ -11,16 +11,16 @@ from datetime import datetime
 import matplotlib as mpl
 import matplotlib.colors
 import matplotlib.pyplot as plt
-from context import root_dir
+from context import root_dir, xr_dir
+
 
 startTime = datetime.now()
 
-xr_dir = '/Volumes/cer/fireweather/data/rerun/'
 
-hourly_file_dir  = str(xr_dir) + "/fwf-hourly-2020090100.zarr"
+hourly_file_dir  = str(xr_dir) + "/current/fwf-hourly-current.zarr"
 hourly_ds = xr.open_zarr(hourly_file_dir)
 
-daily_file_dir  = str(xr_dir) + "/fwf-daily-2020090100.zarr"
+daily_file_dir  = str(xr_dir) + "/current/fwf-daily-current.zarr"
 daily_ds = xr.open_zarr(daily_file_dir)
 
 time_ind = 18

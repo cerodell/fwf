@@ -69,8 +69,8 @@ def intercomparison_make_csv(local, todays_date, yesterday_date):
 
     ### replace NULL with np.nan
     for column in inter_df:
-        mask = inter_df[column] == ' NULL'
-        inter_df[column][mask] = np.nan
+        inter_df = inter_df[inter_df[column] != ' NULL']
+        inter_df = inter_df[inter_df[column] != '  NULL']
 
 
     ### Drop stations out sie of model domain
@@ -137,6 +137,7 @@ def intercomparison_make_csv(local, todays_date, yesterday_date):
     file_name_today  = str(np.array(hourly_ds.Time[0], dtype ='datetime64[h]'))
     file_name_today = datetime.strptime(str(file_name_today), '%Y-%m-%dT%H').strftime('%Y%m%d%H')
     csv_dir_today = write_to_dir + f'fwf-intercomparison-{file_name_today}.csv'
+    csv_dir_current = write_to_dir + f'current/fwf-intercomparison-current.csv'
 
 
         
@@ -146,11 +147,15 @@ def intercomparison_make_csv(local, todays_date, yesterday_date):
         print(f"{str(datetime.now())} ---> wrote {csv_dir_today}" )
 
     else:
-        file_name_yesterday  = str(np.array(hourly_ds_yesterday.Time[0], dtype ='datetime64[h]'))
-        file_name_yesterday = datetime.strptime(str(file_name_yesterday), '%Y-%m-%dT%H').strftime('%Y%m%d%H')
-        csv_dir_yesterday = write_to_dir + f'fwf-intercomparison-{file_name_yesterday}.csv'
+        # file_name_yesterday  = str(np.array(hourly_ds_yesterday.Time[0], dtype ='datetime64[h]'))
+        # file_name_yesterday = datetime.strptime(str(file_name_yesterday), '%Y-%m-%dT%H').strftime('%Y%m%d%H')
+        # csv_dir_yesterday = write_to_dir + f'fwf-intercomparison-{file_name_yesterday}.csv'
+        csv_dir_yesterday = write_to_dir + f'current/fwf-intercomparison-current.csv'
+        
         inter_df_yesterday = pd.read_csv(csv_dir_yesterday)
         final_inter_df = pd.concat([inter_df,inter_df_yesterday])
         final_inter_df.drop(final_inter_df.columns[-1],axis=1,inplace=True)  
         final_inter_df.to_csv(csv_dir_today, sep=',', encoding='utf-8', index=False)
+        final_inter_df.to_csv(csv_dir_current, sep=',', encoding='utf-8', index=False)
         print(f"{str(datetime.now())} ---> wrote {csv_dir_today}" )
+        print(f"{str(datetime.now())} ---> wrote {csv_dir_current}" )
