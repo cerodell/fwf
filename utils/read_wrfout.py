@@ -23,6 +23,7 @@ def readwrf(filein, *args):
         - temp (degC)
         - rh (%)
         - qpf (mm)
+        - snw (mm)
 
     Parameters
     ----------
@@ -76,7 +77,14 @@ def readwrf(filein, *args):
         r_o       = xr.DataArray(qpf, name='r_o', dims=('south_north', 'west_east'))
         r_o.attrs = rain_ci.attrs
         r_o.attrs['description'] = "ACCUMULATED TOTAL PRECIPITATION"
-        var_list = [H,T,W,WD,r_o]
+
+        SNWi           = np.array(getvar(wrf_file, "SNOWNC")) * 1.0
+        SNW            = xr.DataArray(SNWi, name='SNW', dims=('south_north', 'west_east'))
+        SNW.attrs      = Ti.attrs
+        SNW.attrs['units'] = "mm"
+        SNW.attrs['description'] = "ACCUMULATED TOTAL GRID SCALE SNOW AND ICE"
+
+        var_list = [H,T,W,WD,r_o, SNW]
         ds = xr.merge(var_list)
         ds_list.append(ds)
         time_list.append(time)

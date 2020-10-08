@@ -2,6 +2,8 @@
 ---
 ## Fire Weather Forecast Model 
 
+tar -xzf fwf-daily-2020092600.tgz
+mv fwf-daily-2020092600.zarr /bluesky/fireweather/fwf/data/xr/
 
 This project aims to create a  Fire Weather Forecast (FWF) Model. FWF will be
 constructed off preexisting fire weather models such as the Fire Weather Index

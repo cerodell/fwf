@@ -19,7 +19,7 @@ legend_wx.onAdd = function (map) {
 
     var div = L.DomUtil.create('div', 'info legend'),
         grades = [1.0, 0.8, 0.6, 0.4, 0.2, 0.00, -0.2, -0.4, -0.6, -0.8, -1.0],
-        labels = ['<strong> Pearsons Correlation </strong>'],
+        labels = ['<strong> Pearson Correlation </strong>'],
         from, to;
 
     for (var i = 0; i < grades.length; i++) {
@@ -551,20 +551,135 @@ color_map_wsp.onAdd = function(map) {
     return div;
 }
 
+// var color_map_temp = L.control({position: "bottomleft"});
+// color_map_temp.onAdd = function(map) {
+//     var div = L.DomUtil.create('div', 'fcst-legend leaflet-bar leaflet-control');
+//     div.innerHTML =
+// '<table id="values">\
+// <tr id="colours">\
+// <td style="background:#1b34d7; width:10px; border-left:none;"></td>\
+// <td style="background:#2460e2;"></td>\
+// <td style="background:#348ced;"></td>\
+// <td style="background:#44b1f6;"></td>\
+// <td style="background:#51cbfa;"></td>\
+// <td style="background:#80e0f7;"></td>\
+// <td style="background:#a0eaf7;"></td>\
+// <td style="background:#00efbb;"></td>\
+// <td style="background:#00ef7c;"></td>\
+// <td style="background:#00e452;"></td>\
+// <td style="background:#00c848;"></td>\
+// <td style="background:#10b87a;"></td>\
+// <td style="background:#297b5d;"></td>\
+// <td style="background:#007229;"></td>\
+// <td style="background:#3ca12c;"></td>\
+// <td style="background:#79d030;"></td>\
+// <td style="background:#b5ff32;"></td>\
+// <td style="background:#d6ff32;"></td>\
+// <td style="background:#fff600;"></td>\
+// <td style="background:#f8df0b;"></td>\
+// <td style="background:#fdca0c;"></td>\
+// <td style="background:#fcac05;"></td>\
+// <td style="background:#f88d00;"></td>\
+// <td style="background:#ff6600;"></td>\
+// <td style="background:#fc4f00;"></td>\
+// <td style="background:#ff0100;"></td>\
+// </tr>\
+// <tr id="ticks">\
+// <td style="width:10px; border-left:none;"></td>\
+// <td></td>\
+// <td></td>\
+// <td></td>\
+// <td></td>\
+// <td></td>\
+// <td></td>\
+// <td></td>\
+// <td></td>\
+// <td></td>\
+// <td></td>\
+// <td></td>\
+// <td></td>\
+// <td></td>\
+// <td></td>\
+// <td></td>\
+// <td></td>\
+// <td></td>\
+// <td></td>\
+// <td></td>\
+// <td></td>\
+// <td></td>\
+// <td></td>\
+// <td></td>\
+// <td></td>\
+// <td></td>\
+// </tr>\
+// </table>\
+// <table id="labels">\
+// <tr>\
+// <td width="2px"></td>\
+// <td width="1px">-12</td>\
+// <td width="12px"></td>\
+// <td width="10px">-8</td>\
+// <td width="16px"></td>\
+// <td width="10px">-4</td>\
+// <td width="18px"></td>\
+// <td width="10px">0</td>\
+// <td width="16px"></td>\
+// <td width="10px">4</td>\
+// <td width="16px"></td>\
+// <td width="10px">8</td>\
+// <td width="16px"></td>\
+// <td width="10px">12</td>\
+// <td width="16px"></td>\
+// <td width="10px">16</td>\
+// <td width="14px"></td>\
+// <td width="10px">20</td>\
+// <td width="15px"></td>\
+// <td width="10px">24</td>\
+// <td width="15px"></td>\
+// <td width="10px">28</td>\
+// <td width="16px"></td>\
+// <td width="10px">32</td>\
+// <td width="13px"></td>\
+// <td width="10px">36+</td>\
+// <td width="10px"></td>\
+// </tr>\
+// </table>\
+// <div class="legend-title">Temperature (C) at 2m</div>';
+//     return div;
+// }
+
 var color_map_temp = L.control({position: "bottomleft"});
 color_map_temp.onAdd = function(map) {
     var div = L.DomUtil.create('div', 'fcst-legend leaflet-bar leaflet-control');
     div.innerHTML =
 '<table id="values">\
 <tr id="colours">\
-<td style="background:#1b34d7; width:10px; border-left:none;"></td>\
+<td style="background:#00ffff; width:10px; border-left:none;"></td>\
+<td style="background:#06e6ed;"></td>\
+<td style="background:#0bcddb;"></td>\
+<td style="background:#10b5ca;"></td>\
+<td style="background:#159eb9;"></td>\
+<td style="background:#1b86a8;"></td>\
+<td style="background:#206f97;"></td>\
+<td style="background:#255987;"></td>\
+<td style="background:#2a4276;"></td>\
+<td style="background:#2f2a65;"></td>\
+<td style="background:#360a4e;"></td>\
+<td style="background:#560b69;"></td>\
+<td style="background:#7b0c88;"></td>\
+<td style="background:#a30ca8;"></td>\
+<td style="background:#ce0bdc;"></td>\
+<td style="background:#af05e3;"></td>\
+<td style="background:#8904e1;"></td>\
+<td style="background:#5d04d8;"></td>\
+<td style="background:#1c0dcf;"></td>\
+<td style="background:#1b34d7;"></td>\
 <td style="background:#2460e2;"></td>\
 <td style="background:#348ced;"></td>\
 <td style="background:#44b1f6;"></td>\
 <td style="background:#51cbfa;"></td>\
 <td style="background:#80e0f7;"></td>\
 <td style="background:#a0eaf7;"></td>\
-<td style="background:#00efbb;"></td>\
 <td style="background:#00ef7c;"></td>\
 <td style="background:#00e452;"></td>\
 <td style="background:#00c848;"></td>\
@@ -573,8 +688,8 @@ color_map_temp.onAdd = function(map) {
 <td style="background:#007229;"></td>\
 <td style="background:#3ca12c;"></td>\
 <td style="background:#79d030;"></td>\
-<td style="background:#b5ff32;"></td>\
-<td style="background:#d6ff32;"></td>\
+<td style="background:#b5ff33;"></td>\
+<td style="background:#d8f7a1;"></td>\
 <td style="background:#fff600;"></td>\
 <td style="background:#f8df0b;"></td>\
 <td style="background:#fdca0c;"></td>\
@@ -583,9 +698,33 @@ color_map_temp.onAdd = function(map) {
 <td style="background:#ff6600;"></td>\
 <td style="background:#fc4f00;"></td>\
 <td style="background:#ff0100;"></td>\
+<td style="background:#f31a00;"></td>\
+<td style="background:#f31861;"></td>\
+<td style="background:#f316c2;"></td>\
 </tr>\
 <tr id="ticks">\
 <td style="width:10px; border-left:none;"></td>\
+<td></td>\
+<td></td>\
+<td></td>\
+<td></td>\
+<td></td>\
+<td></td>\
+<td></td>\
+<td></td>\
+<td></td>\
+<td></td>\
+<td></td>\
+<td></td>\
+<td></td>\
+<td></td>\
+<td></td>\
+<td></td>\
+<td></td>\
+<td></td>\
+<td></td>\
+<td></td>\
+<td></td>\
 <td></td>\
 <td></td>\
 <td></td>\
@@ -615,40 +754,59 @@ color_map_temp.onAdd = function(map) {
 </table>\
 <table id="labels">\
 <tr>\
-<td width="2px"></td>\
-<td width="1px">-12</td>\
-<td width="12px"></td>\
-<td width="10px">-8</td>\
-<td width="16px"></td>\
-<td width="10px">-4</td>\
-<td width="18px"></td>\
-<td width="10px">0</td>\
-<td width="16px"></td>\
-<td width="10px">4</td>\
-<td width="16px"></td>\
-<td width="10px">8</td>\
-<td width="16px"></td>\
-<td width="10px">12</td>\
-<td width="16px"></td>\
-<td width="10px">16</td>\
-<td width="14px"></td>\
-<td width="10px">20</td>\
-<td width="15px"></td>\
-<td width="10px">24</td>\
-<td width="15px"></td>\
-<td width="10px">28</td>\
-<td width="16px"></td>\
-<td width="10px">32</td>\
-<td width="13px"></td>\
-<td width="10px">36+</td>\
+<td width="1px"></td>\
+<td width="10px">-75</td>\
 <td width="10px"></td>\
+<td width="10px">-65</td>\
+<td width="12px"></td>\
+<td width="10px">-55</td>\
+<td width="11px"></td>\
+<td width="10px">-45</td>\
+<td width="14px"></td>\
+<td width="10px">35</td>\
+<td width="12px"></td>\
+<td width="10px">-30</td>\
+<td width="11px"></td>\
+<td width="10px">-26</td>\
+<td width="10px"></td>\
+<td width="10px">-22</td>\
+<td width="11px"></td>\
+<td width="10px">-18</td>\
+<td width="12px"></td>\
+<td width="10px">-14</td>\
+<td width="12px"></td>\
+<td width="10px">-10</td>\
+<td width="12px"></td>\
+<td width="10px">-6</td>\
+<td width="17px"></td>\
+<td width="10px">-2</td>\
+<td width="17px"></td>\
+<td width="10px">2</td>\
+<td width="16px"></td>\
+<td width="10px">6</td>\
+<td width="16px"></td>\
+<td width="10px">10</td>\
+<td width="16px"></td>\
+<td width="10px">14</td>\
+<td width="14px"></td>\
+<td width="10px">18</td>\
+<td width="15px"></td>\
+<td width="10px">22</td>\
+<td width="15px"></td>\
+<td width="10px">26</td>\
+<td width="17px"></td>\
+<td width="10px">30</td>\
+<td width="14px"></td>\
+<td width="10px">34</td>\
+<td width="14px"></td>\
+<td width="10px">38</td>\
+<td width="10px"></td>\
+<td width="10px">42+</td>\
 </tr>\
 </table>\
 <div class="legend-title">Temperature (C) at 2m</div>';
     return div;
 }
-
-
 var color_map_rh = L.control({position: "bottomleft"});
 color_map_rh.onAdd = function(map) {
     var div = L.DomUtil.create('div', 'fcst-legend leaflet-bar leaflet-control');
@@ -713,7 +871,7 @@ color_map_rh.onAdd = function(map) {
 <td width="14px"></td>\
 <td width="10px">90</td>\
 <td width="16px"></td>\
-<td width="10px">99</td>\
+<td width="10px">97</td>\
 <td width="2px"></td>\
 <td width="10px">100+</td>\
 </tr>\
@@ -1068,10 +1226,107 @@ function geo_json_styler_wsp(properties, zoom) {
             }
         }
         
+// function geo_json_styler_temp(properties, zoom) {
+//     var fillOpacity = 1
+//     var opacity = 1
+//     switch(properties.fill) {
+//         case "#1b34d7": 
+//             return {"color": "#1b34d7", "opacity": opacity, "fillColor": "#1b34d7", "fillOpacity": fillOpacity, "weight": 0.2, fill: true};
+//         case "#2460e2": 
+//             return {"color": "#2460e2", "opacity": opacity, "fillColor": "#2460e2", "fillOpacity": fillOpacity, "weight": 0.2, fill: true};
+//         case "#348ced": 
+//             return {"color": "#348ced", "opacity": opacity, "fillColor": "#348ced", "fillOpacity": fillOpacity, "weight": 0.2, fill: true};
+//         case "#44b1f6": 
+//             return {"color": "#44b1f6", "opacity": opacity, "fillColor": "#44b1f6", "fillOpacity": fillOpacity, "weight": 0.2, fill: true};
+//         case "#51cbfa": 
+//             return {"color": "#51cbfa", "opacity": opacity, "fillColor": "#51cbfa", "fillOpacity": fillOpacity, "weight": 0.2, fill: true};
+//         case "#80e0f7": 
+//             return {"color": "#80e0f7", "opacity": opacity, "fillColor": "#80e0f7", "fillOpacity": fillOpacity, "weight": 0.2, fill: true};
+//         case "#a0eaf7": 
+//             return {"color": "#a0eaf7", "opacity": opacity, "fillColor": "#a0eaf7", "fillOpacity": fillOpacity, "weight": 0.2, fill: true};
+//         case "#00efbb": 
+//             return {"color": "#00efbb", "opacity": opacity, "fillColor": "#00efbb", "fillOpacity": fillOpacity, "weight": 0.2, fill: true};
+//         case "#00ef7c": 
+//             return {"color": "#00ef7c", "opacity": opacity, "fillColor": "#00ef7c", "fillOpacity": fillOpacity, "weight": 0.2, fill: true};
+//         case "#00e452": 
+//             return {"color": "#00e452", "opacity": opacity, "fillColor": "#00e452", "fillOpacity": fillOpacity, "weight": 0.2, fill: true};
+//         case "#00c848": 
+//             return {"color": "#00c848", "opacity": opacity, "fillColor": "#00c848", "fillOpacity": fillOpacity, "weight": 0.2, fill: true};
+//         case "#10b87a": 
+//             return {"color": "#10b87a", "opacity": opacity, "fillColor": "#10b87a", "fillOpacity": fillOpacity, "weight": 0.2, fill: true};
+//         case "#297b5d": 
+//             return {"color": "#297b5d", "opacity": opacity, "fillColor": "#297b5d", "fillOpacity": fillOpacity, "weight": 0.2, fill: true};
+//         case "#007229": 
+//             return {"color": "#007229", "opacity": opacity, "fillColor": "#007229", "fillOpacity": fillOpacity, "weight": 0.2, fill: true};
+//         case "#3ca12c": 
+//             return {"color": "#3ca12c", "opacity": opacity, "fillColor": "#3ca12c", "fillOpacity": fillOpacity, "weight": 0.2, fill: true};
+//         case "#79d030": 
+//             return {"color": "#79d030", "opacity": opacity, "fillColor": "#79d030", "fillOpacity": fillOpacity, "weight": 0.2, fill: true};
+//         case "#b5ff32": 
+//             return {"color": "#b5ff32", "opacity": opacity, "fillColor": "#b5ff32", "fillOpacity": fillOpacity, "weight": 0.2, fill: true};
+//         case "#d6ff32": 
+//             return {"color": "#d6ff32", "opacity": opacity, "fillColor": "#d6ff32", "fillOpacity": fillOpacity, "weight": 0.2, fill: true};
+//         case "#fff600": 
+//             return {"color": "#fff600", "opacity": opacity, "fillColor": "#fff600", "fillOpacity": fillOpacity, "weight": 0.2, fill: true};
+//         case "#f8df0b": 
+//             return {"color": "#f8df0b", "opacity": opacity, "fillColor": "#f8df0b", "fillOpacity": fillOpacity, "weight": 0.2, fill: true};
+//         case "#fdca0c": 
+//             return {"color": "#fdca0c", "opacity": opacity, "fillColor": "#fdca0c", "fillOpacity": fillOpacity, "weight": 0.2, fill: true};
+//         case "#fcac05": 
+//             return {"color": "#fcac05", "opacity": opacity, "fillColor": "#fcac05", "fillOpacity": fillOpacity, "weight": 0.2, fill: true};
+//         case "#f88d00": 
+//             return {"color": "#f88d00", "opacity": opacity, "fillColor": "#f88d00", "fillOpacity": fillOpacity, "weight": 0.2, fill: true};
+//         case "#ff6600": 
+//             return {"color": "#ff6600", "opacity": opacity, "fillColor": "#ff6600", "fillOpacity": fillOpacity, "weight": 0.2, fill: true};
+//         case "#fc4f00": 
+//             return {"color": "#fc4f00", "opacity": opacity, "fillColor": "#fc4f00", "fillOpacity": fillOpacity, "weight": 0.2, fill: true};
+//         default:
+//             return {"color": "#ff0100", "opacity": opacity, "fillColor": "#ff0100", "fillOpacity": fillOpacity, "weight": 0.2, fill: true};
+//             }
+//         }
+
 function geo_json_styler_temp(properties, zoom) {
     var fillOpacity = 1
     var opacity = 1
     switch(properties.fill) {
+        case "#00ffff": 
+            return {"color": "#00ffff", "opacity": opacity, "fillColor": "#00ffff", "fillOpacity": fillOpacity, "weight": 0.2, fill: true};
+        case "#06e6ed": 
+            return {"color": "#06e6ed", "opacity": opacity, "fillColor": "#06e6ed", "fillOpacity": fillOpacity, "weight": 0.2, fill: true};
+        case "#0bcddb": 
+            return {"color": "#0bcddb", "opacity": opacity, "fillColor": "#0bcddb", "fillOpacity": fillOpacity, "weight": 0.2, fill: true};
+        case "#10b5ca": 
+            return {"color": "#10b5ca", "opacity": opacity, "fillColor": "#10b5ca", "fillOpacity": fillOpacity, "weight": 0.2, fill: true};
+        case "#159eb9": 
+            return {"color": "#159eb9", "opacity": opacity, "fillColor": "#159eb9", "fillOpacity": fillOpacity, "weight": 0.2, fill: true};
+        case "#1b86a8": 
+            return {"color": "#1b86a8", "opacity": opacity, "fillColor": "#1b86a8", "fillOpacity": fillOpacity, "weight": 0.2, fill: true};
+        case "#206f97": 
+            return {"color": "#206f97", "opacity": opacity, "fillColor": "#206f97", "fillOpacity": fillOpacity, "weight": 0.2, fill: true};
+        case "#255987": 
+            return {"color": "#255987", "opacity": opacity, "fillColor": "#255987", "fillOpacity": fillOpacity, "weight": 0.2, fill: true};
+        case "#2a4276": 
+            return {"color": "#2a4276", "opacity": opacity, "fillColor": "#2a4276", "fillOpacity": fillOpacity, "weight": 0.2, fill: true};
+        case "#2f2a65": 
+            return {"color": "#2f2a65", "opacity": opacity, "fillColor": "#2f2a65", "fillOpacity": fillOpacity, "weight": 0.2, fill: true};
+        case "#360a4e": 
+            return {"color": "#360a4e", "opacity": opacity, "fillColor": "#360a4e", "fillOpacity": fillOpacity, "weight": 0.2, fill: true};
+        case "#560b69": 
+            return {"color": "#560b69", "opacity": opacity, "fillColor": "#560b69", "fillOpacity": fillOpacity, "weight": 0.2, fill: true};
+        case "#7b0c88": 
+            return {"color": "#7b0c88", "opacity": opacity, "fillColor": "#7b0c88", "fillOpacity": fillOpacity, "weight": 0.2, fill: true};
+        case "#a30ca8": 
+            return {"color": "#a30ca8", "opacity": opacity, "fillColor": "#a30ca8", "fillOpacity": fillOpacity, "weight": 0.2, fill: true};
+        case "#ce0bdc": 
+            return {"color": "#ce0bdc", "opacity": opacity, "fillColor": "#ce0bdc", "fillOpacity": fillOpacity, "weight": 0.2, fill: true};
+        case "#af05e3": 
+            return {"color": "#af05e3", "opacity": opacity, "fillColor": "#af05e3", "fillOpacity": fillOpacity, "weight": 0.2, fill: true};
+        case "#8904e1": 
+            return {"color": "#8904e1", "opacity": opacity, "fillColor": "#8904e1", "fillOpacity": fillOpacity, "weight": 0.2, fill: true};
+        case "#5d04d8": 
+            return {"color": "#5d04d8", "opacity": opacity, "fillColor": "#5d04d8", "fillOpacity": fillOpacity, "weight": 0.2, fill: true};
+        case "#1c0dcf": 
+            return {"color": "#1c0dcf", "opacity": opacity, "fillColor": "#1c0dcf", "fillOpacity": fillOpacity, "weight": 0.2, fill: true};
         case "#1b34d7": 
             return {"color": "#1b34d7", "opacity": opacity, "fillColor": "#1b34d7", "fillOpacity": fillOpacity, "weight": 0.2, fill: true};
         case "#2460e2": 
@@ -1085,45 +1340,49 @@ function geo_json_styler_temp(properties, zoom) {
         case "#80e0f7": 
             return {"color": "#80e0f7", "opacity": opacity, "fillColor": "#80e0f7", "fillOpacity": fillOpacity, "weight": 0.2, fill: true};
         case "#a0eaf7": 
-            return {"color": "#a0eaf7", "opacity": opacity, "fillColor": "#a0eaf7", "fillOpacity": fillOpacity, "weight": 0.2, fill: true};
-        case "#00efbb": 
-            return {"color": "#00efbb", "opacity": opacity, "fillColor": "#00efbb", "fillOpacity": fillOpacity, "weight": 0.2, fill: true};
+            return {"color": "#a0eaf7", "opacity": opacity, "fillColor": "#a0eaf7", "fillOpacity": fillOpacity, "weight": 0.2, fill: true};            
         case "#00ef7c": 
             return {"color": "#00ef7c", "opacity": opacity, "fillColor": "#00ef7c", "fillOpacity": fillOpacity, "weight": 0.2, fill: true};
         case "#00e452": 
-            return {"color": "#00e452", "opacity": opacity, "fillColor": "#00e452", "fillOpacity": fillOpacity, "weight": 0.2, fill: true};
+            return {"color": "#00e452", "opacity": opacity, "fillColor": "#00e452", "fillOpacity": fillOpacity, "weight": 0.2, fill: true}; 
         case "#00c848": 
             return {"color": "#00c848", "opacity": opacity, "fillColor": "#00c848", "fillOpacity": fillOpacity, "weight": 0.2, fill: true};
         case "#10b87a": 
-            return {"color": "#10b87a", "opacity": opacity, "fillColor": "#10b87a", "fillOpacity": fillOpacity, "weight": 0.2, fill: true};
+            return {"color": "#10b87a", "opacity": opacity, "fillColor": "#10b87a", "fillOpacity": fillOpacity, "weight": 0.2, fill: true}; 
         case "#297b5d": 
             return {"color": "#297b5d", "opacity": opacity, "fillColor": "#297b5d", "fillOpacity": fillOpacity, "weight": 0.2, fill: true};
         case "#007229": 
-            return {"color": "#007229", "opacity": opacity, "fillColor": "#007229", "fillOpacity": fillOpacity, "weight": 0.2, fill: true};
+            return {"color": "#007229", "opacity": opacity, "fillColor": "#007229", "fillOpacity": fillOpacity, "weight": 0.2, fill: true}; 
         case "#3ca12c": 
             return {"color": "#3ca12c", "opacity": opacity, "fillColor": "#3ca12c", "fillOpacity": fillOpacity, "weight": 0.2, fill: true};
         case "#79d030": 
-            return {"color": "#79d030", "opacity": opacity, "fillColor": "#79d030", "fillOpacity": fillOpacity, "weight": 0.2, fill: true};
-        case "#b5ff32": 
-            return {"color": "#b5ff32", "opacity": opacity, "fillColor": "#b5ff32", "fillOpacity": fillOpacity, "weight": 0.2, fill: true};
-        case "#d6ff32": 
-            return {"color": "#d6ff32", "opacity": opacity, "fillColor": "#d6ff32", "fillOpacity": fillOpacity, "weight": 0.2, fill: true};
+            return {"color": "#79d030", "opacity": opacity, "fillColor": "#79d030", "fillOpacity": fillOpacity, "weight": 0.2, fill: true}; 
+        case "#b5ff33": 
+            return {"color": "#b5ff33", "opacity": opacity, "fillColor": "#b5ff33", "fillOpacity": fillOpacity, "weight": 0.2, fill: true};
+        case "#d8f7a1": 
+            return {"color": "#d8f7a1", "opacity": opacity, "fillColor": "#d8f7a1", "fillOpacity": fillOpacity, "weight": 0.2, fill: true}; 
         case "#fff600": 
             return {"color": "#fff600", "opacity": opacity, "fillColor": "#fff600", "fillOpacity": fillOpacity, "weight": 0.2, fill: true};
         case "#f8df0b": 
-            return {"color": "#f8df0b", "opacity": opacity, "fillColor": "#f8df0b", "fillOpacity": fillOpacity, "weight": 0.2, fill: true};
+            return {"color": "#f8df0b", "opacity": opacity, "fillColor": "#f8df0b", "fillOpacity": fillOpacity, "weight": 0.2, fill: true}; 
         case "#fdca0c": 
             return {"color": "#fdca0c", "opacity": opacity, "fillColor": "#fdca0c", "fillOpacity": fillOpacity, "weight": 0.2, fill: true};
         case "#fcac05": 
-            return {"color": "#fcac05", "opacity": opacity, "fillColor": "#fcac05", "fillOpacity": fillOpacity, "weight": 0.2, fill: true};
+            return {"color": "#fcac05", "opacity": opacity, "fillColor": "#fcac05", "fillOpacity": fillOpacity, "weight": 0.2, fill: true};            
         case "#f88d00": 
             return {"color": "#f88d00", "opacity": opacity, "fillColor": "#f88d00", "fillOpacity": fillOpacity, "weight": 0.2, fill: true};
         case "#ff6600": 
-            return {"color": "#ff6600", "opacity": opacity, "fillColor": "#ff6600", "fillOpacity": fillOpacity, "weight": 0.2, fill: true};
+            return {"color": "#ff6600", "opacity": opacity, "fillColor": "#ff6600", "fillOpacity": fillOpacity, "weight": 0.2, fill: true}; 
         case "#fc4f00": 
             return {"color": "#fc4f00", "opacity": opacity, "fillColor": "#fc4f00", "fillOpacity": fillOpacity, "weight": 0.2, fill: true};
+        case "#ff0100": 
+            return {"color": "#ff0100", "opacity": opacity, "fillColor": "#ff0100", "fillOpacity": fillOpacity, "weight": 0.2, fill: true}; 
+        case "#f31a00": 
+            return {"color": "#f31a00", "opacity": opacity, "fillColor": "#f31a00", "fillOpacity": fillOpacity, "weight": 0.2, fill: true};
+        case "#f31861": 
+            return {"color": "#f31861", "opacity": opacity, "fillColor": "#f31861", "fillOpacity": fillOpacity, "weight": 0.2, fill: true}; 
         default:
-            return {"color": "#ff0100", "opacity": opacity, "fillColor": "#ff0100", "fillOpacity": fillOpacity, "weight": 0.2, fill: true};
+            return {"color": "#f316c2", "opacity": opacity, "fillColor": "#f316c2", "fillOpacity": fillOpacity, "weight": 0.2, fill: true};
             }
         }
 

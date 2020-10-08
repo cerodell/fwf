@@ -108,12 +108,15 @@ class FWF:
 
         # ### Create an hourly datasets for use with their respected codes/indices 
         self.hourly_ds = wrf_ds
-
+        wrf_ds = wrf_ds.drop_vars('SNW')
+        
         ### Create an hourly and daily datasets for use with their respected codes/indices 
         self.daily_ds = self.create_daily_ds(wrf_ds)
         for var in self.hourly_ds.data_vars:
-            # print(var)
-            self.daily_ds[var].attrs = self.hourly_ds[var].attrs
+            if var == 'SNW':
+                pass
+            else:
+                self.daily_ds[var].attrs = self.hourly_ds[var].attrs
         self.daily_ds['r_o_tomorrow'].attrs = self.daily_ds['r_o'].attrs      
 
 

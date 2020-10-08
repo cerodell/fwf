@@ -1,9 +1,8 @@
 
-# echo "$(date) ---> start fwf model"
-# ### Run fwf model
-# /bluesky/fireweather/fwf/master/run.py
-# echo "$(date) ---> fwf model done"
-
+echo "$(date) ---> start fwf model"
+### Run fwf model
+/bluesky/fireweather/fwf/master/run.py
+echo "$(date) ---> fwf model done"
 
 echo "$(date) ---> start geojson maker for leaflet map"
 ### Create geojson files for display on leaflet

@@ -16,14 +16,13 @@ warnings.filterwarnings("ignore", message="invalid value encountered in power")
 warnings.filterwarnings("ignore", message="invalid value encountered in log")
 
 
-
 """######### get directory to yesterdays hourly/daily .zarr files.  #############"""
-hourly_file_dir = str(xr_dir) + str("/fwf-hourly-2020082600.zarr") 
-daily_file_dir = str(xr_dir) + str("/fwf-daily-2020082600.zarr") 
+hourly_file_dir = str(xr_dir) + str("/fwf-hourly-2020100700.zarr") 
+daily_file_dir = str(xr_dir) + str("/fwf-daily-2020100700.zarr") 
 
 """######### get directory to todays wrf_out .nc files.  #############"""
-# wrf_filein = date.today().strftime('/%y%m%d00/')
-wrf_filein = '/20082700/'
+wrf_filein = date.today().strftime('/%y%m%d00/')
+# wrf_filein = '/20082700/'
 wrf_file_dir = str(wrf_dir) + wrf_filein
 
 """######### Open wrf_out.nc and write  new hourly/daily .zarr files #############"""

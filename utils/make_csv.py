@@ -34,6 +34,8 @@ def intercomparison_make_csv(local, todays_date, yesterday_date):
     hourly_ds = xr.open_zarr(hourly_file_dir)
     daily_ds = xr.open_zarr(daily_file_dir)
 
+    hourly_ds = hourly_ds.drop_vars('SNW')
+
     ### Get Path to YESTERDAYS FWI forecast and open
     if yesterday_date == None:
         print('No houlry or daily ds from yesterday')
@@ -147,10 +149,10 @@ def intercomparison_make_csv(local, todays_date, yesterday_date):
         print(f"{str(datetime.now())} ---> wrote {csv_dir_today}" )
 
     else:
-        # file_name_yesterday  = str(np.array(hourly_ds_yesterday.Time[0], dtype ='datetime64[h]'))
-        # file_name_yesterday = datetime.strptime(str(file_name_yesterday), '%Y-%m-%dT%H').strftime('%Y%m%d%H')
-        # csv_dir_yesterday = write_to_dir + f'fwf-intercomparison-{file_name_yesterday}.csv'
-        csv_dir_yesterday = write_to_dir + f'current/fwf-intercomparison-current.csv'
+        file_name_yesterday  = str(np.array(hourly_ds_yesterday.Time[0], dtype ='datetime64[h]'))
+        file_name_yesterday = datetime.strptime(str(file_name_yesterday), '%Y-%m-%dT%H').strftime('%Y%m%d%H')
+        csv_dir_yesterday = write_to_dir + f'fwf-intercomparison-{file_name_yesterday}.csv'
+        # csv_dir_yesterday = write_to_dir + f'current/fwf-intercomparison-current.csv'
         
         inter_df_yesterday = pd.read_csv(csv_dir_yesterday)
         final_inter_df = pd.concat([inter_df,inter_df_yesterday])

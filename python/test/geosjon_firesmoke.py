@@ -16,7 +16,7 @@ from context import data_dir, xr_dir, wrf_dir, root_dir
 
 
 ### Open color map json
-with open('/bluesky/fireweather/fwf/firewx_website/json/colormaps.json') as f:
+with open('/bluesky/fireweather/fwf/firewx_website/json/colormaps-new.json') as f:
   cmaps = json.load(f)
 
 

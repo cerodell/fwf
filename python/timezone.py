@@ -10,6 +10,7 @@ import timezonefinder, pytz
 from datetime import datetime
 from pathlib import Path
 
+blah = np.arange(-30,44,2)
 
 
 filein = "/2019-08-19T00_ds_wrf.zarr"

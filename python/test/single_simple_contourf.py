@@ -21,8 +21,8 @@ from wrf import (to_np, getvar, get_cartopy, latlon_coords, g_uvmet, ALL_TIMES)
 
 
 ### BRing in zarr FWF forecast data 
-hourly_file_dir = str(xr_dir) + str("/current/hourly.zarr") 
-daily_file_dir = str(xr_dir) + str("/current/daily.zarr") 
+hourly_file_dir = str(xr_dir) + str("/current/fwf-hourly-current.zarr") 
+daily_file_dir = str(xr_dir) + str("/current/fwf-daily-current.zarr") 
 
 hourly_ds = xr.open_zarr(hourly_file_dir)
 daily_ds = xr.open_zarr(daily_file_dir)
@@ -40,6 +40,7 @@ wrf_file = Dataset(wrf_file_dir[-1],'r')
 
 
 ### Get Land Mask and Lake Mask data
+LANDMASK        = getvar(wrf_file, "LANDMASK")
 LANDMASK        = getvar(wrf_file, "LANDMASK")
 LAKEMASK        = getvar(wrf_file, "LAKEMASK")
 SNOWC           = getvar(wrf_file, "SNOWC")

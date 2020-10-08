@@ -19,8 +19,8 @@
 # tippecanoe -zg -o ffmc-2020090700-blah.mbtiles --drop-densest-as-needed ffmc-2020090700.json
 # tippecanoe -o ffmc-2020090700-blah.mbtiles --detect-shared-borders ffmc-2020090700.json
 ## Convert FFMC to topojson and move to website directory
-# /bluesky/fireweather/fwf/node_modules/topojson-server/bin/geo2topo -q 1e4 wsp=wsp-2020090700.geojson > /bluesky/fireweather/fwf/web_dev/data/wsp-2020090700.json
-# /bluesky/fireweather/fwf/node_modules/topojson-server/bin/geo2topo -q 1e4 temp=temp-2020090700.geojson > /bluesky/fireweather/fwf/web_dev/data/temp-2020090700.json
+/bluesky/fireweather/fwf/node_modules/topojson-server/bin/geo2topo -q 1e4 rh=rh-2020100718.geojson > /bluesky/fireweather/fwf/web_dev/data/rh-2020090718.json
+/bluesky/fireweather/fwf/node_modules/topojson-server/bin/geo2topo -q 1e4 temp=temp-2020100718.geojson > /bluesky/fireweather/fwf/web_dev/data/temp-2020090718.json
 
 
 for filename in /bluesky/fireweather/fwf/data/geojson/2020090700/ffmc*.geojson; do
