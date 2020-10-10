@@ -1,4 +1,5 @@
 import context
+import json
 import numpy as np
 import xarray as xr
 from pathlib import Path
@@ -17,6 +18,10 @@ import matplotlib.pyplot as plt
 # from wrf import (getvar, g_uvmet)
 
 from wrf import (to_np, getvar, get_cartopy, latlon_coords, g_uvmet, ALL_TIMES)
+
+### Open color map json
+with open('/bluesky/fireweather/fwf/json/colormaps-new.json') as f:
+  cmaps = json.load(f)
 
 
 
@@ -58,8 +63,8 @@ def mask(ds_unmasked, LANDMASK, LAKEMASK, SNOWC):
     ds['Time'] = ds_unmasked['Time']
     return ds
 
-hourly_ds = mask(hourly_ds, LANDMASK, LAKEMASK, SNOWC)
-daily_ds  = mask(daily_ds, LANDMASK, LAKEMASK, SNOWC)
+# hourly_ds = mask(hourly_ds, LANDMASK, LAKEMASK, SNOWC)
+# daily_ds  = mask(daily_ds, LANDMASK, LAKEMASK, SNOWC)
 
 
 # proj_ = crs.NorthPolarStereo(central_longitude=center_lon)
@@ -68,25 +73,24 @@ daily_ds  = mask(daily_ds, LANDMASK, LAKEMASK, SNOWC)
 
 fig = plt.figure(frameon=False)
 ax = plt.axes()
-day  = str(np.array(daily_ds.Time[0], dtype ='datetime64[D]'))
+day  = str(np.array(hourly_ds.Time[-1], dtype ='datetime64[h]'))
+colors = cmaps['SNW']['colors']
+levels = cmaps['SNW']['levels']
+vmin, vmax = cmaps['SNW']['vmin'], cmaps['SNW']['vmax']
 
-ffmc = np.array(hourly_ds.F[18])
+snw = np.array(hourly_ds.SNW[-1])
+
 lats, lons = np.array(hourly_ds.XLAT), np.array(hourly_ds.XLONG)
-cmap = plt.cm.jet
-Cnorm = matplotlib.colors.Normalize(vmin= 50, vmax =100)
-levels = np.linspace(49,100,50)
-levels[0] = 0
+Cnorm = matplotlib.colors.Normalize(vmin= 0, vmax =140)
 
-cs = ax.contourf(lons, lats, ffmc, cmap = cmap, norm = Cnorm, \
+cs = ax.contourf(lons, lats, snw, colors = colors, norm = Cnorm, \
      levels=levels, extend="both")
-for c in cs.collections:
-    c.set_rasterized(True)
-ax.axis('off')
-fig.savefig(str(root_dir) + "/web_dev/" + day  + "-ffmc-raster.svg", \
-     transparent=True, bbox_inches='tight', pad_inches=0, dpi = 300)
+clb = fig.colorbar(cs, fraction=0.054, pad=0.04)
+
+fig.savefig(str(root_dir) + "/images/weather/snw-" + day  + ".png", dpi = 300)
 
 # clb = fig.colorbar(C, ax = ax, fraction=0.054, pad=0.04)
-# plt.title(title + f" max {round(np.nanmax(ffmc),1)}  min {round(np.nanmin(ffmc),1)} mean {round(np.mean(ffmc),1)}")
+# plt.title(title + f" max {round(np.nanmax(snw),1)}  min {round(np.nanmin(snw),1)} mean {round(np.mean(snw),1)}")
 
 # isi = np.array(hourly_ds.R[18])
 # title = "ISI"

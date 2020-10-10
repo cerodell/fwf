@@ -9,6 +9,7 @@ var geo_json_temp = L.layerGroup();
 var geo_json_rh = L.layerGroup();
 var geo_json_qpf = L.layerGroup();
 var geo_json_qpf_3h = L.layerGroup();
+var geo_json_snw = L.layerGroup();
 
 
 var ffmcTimeLayer = L.timeDimension.layer.layerGroup(geo_json_ffmc, {
@@ -91,6 +92,12 @@ var qpf_3hTimeLayer = L.timeDimension.layer.layerGroup(geo_json_qpf_3h, {
 
 });
 
+var snwTimeLayer = L.timeDimension.layer.layerGroup(geo_json_snw, {
+    getUrlFunction: getHourlyForecast,
+    getFileDir: snw_topo_file,
+    getVar: 'snw'
+
+});
 
 var baseLayers = {
     "Topography"       : gl,
@@ -119,6 +126,8 @@ var groupedOverlays = [
             {label: ' Wind Speed (km/hr)', layer: wspTimeLayer, radioGroup: 'bc'},
             {label: ' Total Accumulated Precipitation (mm)', layer: qpfTimeLayer, radioGroup: 'bc'},
             {label: ' 3 Hour Accumulated Precipitation (mm)', layer: qpf_3hTimeLayer, radioGroup: 'bc'},
+            {label: ' Accumulated Snowfall (cm)', layer: snwTimeLayer, radioGroup: 'bc'},
+
 
         ]
     },

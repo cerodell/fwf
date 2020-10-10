@@ -22,8 +22,8 @@ warnings.filterwarnings("ignore", message="invalid value encountered in true_div
 with open('/bluesky/fireweather/fwf/json/colormaps-new.json') as f:
   cmaps = json.load(f)
 
-colors = cmaps['snw']['colors']
-levels = cmaps['snw']['levels']
+colors = cmaps['SNW']['colors']
+levels = cmaps['SNW']['levels']
 
 ### Get Path to most recent FWI forecast and open 
 hourly_file_dir = str(xr_dir) + str("/current/fwf-hourly-current.zarr") 
@@ -42,7 +42,7 @@ r_hourly = xr.DataArray(r_hourly, name='r_o_hourly', dims=('time','south_north',
 hourly_ds['r_o_3hour'] = r_hourly
 
 
-hourly_vars = ['F','R','S','DSR', 'W', 'T', 'H', 'r_o', 'r_o_3hour']
+hourly_vars = ['F','R','S','DSR', 'W', 'T', 'H', 'r_o', 'r_o_3hour', 'SNW']
 for var in hourly_vars:
   hourly_ds[var] = xr.where(hourly_ds[var]< cmaps[var]['vmax'], hourly_ds[var], int(cmaps[var]['vmax'] + 1))
 
@@ -66,8 +66,8 @@ make_dir.mkdir(parents=True, exist_ok=True)
 
 ## Make geojson of ffmc, isi, fwf every 6 hours
 print(f"{str(datetime.now())} ---> start loop of hourly fwf products" )
-mycontourf_to_geojson(cmaps, 'T', hourly_ds, 18, folderdate, "colors47")
-mycontourf_to_geojson(cmaps, 'H', hourly_ds, 18, folderdate, "colors18")
+mycontourf_to_geojson(cmaps, 'SNW', hourly_ds, -1, folderdate, "colors")
+# mycontourf_to_geojson(cmaps, 'H', hourly_ds, 18, folderdate, "colors18")
 
 # lenght = len(hourly_ds.F)
 # index = np.arange(0,lenght,3, dtype = int)

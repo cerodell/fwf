@@ -78,10 +78,10 @@ def readwrf(filein, *args):
         r_o.attrs = rain_ci.attrs
         r_o.attrs['description'] = "ACCUMULATED TOTAL PRECIPITATION"
 
-        SNWi           = np.array(getvar(wrf_file, "SNOWNC")) * 1.0
+        SNWi           = np.array(getvar(wrf_file, "SNOWNC")) *1.0
         SNW            = xr.DataArray(SNWi, name='SNW', dims=('south_north', 'west_east'))
         SNW.attrs      = Ti.attrs
-        SNW.attrs['units'] = "mm"
+        SNW.attrs['units'] = "cm"
         SNW.attrs['description'] = "ACCUMULATED TOTAL GRID SCALE SNOW AND ICE"
 
         var_list = [H,T,W,WD,r_o, SNW]

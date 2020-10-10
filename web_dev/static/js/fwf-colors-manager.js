@@ -1026,14 +1026,207 @@ color_map_qpf_3h.onAdd = function(map) {
     return div;
 }
 
+
+var color_map_snw = L.control({position: "bottomleft"});
+color_map_snw.onAdd = function(map) {
+    var div = L.DomUtil.create('div', 'fcst-legend leaflet-bar leaflet-control');
+    div.innerHTML =
+'<table id="values">\
+<tr id="colours">\
+<td style="background:#ffffff; width:10px; border-left:none;"></td>\
+<td style="background:#bdbdbd;"></td>\
+<td style="background:#979797;"></td>\
+<td style="background:#6e6e6e;"></td>\
+<td style="background:#4f5051;"></td>\
+<td style="background:#97d3fb;"></td>\
+<td style="background:#79b9fb;"></td>\
+<td style="background:#50a5f5;"></td>\
+<td style="background:#3d97f5;"></td>\
+<td style="background:#2883f1;"></td>\
+<td style="background:#1e6eeb;"></td>\
+<td style="background:#1563d3;"></td>\
+<td style="background:#085ac3;"></td>\
+<td style="background:#3e0291;"></td>\
+<td style="background:#4c028f;"></td>\
+<td style="background:#5a028c;"></td>\
+<td style="background:#68028b;"></td>\
+<td style="background:#850289;"></td>\
+<td style="background:#a00485;"></td>\
+<td style="background:#c90380;"></td>\
+<td style="background:#f3037c;"></td>\
+<td style="background:#f51485;"></td>\
+<td style="background:#f83b9b;"></td>\
+<td style="background:#fd5eae;"></td>\
+<td style="background:#ff6eb7;"></td>\
+<td style="background:#fa85c2;"></td>\
+<td style="background:#f58dc6;"></td>\
+<td style="background:#ed95cb;"></td>\
+<td style="background:#e79dcc;"></td>\
+<td style="background:#d9add4;"></td>\
+<td style="background:#d0b5d8;"></td>\
+<td style="background:#c3c7e1;"></td>\
+<td style="background:#b5d7e9;"></td>\
+<td style="background:#ace2ef;"></td>\
+<td style="background:#a1eff3;"></td>\
+<td style="background:#95fbf9;"></td>\
+<td style="background:#92f3f1;"></td>\
+<td style="background:#7ddbd9;"></td>\
+<td style="background:#71bdc4;"></td>\
+<td style="background:#7cb9cb;"></td>\
+<td style="background:#81b7cc;"></td>\
+<td style="background:#85b3cf;"></td>\
+<td style="background:#89b1d1;"></td>\
+<td style="background:#90add4;"></td>\
+<td style="background:#94a9d8;"></td>\
+<td style="background:#99a6db;"></td>\
+<td style="background:#9aa5db;"></td>\
+<td style="background:#a3a3de;"></td>\
+<td style="background:#ab9ce5;"></td>\
+<td style="background:#af9be7;"></td>\
+<td style="background:#b399e8;"></td>\
+<td style="background:#b895eb;"></td>\
+<td style="background:#bb93ed;"></td>\
+<td style="background:#bf91f1;"></td>\
+<td style="background:#c38ff3;"></td>\
+<td style="background:#c98bf5;"></td>\
+<td style="background:#d087f9;"></td>\
+</tr>\
+<tr id="ticks">\
+<td style="width:10px; border-left:none;"></td>\
+<td></td>\
+<td></td>\
+<td></td>\
+<td></td>\
+<td></td>\
+<td></td>\
+<td></td>\
+<td></td>\
+<td></td>\
+<td></td>\
+<td></td>\
+<td></td>\
+<td></td>\
+<td></td>\
+<td></td>\
+<td></td>\
+<td></td>\
+<td></td>\
+<td></td>\
+<td></td>\
+<td></td>\
+<td></td>\
+<td></td>\
+<td></td>\
+<td></td>\
+<td></td>\
+<td></td>\
+<td></td>\
+<td></td>\
+<td></td>\
+<td></td>\
+<td></td>\
+<td></td>\
+<td></td>\
+<td></td>\
+<td></td>\
+<td></td>\
+<td></td>\
+<td></td>\
+<td></td>\
+<td></td>\
+<td></td>\
+<td></td>\
+<td></td>\
+<td></td>\
+<td></td>\
+<td></td>\
+<td></td>\
+<td></td>\
+<td></td>\
+<td></td>\
+<td></td>\
+<td></td>\
+<td></td>\
+<td></td>\
+<td></td>\
+<td></td>\
+</tr>\
+</table>\
+<table id="labels">\
+<tr>\
+<td width="2px"></td>\
+<td width="12px">0.2</td>\
+<td width="12px"></td>\
+<td width="16px">2.5</td>\
+<td width="10px"></td>\
+<td width="15px">5</td>\
+<td width="14px"></td>\
+<td width="10px">7.5</td>\
+<td width="13px"></td>\
+<td width="10px">10</td>\
+<td width="12px"></td>\
+<td width="10px">12.5</td>\
+<td width="9px"></td>\
+<td width="10px">15</td>\
+<td width="12px"></td>\
+<td width="4px">17.5</td>\
+<td width="10px"></td>\
+<td width="10px">20</td>\
+<td width="13px"></td>\
+<td width="10px">22.5</td>\
+<td width="9px"></td>\
+<td width="10px">25</td>\
+<td width="14px"></td>\
+<td width="10px">30</td>\
+<td width="16px"></td>\
+<td width="10px">35</td>\
+<td width="14px"></td>\
+<td width="10px">40</td>\
+<td width="15px"></td>\
+<td width="10px">45</td>\
+<td width="16px"></td>\
+<td width="10px">50</td>\
+<td width="15px"></td>\
+<td width="10px">55</td>\
+<td width="15px"></td>\
+<td width="10px">60</td>\
+<td width="15px"></td>\
+<td width="10px">65</td>\
+<td width="15px"></td>\
+<td width="10px">70</td>\
+<td width="15px"></td>\
+<td width="10px">75</td>\
+<td width="15px"></td>\
+<td width="10px">80</td>\
+<td width="15px"></td>\
+<td width="10px">85</td>\
+<td width="15px"></td>\
+<td width="10px">90</td>\
+<td width="15px"></td>\
+<td width="10px">95</td>\
+<td width="15px"></td>\
+<td width="10px">100</td>\
+<td width="15px"></td>\
+<td width="10px">105</td>\
+<td width="15px"></td>\
+<td width="10px">110</td>\
+<td width="1px"></td>\
+<td width="10px">140+</td>\
+</tr>\
+</table>\
+<div class="legend-title">Total Accumulated Snowfall (cm)</div>';
+    return div;
+}
+
+
 map.on('overlayadd', function (eventLayer) {
     if (eventLayer.layer == wx_station) {
         legend_wx.addTo(map);
     }});
-    map.on('overlayremove', function (eventLayer) {
-    if (eventLayer.layer == wx_station) {
-        legend_wx.remove(map);
-    }});
+map.on('overlayremove', function (eventLayer) {
+if (eventLayer.layer == wx_station) {
+    legend_wx.remove(map);
+}});
 
 map.on('overlayadd', function (eventLayer) {
 if (eventLayer.layer == ffmcTimeLayer) {
@@ -1136,6 +1329,14 @@ if (eventLayer.layer == qpf_3hTimeLayer) {
     color_map_qpf_3h.remove(map);
 }});
 
+map.on('overlayadd', function (eventLayer) {
+    if (eventLayer.layer == snwTimeLayer) {
+        color_map_snw.addTo(map);
+    }});
+map.on('overlayremove', function (eventLayer) {
+if (eventLayer.layer == snwTimeLayer) {
+    color_map_snw.remove(map);
+}});
 
 function geo_json_styler18(properties, zoom) {
     var fillOpacity = 1
@@ -1226,64 +1427,7 @@ function geo_json_styler_wsp(properties, zoom) {
             }
         }
         
-// function geo_json_styler_temp(properties, zoom) {
-//     var fillOpacity = 1
-//     var opacity = 1
-//     switch(properties.fill) {
-//         case "#1b34d7": 
-//             return {"color": "#1b34d7", "opacity": opacity, "fillColor": "#1b34d7", "fillOpacity": fillOpacity, "weight": 0.2, fill: true};
-//         case "#2460e2": 
-//             return {"color": "#2460e2", "opacity": opacity, "fillColor": "#2460e2", "fillOpacity": fillOpacity, "weight": 0.2, fill: true};
-//         case "#348ced": 
-//             return {"color": "#348ced", "opacity": opacity, "fillColor": "#348ced", "fillOpacity": fillOpacity, "weight": 0.2, fill: true};
-//         case "#44b1f6": 
-//             return {"color": "#44b1f6", "opacity": opacity, "fillColor": "#44b1f6", "fillOpacity": fillOpacity, "weight": 0.2, fill: true};
-//         case "#51cbfa": 
-//             return {"color": "#51cbfa", "opacity": opacity, "fillColor": "#51cbfa", "fillOpacity": fillOpacity, "weight": 0.2, fill: true};
-//         case "#80e0f7": 
-//             return {"color": "#80e0f7", "opacity": opacity, "fillColor": "#80e0f7", "fillOpacity": fillOpacity, "weight": 0.2, fill: true};
-//         case "#a0eaf7": 
-//             return {"color": "#a0eaf7", "opacity": opacity, "fillColor": "#a0eaf7", "fillOpacity": fillOpacity, "weight": 0.2, fill: true};
-//         case "#00efbb": 
-//             return {"color": "#00efbb", "opacity": opacity, "fillColor": "#00efbb", "fillOpacity": fillOpacity, "weight": 0.2, fill: true};
-//         case "#00ef7c": 
-//             return {"color": "#00ef7c", "opacity": opacity, "fillColor": "#00ef7c", "fillOpacity": fillOpacity, "weight": 0.2, fill: true};
-//         case "#00e452": 
-//             return {"color": "#00e452", "opacity": opacity, "fillColor": "#00e452", "fillOpacity": fillOpacity, "weight": 0.2, fill: true};
-//         case "#00c848": 
-//             return {"color": "#00c848", "opacity": opacity, "fillColor": "#00c848", "fillOpacity": fillOpacity, "weight": 0.2, fill: true};
-//         case "#10b87a": 
-//             return {"color": "#10b87a", "opacity": opacity, "fillColor": "#10b87a", "fillOpacity": fillOpacity, "weight": 0.2, fill: true};
-//         case "#297b5d": 
-//             return {"color": "#297b5d", "opacity": opacity, "fillColor": "#297b5d", "fillOpacity": fillOpacity, "weight": 0.2, fill: true};
-//         case "#007229": 
-//             return {"color": "#007229", "opacity": opacity, "fillColor": "#007229", "fillOpacity": fillOpacity, "weight": 0.2, fill: true};
-//         case "#3ca12c": 
-//             return {"color": "#3ca12c", "opacity": opacity, "fillColor": "#3ca12c", "fillOpacity": fillOpacity, "weight": 0.2, fill: true};
-//         case "#79d030": 
-//             return {"color": "#79d030", "opacity": opacity, "fillColor": "#79d030", "fillOpacity": fillOpacity, "weight": 0.2, fill: true};
-//         case "#b5ff32": 
-//             return {"color": "#b5ff32", "opacity": opacity, "fillColor": "#b5ff32", "fillOpacity": fillOpacity, "weight": 0.2, fill: true};
-//         case "#d6ff32": 
-//             return {"color": "#d6ff32", "opacity": opacity, "fillColor": "#d6ff32", "fillOpacity": fillOpacity, "weight": 0.2, fill: true};
-//         case "#fff600": 
-//             return {"color": "#fff600", "opacity": opacity, "fillColor": "#fff600", "fillOpacity": fillOpacity, "weight": 0.2, fill: true};
-//         case "#f8df0b": 
-//             return {"color": "#f8df0b", "opacity": opacity, "fillColor": "#f8df0b", "fillOpacity": fillOpacity, "weight": 0.2, fill: true};
-//         case "#fdca0c": 
-//             return {"color": "#fdca0c", "opacity": opacity, "fillColor": "#fdca0c", "fillOpacity": fillOpacity, "weight": 0.2, fill: true};
-//         case "#fcac05": 
-//             return {"color": "#fcac05", "opacity": opacity, "fillColor": "#fcac05", "fillOpacity": fillOpacity, "weight": 0.2, fill: true};
-//         case "#f88d00": 
-//             return {"color": "#f88d00", "opacity": opacity, "fillColor": "#f88d00", "fillOpacity": fillOpacity, "weight": 0.2, fill: true};
-//         case "#ff6600": 
-//             return {"color": "#ff6600", "opacity": opacity, "fillColor": "#ff6600", "fillOpacity": fillOpacity, "weight": 0.2, fill: true};
-//         case "#fc4f00": 
-//             return {"color": "#fc4f00", "opacity": opacity, "fillColor": "#fc4f00", "fillOpacity": fillOpacity, "weight": 0.2, fill: true};
-//         default:
-//             return {"color": "#ff0100", "opacity": opacity, "fillColor": "#ff0100", "fillOpacity": fillOpacity, "weight": 0.2, fill: true};
-//             }
-//         }
+
 
 function geo_json_styler_temp(properties, zoom) {
     var fillOpacity = 1
@@ -1475,7 +1619,125 @@ function geo_json_styler_qpf(properties, zoom) {
 
 
 
-
-
+function geo_json_styler_snw(properties, zoom) {
+    var fillOpacity = 1
+    var opacity = 1
+    switch(properties.fill) {
+        case "#ffffff": 
+            return {"color": "#ffffff", "opacity": opacity, "fillColor": "#ffffff", "fillOpacity": fillOpacity, "weight": 0.2, fill: true};
+        case "#bdbdbd": 
+            return {"color": "#bdbdbd", "opacity": opacity, "fillColor": "#bdbdbd", "fillOpacity": fillOpacity, "weight": 0.2, fill: true};
+        case "#979797": 
+            return {"color": "#979797", "opacity": opacity, "fillColor": "#979797", "fillOpacity": fillOpacity, "weight": 0.2, fill: true};
+        case "#6e6e6e": 
+            return {"color": "#6e6e6e", "opacity": opacity, "fillColor": "#6e6e6e", "fillOpacity": fillOpacity, "weight": 0.2, fill: true};
+        case "#4f5051": 
+            return {"color": "#4f5051", "opacity": opacity, "fillColor": "#4f5051", "fillOpacity": fillOpacity, "weight": 0.2, fill: true};
+        case "#97d3fb": 
+            return {"color": "#97d3fb", "opacity": opacity, "fillColor": "#97d3fb", "fillOpacity": fillOpacity, "weight": 0.2, fill: true};
+        case "#79b9fb": 
+            return {"color": "#79b9fb", "opacity": opacity, "fillColor": "#79b9fb", "fillOpacity": fillOpacity, "weight": 0.2, fill: true};
+        case "#50a5f5": 
+            return {"color": "#50a5f5", "opacity": opacity, "fillColor": "#50a5f5", "fillOpacity": fillOpacity, "weight": 0.2, fill: true};
+        case "#3d97f5": 
+            return {"color": "#3d97f5", "opacity": opacity, "fillColor": "#3d97f5", "fillOpacity": fillOpacity, "weight": 0.2, fill: true};
+        case "#2883f1": 
+            return {"color": "#2883f1", "opacity": opacity, "fillColor": "#2883f1", "fillOpacity": fillOpacity, "weight": 0.2, fill: true};
+        case "#1e6eeb": 
+            return {"color": "#1e6eeb", "opacity": opacity, "fillColor": "#1e6eeb", "fillOpacity": fillOpacity, "weight": 0.2, fill: true};
+        case "#1563d3": 
+            return {"color": "#1563d3", "opacity": opacity, "fillColor": "#1563d3", "fillOpacity": fillOpacity, "weight": 0.2, fill: true};
+        case "#085ac3": 
+            return {"color": "#085ac3", "opacity": opacity, "fillColor": "#085ac3", "fillOpacity": fillOpacity, "weight": 0.2, fill: true};
+        case "#3e0291": 
+            return {"color": "#3e0291", "opacity": opacity, "fillColor": "#3e0291", "fillOpacity": fillOpacity, "weight": 0.2, fill: true};
+        case "#4c028f": 
+            return {"color": "#4c028f", "opacity": opacity, "fillColor": "#4c028f", "fillOpacity": fillOpacity, "weight": 0.2, fill: true};
+        case "#5a028c": 
+            return {"color": "#5a028c", "opacity": opacity, "fillColor": "#5a028c", "fillOpacity": fillOpacity, "weight": 0.2, fill: true};
+        case "#68028b": 
+            return {"color": "#68028b", "opacity": opacity, "fillColor": "#68028b", "fillOpacity": fillOpacity, "weight": 0.2, fill: true};
+        case "#850289": 
+            return {"color": "#850289", "opacity": opacity, "fillColor": "#850289", "fillOpacity": fillOpacity, "weight": 0.2, fill: true};
+        case "#a00485": 
+            return {"color": "#a00485", "opacity": opacity, "fillColor": "#a00485", "fillOpacity": fillOpacity, "weight": 0.2, fill: true};
+        case "#c90380": 
+            return {"color": "#c90380", "opacity": opacity, "fillColor": "#c90380", "fillOpacity": fillOpacity, "weight": 0.2, fill: true};
+        case "#f3037c": 
+            return {"color": "#f3037c", "opacity": opacity, "fillColor": "#f3037c", "fillOpacity": fillOpacity, "weight": 0.2, fill: true};
+        case "#f51485": 
+            return {"color": "#f51485", "opacity": opacity, "fillColor": "#f51485", "fillOpacity": fillOpacity, "weight": 0.2, fill: true};
+        case "#f83b9b": 
+            return {"color": "#f83b9b", "opacity": opacity, "fillColor": "#f83b9b", "fillOpacity": fillOpacity, "weight": 0.2, fill: true};
+        case "#fd5eae": 
+            return {"color": "#fd5eae", "opacity": opacity, "fillColor": "#fd5eae", "fillOpacity": fillOpacity, "weight": 0.2, fill: true};
+        case "#ff6eb7": 
+            return {"color": "#ff6eb7", "opacity": opacity, "fillColor": "#ff6eb7", "fillOpacity": fillOpacity, "weight": 0.2, fill: true};
+        case "#fa85c2": 
+            return {"color": "#fa85c2", "opacity": opacity, "fillColor": "#fa85c2", "fillOpacity": fillOpacity, "weight": 0.2, fill: true};            
+        case "#f58dc6": 
+            return {"color": "#f58dc6", "opacity": opacity, "fillColor": "#f58dc6", "fillOpacity": fillOpacity, "weight": 0.2, fill: true};
+        case "#ed95cb": 
+            return {"color": "#ed95cb", "opacity": opacity, "fillColor": "#ed95cb", "fillOpacity": fillOpacity, "weight": 0.2, fill: true}; 
+        case "#e79dcc": 
+            return {"color": "#e79dcc", "opacity": opacity, "fillColor": "#e79dcc", "fillOpacity": fillOpacity, "weight": 0.2, fill: true};
+        case "#d9add4": 
+            return {"color": "#d9add4", "opacity": opacity, "fillColor": "#d9add4", "fillOpacity": fillOpacity, "weight": 0.2, fill: true}; 
+        case "#d0b5d8": 
+            return {"color": "#d0b5d8", "opacity": opacity, "fillColor": "#d0b5d8", "fillOpacity": fillOpacity, "weight": 0.2, fill: true};
+        case "#c3c7e1": 
+            return {"color": "#c3c7e1", "opacity": opacity, "fillColor": "#c3c7e1", "fillOpacity": fillOpacity, "weight": 0.2, fill: true}; 
+        case "#b5d7e9": 
+            return {"color": "#b5d7e9", "opacity": opacity, "fillColor": "#b5d7e9", "fillOpacity": fillOpacity, "weight": 0.2, fill: true};
+        case "#ace2ef": 
+            return {"color": "#ace2ef", "opacity": opacity, "fillColor": "#ace2ef", "fillOpacity": fillOpacity, "weight": 0.2, fill: true}; 
+        case "#a1eff3": 
+            return {"color": "#a1eff3", "opacity": opacity, "fillColor": "#a1eff3", "fillOpacity": fillOpacity, "weight": 0.2, fill: true};
+        case "#95fbf9": 
+            return {"color": "#95fbf9", "opacity": opacity, "fillColor": "#95fbf9", "fillOpacity": fillOpacity, "weight": 0.2, fill: true}; 
+        case "#92f3f1": 
+            return {"color": "#92f3f1", "opacity": opacity, "fillColor": "#92f3f1", "fillOpacity": fillOpacity, "weight": 0.2, fill: true};
+        case "#7ddbd9": 
+            return {"color": "#7ddbd9", "opacity": opacity, "fillColor": "#7ddbd9", "fillOpacity": fillOpacity, "weight": 0.2, fill: true}; 
+        case "#71bdc4": 
+            return {"color": "#71bdc4", "opacity": opacity, "fillColor": "#71bdc4", "fillOpacity": fillOpacity, "weight": 0.2, fill: true};
+        case "#7cb9cb": 
+            return {"color": "#7cb9cb", "opacity": opacity, "fillColor": "#7cb9cb", "fillOpacity": fillOpacity, "weight": 0.2, fill: true};            
+        case "#81b7cc": 
+            return {"color": "#81b7cc", "opacity": opacity, "fillColor": "#81b7cc", "fillOpacity": fillOpacity, "weight": 0.2, fill: true};
+        case "#85b3cf": 
+            return {"color": "#85b3cf", "opacity": opacity, "fillColor": "#85b3cf", "fillOpacity": fillOpacity, "weight": 0.2, fill: true}; 
+        case "#89b1d1": 
+            return {"color": "#89b1d1", "opacity": opacity, "fillColor": "#89b1d1", "fillOpacity": fillOpacity, "weight": 0.2, fill: true};
+        case "#90add4": 
+            return {"color": "#90add4", "opacity": opacity, "fillColor": "#90add4", "fillOpacity": fillOpacity, "weight": 0.2, fill: true}; 
+        case "#94a9d8": 
+            return {"color": "#94a9d8", "opacity": opacity, "fillColor": "#94a9d8", "fillOpacity": fillOpacity, "weight": 0.2, fill: true};
+        case "#99a6db": 
+            return {"color": "#99a6db", "opacity": opacity, "fillColor": "#99a6db", "fillOpacity": fillOpacity, "weight": 0.2, fill: true}; 
+        case "#9aa5db": 
+            return {"color": "#9aa5db", "opacity": opacity, "fillColor": "#9aa5db", "fillOpacity": fillOpacity, "weight": 0.2, fill: true};
+        case "#a3a3de": 
+            return {"color": "#a3a3de", "opacity": opacity, "fillColor": "#a3a3de", "fillOpacity": fillOpacity, "weight": 0.2, fill: true}; 
+        case "#ab9ce5": 
+            return {"color": "#ab9ce5", "opacity": opacity, "fillColor": "#ab9ce5", "fillOpacity": fillOpacity, "weight": 0.2, fill: true};
+        case "#af9be7": 
+            return {"color": "#af9be7", "opacity": opacity, "fillColor": "#af9be7", "fillOpacity": fillOpacity, "weight": 0.2, fill: true}; 
+        case "#b399e8": 
+            return {"color": "#b399e8", "opacity": opacity, "fillColor": "#b399e8", "fillOpacity": fillOpacity, "weight": 0.2, fill: true};
+        case "#b895eb": 
+            return {"color": "#b895eb", "opacity": opacity, "fillColor": "#b895eb", "fillOpacity": fillOpacity, "weight": 0.2, fill: true};            
+        case "#bb93ed": 
+            return {"color": "#bb93ed", "opacity": opacity, "fillColor": "#bb93ed", "fillOpacity": fillOpacity, "weight": 0.2, fill: true};
+        case "#bf91f1": 
+            return {"color": "#bf91f1", "opacity": opacity, "fillColor": "#bf91f1", "fillOpacity": fillOpacity, "weight": 0.2, fill: true}; 
+        case "#c38ff3": 
+            return {"color": "#c38ff3", "opacity": opacity, "fillColor": "#c38ff3", "fillOpacity": fillOpacity, "weight": 0.2, fill: true};
+        case "#c98bf5": 
+            return {"color": "#c98bf5", "opacity": opacity, "fillColor": "#c98bf5", "fillOpacity": fillOpacity, "weight": 0.2, fill: true}; 
+        default:
+            return {"color": "#d087f9", "opacity": opacity, "fillColor": "#d087f9", "fillOpacity": fillOpacity, "weight": 0.2, fill: true};
+            }
+        }
    
 
