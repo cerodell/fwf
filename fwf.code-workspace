@@ -12,7 +12,8 @@
             "geojsoncontour",
             "lons",
             "ndigits",
-            "pcolormesh"
+            "pcolormesh",
+            "xarray"
         ]
     }
 }
