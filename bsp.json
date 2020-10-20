@@ -1,0 +1,80 @@
+{
+    "config": {
+        "filter": { "time": { "end": "2020-07-03T11:00:00", "start": "2020-06-29T08:00:00" } },
+        "extrafiles": { "emissionscsv": { "filename": "fire_emissions.csv" }, "dest_dir": "/bluesky/pipeline/master/output/BSC00CA12p/2020070108", "sets": ["emissionscsv"] },
+        "plumerise": { "model": "feps", "feps": { "working_dir": "/bluesky/pipeline/master/working/BSC00CA12p/2020070108/plumerise", "load_heat": true, "consumption_in_tons_per_acre": true } },
+        "load": {
+            "sources": [
+                { "load_consumption": true, "skip_failures": true, "name": "bsf", "format": "CSV", "file": "/bluesky/pipeline/master/input/BSC00CA12p/2020070108/smartfire/20200629.csv", "type": "file", "omit_nulls": true },
+                { "load_consumption": true, "skip_failures": true, "name": "bsf", "format": "CSV", "file": "/bluesky/pipeline/master/input/BSC00CA12p/2020070108/smartfire/20200630.csv", "type": "file", "omit_nulls": true },
+                { "load_consumption": true, "skip_failures": true, "name": "bsf", "format": "CSV", "file": "/bluesky/pipeline/master/input/BSC00CA12p/2020070108/smartfire/20200701.csv", "type": "file", "omit_nulls": true }
+            ]
+        },
+        "dispersion": {
+            "working_dir": "/bluesky/pipeline/master/working/BSC00CA12p/2020070108",
+            "output_dir": "/bluesky/pipeline/master/output/BSC00CA12p/2020070108",
+            "start": "2020-07-01T08:00:00",
+            "num_hours": 51,
+            "hysplit": {
+                "STOP_IF_NO_PARINIT": false,
+                "mpi": true,
+                "user_defined_grid": true,
+                "vertical_levels": [10],
+                "ndump": 6,
+                "height_latitude": 30.0,
+                "fire_intervals": [0, 50, 100, 500, 1000],
+                "maxpar": 630000,
+                "PARDUMP": "/bluesky/pipeline/master/output/BSC00CA12p/2020070108/PARDUMP",
+                "center_longitude": -98.5,
+                "mgmin": 750,
+                "dispersion_offset": 0,
+                "center_latitude": 55.0,
+                "spacing_longitude": 0.1,
+                "delt": -3.0,
+                "numpar": 2500,
+                "ninit": 1,
+                "width_longitude": 92.0,
+                "ncycl": 6,
+                "khmax": 168,
+                "PARINIT": "",
+                "qcycle": 1.0,
+                "make_init_file": true,
+                "spacing_latitude": 0.1,
+                "vertical_emislevels_reduction_factor": 5,
+                "initd": 1,
+                "ncpus": 8,
+                "optimize_grid_resolution": false
+            },
+            "model": "hysplit",
+            "handle_existing": "write_in_place"
+        },
+        "visualization": {
+            "targets": ["dispersion"],
+            "dispersion": {
+                "hysplit": {
+                    "output_dir": "/bluesky/pipeline/master/output/BSC00CA12p/2020070108",
+                    "images_dir": "/bluesky/pipeline/master/output/BSC00CA12p/2020070108",
+                    "data_dir": "/bluesky/pipeline/master/output/BSC00CA12p/2020070108",
+                    "blueskykml_config": {
+                        "DispersionGridOutput": { "THREE_HOUR_COLORS": "6Levels-YellowOrangeBrown", "DAILY_COLORS": "6Levels-YellowOrangeBrown", "HOURLY_COLORS": "6Levels-YellowOrangeBrown" },
+                        "6Levels-YellowOrangeBrown": {
+                            "IMAGE_OPACITY_FACTOR": "1.0",
+                            "HEX_COLORS": "#000000 #fff7bc #fee391 #fec44f #fe9929 #cc4c02 #662506",
+                            "GREEN": "0 247 227 196 153 76 37",
+                            "DATA_LEVELS": "0 1 10 28 60 120 250 5000",
+                            "DEFINE_HEX": "false",
+                            "DEFINE_RGB": "true",
+                            "BLUE": "0 188 145 79 41 2 6",
+                            "RED": "0 255 254 254 254 204 102"
+                        },
+                        "DispersionImages": { "REPROJECT_IMAGES": "true" }
+                    },
+                    "create_summary_json": true
+                }
+            }
+        },
+        "skip_failed_fires": true,
+        "timeprofile": { "ubc-bsf-feps": { "NORMALIZE": true, "working_dir": "/bluesky/pipeline/master/working/BSC00CA12p/2020070108/timeprofile", "INTERPOLATION_TYPE": 1 }, "model": "ubc-bsf-feps" },
+        "emissions": { "ubc-bsf-feps": { "working_dir": "/bluesky/pipeline/master/working/BSC00CA12p/2020070108/emissions" }, "model": "ubc-bsf-feps" }
+    }
+}

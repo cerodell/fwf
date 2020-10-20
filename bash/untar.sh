@@ -1,7 +1,7 @@
 
 
 
-cd /Volumes/cer/fireweather/data/tar2/
+cd /Volumes/cer/fireweather/data/tar-new/
 for filename in *.tgz; do
     tar -xzf "$filename"
 done

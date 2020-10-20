@@ -67,12 +67,17 @@ ax.plot(lons[-1].T,lats[-1].T, color ='red', linewidth= 2 , zorder=8, alpha =1)
 ax.plot(lons[:,0],lats[:,0], color ='red', linewidth= 2, zorder=8, alpha =1)
 ax.plot(lons[:,-1].T,lats[:,-1].T, color ='red', linewidth= 2 , zorder=8, alpha =1, label = 'New 12km WRF')
 
-# lats, lons = np.array(ds_hysplit.XLAT), np.array(ds_hysplit.XLONG)
-# lats, lons = lats[0], lons[0]
 
-lats = np.arange(40.0,71.0,1)
-lons = np.arange(-144.5,-51.5,1)
+
+lat_i, lon_i = ds_hysplit.YORIG, ds_hysplit.XORIG
+nrows, ncols = ds_hysplit.NROWS, ds_hysplit.NCOLS
+xcell, ycell = ds_hysplit.XCELL, ds_hysplit.YCELL
+lat_f = (nrows * ycell) + lat_i
+lon_f = (ncols * xcell) + lon_i
+lats = np.arange(lat_i,lat_f+ycell,ycell)
+lons = np.arange(lon_i,lon_f+xcell,xcell)
 lons, lats = np.meshgrid(lons, lats)
+
 
 ax.plot(lons[0],lats[0], color ='k', linewidth= 2, zorder=8, alpha =1)
 ax.plot(lons[-1].T,lats[-1].T, color ='k', linewidth= 2 , zorder=8, alpha =1)
