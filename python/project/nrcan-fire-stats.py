@@ -17,44 +17,48 @@ from datetime import datetime, date, timedelta
 from context import data_dir, root_dir
 
 
-filein = str(data_dir) + '/shp/' + "nbac_1986_to_2019_20200921/nbac_1986_to_2019_20200921.shp"
-per_1986_2020 = gpd.read_file(filein)
+filein = str(data_dir) + '/shp/' + "progression.shp"
+df = gpd.read_file(filein)
+df = df.to_crs(epsg=4326)
+
+df2 = df.loc[df['DATE'] == 20200910.0]
 
 
-def firestats(per):
-    mins, growth, timediff = [], [], []
-    for i in range(len(per['AFSDATE'])):
-        print(per['YEAR'][i])
-        if per['AFSDATE'][i] == None:
-            if per['EDATE'][i] == None:
-                pass
-            else:
-                first= datetime.fromisoformat(per['SDATE'][i])
-        else:
-            first= datetime.fromisoformat(per['AFSDATE'][i])
-        if per['AFEDATE'][i] == None:
-            if per['EDATE'][i] == None:
-                pass
-            else:
-                last= datetime.fromisoformat(per['EDATE'][i])
-        else:
-            last= datetime.fromisoformat(per['AFEDATE'][i])
+
+# def firestats(per):
+#     mins, growth, timediff = [], [], []
+#     for i in range(len(per['AFSDATE'])):
+#         print(per['YEAR'][i])
+#         if per['AFSDATE'][i] == None:
+#             if per['EDATE'][i] == None:
+#                 pass
+#             else:
+#                 first= datetime.fromisoformat(per['SDATE'][i])
+#         else:
+#             first= datetime.fromisoformat(per['AFSDATE'][i])
+#         if per['AFEDATE'][i] == None:
+#             if per['EDATE'][i] == None:
+#                 pass
+#             else:
+#                 last= datetime.fromisoformat(per['EDATE'][i])
+#         else:
+#             last= datetime.fromisoformat(per['AFEDATE'][i])
         
-        total_i = last-first
-        minutes_diff = total_i.total_seconds() / 60.0
+#         total_i = last-first
+#         minutes_diff = total_i.total_seconds() / 60.0
 
-        timediff.append(minutes_diff)
+#         timediff.append(minutes_diff)
 
-    # per['minutes'] = mins
-    # per['growth'] = growth
-    per['timediff'] = timediff
-    return per
-per_1986_2020 = firestats(per_1986_2020)
+#     # per['minutes'] = mins
+#     # per['growth'] = growth
+#     per['timediff'] = timediff
+#     return per
+# per_1986_2020 = firestats(per_1986_2020)
 
-per_test = per_1986_2020.loc[per_1986_2020['timediff'] < 1000000]
-per_test = per_test.loc[per_test['timediff'] > 0]
-per_test = per_test.loc[per_test['POLY_HA'] > 100]
+# per_test = per_1986_2020.loc[per_1986_2020['timediff'] < 1000000]
+# per_test = per_test.loc[per_test['timediff'] > 0]
+# per_test = per_test.loc[per_test['POLY_HA'] > 100]
 
-sns.jointplot(x=per_test["timediff"], y=per_test["POLY_HA"], kind='scatter')
+# sns.jointplot(x=per_test["timediff"], y=per_test["POLY_HA"], kind='scatter')
 
-corr = per_test["timediff"].corr(per_test["POLY_HA"])
+# corr = per_test["timediff"].corr(per_test["POLY_HA"])
