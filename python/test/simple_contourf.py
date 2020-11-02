@@ -15,13 +15,13 @@ from context import root_dir
 
 startTime = datetime.now()
 
-xr_dir = '/Volumes/cer/fireweather/data/xr/'
+# xr_dir = '/Volumes/cer/fireweather/data/xr/'
 
-hourly_file_dir_old  = str(xr_dir) + "/fwf-hourly-2020091200.zarr"
-hourly_ds_old = xr.open_zarr(hourly_file_dir_old)
+# hourly_file_dir_old  = str(xr_dir) + "/fwf-hourly-2020091200.zarr"
+# hourly_ds_old = xr.open_zarr(hourly_file_dir_old)
 
-daily_file_dir_old  = str(xr_dir) + "/fwf-daily-2020091200.zarr"
-daily_ds_old = xr.open_zarr(daily_file_dir_old)
+# daily_file_dir_old  = str(xr_dir) + "/fwf-daily-2020091200.zarr"
+# daily_ds_old = xr.open_zarr(daily_file_dir_old)
 
 # %%
 

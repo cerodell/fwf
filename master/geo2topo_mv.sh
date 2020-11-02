@@ -59,7 +59,10 @@ for filename in /bluesky/fireweather/fwf/data/geojson/$(date '+%Y%m%d00')/qpf_3h
     /bluesky/fireweather/fwf/node_modules/topojson-server/bin/geo2topo -q 1e4 qpf="$filename" > "/bluesky/archive/fireweather/forecasts/$(date '+%Y%m%d00')/data/$(basename "$filename" .geojson).json"
 done
 
-
+## Convert total accumulated snow to topojson and move to website directory
+for filename in /bluesky/fireweather/fwf/data/geojson/$(date '+%Y%m%d00')/snw*.geojson; do
+    /bluesky/fireweather/fwf/node_modules/topojson-server/bin/geo2topo -q 1e4 snw="$filename" > "/bluesky/archive/fireweather/forecasts/$(date '+%Y%m%d00')/data/$(basename "$filename" .geojson).json"
+done
 
 
 

@@ -37,7 +37,7 @@
     <script src="/static/js/fwf-Leaflet.VectorGrid.bundled.min.js"></script>
     <script src="/static/js/fwf-leaflet.groupedlayercontrol-0.0.1.min.js"></script>
     <script src="/static/js/fwf-kdbush-0.0.1.min.js"></script>
-    <script src="/static/js/fwf-time-layer-group-0.0.1.min.js"></script>
+    <script src="/static/js/fwf-time-layer-group-0.0.2.min.js"></script>
     <script>
         var timeInterval = "{%FirstDateTime%}/{%LastDateTime%}"
         var tinital = timeInterval.slice(0,20)
@@ -90,13 +90,14 @@
         var rh_topo_file = 'data/rh-{%FileDateTime%}00.json';
         var qpf_topo_file = 'data/qpf-{%FileDateTime%}00.json';
         var qpf_3h_topo_file = 'data/qpf_3h-{%FileDateTime%}00.json';
+        var snw_topo_file = 'data/snw-{%FileDateTime%}00.json';
         var wxstations = 'data/fwf-wxstation-{%FileDateTimeYesterday%}00.json';
     </script>
     <script src="/static/js/fwf-basemaps.min.js"></script>
-    <script src="/static/js/fwf-plotly-0.0.1.min.js"></script>
+    <script src="/static/js/fwf-plotly-0.0.2.min.js"></script>
     <script src="/static/js/fwf-wxstations-0.0.1.min.js"></script>
-    <script src="/static/js/fwf-layer-controler-0.0.1.min.js"></script>
-    <script src="/static/js/fwf-colors-manager-0.0.1.min.js"></script>
+    <script src="/static/js/fwf-layer-controler-0.0.2.min.js"></script>
+    <script src="/static/js/fwf-colors-manager-0.0.2.min.js"></script>
     <!-- Google analytics -->
     <script>
         (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){

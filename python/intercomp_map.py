@@ -26,13 +26,14 @@ warnings.filterwarnings("ignore")
 
 """######### get directory to hourly/daily .zarr files.  #############"""
 start_date = date(2020, 6, 4)
-stop_date  = date(2020, 8, 9)
+stop_date  = date(2020, 9, 20)
 
 todays_date = stop_date.strftime("%Y%m%d")
 
 
 # filecsv = f'/Volumes/cer/fireweather/data/csv/fwf-intermoparison-{todays_date}00.csv'
-filecsv = str(data_dir) + f'/csv/fwf-intercomparison-{todays_date}00.csv'
+# filecsv = str(data_dir) + f'/csv/fwf-intercomparison-{todays_date}00.csv'
+filecsv = str(data_dir) + f'/csv/current/fwf-intercomparison-current.csv'
 inter_df = pd.read_csv(filecsv)
 
 inter_df['DateTime'] = pd.to_datetime(inter_df['DateTime'] ,format= '%Y%m%d%H')
@@ -69,7 +70,7 @@ wmo.remove(9114)
 wmo.remove(9113)
 wmo.remove(9213)
 wmo.remove(9513)
-wmo.remove(71520)
+# wmo.remove(71520)
 wmo.remove(721525)
 wmo.remove(721430)
 wmo.remove(721303)

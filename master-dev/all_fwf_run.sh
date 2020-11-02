@@ -4,7 +4,6 @@ echo "$(date) ---> start fwf model"
 /bluesky/fireweather/fwf/master/run.py
 echo "$(date) ---> fwf model done"
 
-
 echo "$(date) ---> start geojson maker for leaflet map"
 ### Create geojson files for display on leaflet
 /bluesky/fireweather/fwf/master/geojson_maker.py
@@ -34,3 +33,9 @@ echo "$(date) ---> make new symlink"
 cd /bluesky/archive/fireweather/forecasts/
 ln -fnsv $(date '+%Y%m%d00') current
 echo "$(date) ---> new symlink created"
+
+
+echo "$(date) ---> start intercomp_json for plotly line plts"
+### Create json file for plotly line plots
+/bluesky/fireweather/fwf/master/intercomp_json.py
+echo "$(date) ---> intercomp_json done"

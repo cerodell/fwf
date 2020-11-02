@@ -144,6 +144,14 @@ def jsonmask(ds_unmasked, wrf_file_dir):
     LANDMASK, LAKEMASK, SNOWC = wrfmasks(wrf_file_dir)
     SNOWC[:,:600]   = 0
     ds = xr.where(LANDMASK == 1, ds_unmasked, '')
+    if len(ds_unmasked.Time) == 61:
+        ds['T'] = ds_unmasked['T']
+        ds['H'] = ds_unmasked['H']
+        ds['W'] = ds_unmasked['W']
+        ds['WD'] = ds_unmasked['WD']
+        ds['r_o'] = ds_unmasked['r_o']
+    else:
+        pass
     ds = ds.transpose("time", "south_north", "west_east")
     # ds = xr.where(LAKEMASK == 0, ds, np.nan)
     # ds = ds.transpose("time", "south_north", "west_east")

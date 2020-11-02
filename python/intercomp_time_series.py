@@ -24,11 +24,11 @@ warnings.filterwarnings("ignore", message="elementwise comparison failed")
 """######### get directory to hourly/daily .zarr files.  #############"""
 
 
-todays_date = '20200920'
+todays_date = '20201014'
 
 
 # filecsv = f'/Volumes/cer/fireweather/data/csv_rerun/fwf-intercomparison-{todays_date}00.csv'
-filecsv = str(data_dir) + f'/csv/fwf-intercomparison-{todays_date}00.csv'
+filecsv = str(data_dir) + f'/csv/current/fwf-intercomparison-current.csv'
 inter_df = pd.read_csv(filecsv)
 
 
@@ -250,6 +250,6 @@ ax.set_ylabel("r", fontsize=14)
 ax.legend(loc='upper center', bbox_to_anchor=(.50,1.), shadow=True, ncol=6)
 
 fig.savefig(str(root_dir) + f"/images/intercomparison/pearsons_time_series-{todays_date}.png")
-
+plt.show()
 
 print("Run Time: ", datetime.now() - startTime)
