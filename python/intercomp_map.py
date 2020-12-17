@@ -5,6 +5,7 @@ import pandas as pd
 import xarray as xr
 from pathlib import Path
 from netCDF4 import Dataset
+from sklearn import preprocessing
 import matplotlib.pyplot as plt
 import cartopy.crs as ccrs
 import cartopy.feature as cfeature
@@ -25,8 +26,8 @@ import warnings
 warnings.filterwarnings("ignore")
 
 """######### get directory to hourly/daily .zarr files.  #############"""
-start_date = date(2020, 6, 4)
-stop_date  = date(2020, 9, 20)
+start_date = date(2020, 6, 1)
+stop_date  = date(2020, 10, 1)
 
 todays_date = stop_date.strftime("%Y%m%d")
 
@@ -44,6 +45,8 @@ stop = stop_date.strftime("%Y-%m-%d")
 inter_df = inter_df.loc[stop:start]
 inter_df = inter_df.reset_index()
 
+make_dir = Path(str(root_dir) + f"/images/intercomparison/map/{start}-{stop}/")
+make_dir.mkdir(parents=True, exist_ok=True)
 
 ## replace NULL with np.nan
 for column in inter_df:
@@ -62,23 +65,58 @@ inter_df = inter_df.astype({'lon':float, 'lat':float,'TEMP':float, 'RH': float, 
     'WS': float, 'WG': float, 'WDIR': float, 'PRES': float, 'PRECIP': float, 'FFMC': float,\
         'DMC': float, 'DC': float, 'BUI': float, 'ISI': float, 'FWI': float, 'DSR': float})
 
-df = inter_df[inter_df['FFMC'].notna()]
 
-
+df = inter_df
+# print(df)
 wmo = sorted(df['WMO'].unique())
-wmo.remove(9114)
-wmo.remove(9113)
-wmo.remove(9213)
-wmo.remove(9513)
-# wmo.remove(71520)
-wmo.remove(721525)
-wmo.remove(721430)
-wmo.remove(721303)
-wmo.remove(71682)
-wmo.remove(71669)
-wmo.remove(9419)
-wmo.remove(5536)
+wmo_array = df['WMO'].values
+unique, counts = np.unique(wmo_array, return_counts=True)
+unique_counts = np.asarray((unique, counts)).T
+low_count = np.where(counts<80)
+wmo_map_remove = np.array([720945, 721434, 721543, 720892, 720669 ]) 
+remove_wmo  = unique[low_count]
+remove_wmo = np.concatenate([remove_wmo,wmo_map_remove])
+
+for i in range(len(remove_wmo)):
+    # print(remove_wmo[i])
+    wmo.remove(remove_wmo[i])
+
 df = df.set_index('WMO')
+
+def nrmse(target, prediction):
+    rmse = np.sqrt(((target - prediction) ** 2).sum() / len(target))
+    nrmse = rmse/ (np.max(target)- np.min(target))
+    return round(nrmse,2)
+
+# def nrmse(target, prediction):
+#     rmse = np.sqrt(((target - prediction) ** 2).sum() / len(target))
+#     return round(rmse,2)
+
+mean_nrmse = {'FFMC': nrmse(df['F_today'], df['FFMC']),
+              'DMC': nrmse(df['P_today'],(df['DMC'])),
+              'DC': nrmse(df['D_today'],(df['DC'])),
+              'ISI': nrmse(df['R_today'],(df['ISI'])),
+              'BUI': nrmse(df['U_today'],(df['BUI'])),
+              'FWI': nrmse(df['S_today'],(df['FWI'])),
+              'TEMP': nrmse(df['T_today'],(df['TEMP'])),
+              'RH': nrmse(df['H_today'],(df['RH'])),
+              'WSP': nrmse(df['W_today'],(df['WS'])),
+              'WDIR': nrmse(df['WD_today'],(df['WDIR'])),
+              'PRECIP': nrmse(df['r_o_today'],(df['PRECIP']))
+              }
+
+mean_pearson = {'FFMC': df['F_today'].corr(df['FFMC']),
+              'DMC': df['P_today'].corr(df['DMC']),
+              'DC': df['D_today'].corr(df['DC']),
+              'ISI': df['R_today'].corr(df['ISI']),
+              'BUI': df['U_today'].corr(df['BUI']),
+              'FWI': df['S_today'].corr(df['FWI']),
+              'TEMP': df['T_today'].corr(df['TEMP']),
+              'RH': df['H_today'].corr(df['RH']),
+              'WSP': df['W_today'].corr(df['WS']),
+              'WDIR': df['WD_today'].corr(df['WDIR']),
+              'PRECIP': df['r_o_today'].corr(df['PRECIP'])
+              }
 
 wmo_r_1day = {}
 for loc in wmo:
@@ -158,11 +196,11 @@ def drop_bad_wx(wmo_dict):
     bad_ws_all = bad_ws_all + bad_wx_ffmc + bad_wx_fwi + bad_wx_isi + bad_wx_bui + bad_wx_dc + bad_wx_dmc
     bad_ws_all = [str(i) for i in bad_ws_all]
 
-    print(bad_ws_all)
-    print(len(df_wmo))
+    # print(bad_ws_all)
+    # print(len(df_wmo))
 
     df = df_wmo.loc[~df_wmo['wmo'].isin(bad_ws_all)]
-    print(len(df))
+    # print(len(df))
     df = df.T
 
     return df.to_dict()
@@ -170,6 +208,11 @@ def drop_bad_wx(wmo_dict):
 wmo_r_1day = drop_bad_wx(wmo_r_1day)
 wmo_r_2day = drop_bad_wx(wmo_r_2day)
 
+wmo = df.index.values
+unique, count = np.unique(wmo, return_counts=True)
+mask = np.where(count == int(len(num_days) * len(years)))
+unique = unique[mask]
+count = count[mask]
 
 def stations_map(var, start, stop, day):
     if day == 1:
@@ -183,7 +226,7 @@ def stations_map(var, start, stop, day):
 
         # An arbitrary choice.
     canada_east, canada_west = -60, -138
-    canada_north, canada_south = 64, 37
+    canada_north, canada_south = 62, 38
 
     standard_parallels = (49, 77)
     central_longitude = -(91 + 52 / 60)
@@ -192,20 +235,20 @@ def stations_map(var, start, stop, day):
         name='admin_1_states_provinces_lines',scale='50m',facecolor='none')
 
     fig = plt.figure(figsize=[16,8])
-    fig.suptitle(f"Station Observations vs {title} Day Model Forecast at noon local of  {var} \n {start} to {stop}", fontsize=16)
+    fig.suptitle(f"Station Observations vs {title} Day Model Forecast at noon local of {var} \n {start} to {stop} \n  \n Mean Correlation {round(mean_pearson[var],2)} and NRMSE {mean_nrmse[var]} of All Stations", fontsize=20)
+
     # fig.subplots_adjust(hspace=0.001)
     ax = fig.add_subplot(1, 1, 1, projection=ccrs.PlateCarree())
 
     ax.set_extent([canada_west, canada_east, canada_south, canada_north])
-    cm = plt.cm.get_cmap('jet_r')
-
+    cm = plt.cm.get_cmap('rainbow_r')
     for key in wmo_r:
-        C = ax.scatter(wmo_r[key]['lng'],wmo_r[key]['lat'], zorder =10, s= 12,\
+        C = ax.scatter(wmo_r[key]['lng'],wmo_r[key]['lat'], zorder =10, s= 40,\
             cmap=cm, vmin=-1, vmax=1, c=wmo_r[key][var], transform=ccrs.PlateCarree())
     ax.gridlines()
     clb = fig.colorbar(C, ax = ax, fraction=0.02, pad=0.02)
-    clb.set_label(f"{var} (Pearson's r)", fontsize = 8)
-    clb.ax.tick_params(labelsize= 8) 
+    clb.set_label(f"{var} (Pearson r)", fontsize = 18)
+    clb.ax.tick_params(labelsize= 12) 
     ax.add_feature(cfeature.LAND, zorder =1)
     ax.add_feature(cfeature.LAKES, zorder =1)
     ax.add_feature(cfeature.OCEAN, zorder =1)
@@ -213,48 +256,50 @@ def stations_map(var, start, stop, day):
     ax.add_feature(cfeature.COASTLINE, zorder =1)
     # ax.add_feature(cfeature.RIVERS)
     ax.add_feature(states_provinces,edgecolor='gray', zorder =2)
+    ax.set_xlabel("Longitude", fontsize=18)
+    ax.set_ylabel("Latitude", fontsize=18)
     plt.tight_layout()
     var = var.lower()
-    fig.savefig(str(root_dir) + f"/images/intercomparison/map/pearsons_map_{var}_{str(day)}day.png", dpi =200)
+    fig.savefig(str(make_dir) + f"/pearsons_map_{var}_{str(day)}day.png", dpi =250)
 
 
 
 
 print(f"{str(datetime.now())} ---> start loop of fwi vars" )
 stations_map('FFMC', start, stop, 1)
-stations_map('DMC', start, stop, 1)
-stations_map('DC', start, stop, 1)
-stations_map('ISI', start, stop, 1)
-stations_map('BUI', start, stop, 1)
-stations_map('FWI', start, stop, 1)
-print(f"{str(datetime.now())} ---> End loop of fwi vars" )
+# stations_map('DMC', start, stop, 1)
+# stations_map('DC', start, stop, 1)
+# stations_map('ISI', start, stop, 1)
+# stations_map('BUI', start, stop, 1)
+# stations_map('FWI', start, stop, 1)
+# print(f"{str(datetime.now())} ---> End loop of fwi vars" )
 
-print(f"{str(datetime.now())} ---> start loop of met vars :)" )
-stations_map('TEMP', start, stop, 1)
-stations_map('RH', start, stop, 1)
-stations_map('WSP', start, stop, 1)
-stations_map('WDIR', start, stop, 1)
-stations_map('PRECIP', start, stop, 1)
-print(f"{str(datetime.now())} ---> End loop of met vars" )
+# print(f"{str(datetime.now())} ---> start loop of met vars :)" )
+# stations_map('TEMP', start, stop, 1)
+# stations_map('RH', start, stop, 1)
+# stations_map('WSP', start, stop, 1)
+# stations_map('WDIR', start, stop, 1)
+# stations_map('PRECIP', start, stop, 1)
+# print(f"{str(datetime.now())} ---> End loop of met vars" )
 
 
 
-print(f"{str(datetime.now())} ---> start loop of fwi vars" )
-stations_map('FFMC', start, stop, 2)
-stations_map('DMC', start, stop, 2)
-stations_map('DC', start, stop, 2)
-stations_map('ISI', start, stop, 2)
-stations_map('BUI', start, stop, 2)
-stations_map('FWI', start, stop, 2)
-print(f"{str(datetime.now())} ---> End loop of fwi vars" )
+# print(f"{str(datetime.now())} ---> start loop of fwi vars" )
+# stations_map('FFMC', start, stop, 2)
+# stations_map('DMC', start, stop, 2)
+# stations_map('DC', start, stop, 2)
+# stations_map('ISI', start, stop, 2)
+# stations_map('BUI', start, stop, 2)
+# stations_map('FWI', start, stop, 2)
+# print(f"{str(datetime.now())} ---> End loop of fwi vars" )
 
-print(f"{str(datetime.now())} ---> start loop of met vars :)" )
-stations_map('TEMP', start, stop, 2)
-stations_map('RH', start, stop, 2)
-stations_map('WSP', start, stop, 2)
-stations_map('WDIR', start, stop, 2)
-stations_map('PRECIP', start, stop, 2)
-print(f"{str(datetime.now())} ---> End loop of met vars" )
+# print(f"{str(datetime.now())} ---> start loop of met vars :)" )
+# stations_map('TEMP', start, stop, 2)
+# stations_map('RH', start, stop, 2)
+# stations_map('WS', start, stop, 2)
+# stations_map('WDIR', start, stop, 2)
+# stations_map('PRECIP', start, stop, 2)
+# print(f"{str(datetime.now())} ---> End loop of met vars" )
 
 
 ### Timer

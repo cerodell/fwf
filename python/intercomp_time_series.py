@@ -24,7 +24,7 @@ warnings.filterwarnings("ignore", message="elementwise comparison failed")
 """######### get directory to hourly/daily .zarr files.  #############"""
 
 
-todays_date = '20201014'
+todays_date = '20201002'
 
 
 # filecsv = f'/Volumes/cer/fireweather/data/csv_rerun/fwf-intercomparison-{todays_date}00.csv'
@@ -46,13 +46,17 @@ inter_df = inter_df.astype({'lon':float, 'lat':float,'TEMP':float, 'RH': float, 
     'WS': float, 'WG': float, 'WDIR': float, 'PRES': float, 'PRECIP': float, 'FFMC': float,\
         'DMC': float, 'DC': float, 'BUI': float, 'ISI': float, 'FWI': float, 'DSR': float})
 
-df = inter_df.dropna()
+df = inter_df
+# print(df)
 wmo = sorted(df['WMO'].unique())
 wmo_array = df['WMO'].values
 unique, counts = np.unique(wmo_array, return_counts=True)
 unique_counts = np.asarray((unique, counts)).T
-low_count = np.where(counts<16)
+low_count = np.where(counts<80)
+wmo_map_remove = np.array([720945, 721434, 721543, 720892, 720669 ]) 
 remove_wmo  = unique[low_count]
+remove_wmo = np.concatenate([remove_wmo,wmo_map_remove])
+
 for i in range(len(remove_wmo)):
     # print(remove_wmo[i])
     wmo.remove(remove_wmo[i])
@@ -235,14 +239,15 @@ ax.plot(time[:-2],isi[:-2], label ='ISI', linewidth = 4, color = colors[3])
 ax.plot(time[:-2],bui[:-2], label ='BUI', linewidth = 4, color = colors[4])
 ax.plot(time[:-2],fwi[:-2], label ='FWI', linewidth = 4, color = colors[5])
 
-ax.plot(time,ffmc_r, color = colors[0], zorder=1, alpha = 0.2)
-ax.plot(time,dmc_r, color = colors[1],zorder=1, alpha = 0.2)
-ax.plot(time,dc_r, color = colors[2], zorder=1, alpha = 0.2)
-ax.plot(time,isi_r, color = colors[3], zorder=1, alpha = 0.2)
-ax.plot(time,bui_r, color = colors[4], zorder=1, alpha = 0.2)
-ax.plot(time,fwi_r, color = colors[5], zorder=1, alpha = 0.2)
+ax.plot(time[:-2],ffmc_r[:-2], color = colors[0], zorder=1, alpha = 0.2)
+ax.plot(time[:-2],dmc_r[:-2], color = colors[1],zorder=1, alpha = 0.2)
+ax.plot(time[:-2],dc_r[:-2], color = colors[2], zorder=1, alpha = 0.2)
+ax.plot(time[:-2],isi_r[:-2], color = colors[3], zorder=1, alpha = 0.2)
+ax.plot(time[:-2],bui_r[:-2], color = colors[4], zorder=1, alpha = 0.2)
+ax.plot(time[:-2],fwi_r[:-2], color = colors[5], zorder=1, alpha = 0.2)
 
 xfmt = DateFormatter('%Y-%m-%d')
+# ax.xaxis.set_major_formatter(DateFormatter('%y%b\n%d'))
 ax.xaxis.set_major_formatter(xfmt)
 ax.set_xlabel("Date", fontsize=14)
 ax.set_ylabel("r", fontsize=14)
