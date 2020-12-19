@@ -25,6 +25,7 @@ xr_dir   = root_dir / Path("data/xr/")
 
 
 wrf_dir = Path("/nfs/kitsault/archives/forecasts/WAN00CP-04/")
+wrf_dir_new = Path("/nfs/kitsault/archives/forecasts/WAN00CG-01/")
 
 
 sys.path.insert(0, str(root_dir))

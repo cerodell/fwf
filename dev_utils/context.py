@@ -20,6 +20,7 @@ root_dir = notebooks_dir.parents[0]
 data_dir = root_dir / Path("data")
 tzone_dir = root_dir / Path("data/tzone/")
 xr_dir   = root_dir / Path("data/xr/")
+nc_dir   = root_dir / Path("data/nc/")
 
 
 wrf_dir = Path("/nfs/kitsault/archives/forecasts/WAN00CP-04/")

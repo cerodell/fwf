@@ -54,6 +54,9 @@ hex_list = []
 for i in range(cmap.N):
     rgb = cmap(i)[:3] # will return rgba, we take only first 3 so we get rgb
     hex_list.append(str(matplotlib.colors.rgb2hex(rgb)))
+
+
+    
 hex_color = matplotlib.colors.to_hex([ 0.47, 
                                       0.0,  
                                       1.0,  
