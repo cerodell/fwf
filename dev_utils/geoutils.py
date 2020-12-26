@@ -19,7 +19,7 @@ from wrf import getvar
 
 
 
-def mycontourf_to_geojson(cmaps, var, ds, index, folderdate, colornumber):
+def mycontourf_to_geojson(cmaps, var, ds, index, folderdate, colornumber, domain):
     """
     This makes a geojson file from a matplot lib countourf
 
@@ -68,15 +68,13 @@ def mycontourf_to_geojson(cmaps, var, ds, index, folderdate, colornumber):
     else:
         pass
 
-    lngs = np.array(ds.XLONG)
-    lats = np.array(ds.XLAT)
+    lngs = ds.XLONG.values
+    lats = ds.XLAT.values
     fillarray = np.round(np.array(ds[var][index]),0)
     fillarray = ndimage.gaussian_filter(fillarray, sigma=sigma)
     
-    geojson_filepath = str(name + "-" + timestamp)
+    geojson_filepath = str(name + "-" + timestamp + "-" + domain)
     lenght = len(colors)
-    lngs, lats = lngs[10:,47:], lats[10:,47:]
-    fillarray = fillarray[10:,47:]
     levels = cmaps[var]["levels"]
     Cnorm = matplotlib.colors.Normalize(vmin= vmin, vmax =vmax+1)
     contourf = plt.contourf(lngs, lats, fillarray, levels = levels, \

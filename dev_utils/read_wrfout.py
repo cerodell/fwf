@@ -8,7 +8,7 @@ from netCDF4 import Dataset
 from datetime import datetime
 from context import data_dir, xr_dir, wrf_dir
 
-from wrf import (getvar, g_uvmet,get_cartopy, ll_to_xy, interplevel)
+from wrf import (getvar, g_uvmet,get_cartopy, ll_to_xy, interplevel, omp_set_num_threads, omp_get_max_threads)
 
 
 
@@ -37,6 +37,8 @@ def readwrf(filein, domain,  *args):
     ds_wrf: DataSet
         xarray DataSet
     """
+    omp_set_num_threads(6)
+    print(f"read files with {omp_get_max_threads()} threads")
     startTime = datetime.now()
     print("begin readwrf: ", str(startTime))
     ds_list, time_list, attributes = [], [], []
@@ -50,16 +52,32 @@ def readwrf(filein, domain,  *args):
         wrf_file = Dataset(path_in_str,'r')
 
         time         = getvar(wrf_file, "times", timeidx=0)
+        lats         = getvar(wrf_file, "XLAT")
+        lngs         = getvar(wrf_file, "XLONG")
         Ti           = getvar(wrf_file, "T2")
         T            = Ti-273.15
         T.attrs      = Ti.attrs
         T.attrs['description'] = "2m TEMP"
         T.attrs['units'] = "C"
+
+        TDi           = getvar(wrf_file, "td2", units = "degC", meta=False)
+        TD            = xr.DataArray(TDi, name='TD', dims=('south_north', 'west_east'))
+        TD.attrs      = Ti.attrs
+        TD.attrs['description'] = "2m DEW POINT TEMP"
+        TD.attrs['units'] = "C"
+
+        # SLPi           = getvar(wrf_file, "slp", units = "hPa", meta=False)
+        # SLP            = xr.DataArray(SLPi, name='SLP', dims=('south_north', 'west_east'))
+        # SLP.attrs      = Ti.attrs
+        # SLP.attrs['description'] = "SEA LEVEL PRESSURE"
+        # SLP.attrs['units'] = "hPa"
+
         Hi           = getvar(wrf_file, "rh2", meta=False)
         H            = xr.DataArray(Hi, name='H', dims=('south_north', 'west_east'))
         H.attrs      = Ti.attrs
         H.attrs['units'] = "(%)"
         H.attrs['description'] = "2m RELATIVE HUMIDITY"
+
         wsp_wdir     = g_uvmet.get_uvmet10_wspd_wdir(wrf_file,units='km h-1')
         wsp_array    = np.array(wsp_wdir[0])
         wdir_array   = np.array(wsp_wdir[1])
@@ -71,13 +89,13 @@ def readwrf(filein, domain,  *args):
         WD.attrs['description'] = "10m WIND DIRECTION"
         WD.attrs['units'] = "degrees"
 
-        U10i           = np.array(getvar(wrf_file, "U10")) *1.0
+        U10i           = getvar(wrf_file, "U10", meta=False)
         U10            = xr.DataArray(U10i, name='U10', dims=('south_north', 'west_east'))
         U10.attrs      = Ti.attrs
         U10.attrs['units'] = "m s-1"
         U10.attrs['description'] = "U at 10 M"
 
-        V10i           = np.array(getvar(wrf_file, "V10")) *1.0
+        V10i           = getvar(wrf_file, "V10", meta=False)
         V10            = xr.DataArray(V10i, name='V10', dims=('south_north', 'west_east'))
         V10.attrs      = Ti.attrs
         V10.attrs['units'] = "m s-1"

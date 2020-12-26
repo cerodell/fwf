@@ -1,13 +1,14 @@
 #!/bluesky/fireweather/miniconda3/envs/fwf/bin/python
 import context
 import json
+import bson
 import numpy as np
+import pandas as pd
 import xarray as xr
 from pathlib import Path
 from netCDF4 import Dataset
 from datetime import datetime
 # from utils.geoutils import jsonmask, delete3D, delete2D, latlngmask
-from dev_geoutils import jsonmask
 import string
 
 from context import data_dir, xr_dir, wrf_dir, root_dir
@@ -19,20 +20,62 @@ import matplotlib as mpl
 import matplotlib.colors
 import cartopy.crs as crs
 import matplotlib.pyplot as plt
-# from wrf import (getvar, g_uvmet)
+from wrf import (getvar, g_uvmet, geo_bounds)
 
-
+domain = 'd02'
 
 ### Get Path to most recent FWI forecast and open 
-hourly_file_dir = str(xr_dir) + str("/current/hourly.zarr") 
-daily_file_dir = str(xr_dir) + str("/current/daily.zarr") 
+hourly_file_dir = str(data_dir) + str(f"/test/current/fwf-hourly-current-{domain}.zarr") 
+daily_file_dir = str(data_dir) + str(f"/test/current/fwf-daily-current-{domain}.zarr") 
 
 # hourly_file_dir = str(xr_dir) + str("/fwf-hourly-2020082000.zarr") 
 # daily_file_dir = str(xr_dir) + str("/fwf-daily-2020082000.zarr")
 
+
+coast_lines = str(data_dir) + "/n_hem.csv"
+df_coast = pd.read_csv(coast_lines)
+
+## Make 1D arrays of lat and lon
+lats = np.array(df_coast["lat_degr"])
+lons = np.array(df_coast["lon_degr"])
+
+
 ### Open datasets
 hourly_ds = xr.open_zarr(hourly_file_dir)
 daily_ds = xr.open_zarr(daily_file_dir)
+
+test = geo_bounds(hourly_ds.F)
+
+
+ffmc = hourly_ds.F.values
+
+ff = {"ffmc": ffmc[1,:,:].tolist()}
+
+# Serializing json  
+json_object = json.dumps(ff, default=json_util.default, separators=(',', ':'), indent=None) 
+  
+# Writing to sample.json 
+with open(str(data_dir) + f"/test.json","w") as outfile:
+    json.dump(ff,outfile, default=json_util.default, separators=(',', ':'), indent=None)
+
+    outfile.write(json_object)
+
+xlats = hourly_ds.XLAT.values
+xlngs = hourly_ds.XLONG.values
+shape = ffmc.shape
+plt.contourf(xlngs, xlats, ffmc[0,:,:])
+plt.plot(lons, lats, zorder=1, linewidth=0.6, color="grey")
+plt.xlim([-175, -30])
+plt.ylim([30, 88])
+
+
+for i in range(1,100):
+    if int(shape[1]) % i == 0:
+        print(i)
+    else:
+        pass
+
+
 
 
 # # ### make dir for that days forecast files to be sotred...along woth index.html etc!!!!!

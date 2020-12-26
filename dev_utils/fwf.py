@@ -27,12 +27,12 @@ class FWF:
     ----------
 
     wrf_file_dir: str
-        - File directory to (nc) file of WRF met variables to calculate FWI
+        - File directory to (zarr) file of WRF met variables to calculate FWI
     hourly_file_dir: str
-        - File directory to (nc) file of yestersdays hourly FWI codes
+        - File directory to (zarr) file of yestersdays hourly FWI codes
         - Needed for carry over to intilaze the model
     daily_file_dir: str
-        - File directory to (nc) file of yestersdays daily FWI codes
+        - File directory to (zarr) file of yestersdays daily FWI codes
         - Needed for carry over to intilaze the model
 
 
@@ -40,13 +40,13 @@ class FWF:
     -------
         
     daily_ds: DataSet 
-        Writes a DataSet (nc) of daily FWI indeces/codes 
+        Writes a DataSet (zarr) of daily FWI indeces/codes 
         - Duff Moisture Code
         - Drought Code
         - Build Up Index
 
     hourly_ds: DataSet 
-        Writes a DataSet (nc) of daily FWI indeces/codes 
+        Writes a DataSet (zarr) of daily FWI indeces/codes 
         - Fine Fuel Moisture Code
         - Initial Spread index
         - Fire Weather Index
@@ -481,7 +481,7 @@ class FWF:
         # tzdict = self.tzdict
 
         #### HOPEFULLY SOLVES RUNTIME WARNING
-        P_o = xr.where(P_o > 0, P_o, 1e-6)
+        P_o = xr.where(P_o > 0, P_o, 0.1)
 
         ########################################################################
         ### (11) Solve for the effective rain (r_e) 
@@ -581,7 +581,7 @@ class FWF:
         ########################################################################
         ## keep grid to P intial (start up vlaue) if grid 
         ## is covered by more than 50% snow
-        P = xr.where(SNOWC < 0.5 , P_i, self.P_inital)
+        P = xr.where(SNOWC < 0.8 , P_i, self.P_inital)
         P = xr.where(P > 0.0 , P, 0.1)
 
         self.daily_ds['P'] = P
@@ -680,6 +680,9 @@ class FWF:
 
         V = (0.36 * (T + 2.8)) + L_f
 
+        ### V can not go negative, if V does go negative rasie to zero 
+        V = xr.where(V > 0, V, 1e-6)
+
         ########################################################################
         ### (21) Combine dry and moist D and Solve for Drought Code (D) 
         D_d = xr.where(r_o > r_limit, zero_full, D_o)
@@ -689,9 +692,10 @@ class FWF:
         ########################################################################
         ## keep grid to D intial (start up vlaue) if grid 
         ## is covered by more than 50% snow
-        D = xr.where(SNOWC < 0.5 , D_i, self.D_inital)
-        D = xr.where(D > 0.0 , D, 0.1)
+        D = xr.where(SNOWC < 0.8 , D_i, self.D_inital)
 
+        ### D can not go negative, if D does go negative rasie to zero 
+        D = xr.where(D > 0.0 , D, 0.1)
 
         self.daily_ds['D'] = D
 
@@ -794,7 +798,7 @@ class FWF:
         ### (27b) Solve for build up index where P > 0.4D (U_b) 
 
         a   = 0.92 + np.power((0.0114 * P), 1.7)
-        U_b = P - ((1 - (0.8 * D)) / ((P + (0.4 * D)) * a))
+        U_b = P - ((1 - (0.8 * D)) / (P + (0.4 * D))) * a
         U_b = xr.where(P < P_limit, zero_full, U_b)
 
 
@@ -945,8 +949,8 @@ class FWF:
         
         ## loop every 24 hours
         files_ds = []
-        for i in [0,24]:
-            print(i)
+        for i in [12,36]:
+            # print(i)
             
             ## loop each variable 
             mean_da = []
@@ -977,7 +981,8 @@ class FWF:
         daily_ds = xr.combine_nested(files_ds, 'time')
 
         ## create datarray for carry over rain, this will be added to the next days rain totals
-        r_o_tomorrow_i = daily_ds.r_o.values[1] - daily_ds.r_o.values[0]
+        ## NOTE: this is rain that fell from noon local until 00Z.
+        r_o_tomorrow_i = wrf_ds.r_o.values[24] - daily_ds.r_o.values[0]
         r_o_tomorrow = np.stack([r_o_tomorrow_i,r_o_tomorrow_i])
         r_o_tomorrow_da = xr.DataArray(r_o_tomorrow, name="r_o_tomorrow", 
                         dims=('time','south_north', 'west_east'), coords= daily_ds.coords)
@@ -1011,7 +1016,9 @@ class FWF:
             FFMC = self.solve_ffmc(self.hourly_ds.isel(time = i))
             hourly_list.append(FFMC)
         print("Hourly loop done")
-        hourly_ds = self.combine_by_time(hourly_list)
+        # hourly_ds = self.combine_by_time(hourly_list)
+        hourly_ds = xr.combine_nested(hourly_list, 'time')
+
         ISI  = self.solve_isi(hourly_ds)
         hourly_ds['R'] = ISI
         self.R = ISI
@@ -1053,7 +1060,8 @@ class FWF:
             daily_list.append(DMC)
         
         print("Daily loop done")
-        daily_ds = self.combine_by_time(daily_list)
+        # daily_ds = self.combine_by_time(daily_list)
+        daily_ds = xr.combine_nested(daily_list, 'time')
         U  = self.solve_bui(daily_ds)
         daily_ds['U'] = U
         self.U = U
@@ -1077,6 +1085,7 @@ class FWF:
         combined_ds: DataSet
             Single xarray DataSet with a dimension time
         """
+
         files_ds = []
         for index in dict_list:
             ds  = xr.Dataset(index)
@@ -1100,12 +1109,12 @@ class FWF:
     """#######################################"""
     def hourly(self):
         """
-        Writes hourly_ds (.nc) and adds the appropriate attributes to each variable 
+        Writes hourly_ds (.zarr) and adds the appropriate attributes to each variable 
 
         Returns
         -------
         make_dir: str
-            - File directory to (nc) file of todays hourly FWI codes
+            - File directory to (zarr) file of todays hourly FWI codes
             - Needed for carry over to intilaze tomorrow's model run
         """
         hourly_ds = self.hourly_loop()
@@ -1142,7 +1151,7 @@ class FWF:
         # ### Name file after initial time of wrf 
         file_name  = str(np.array(self.hourly_ds.Time[0], dtype ='datetime64[h]'))
         file_name = datetime.strptime(str(file_name), '%Y-%m-%dT%H').strftime('%Y%m%d%H')
-        print("Hourly nc initialized at :", file_name)
+        print("Hourly zarr initialized at :", file_name)
 
         # # ## Write and save DataArray (.zarr) file
         make_dir = Path(str(data_dir) + str('/test/fwf-hourly-') + file_name + str(f"-{self.domain}.zarr"))
@@ -1174,12 +1183,12 @@ class FWF:
     """#######################################"""
     def daily(self):
         """
-        Writes daily_ds (.nc) and adds the appropriate attributes to each variable
+        Writes daily_ds (.zarr) and adds the appropriate attributes to each variable
 
         Returns
         -------
         make_dir: str
-            - File directory to (nc) file of todays daily FWI codes
+            - File directory to (zarr) file of todays daily FWI codes
             - Needed for carry over to intilaze tomorrow's model run
         """
         daily_ds = self.daily_loop()
@@ -1210,7 +1219,7 @@ class FWF:
         file_name  = str(np.array(self.hourly_ds.Time[0], dtype ='datetime64[h]'))
         file_name = datetime.strptime(str(file_name), '%Y-%m-%dT%H').strftime('%Y%m%d%H')
 
-        print("Daily nc initialized at :", file_name)
+        print("Daily zarr initialized at :", file_name)
 
         # # ## Write and save DataArray (.zarr) file
         make_dir = Path(str(data_dir) + str('/test/fwf-daily-') + file_name + str(f"-{self.domain}.zarr"))

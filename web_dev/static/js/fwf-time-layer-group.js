@@ -472,7 +472,7 @@ getHourlyForecast = function(baseUrl, time) {
     var initFileUrl = baseUrl.substring(baseUrl.lastIndexOf("/"), baseUrl.length - 16);
     var strTime = dateTimeFileName(new Date(time));
     url = beginUrl + initFileUrl + '-' + strTime + '.json';
-    // console.log(url);
+    console.log(url);
     return url;
 };
 

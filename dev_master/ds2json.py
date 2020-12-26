@@ -9,7 +9,7 @@ from datetime import datetime
 from utils.geoutils import jsonmask
 import string
 
-from context import data_dir, xr_dir, wrf_dir, root_dir, tzone_dir
+from context import data_dir, xr_dir, wrf_dir, root_dir, tzone_dir, wrf_dir_new
 from datetime import datetime, date, timedelta
 startTime = datetime.now()
 
@@ -74,8 +74,8 @@ for i in range(0,48,24):
 
 ### Get Path to most recent WRF run for most uptodate snowcover info
 wrf_folder = date.today().strftime('/%y%m%d00/')
-filein = str(wrf_dir) + wrf_folder
-wrf_file_dir = sorted(Path(filein).glob('wrfout_d03_*'))
+filein = str(wrf_dir_new) + wrf_folder
+wrf_file_dir = sorted(Path(filein).glob(f'wrfout_{domain}_*'))
 
 ### Round all vars to second decimal...save on file size...maybe make everything ints? idk 
 hourly_ds = hourly_ds.round(2)
