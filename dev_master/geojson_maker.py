@@ -24,12 +24,16 @@ warnings.filterwarnings("ignore", message="invalid value encountered in true_div
 with open('/bluesky/fireweather/fwf/json/colormaps-dev.json') as f:
   cmaps = json.load(f)
 
+### Open color map json
+with open('/bluesky/fireweather/fwf/json/nested-index.json') as f:
+  nested_index = json.load(f)
 
 ### Get Path to most recent FWI forecast and open 
 # hourly_file_dir = str(xr_dir) + str("/current/fwf-hourly-current.zarr") 
 # daily_file_dir = str(xr_dir) + str("/current/fwf-daily-current.zarr") 
 
-for domain in ['d02','d03']:
+# for domain in ['d02','d03']:
+for domain in ['d03']:
   hourly_file_dir = str(data_dir) + str(f"/test/current/fwf-hourly-current-{domain}.zarr") 
   daily_file_dir = str(data_dir) + str(f"/test/current/fwf-daily-current-{domain}.zarr") 
 
@@ -75,15 +79,15 @@ for domain in ['d02','d03']:
   lenght = len(hourly_ds.F)
   index = np.arange(0,lenght,3, dtype = int)
   for i in index:
-    mycontourf_to_geojson(cmaps, 'F', hourly_ds, i, folderdate, "colors18", domain)
-    mycontourf_to_geojson(cmaps, 'R', hourly_ds, i, folderdate, "colors18", domain)
-    mycontourf_to_geojson(cmaps, 'S', hourly_ds, i, folderdate, "colors18", domain)
-    mycontourf_to_geojson(cmaps, 'W', hourly_ds, i, folderdate, "colors18", domain)
-    mycontourf_to_geojson(cmaps, 'T', hourly_ds, i, folderdate, "colors47", domain)
-    mycontourf_to_geojson(cmaps, 'H', hourly_ds, i, folderdate, "colors18", domain)
-    mycontourf_to_geojson(cmaps, 'r_o', hourly_ds, i, folderdate, "colors18", domain)
-    mycontourf_to_geojson(cmaps, 'r_o_3hour', hourly_ds, i, folderdate, "colors18", domain)
-    mycontourf_to_geojson(cmaps, 'SNW', hourly_ds, i, folderdate, "colors", domain)
+    mycontourf_to_geojson(cmaps, 'F', hourly_ds, i, folderdate, "colors18", domain, nested_index)
+    mycontourf_to_geojson(cmaps, 'R', hourly_ds, i, folderdate, "colors18", domain, nested_index)
+    mycontourf_to_geojson(cmaps, 'S', hourly_ds, i, folderdate, "colors18", domain, nested_index)
+    mycontourf_to_geojson(cmaps, 'W', hourly_ds, i, folderdate, "colors18", domain, nested_index)
+    mycontourf_to_geojson(cmaps, 'T', hourly_ds, i, folderdate, "colors47", domain, nested_index)
+    mycontourf_to_geojson(cmaps, 'H', hourly_ds, i, folderdate, "colors18", domain, nested_index)
+    mycontourf_to_geojson(cmaps, 'r_o', hourly_ds, i, folderdate, "colors18", domain, nested_index)
+    mycontourf_to_geojson(cmaps, 'r_o_3hour', hourly_ds, i, folderdate, "colors18", domain, nested_index)
+    mycontourf_to_geojson(cmaps, 'SNW', hourly_ds, i, folderdate, "colors", domain, nested_index)
 
   print(f"{str(datetime.now())} ---> end loop of hourly fwf products" )
 
@@ -94,9 +98,9 @@ for domain in ['d02','d03']:
 
 
   for i in range(len(daily_ds.Time)):
-    mycontourf_to_geojson(cmaps, 'P', daily_ds, i, folderdate, "colors18", domain)
-    mycontourf_to_geojson(cmaps, 'D', daily_ds, i, folderdate, "colors18", domain)
-    mycontourf_to_geojson(cmaps, 'U', daily_ds, i, folderdate, "colors18", domain)
+    mycontourf_to_geojson(cmaps, 'P', daily_ds, i, folderdate, "colors18", domain, nested_index)
+    mycontourf_to_geojson(cmaps, 'D', daily_ds, i, folderdate, "colors18", domain, nested_index)
+    mycontourf_to_geojson(cmaps, 'U', daily_ds, i, folderdate, "colors18", domain, nested_index)
 
   print(f"{str(datetime.now())} ---> end loop of daily fwf products" )
 

@@ -19,7 +19,7 @@ from wrf import getvar
 
 
 
-def mycontourf_to_geojson(cmaps, var, ds, index, folderdate, colornumber, domain):
+def mycontourf_to_geojson(cmaps, var, ds, index, folderdate, colornumber, domain, nested_index):
     """
     This makes a geojson file from a matplot lib countourf
 
@@ -55,6 +55,7 @@ def mycontourf_to_geojson(cmaps, var, ds, index, folderdate, colornumber, domain
         - ``../fwf/data/geojson/YYYYMMDDHH``
 
     """
+    y1, y2, x1, x2 = nested_index["y1_"+domain], nested_index["y2_"+domain], nested_index["x1_"+domain], nested_index["x2_"+domain] 
     timestamp  = str(np.array(ds.Time[index], dtype ='datetime64[h]'))
     timestamp = datetime.strptime(str(timestamp), '%Y-%m-%dT%H').strftime('%Y%m%d%H')
     vmin, vmax = cmaps[var]["vmin"], cmaps[var]["vmax"]
@@ -70,7 +71,11 @@ def mycontourf_to_geojson(cmaps, var, ds, index, folderdate, colornumber, domain
 
     lngs = ds.XLONG.values
     lats = ds.XLAT.values
-    fillarray = np.round(np.array(ds[var][index]),0)
+    lngs = lngs[y1:-y2,x1:-x2]
+    lats = lats[y1:-y2,x1:-x2]
+
+    fillarray = ds[var][index].values[y1:-y2,x1:-x2]
+    fillarray = np.round(fillarray,0)
     fillarray = ndimage.gaussian_filter(fillarray, sigma=sigma)
     
     geojson_filepath = str(name + "-" + timestamp + "-" + domain)
@@ -132,7 +137,6 @@ def wrfmasks(wrf_file_dir):
     LANDMASK        = getvar(wrf_file, "LANDMASK")
     LAKEMASK        = getvar(wrf_file, "LAKEMASK")
     SNOWC           = getvar(wrf_file, "SNOWC")
-    SNOWC[:,:600]   = 0
 
     return LANDMASK, LAKEMASK, SNOWC
 
@@ -140,7 +144,6 @@ def wrfmasks(wrf_file_dir):
 
 def jsonmask(ds_unmasked, wrf_file_dir):
     LANDMASK, LAKEMASK, SNOWC = wrfmasks(wrf_file_dir)
-    SNOWC[:,:600]   = 0
     ds = xr.where(LANDMASK == 1, ds_unmasked, '')
     if len(ds_unmasked.Time) == 61:
         ds['T'] = ds_unmasked['T']

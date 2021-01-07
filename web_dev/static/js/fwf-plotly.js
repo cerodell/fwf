@@ -11,11 +11,8 @@ const fwfmodellocation = L.marker([51.5, -0.09],{icon: redIcon}).bindPopup("<b>H
 const fwfclicklocation = L.marker().bindPopup("<b>Hello!</b><br />I am where you clicked <br /> or searched on the map.");
 
 const buffer = 0.05
-
 var point_list = [];
 var file_list = [];
-
-
 function makeplotly(n, o, UTCTimeMap) {
 
     for (var t = n.XLAT, e = n.XLONG, l = [], a = [], r = [(r = [t.length, t[0].length])[1], r[0]], c = 0; c < t.length; c++) l = l.concat(t[c]);
@@ -190,6 +187,8 @@ function makeplotly(n, o, UTCTimeMap) {
         fwfmodellocation.setLatLng([w.toFixed(3), v.toFixed(3)]).addTo(map)
     Plotly.react(C, N, S);
 }
+
+
 function makeplots(n) {
     (json_dir = "fwf-zone.json"),
         fetch(n)

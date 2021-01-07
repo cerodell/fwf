@@ -83,9 +83,9 @@ daily_ds = daily_ds.round(2)
 fwi_dsr_ds = fwi_dsr_ds.round(2)
 
 # ## Mask out oceans, lakes and snow cover
-hourly_ds = jsonmask(hourly_ds, wrf_file_dir)
-daily_ds  = jsonmask(daily_ds, wrf_file_dir)
-fwi_dsr_ds  = jsonmask(fwi_dsr_ds, wrf_file_dir)
+hourly_ds = jsonmask(hourly_ds, wrf_file_dir[0])
+daily_ds  = jsonmask(daily_ds, wrf_file_dir[0])
+fwi_dsr_ds  = jsonmask(fwi_dsr_ds, wrf_file_dir[0])
 
 
 

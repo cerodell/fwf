@@ -68,7 +68,7 @@ done
 # done
 
 # ## Convert total accumulated precip to topojson and move to website directory
-# for filename in /bluesky/fireweather/fwf/data/geojson/2020090700/qpf-*.geojson; do
+# for filename in /bluesky/fireweather/fwf/data/geojson/2020090700/precip-*.geojson; do
 #     /bluesky/fireweather/fwf/node_modules/topojson-server/bin/geo2topo -q 1e4 qpf="$filename" > "/bluesky/fireweather/fwf/web_dev/data/$(basename "$filename" .geojson).json"
 # done
 
