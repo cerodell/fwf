@@ -1,39 +1,75 @@
+// function getColor(d) {
+//     return d >  1.0    ? '#276419'  :
+//             d > 0.8    ? '#4d9221' :
+//             d > 0.6    ? '#7fbc41' :
+//             d > 0.4    ? '#b8e186' :
+//             d > 0.2    ? '#e6f5d0' :
+//             d > 0.0    ? '#f7f7f7' :
+//             d > -0.2   ? '#fde0ef' :
+//             d > -0.4   ? '#f1b6da' :
+//             d > -0.6   ? '#de77ae' :
+//             d > -0.8   ? '#c51b7d' :
+//             d > -1.0   ? '#8e0152' :
+//                          '#8e0152' ;
+// }
+
+// var legend_wx = L.control({position: 'bottomright'});
+
+// legend_wx.onAdd = function (map) {
+
+//     var div = L.DomUtil.create('div', 'info legend'),
+//         grades = [1.0, 0.8, 0.6, 0.4, 0.2, 0.00, -0.2, -0.4, -0.6, -0.8, -1.0],
+//         labels = ['<strong> Pearson Correlation </strong>'],
+//         from, to;
+
+//     for (var i = 0; i < grades.length; i++) {
+//         from = grades[i];
+//         to = grades[i + 1];
+//         labels.push(
+//             '<i style="background:' + getColor(from + 0.001) + '"></i> ' +
+//             from + (to ? '      &ndash;       ' + to : ''));
+//     }
+
+//     div.innerHTML = labels.join('<br>');
+//     return div;
+// };
 function getColor(d) {
-    return d >  1.0    ? '#276419'  :
-            d > 0.8    ? '#4d9221' :
-            d > 0.6    ? '#7fbc41' :
-            d > 0.4    ? '#b8e186' :
-            d > 0.2    ? '#e6f5d0' :
-            d > 0.0    ? '#f7f7f7' :
-            d > -0.2   ? '#fde0ef' :
-            d > -0.4   ? '#f1b6da' :
-            d > -0.6   ? '#de77ae' :
-            d > -0.8   ? '#c51b7d' :
-            d > -1.0   ? '#8e0152' :
-                         '#8e0152' ;
+    return d === 'Fully Reporting'  ? "#008000" :
+           d === 'Partially Reporting'  ? "#FFFF00" :
+           d === 'Not Reporting' ? "#FF0000" :
+                        "#008000";
+}
+
+function style(feature) {
+    return {
+        weight: 1.5,
+        opacity: 1,
+        fillOpacity: 1,
+        radius: 6,
+        fillColor: getColor(feature.properties.TypeOfIssue),
+        color: "grey"
+
+    };
 }
 
 var legend_wx = L.control({position: 'bottomright'});
-
 legend_wx.onAdd = function (map) {
 
-    var div = L.DomUtil.create('div', 'info legend'),
-        grades = [1.0, 0.8, 0.6, 0.4, 0.2, 0.00, -0.2, -0.4, -0.6, -0.8, -1.0],
-        labels = ['<strong> Pearson Correlation </strong>'],
-        from, to;
+    var div = L.DomUtil.create('div', 'info legend');
+    labels = ['<strong>Station Status</strong>'],
+    categories = ['Fully Reporting', 'Partially Reporting', 'Not Reporting'];
 
-    for (var i = 0; i < grades.length; i++) {
-        from = grades[i];
-        to = grades[i + 1];
-        labels.push(
-            '<i style="background:' + getColor(from + 0.001) + '"></i> ' +
-            from + (to ? '      &ndash;       ' + to : ''));
-    }
+    for (var i = 0; i < categories.length; i++) {
 
-    div.innerHTML = labels.join('<br>');
+            div.innerHTML += 
+            labels.push(
+                '<i class="circle" style="background:' + getColor(categories[i]) + '"></i> ' +
+            (categories[i] ? categories[i] : '+'));
+
+        }
+        div.innerHTML = labels.join('<br>');
     return div;
-};
-
+    };
 
 
 

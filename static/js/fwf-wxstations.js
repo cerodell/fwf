@@ -35,6 +35,7 @@ const customOptions =
 'maxWidth': '500',
 'className' : 'custom-popup'
 }
+
 fetch(wxstations).then(function(response){
     return response.json();
 }).then(function(json){    
