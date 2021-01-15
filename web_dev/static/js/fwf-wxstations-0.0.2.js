@@ -204,7 +204,7 @@ function circleClick(e) {
                 var index = wmo.indexOf(parseInt(target_wmo));
     
                 var dict = {};
-                const arrayColumn = (arr, n) => arr.map(x => x[n]);
+                var arrayColumn = (arr, n) => arr.map(x => x[n]);
                 function change99(array){
                     for (i = 0; i < array.length; ++i){
                     if (array[i]== -99){

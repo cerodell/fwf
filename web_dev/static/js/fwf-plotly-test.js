@@ -16,14 +16,20 @@ div2.className = "wx-plot2";
 div2.style.width = width;
 div2.style.height = height;
 div2.setAttribute("id", "wx_plot2");
+ 
+var btn_fire2 = document.createElement("BUTTON");   // Create a <button> element
+btn_fire2.setAttribute("id", "button");
+btn_fire2.className = "btn_fire2";
+btn_fire2.innerHTML = "Fire Weather";
+// Insert text
+div2.appendChild(btn_fire2);               // Append <button> to <body>
 
-// window.onload = function() {
-//     alert(document.getElementById("wx_plot2"));
-//     console.log('alert')
-// };
 
-// console.log(div2);
-// console.log(TESTER);
+var btn_wx2 = document.createElement("BUTTON");   // Create a <button> element
+btn_wx2.setAttribute("id", "button");
+btn_wx2.className = "btn_wx2";
+btn_wx2.innerHTML = "Weather";                   // Insert text
+div2.appendChild(btn_wx2); 
 
 
 
@@ -55,6 +61,8 @@ function makeplotly(e) {
     console.log(clickedCircle);
     var ll = clickedCircle._latlng
     console.log(ll);
+    // btn_fire2.onclick = fwiplot;
+    // btn_wx2.onclick = wxplot;
 
     var o = [ll.lat,ll.lng]
     console.log(o);
@@ -63,8 +71,6 @@ function makeplotly(e) {
         return response.json();
     }).then(function(n){  
 
-    var C = document.getElementById('wx_plot2')
-    console.log(C);
      var buff = 0.2
     for (var t = n.XLAT, e = n.XLONG, l = [], a = [], r = [(r = [t.length, t[0].length])[1], r[0]], c = 0; c < t.length; c++) l = l.concat(t[c]);
     for (c = 0; c < e.length; c++) a = a.concat(e[c]);
@@ -88,14 +94,64 @@ function makeplotly(e) {
     var h = m[hh];
     var w = n.XLAT[h];
     var v = n.XLONG[h];
+    console.log(n);
     console.log(w);
-    console.log(v);
 
-    fwfmodellocation.setLatLng([w, v]).addTo(map);
+
+    var dict = {};
+    var arrayColumn = (arr, n) => arr.map(x => x[n]);
+    keys = ['dsr', 'ffmc', 'rh', 'isi', 'fwi', 'temp', 
+            'ws', 'wdir', 'precip', 'dc', 'dmc', 'bui'];
+
+    for (var key of keys) {
+        var array = JSON.parse(n[key]);
+        var array = arrayColumn(array,hh);
+        dict[key] = array;
+    };
+
+    dict['time'] = n["Time"];
+    dict['day'] = n["Day"];
+
+    console.log(dict);
+
+
+
+    var C = document.getElementById('wx_plot2');
+    console.log(C);
+    hovsize = 10;
+    N =
+    [(ffmc = {x: dict['time'], y: dict['ffmc'], mode: 'lines', line: { color: "ff7f0e", dash: "dot" }, yaxis: "y6",  hoverlabel:{font:{size: hovsize, color: "#ffffff"}, bordercolor: "#ffffff"}, hovertemplate: "<b> FFMC </b><br>" + "%{y:.2f} <br>" + "<extra></extra>" }),    
+    (dmc = {x: dict['day'], y: dict['dmc'], mode: 'lines', line: { color: "2ca02c", dash: "dot" }, yaxis: "y5",  hoverlabel:{font:{size: hovsize}}, hovertemplate: "<b> DMC </b><br>" + "%{y:.2f} <br>" + "<extra></extra>"}),
+    (dc = {x: dict['day'], y: dict['dc'], mode: 'lines', line: { color: "8c564b", dash: "dot" }, yaxis: "y4", hoverlabel:{font:{size: hovsize}}, hovertemplate: "<b> DC </b><br>" + "%{y:.2f} <br>" + "<extra></extra>" }),
+    (isi = {x: dict['time'], y: dict['isi'], mode: 'lines', line: { color: "9467bd", dash: "dot" }, yaxis: "y3",  hoverlabel:{font:{size: hovsize}}, hovertemplate: "<b> ISI </b><br>" + "%{y:.2f} <br>" + "<extra></extra>" }),
+    (bui = {x: dict['day'], y: dict['bui'], mode: 'lines', line: { color: "7f7f7f", dash: "dot" }, yaxis: "y2",  hoverlabel:{font:{size: hovsize}}, hovertemplate: "<b> FWI </b><br>" + "%{y:.2f} <br>" + "<extra></extra>"}),
+    (fwi = {x: dict['day'], y: dict['fwi'], mode: 'lines', line: { color: "d62728", dash: "dot" }, yaxis: "y1",  hoverlabel:{font:{size: hovsize}}, hovertemplate: "<b> FWI </b><br>" + "%{y:.2f} <br>" + "<extra></extra>" }),
+    ];
+        
+
+
+    labelsize = 12;
+    ticksize = 9;
+    S = {
+        autosize: true, 
+        title: {text: "Fire Weather Forecast " + "<br>Lat: " + w.toString().slice(0,6) + ", Lon: " + v.toString().slice(0,8) , x:0.05}, 
+        titlefont: { color: "#444444", size: 13 },
+        showlegend: !1,
+        yaxis6: {domain: [.8, .94], title: { text: "FFMC", font: { size: labelsize, color: "ff7f0e" } }, tickfont: {size: ticksize, color: "ff7f0e"}},
+        yaxis5: {domain: [0.64, 0.78], title: { text: "DMC", font: { size: labelsize,color: "2ca02c" } }, tickfont: {size: ticksize, color: "2ca02c"}},
+        yaxis4: { domain: [0.48, 0.62], title: { text: "DC", font: { size: labelsize,color: "8c564b" } }, tickfont: {size: ticksize, color: "8c564b"}},
+        yaxis3: { domain: [0.32, 0.46], title: { text: "ISI", font: {size: labelsize, color: "9467bd" } }, tickfont: {size: ticksize, color: "9467bd"}},
+        yaxis2: { domain: [0.16, 0.30], title: { text: "BUI", font: { size: labelsize, color: "7f7f7f" } }, tickfont: {size: ticksize, color: "7f7f7f"}},
+        yaxis1: { domain: [0, 0.14], title: { text: "FWI", font: {size: labelsize, color: "d62728" } }, tickfont: {size: ticksize, color: "d62728"}},
+        xaxis: { title: "Date (UTC)", font: { size: labelsize, color: "444444" }}
+    };
+        Plotly.newPlot(C,  N, S);
+        });
+
+
+    // fwfmodellocation.setLatLng([w, v]).addTo(map);
     
-    
-})
-}
+    };
 
 
 

@@ -12,14 +12,14 @@
     text-align: center;
   }
 
-.fwi-plot {
+/* .fwi-plot {
   width: 600px;
   height: 450px;
   border: 2px ridge #969696;
   background-color: white;   
   border-radius: 2px;
   text-align: center;
-}
+} */
 
 .btn_fire{
     position: absolute;
@@ -67,4 +67,57 @@
 .btn_wx:hover {
   background-color: #555555;
   color: white;
+}
+
+
+
+
+
+
+.btn_fire2{
+  position: absolute;
+  right:112px;
+  z-index:1000;
+  float: right;
+  top: 60px;
+  padding: 8px 4px;
+  background-color: white;
+  color: #444444;
+  border: 1px solid #555555;
+  border-radius: 4px;
+  font-family: Verdana, sans-serif;
+  display: inline-block;
+  font-size: 14px;
+  margin: 4px 2px;
+  cursor: pointer;
+}
+
+
+.btn_fire2:hover {
+background-color: #555555;
+color: white;
+}
+
+.btn_wx2{
+  position: absolute;
+  right:40px;
+  z-index:1000;
+  float: right;
+  top: 60px;
+  padding: 8px 4px;
+  background-color: white;
+  color: #444444;
+  border: 1px solid #555555;
+  border-radius: 4px;
+  font-family: Verdana, sans-serif;
+  display: inline-block;
+  font-size: 14px;
+  margin: 4px 2px;
+  cursor: pointer;
+}
+
+
+.btn_wx2:hover {
+background-color: #555555;
+color: white;
 }
