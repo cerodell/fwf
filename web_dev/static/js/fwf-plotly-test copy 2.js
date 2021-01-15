@@ -12,24 +12,13 @@ var point_list = [];
 var file_list = [];
 
 
-div2.className = "wx-plot2";
-div2.style.width = width;
-div2.style.height = height;
-div2.setAttribute("id", "wx_plot2");
-
-// window.onload = function() {
-//     alert(document.getElementById("wx_plot2"));
-//     console.log('alert')
-// };
-
-// console.log(div2);
-// console.log(TESTER);
 
 
-
-// const fwfmodellocation = L.marker([51.5, -0.09],{icon: redIcon});
-// fwfmodellocation.bindPopup(div2, {maxWidth: "auto", maxHeight: "auto"});
-// fwfmodellocation.setZIndexOffset(1000);
+// const div2 = div.cloneNode(true);
+// const div2 = document.createElement("div");
+// const div2 = div.cloneNode(true);
+const fwfmodellocation = L.marker([51.5, -0.09],{icon: redIcon});
+fwfmodellocation.setZIndexOffset(1000);
 const fwfclicklocation = L.marker().bindPopup("<b>Hello!</b><br />I am where you clicked <br /> or searched on the map.");
 fwfclicklocation.setZIndexOffset(10);
 
@@ -49,23 +38,20 @@ var searchboxControl=createSearchboxControl();
 
 
 
-function makeplotly(e) {
-    var clickedCircle = e.target;
-    var json_dir = clickedCircle.options.customId;
-    console.log(clickedCircle);
-    var ll = clickedCircle._latlng
-    console.log(ll);
 
-    var o = [ll.lat,ll.lng]
-    console.log(o);
+function makeplotly(n, o, UTCTimeMap) {
+    // div2.className = "fwi-plot";
+    // div2.setAttribute("id", "plot_fwi");
+    // div2.style.width = width;
+    // div2.style.height = height;
+    // var C = document.getElementById("plot_fwi");
 
-    fetch(json_dir).then(function(response){
-        return response.json();
-    }).then(function(n){  
+    // console.log(div2)
+    // console.log(C)
 
-    var C = document.getElementById('wx_plot2')
-    console.log(C);
-     var buff = 0.2
+    // fwfmodellocation.bindPopup(div2, {maxWidth: "auto", maxHeight: "auto"});
+
+    var buff = 0.2
     for (var t = n.XLAT, e = n.XLONG, l = [], a = [], r = [(r = [t.length, t[0].length])[1], r[0]], c = 0; c < t.length; c++) l = l.concat(t[c]);
     for (c = 0; c < e.length; c++) a = a.concat(e[c]);
     var i = t.map(function (n, o) {
@@ -83,18 +69,162 @@ function makeplotly(e) {
             }
         })(u, o);
 
-    var hh = ll_diff.indexOf(Math.min(...ll_diff));
+    hh = ll_diff.indexOf(Math.min(...ll_diff));
     var m = s.range(o[0] - buff, o[1] - buff, o[0] + buff, o[1] + buff);
-    var h = m[hh];
-    var w = n.XLAT[h];
-    var v = n.XLONG[h];
-    console.log(w);
-    console.log(v);
+    h = m[hh];
+    
+    var g, p;
+    f =
+        ((p = (g = r).reduce(
+            function (n, o) {
+                return n.concat(n[n.length - 1] * o);
+            },
+            [1]
+        )),
+        function (n) {
+            return (function (n, o, t) {
+                return n.map(function (n, e) {
+                    return Math.round(o / t[e]) % n;
+                });
+            })(g, n, p);
+        });
+    var y = (function (n, o) {
+            var t = n.reduce(
+                function (n, o) {
+                    return n.concat(n[n.length - 1] * o);
+                },
+                [1]
+            );
+            return n.map(function (n, e) {
+                return Math.round(o / t[e]) % n;
+            });
+        })(r, m[h], f(m[h])),
 
-    fwfmodellocation.setLatLng([w, v]).addTo(map);
-    
-    
-})
+
+        x = y[1],
+        _ = y[0],
+        w = n.XLAT[h], 
+        v = n.XLONG[h],
+        time = n.Time,
+        z = n.Day,
+        F = JSON.parse(n.ffmc).map(function (n, o) {
+            return n[h];
+        }),                      
+        R = JSON.parse(n.isi).map(function (n, o) {
+            return n[h];
+        }),
+        // F = F.map(Number) 
+        L = JSON.parse(n.fwi).map(function (n, o) {
+            return n[h];
+        }),
+        M = JSON.parse(n.temp).map(function (n, o) {
+            return n[h];
+        }),
+        rh = JSON.parse(n.rh).map(function (n, o) {
+            return n[h];
+        }),
+        wsp = JSON.parse(n.ws).map(function (n, o) {
+            return n[h];
+        }),
+        wdir = JSON.parse(n.wdir).map(function (n, o) {
+            return n[h];
+        }),
+        qpf = JSON.parse(n.precip).map(function (n, o) {
+            return n[h];
+        }),
+        j = JSON.parse(n.dmc).map(function (n, o) {
+            return n[h];
+        }),
+        b = JSON.parse(n.dc).map(function (n, o) {
+            return n[h];
+        }),
+        k = JSON.parse(n.bui).map(function (n, o) {
+            return n[h];
+        }),
+        fwi = JSON.parse(n.fwi).map(function (n, o) {
+            return n[h];
+        }),
+        dsr = JSON.parse(n.dsr).map(function (n) {
+            return n[h];
+        }),
+
+        T = [
+            ["DMC", "DC", "BUI", "FWI", "DSR"],
+            [j[0], b[0], k[0], fwi[0], dsr[0]],
+            [j[1], b[1], k[1], fwi[1], dsr[1]],
+        ],
+
+
+        N =
+            ((F = { x: time, y: F, type: "scatter", line: { color: "ff7f0e" }, yaxis: "y7", name: "FFMC" }),
+            (R = { x: time, y: R, type: "scatter", line: { color: "9467bd" }, yaxis: "y6", name: "ISI" }),
+            (M = { x: time, y: M, type: "scatter", line: { color: "d62728" }, yaxis: "y5", name: "Temp (C)" }),
+            (rh = { x: time, y: rh, type: "scatter", line: { color: "1f77b4" }, yaxis: "y4", name: "RH (%)" }),
+            (wsp = { x: time, y: wsp, type: "scatter", line: { color: "202020" }, yaxis: "y3",  name: "WSP (km/hr)" }),
+            (wdir = { x: time, y: wdir, type: "scatter", line: { color: "7f7f7f" }, yaxis: "y2", name: "WDIR (deg)" }),
+            (qpf = { x: time, y: qpf, type: "scatter", line: { color: "2ca02c" }, yaxis: "y1", name: "QPF (mm)" }),
+
+            [
+                {
+                    type: "table",
+                    header: { values: [["<b>Index/Code</b>"], [z[0]], [z[1]]], align: "center", line: { width: 1, color: "616161" }, fill: { color: "7f7f7f" }, font: { family: "inherit", size: 12, color: "white" } },
+                    cells: { values: T, align: "center", line: { color: "616161", width: 1 }, fill: { color: [["white", "white", "white", "white", "white"]] }, font: { family: "inherit", size: 11, color: ["616161"] } },
+                    xaxis: "x",
+                    yaxis: "y",
+                    domain: { x: [0, 1], y: [0.8, 1] },
+                },
+                F,
+                R,
+                rh,
+                M,
+                wsp,
+                wdir,
+                qpf,
+            ]),
+            
+        S = {
+            autosize: true, 
+            title: "Fire Weather Forecast <br> Lat: " + w.slice(0,6) + ", Long: " + v.slice(0,8),
+            titlefont: { color: "#616161", autosize: !0 },
+            showlegend: !1,
+            yaxis7: { domain: [0.67, 0.78], title: { text: "FFMC", font: { color: "ff7f0e" } }, tickfont: {color: "ff7f0e"}},
+            yaxis6: { domain: [0.56, 0.65], title: { text: "ISI", font: { color: "9467bd" } }, tickfont: {color: "9467bd"}},
+            yaxis5: { domain: [0.45, 0.54], title: { text: "Temp<br>(C)", font: { color: "d62728" } }, tickfont: {color: "d62728"}},
+            yaxis4: { domain: [0.34, 0.43],  title: { text: "RH<br>(%)", font: { color: "1f77b4" } }, tickfont: {color: "1f77b4"}},
+            yaxis3: { domain: [0.23, 0.32], title: { text: "WSP<br>(km/hr)", font: { color: "202020" } } , tickfont: {color: "202020"}},
+            yaxis2: { domain: [0.12, 0.21], title: { text: "WDIR<br>(deg)", font: { color: "7f7f7f" } }, tickfont: {color: "7f7f7f"}, range: [0, 360], tickvals:[0, 90, 180, 270, 360]},
+            yaxis1: { domain: [0, 0.09], title: { text: "QPF<br>(mm)", font: { color: "2ca02c" } }, tickfont: {color: "2ca02c"}},
+            xaxis: { title: "Date (UTC)" },
+            shapes: [{
+                type: 'line',
+                x0: UTCTimeMap,
+                y0: 0,
+                x1: UTCTimeMap,
+                yref: 'paper',
+                y1: 0.8,
+                line: {
+                    color: 'grey',
+                    width: 1.5,
+                    dash: 'dot'
+                }},
+                {
+                    type: 'rect',
+                    xref: 'x',
+                    yref: 'paper',
+                    x0: tinital,
+                    y0: 0,
+                    x1: UTCTimePlot,
+                    y1: 0.8,
+                    fillcolor: '#A7A7A7',
+                    opacity: 0.2,
+                    line: {
+                        width: 0
+                    }
+                },],
+        };
+
+        fwfmodellocation.setLatLng([w, v]).addTo(map)
+    Plotly.newPlot(C, N, S);
 }
 
 
@@ -102,8 +232,7 @@ function makeplotly(e) {
 
 
 
-
-var fwfmodellocation;             
+                        
 
 function makeplots(n) {
 
@@ -115,7 +244,7 @@ function makeplots(n) {
             .then(function (n) {
                 var o = [50.6745, -120.3273];
                 // var o = [49.22, -126.37];
-                // fwfclicklocation.setLatLng(o).addTo(map), makeplotly(n, o, UTCTimeMap);
+                fwfclicklocation.setLatLng(o).addTo(map), makeplotly(n, o, UTCTimeMap);
             })
         fetch(json_dir, { cache: "default"})
             .then(function (n) {
@@ -141,9 +270,6 @@ function makeplots(n) {
                 (loaded_zones = ["he"]),
                 (loaded_zones_d3 = ["he"]),
                     map.on("click", function (o) {
-                        if (fwfmodellocation != undefined) {
-                            fwfmodellocation.remove(map);
-                        };
                         fwfclicklocation.setLatLng(o.latlng).addTo(map);
                         var e = [parseFloat(o.latlng.lat.toFixed(4)), parseFloat(o.latlng.lng.toFixed(4))];
                         var l = u.range(e[0] - buffer, e[1] - buffer, e[0] + buffer, e[1] + buffer).map((n) => s[n]);
@@ -232,36 +358,30 @@ function makeplots(n) {
                                 var __ = tt[pp][yy];
                                 (zone_json_d3 = n.slice(0, 14)),
                                 (zone_json_d3 = zone_json_d3 + __ + n.slice(16, 36)),
-                                console.log(zone_json_d3);
-                                fwfmodellocation = new L.marker([ee[0],ee[1]],{icon: redIcon, customId: zone_json_d3});
-                                fwfmodellocation.bindPopup(div2, {maxWidth: "auto", maxHeight: "auto"});
-                                fwfmodellocation.setZIndexOffset(1000);
-                                fwfmodellocation.on('click', makeplotly).addTo(map);
-                                // fetch(zone_json_d3, { cache: "default"})
-                                //     .then(function (nn) {
-                                //         return nn.json();
-                                //     })
-                                //     .then(function (nn) {
-                                //         console.log(nn);
-                                //         console.log(ee);
-                                //     }),
-                                loaded_zones_d3.push(__);
+                                fetch(zone_json_d3, { cache: "default"})
+                                    .then(function (nn) {
+                                        return nn.json();
+                                    })
+                                    .then(function (nn) {
+                                        makeplotly(nn, ee, UTCTimeMap);
+                                    }),
+                                loaded_zones_d3.push(__)
 
                             } else {        
                             (zone_json = n.slice(0, 14)),
                             (zone_json = zone_json + _ + n.slice(16, 30) + '2.json'),
-                            fwfmodellocation = new L.marker([e[0],e[1]],{icon: redIcon, customId: zone_json});
-                            fwfmodellocation.bindPopup(div2, {maxWidth: "auto", maxHeight: "auto"});
-                            fwfmodellocation.setZIndexOffset(1000);
-                            fwfmodellocation.on('click', makeplotly).addTo(map);
-                            loaded_zones.push(_);
+                            fetch(zone_json, { cache: "default"})
+                                .then(function (n) {
+                                    return n.json();
+                                })
+                                .then(function (n) {
+                                    makeplotly(n, e, UTCTimeMap);
+                                }),
+                            loaded_zones.push(_)
                     }});
+                
                     function searchcontrol(o) {
-                        if (fwfmodellocation != undefined) {
-                            fwfmodellocation.remove(map);
-                        };
-                        
-                        map.flyTo(o);
+                        map.flyTo(o)
                         fwfclicklocation.setLatLng(o).addTo(map);
                         var e = [parseFloat(o[0]), parseFloat(o[1])];
                         var l = u.range(e[0] - buffer, e[1] - buffer, e[0] + buffer, e[1] + buffer).map((n) => s[n]);
@@ -349,20 +469,26 @@ function makeplots(n) {
                                 var __ = tt[pp][yy];
                                 (zone_json_d3 = n.slice(0, 14)),
                                 (zone_json_d3 = zone_json_d3 + __ + n.slice(16, 36)),
-                                fwfmodellocation = new L.marker([e[0],e[1]],{icon: redIcon, customId: zone_json_d3});
-                                fwfmodellocation.bindPopup(div2, {maxWidth: "auto", maxHeight: "auto"});
-                                fwfmodellocation.setZIndexOffset(1000);
-                                fwfmodellocation.on('click', makeplotly).addTo(map);
-                                loaded_zones_d3.push(__);
+                                fetch(zone_json_d3, { cache: "default"})
+                                    .then(function (nn) {
+                                        return nn.json();
+                                    })
+                                    .then(function (nn) {
+                                        makeplotly(nn, ee, UTCTimeMap);
+                                    }),
+                                loaded_zones_d3.push(__)
 
                             } else {        
                             (zone_json = n.slice(0, 14)),
                             (zone_json = zone_json + _ + n.slice(16, 30) + '2.json'),
-                            fwfmodellocation = new L.marker([e[0],e[1]],{icon: redIcon, customId: zone_json});
-                            fwfmodellocation.bindPopup(div2, {maxWidth: "auto", maxHeight: "auto"});
-                            fwfmodellocation.setZIndexOffset(1000);
-                            fwfmodellocation.on('click', makeplotly).addTo(map);
-                            loaded_zones.push(_);
+                            fetch(zone_json, { cache: "default"})
+                                .then(function (n) {
+                                    return n.json();
+                                })
+                                .then(function (n) {
+                                    makeplotly(n, e, UTCTimeMap);
+                                }),
+                            loaded_zones.push(_)
                     }
                         };
 
@@ -377,13 +503,12 @@ function makeplots(n) {
                         map.addControl(control);
 
             
-        // (window.onresize = function () {
-        //     Plotly.Plots.resize(plot_fwi);
-        // });
+        (window.onresize = function () {
+            Plotly.Plots.resize(plot_fwi);
+        });
 });
 }
 window.onload = function () {
     makeplots(json_fwf);
-
 };
 

@@ -60,7 +60,11 @@ for coords in coords_list:
   if coords != 'time':
     coord_array = obs_final[coords].values
     coord_array = coord_array.tolist()
-    dict_var.update({coords.lower() :str(coord_array)})
+    if coords == 'name':
+      coord_array = [item.replace(",", "") for item in coord_array]
+      dict_var.update({coords.lower() :str(coord_array)})
+    else:
+        dict_var.update({coords.lower() :str(coord_array)})
   else:
     pass
 
@@ -128,7 +132,7 @@ for var in var_list:
 remove = ['DSR', 'S']
 hourly_list = list(set(hourly_list)- set(remove))
 
-dict_var.update({'time_fch': str(time.tolist()), 'time_fcd': str(day.tolist()), 'time_obs': str(time_obs.tolist())})
+dict_var.update({'time_fch': time.tolist(), 'time_fcd': day.tolist(), 'time_obs': time_obs.tolist()})
 for var in hourly_list:
   var_name = cmaps[var]['name'].upper() 
   fc_array = hourly_ds[var].values.astype('float64')
