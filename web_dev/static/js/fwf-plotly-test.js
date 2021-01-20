@@ -11,10 +11,8 @@ const buffer = 0.5
 var point_list = [];
 var file_list = [];
 
-
+map.doubleClickZoom.disable(); 
 div2.className = "wx-plot2";
-div2.style.width = width;
-div2.style.height = height;
 div2.setAttribute("id", "wx_plot2");
  
 var btn_fire2 = document.createElement("BUTTON");   // Create a <button> element
@@ -36,8 +34,8 @@ div2.appendChild(btn_wx2);
 // const fwfmodellocation = L.marker([51.5, -0.09],{icon: redIcon});
 // fwfmodellocation.bindPopup(div2, {maxWidth: "auto", maxHeight: "auto"});
 // fwfmodellocation.setZIndexOffset(1000);
-const fwfclicklocation = L.marker().bindPopup("<b>Hello!</b><br />I am where you clicked <br /> or searched on the map.");
-fwfclicklocation.setZIndexOffset(10);
+let fwfclicklocation;
+fwfclicklocation = new L.marker().bindPopup("<b>Hello!</b><br />The blue icon is where you clicked or searched on the map. <br /> <br />The red icon is the closest model grid point to where you clicked or searched on the map. <br />  <br /> Click the red icon for a point forecast");
 
 var searchboxControl=createSearchboxControl();
                         const control = new searchboxControl({
@@ -58,100 +56,163 @@ var searchboxControl=createSearchboxControl();
 function makeplotly(e) {
     var clickedCircle = e.target;
     var json_dir = clickedCircle.options.customId;
+    var index = clickedCircle.options.customIdx;
+
     console.log(clickedCircle);
+    console.log(index);
+
     var ll = clickedCircle._latlng
     console.log(ll);
-    // btn_fire2.onclick = fwiplot;
-    // btn_wx2.onclick = wxplot;
+    btn_fire2.onclick = fwiplot2;
+    btn_wx2.onclick = wxplot2;
 
     var o = [ll.lat,ll.lng]
     console.log(o);
-
-    fetch(json_dir).then(function(response){
-        return response.json();
-    }).then(function(n){  
-
-     var buff = 0.2
-    for (var t = n.XLAT, e = n.XLONG, l = [], a = [], r = [(r = [t.length, t[0].length])[1], r[0]], c = 0; c < t.length; c++) l = l.concat(t[c]);
-    for (c = 0; c < e.length; c++) a = a.concat(e[c]);
-    var i = t.map(function (n, o) {
-        return [n, e[o]];
-    });
-    var s = new KDBush(i);
-    point_list.push(o);
-    file_list.push(n);
-    var u = s.range(o[0] - buff, o[1] - buff, o[0] + buff, o[1] + buff).map((n) => i[n]);
-    (ll_diff = []),
-        (function (n, o) {
-            for (var t = 0; t < n.length; t++) {
-                var e = Math.abs(parseFloat(n[t][0]) - o[0]) + Math.abs(parseFloat(n[t][1]) - o[1]);
-                ll_diff.push(e);
-            }
-        })(u, o);
-
-    var hh = ll_diff.indexOf(Math.min(...ll_diff));
-    var m = s.range(o[0] - buff, o[1] - buff, o[0] + buff, o[1] + buff);
-    var h = m[hh];
-    var w = n.XLAT[h];
-    var v = n.XLONG[h];
-    console.log(n);
-    console.log(w);
-
-
-    var dict = {};
-    var arrayColumn = (arr, n) => arr.map(x => x[n]);
-    keys = ['dsr', 'ffmc', 'rh', 'isi', 'fwi', 'temp', 
-            'ws', 'wdir', 'precip', 'dc', 'dmc', 'bui'];
-
-    for (var key of keys) {
-        var array = JSON.parse(n[key]);
-        var array = arrayColumn(array,hh);
-        dict[key] = array;
-    };
-
-    dict['time'] = n["Time"];
-    dict['day'] = n["Day"];
-
-    console.log(dict);
-
-
-
     var C = document.getElementById('wx_plot2');
-    console.log(C);
-    hovsize = 10;
-    N =
-    [(ffmc = {x: dict['time'], y: dict['ffmc'], mode: 'lines', line: { color: "ff7f0e", dash: "dot" }, yaxis: "y6",  hoverlabel:{font:{size: hovsize, color: "#ffffff"}, bordercolor: "#ffffff"}, hovertemplate: "<b> FFMC </b><br>" + "%{y:.2f} <br>" + "<extra></extra>" }),    
-    (dmc = {x: dict['day'], y: dict['dmc'], mode: 'lines', line: { color: "2ca02c", dash: "dot" }, yaxis: "y5",  hoverlabel:{font:{size: hovsize}}, hovertemplate: "<b> DMC </b><br>" + "%{y:.2f} <br>" + "<extra></extra>"}),
-    (dc = {x: dict['day'], y: dict['dc'], mode: 'lines', line: { color: "8c564b", dash: "dot" }, yaxis: "y4", hoverlabel:{font:{size: hovsize}}, hovertemplate: "<b> DC </b><br>" + "%{y:.2f} <br>" + "<extra></extra>" }),
-    (isi = {x: dict['time'], y: dict['isi'], mode: 'lines', line: { color: "9467bd", dash: "dot" }, yaxis: "y3",  hoverlabel:{font:{size: hovsize}}, hovertemplate: "<b> ISI </b><br>" + "%{y:.2f} <br>" + "<extra></extra>" }),
-    (bui = {x: dict['day'], y: dict['bui'], mode: 'lines', line: { color: "7f7f7f", dash: "dot" }, yaxis: "y2",  hoverlabel:{font:{size: hovsize}}, hovertemplate: "<b> FWI </b><br>" + "%{y:.2f} <br>" + "<extra></extra>"}),
-    (fwi = {x: dict['day'], y: dict['fwi'], mode: 'lines', line: { color: "d62728", dash: "dot" }, yaxis: "y1",  hoverlabel:{font:{size: hovsize}}, hovertemplate: "<b> FWI </b><br>" + "%{y:.2f} <br>" + "<extra></extra>" }),
-    ];
+
+    fwiplot2();
+    function fwiplot2() {
+        fetch(json_dir).then(function(response){
+            return response.json();
+        }).then(function(n){  
+        var h = index
+        var w = n.XLAT[h];
+        var v = n.XLONG[h];
+        console.log(n);
+        console.log(w);
+
+
+        var dict = {};
+        var arrayColumn = (arr, n) => arr.map(x => x[n]);
+        keys = ['dsr', 'ffmc', 'rh', 'isi', 'fwi', 'temp', 
+                'ws', 'wdir', 'precip', 'dc', 'dmc', 'bui'];
+
+        for (var key of keys) {
+            var array = JSON.parse(n[key]);
+            var array = arrayColumn(array,h);
+            dict[key] = array;
+        };
+
+        dict['time'] = n["Time"];
+        dict['day'] = n["Day"];
+
+        console.log(dict);
+
+
+
+        console.log(C);
+        hovsize = 10;
+        labelsize = 12;
+        ticksize = 9;
+
+        T = [
+            ["DMC", "DC", "BUI", "FWI", "DSR"],
+            [dict['dmc'][0], dict['dc'][0], dict['bui'][0], dict['fwi'][0], dict['dsr'][0]],
+            [dict['dmc'][1], dict['dc'][1], dict['bui'][1], dict['fwi'][1], dict['dsr'][1]],
+        ],
+
+        N =
+        ((ffmc = {x: dict['time'], y: dict['ffmc'], mode: 'lines', line: { color: "ff7f0e" }, yaxis: "y2",  hoverlabel:{font:{size: hovsize, color: "#ffffff"}, bordercolor: "#ffffff"}, hovertemplate: "<b> FFMC </b><br>" + "%{y:.2f} <br>" + "<extra></extra>" }),    
+        (isi = {x: dict['time'], y: dict['isi'], mode: 'lines', line: { color: "9467bd" }, yaxis: "y1",  hoverlabel:{font:{size: hovsize}}, hovertemplate: "<b> ISI </b><br>" + "%{y:.2f} <br>" + "<extra></extra>" }),
         
+        [
+            {
+                type: "table",
+                header: { values: [["Index/Code"], [dict['day'][0]], [dict['day'][1]]], align: "center", height:18, line: {color: "444444" }, fill: { color: "444444E6" }, font: { family: "inherit", size: 10, color: "white" } },
+                // cells: { values: T, align: "center",  height:18, line: { color: "444444", width: 1 }, fill: { color: ["white", "white", "white", "white"], fillopacity:0.5 }, font: { family: "inherit", size: 10, color:[["#2ca02c", "#8c564b", "7f7f7f", "d62728", "000000"]] } },
+                cells: { values: T, align: "center",  height:18, line: { color: "444444", width: 1 }, fill: { color:[["#2ca02c1A", "#8c564b1A", "7f7f7f1A", "d627281A", "0000001A"]] }, font: { family: "inherit", size: 10, color:[["#2ca02c", "#8c564b", "7f7f7f", "d62728", "000000"]]} },
+
+                xaxis: "x",
+                yaxis: "y",
+                domain: { x: [0.0, 1.0], y: [0.54, 1] },
+            },
+            ffmc,
+            isi,
+        ]
+        );
 
 
-    labelsize = 12;
-    ticksize = 9;
-    S = {
-        autosize: true, 
-        title: {text: "Fire Weather Forecast " + "<br>Lat: " + w.toString().slice(0,6) + ", Lon: " + v.toString().slice(0,8) , x:0.05}, 
-        titlefont: { color: "#444444", size: 13 },
-        showlegend: !1,
-        yaxis6: {domain: [.8, .94], title: { text: "FFMC", font: { size: labelsize, color: "ff7f0e" } }, tickfont: {size: ticksize, color: "ff7f0e"}},
-        yaxis5: {domain: [0.64, 0.78], title: { text: "DMC", font: { size: labelsize,color: "2ca02c" } }, tickfont: {size: ticksize, color: "2ca02c"}},
-        yaxis4: { domain: [0.48, 0.62], title: { text: "DC", font: { size: labelsize,color: "8c564b" } }, tickfont: {size: ticksize, color: "8c564b"}},
-        yaxis3: { domain: [0.32, 0.46], title: { text: "ISI", font: {size: labelsize, color: "9467bd" } }, tickfont: {size: ticksize, color: "9467bd"}},
-        yaxis2: { domain: [0.16, 0.30], title: { text: "BUI", font: { size: labelsize, color: "7f7f7f" } }, tickfont: {size: ticksize, color: "7f7f7f"}},
-        yaxis1: { domain: [0, 0.14], title: { text: "FWI", font: {size: labelsize, color: "d62728" } }, tickfont: {size: ticksize, color: "d62728"}},
-        xaxis: { title: "Date (UTC)", font: { size: labelsize, color: "444444" }}
-    };
-        Plotly.newPlot(C,  N, S);
-        });
+            
 
+        S = {
+            autosize: true, 
+            title: {text: "Fire Weather Forecast " + "<br>Lat: " + w.toString().slice(0,6) + ", Lon: " + v.toString().slice(0,8) , x:0.05}, 
+            titlefont: { color: "#444444", size: 13 },
+            showlegend: !1,
+            yaxis2: {domain: [.26, .52], title: { text: "FFMC", font: { size: labelsize, color: "ff7f0e" } }, tickfont: {size: ticksize, color: "ff7f0e"}},
+            yaxis1: { domain: [0.0, 0.24], title: { text: "ISI", font: {size: labelsize, color: "9467bd" } }, tickfont: {size: ticksize, color: "9467bd"}},
+            // yaxis1: {domain: [0.0, 0.4], title: { text: "DMC", font: { size: labelsize,color: "2ca02c" } }, tickfont: {size: ticksize, color: "2ca02c"}},
+            // yaxis4: { domain: [0.48, 0.62], title: { text: "DC", font: { size: labelsize,color: "8c564b" } }, tickfont: {size: ticksize, color: "8c564b"}},
+            // yaxis3: { domain: [0.32, 0.46], title: { text: "ISI", font: {size: labelsize, color: "9467bd" } }, tickfont: {size: ticksize, color: "9467bd"}},
+            // yaxis2: { domain: [0.16, 0.30], title: { text: "BUI", font: { size: labelsize, color: "7f7f7f" } }, tickfont: {size: ticksize, color: "7f7f7f"}},
+            // yaxis1: { domain: [0, 0.14], title: { text: "FWI", font: {size: labelsize, color: "d62728" } }, tickfont: {size: ticksize, color: "d62728"}},
+            xaxis: { title: "Date (UTC)", font: { size: labelsize, color: "444444" }}
+        };
+            Plotly.newPlot(C,  N, S);
+            });
+        
+        };
 
-    // fwfmodellocation.setLatLng([w, v]).addTo(map);
+        function wxplot2() {
+            fetch(json_dir).then(function(response){
+                return response.json();
+            }).then(function(n){  
+            var h = index
+            var w = n.XLAT[h];
+            var v = n.XLONG[h];
+            console.log(n);
+            console.log(w);
     
-    };
+    
+            var dict = {};
+            var arrayColumn = (arr, n) => arr.map(x => x[n]);
+            keys = ['dsr', 'ffmc', 'rh', 'isi', 'fwi', 'temp', 
+                    'ws', 'wdir', 'precip', 'dc', 'dmc', 'bui'];
+    
+            for (var key of keys) {
+                var array = JSON.parse(n[key]);
+                var array = arrayColumn(array,h);
+                dict[key] = array;
+            };
+    
+            dict['time'] = n["Time"];
+            dict['day'] = n["Day"];
+    
+            console.log(dict);
+    
+    
+    
+            console.log(C);
+            hovsize = 10;
+            N =
+            [(temp = {x: dict['time'], y: dict['temp'], mode: 'lines', line: { color: "d62728" }, yaxis: "y5", hoverlabel:{font:{size: hovsize}}, hovertemplate: "<b> Temp </b><br>" + "%{y:.2f} (C)<br>" + "<extra></extra>"}),
+            (rh = {x: dict['time'], y: dict['rh'], mode: 'lines', line: { color: "1f77b4" }, yaxis: "y4", hoverlabel:{font:{size: hovsize}}, hovertemplate: "<b> RH </b><br>" + "%{y:.2f} (%)<br>" + "<extra></extra>"}),
+            (ws = {x: dict['time'], y: dict['ws'], mode: 'lines', line: { color: "202020" }, yaxis: "y3", hoverlabel:{font:{size: hovsize}}, hovertemplate: "<b> WSP </b><br>" + "%{y:.2f} (km/hr)<br>" + "<extra></extra>"}),
+            (wdir = {x: dict['time'], y: dict['wdir'], mode: 'lines', line: { color: "7f7f7f" }, yaxis: "y2",  hoverlabel:{font:{size: hovsize}}, hovertemplate: "<b> WDIR </b><br>" + "%{y:.2f} (deg)<br>" + "<extra></extra>" }),
+            (precip = {x: dict['time'], y: dict['precip'], mode: 'lines', line: { color: "2ca02c" }, yaxis: "y1",  hoverlabel:{font:{size: hovsize}}, hovertemplate: "<b> Precip </b><br>" + "%{y:.2f} (mm)<br>" + "<extra></extra>" }),
+            
+            ]
+                
+     
+
+            labelsize = 12,
+            ticksize = 9,
+            S = {
+                autosize: true, 
+                title: {text: "Weather Forecast " + "<br>Lat: " + w.toString().slice(0,6) + ", Lon: " + v.toString().slice(0,8) , x:0.05}, 
+                titlefont: { color: "#444444", size: 13 },
+                showlegend: !1,
+                yaxis5: { domain: [0.80, 0.98], title: { text: "Temp<br>(C)", font: {size: labelsize, color: "d62728" } }, tickfont: {size: ticksize, color: "d62728"}},
+                yaxis4: { domain: [0.60, 0.78],  title: { text: "RH<br>(%)", font: {size: labelsize, color: "1f77b4" } }, tickfont: {size: ticksize, color: "1f77b4"}},
+                yaxis3: { domain: [0.40, 0.58], title: { text: "WSP<br>(km/hr)", font: {size: labelsize, color: "202020" } } , tickfont: {size: ticksize, color: "202020"}},
+                yaxis2: { domain: [0.20, 0.38], title: { text: "WDIR<br>(deg)", font: {size: labelsize, color: "7f7f7f" } }, tickfont: {size: ticksize, color: "7f7f7f"}, range: [0, 360], tickvals:[0, 90, 180, 270, 360]},
+                yaxis1: { domain: [0, 0.18], title: { text: "Precip<br>(mm)", font: {size: labelsize, color: "2ca02c" } }, tickfont: {size: ticksize, color: "2ca02c"}},
+                xaxis: { title: "Date (UTC)", font: { size: labelsize, color: "#444444" }},
+                };
+                Plotly.newPlot(C,  N, S);
+                });
+            }
+};
 
 
 
@@ -164,15 +225,15 @@ var fwfmodellocation;
 function makeplots(n) {
 
     (json_dir = "static/json/fwf-zone-merge.json"),
-        fetch(n)
-            .then(function (n) {
-                return n.json();
-            })
-            .then(function (n) {
-                var o = [50.6745, -120.3273];
-                // var o = [49.22, -126.37];
-                // fwfclicklocation.setLatLng(o).addTo(map), makeplotly(n, o, UTCTimeMap);
-            })
+        // fetch(n)
+        //     .then(function (n) {
+        //         return n.json();
+        //     })
+        //     .then(function (n) {
+        //         // var o = [50.6745, -120.3273];
+        //         // var o = [49.22, -126.37];
+        //         // fwfclicklocation.setLatLng(o).addTo(map);
+        //     })
         fetch(json_dir, { cache: "default"})
             .then(function (n) {
                 return n.json();
@@ -196,7 +257,7 @@ function makeplots(n) {
 
                 (loaded_zones = ["he"]),
                 (loaded_zones_d3 = ["he"]),
-                    map.on("click", function (o) {
+                    map.on("dblclick", function (o) {
                         if (fwfmodellocation != undefined) {
                             fwfmodellocation.remove(map);
                         };
@@ -285,31 +346,105 @@ function makeplots(n) {
                                     pp = gg[1],
                                     yy = gg[0],
                                     xx = [pp, yy];
+                                    oo = ee;
                                 var __ = tt[pp][yy];
                                 (zone_json_d3 = n.slice(0, 14)),
                                 (zone_json_d3 = zone_json_d3 + __ + n.slice(16, 36)),
+                                fetch(zone_json_d3).then(function(response){
+                                    return response.json();
+                                }).then(function(nn){  
+                                    console.log(nn);
+                                    console.log(oo);
+
+                                 var buff = 0.2
+                                for (var t = nn.XLAT, e = nn.XLONG, l = [], a = [], r = [(r = [t.length, t[0].length])[1], r[0]], c = 0; c < t.length; c++) l = l.concat(t[c]);
+                                for (c = 0; c < e.length; c++) a = a.concat(e[c]);
+                                var i = t.map(function (nn, oo) {
+                                    return [nn, e[oo]];
+                                });
+                                var ss = new KDBush(i);
+                                console.log(ss);
+
+                                point_list.push(oo);
+                                file_list.push(nn);
+                                var uu = ss.range(oo[0] - buff, oo[1] - buff, oo[0] + buff, oo[1] + buff).map((nn) => i[nn]);
+                                console.log(uu);
+
+                                (ll_diff = []),
+                                    (function (nn, oo) {
+                                        for (var t = 0; t < nn.length; t++) {
+                                            var ee = Math.abs(parseFloat(nn[t][0]) - oo[0]) + Math.abs(parseFloat(nn[t][1]) - oo[1]);
+                                            ll_diff.push(ee);
+                                        }
+                                    })(uu, oo);
+                            
+                                var hh = ll_diff.indexOf(Math.min(...ll_diff));
+                                console.log(hh);
+                                var mm = ss.range(oo[0] - buff, oo[1] - buff, oo[0] + buff, oo[1] + buff);
+                                var hh = mm[hh];
+                                console.log(hh);
+
+                                var ww = nn.XLAT[hh];
+                                var vv = nn.XLONG[hh];
+
                                 console.log(zone_json_d3);
-                                fwfmodellocation = new L.marker([ee[0],ee[1]],{icon: redIcon, customId: zone_json_d3});
+                                fwfmodellocation = new L.marker([ww,vv],{icon: redIcon, customId: zone_json_d3, customIdx: hh});
                                 fwfmodellocation.bindPopup(div2, {maxWidth: "auto", maxHeight: "auto"});
                                 fwfmodellocation.setZIndexOffset(1000);
                                 fwfmodellocation.on('click', makeplotly).addTo(map);
-                                // fetch(zone_json_d3, { cache: "default"})
-                                //     .then(function (nn) {
-                                //         return nn.json();
-                                //     })
-                                //     .then(function (nn) {
-                                //         console.log(nn);
-                                //         console.log(ee);
-                                //     }),
+
+                                });
                                 loaded_zones_d3.push(__);
 
-                            } else {        
+                            } else {     
+                            o = e;   
                             (zone_json = n.slice(0, 14)),
                             (zone_json = zone_json + _ + n.slice(16, 30) + '2.json'),
-                            fwfmodellocation = new L.marker([e[0],e[1]],{icon: redIcon, customId: zone_json});
+                            fetch(zone_json).then(function(response){
+                                return response.json();
+                            }).then(function(n){  
+                                console.log(n);
+                                console.log(o);
+
+                             var buff = 0.2
+                            for (var t = n.XLAT, e = n.XLONG, l = [], a = [], r = [(r = [t.length, t[0].length])[1], r[0]], c = 0; c < t.length; c++) l = l.concat(t[c]);
+                            for (c = 0; c < e.length; c++) a = a.concat(e[c]);
+                            var i = t.map(function (n, o) {
+                                return [n, e[o]];
+                            });
+                            var s = new KDBush(i);
+                            console.log(s);
+
+                            point_list.push(o);
+                            file_list.push(n);
+                            console.log(o);
+                            var u = s.range(o[0] - buff, o[1] - buff, o[0] + buff, o[1] + buff).map((n) => i[n]);
+                            console.log(u);
+
+                            (ll_diff = []),
+                                (function (n, o) {
+                                    for (var t = 0; t < n.length; t++) {
+                                        var e = Math.abs(parseFloat(n[t][0]) - o[0]) + Math.abs(parseFloat(n[t][1]) - o[1]);
+                                        ll_diff.push(e);
+                                    }
+                                })(u, o);
+                        
+                            var h = ll_diff.indexOf(Math.min(...ll_diff));
+                            console.log(h);
+                            var m = s.range(o[0] - buff, o[1] - buff, o[0] + buff, o[1] + buff);
+                            var h = m[h];
+                            console.log(h);
+
+                            var w = n.XLAT[h];
+                            var v = n.XLONG[h];
+
+                            console.log(zone_json);
+                            fwfmodellocation = new L.marker([w,v],{icon: redIcon, customId: zone_json, customIdx: h});
                             fwfmodellocation.bindPopup(div2, {maxWidth: "auto", maxHeight: "auto"});
                             fwfmodellocation.setZIndexOffset(1000);
                             fwfmodellocation.on('click', makeplotly).addTo(map);
+
+                            });
                             loaded_zones.push(_);
                     }});
                     function searchcontrol(o) {
@@ -402,25 +537,107 @@ function makeplots(n) {
                                     pp = gg[1],
                                     yy = gg[0],
                                     xx = [pp, yy];
+                                    oo = ee;
                                 var __ = tt[pp][yy];
                                 (zone_json_d3 = n.slice(0, 14)),
                                 (zone_json_d3 = zone_json_d3 + __ + n.slice(16, 36)),
-                                fwfmodellocation = new L.marker([e[0],e[1]],{icon: redIcon, customId: zone_json_d3});
+                                fetch(zone_json_d3).then(function(response){
+                                    return response.json();
+                                }).then(function(nn){  
+                                    console.log(nn);
+                                    console.log(oo);
+
+                                 var buff = 0.2
+                                for (var t = nn.XLAT, e = nn.XLONG, l = [], a = [], r = [(r = [t.length, t[0].length])[1], r[0]], c = 0; c < t.length; c++) l = l.concat(t[c]);
+                                for (c = 0; c < e.length; c++) a = a.concat(e[c]);
+                                var i = t.map(function (nn, oo) {
+                                    return [nn, e[oo]];
+                                });
+                                var ss = new KDBush(i);
+                                console.log(ss);
+
+                                point_list.push(oo);
+                                file_list.push(nn);
+                                var uu = ss.range(oo[0] - buff, oo[1] - buff, oo[0] + buff, oo[1] + buff).map((nn) => i[nn]);
+                                console.log(uu);
+
+                                (ll_diff = []),
+                                    (function (nn, oo) {
+                                        for (var t = 0; t < nn.length; t++) {
+                                            var ee = Math.abs(parseFloat(nn[t][0]) - oo[0]) + Math.abs(parseFloat(nn[t][1]) - oo[1]);
+                                            ll_diff.push(ee);
+                                        }
+                                    })(uu, oo);
+                            
+                                var hh = ll_diff.indexOf(Math.min(...ll_diff));
+                                console.log(hh);
+                                var mm = ss.range(oo[0] - buff, oo[1] - buff, oo[0] + buff, oo[1] + buff);
+                                var hh = mm[hh];
+                                console.log(hh);
+
+                                var ww = nn.XLAT[hh];
+                                var vv = nn.XLONG[hh];
+
+                                console.log(zone_json_d3);
+                                fwfmodellocation = new L.marker([ww,vv],{icon: redIcon, customId: zone_json_d3, customIdx: hh});
                                 fwfmodellocation.bindPopup(div2, {maxWidth: "auto", maxHeight: "auto"});
                                 fwfmodellocation.setZIndexOffset(1000);
                                 fwfmodellocation.on('click', makeplotly).addTo(map);
+
+                                });
                                 loaded_zones_d3.push(__);
 
-                            } else {        
+                            } else {   
+                            o = e;        
                             (zone_json = n.slice(0, 14)),
                             (zone_json = zone_json + _ + n.slice(16, 30) + '2.json'),
-                            fwfmodellocation = new L.marker([e[0],e[1]],{icon: redIcon, customId: zone_json});
+                            fetch(zone_json).then(function(response){
+                                return response.json();
+                            }).then(function(n){  
+                                console.log(n);
+                                console.log(o);
+
+                             var buff = 0.2
+                            for (var t = n.XLAT, e = n.XLONG, l = [], a = [], r = [(r = [t.length, t[0].length])[1], r[0]], c = 0; c < t.length; c++) l = l.concat(t[c]);
+                            for (c = 0; c < e.length; c++) a = a.concat(e[c]);
+                            var i = t.map(function (n, o) {
+                                return [n, e[o]];
+                            });
+                            var s = new KDBush(i);
+                            console.log(s);
+
+                            point_list.push(o);
+                            file_list.push(n);
+                            console.log(o);
+                            var u = s.range(o[0] - buff, o[1] - buff, o[0] + buff, o[1] + buff).map((n) => i[n]);
+                            console.log(u);
+
+                            (ll_diff = []),
+                                (function (n, o) {
+                                    for (var t = 0; t < n.length; t++) {
+                                        var e = Math.abs(parseFloat(n[t][0]) - o[0]) + Math.abs(parseFloat(n[t][1]) - o[1]);
+                                        ll_diff.push(e);
+                                    }
+                                })(u, o);
+                        
+                            var h = ll_diff.indexOf(Math.min(...ll_diff));
+                            console.log(h);
+                            var m = s.range(o[0] - buff, o[1] - buff, o[0] + buff, o[1] + buff);
+                            var h = m[h];
+                            console.log(h);
+
+                            var w = n.XLAT[h];
+                            var v = n.XLONG[h];
+
+                            console.log(zone_json);
+                            fwfmodellocation = new L.marker([w,v],{icon: redIcon, customId: zone_json, customIdx: h});
                             fwfmodellocation.bindPopup(div2, {maxWidth: "auto", maxHeight: "auto"});
                             fwfmodellocation.setZIndexOffset(1000);
                             fwfmodellocation.on('click', makeplotly).addTo(map);
                             loaded_zones.push(_);
-                    }
+                    });
                         };
+                    };
 
                         control._searchfunctionCallBack = function (searchkeywords){
                             if (!searchkeywords) {
@@ -432,7 +649,7 @@ function makeplots(n) {
 
                         map.addControl(control);
 
-            
+                    
         // (window.onresize = function () {
         //     Plotly.Plots.resize(plot_fwi);
         // });
@@ -440,6 +657,7 @@ function makeplots(n) {
 }
 window.onload = function () {
     makeplots(json_fwf);
+    // alert("Hello WFRT Team tester, please click on the map for point forecasts. Youll's see a red icon where you clicked. Click that red icon for a popup Meteogram. \n \n Also, please test the weather station layer. Look under the drop-down menu in the upper right to active the Weather Station layer. Each WxStation has a popup plot bound to it with past observations and model forecasts. \n \n Thank you :)");
 
 };
 

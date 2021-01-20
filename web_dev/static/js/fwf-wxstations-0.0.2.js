@@ -6,11 +6,11 @@ const div2 = div.cloneNode(true);
 
 div.className = "wx-plot";
 
-const width =  '600px';
-const height =  '450px';
+// const width =  '600px';
+// const height =  '450px';
 
-div.style.width = width;
-div.style.height = height;
+// div.style.width = width;
+// div.style.height = height;
 div.setAttribute("id", "wx_plot");
 
 
@@ -250,25 +250,25 @@ function circleClick(e) {
                 C = document.getElementById('wx_plot');
                 hovsize =10
                 N =
-                [(ffmc_obs = {x: dict['time_obs'], y: dict['temp_obs'], mode: 'lines', line: { color: "d62728", dash: "dot" }, yaxis: "y5", hoverlabel:{font:{size: hovsize}}, hovertemplate: "<b> Temp Obs </b><br>" + "%{y:.2f} (C)<br>" + "<extra></extra>"}),
-                (ffmc_fc = {x: dict['time_obs'], y: dict['temp_pfc'],mode: 'lines', line: { color: "d62728", width: 0.5 }, yaxis: "y5", hoverlabel:{font:{size: hovsize}},  hovertemplate: "<b> Temp Modeled </b><br>" + "%{y:.2f} (C)<br>" + "<extra></extra>" }),
-                (ffmc_fc = {x: dict['time_fch'], y: dict['temp_fc'], mode: 'lines', line: { color: "d62728" }, yaxis: "y5",  hoverlabel:{font:{size: hovsize}}, hovertemplate: "<b> Temp Forecast </b><br>" + "%{y:.2f} (C)<br>" + "<extra></extra>" }),
+                [(temp_obs = {x: dict['time_obs'], y: dict['temp_obs'], mode: 'lines', line: { color: "d62728", dash: "dot" }, yaxis: "y5", hoverlabel:{font:{size: hovsize}}, hovertemplate: "<b> Temp Obs </b><br>" + "%{y:.2f} (C)<br>" + "<extra></extra>"}),
+                (temp_fc = {x: dict['time_obs'], y: dict['temp_pfc'],mode: 'lines', line: { color: "d62728", width: 0.5 }, yaxis: "y5", hoverlabel:{font:{size: hovsize}},  hovertemplate: "<b> Temp Modeled </b><br>" + "%{y:.2f} (C)<br>" + "<extra></extra>" }),
+                (temp_fc = {x: dict['time_fch'], y: dict['temp_fc'], mode: 'lines', line: { color: "d62728" }, yaxis: "y5",  hoverlabel:{font:{size: hovsize}}, hovertemplate: "<b> Temp Forecast </b><br>" + "%{y:.2f} (C)<br>" + "<extra></extra>" }),
                 
-                (dmc_obs = {x: dict['time_obs'], y: dict['rh_obs'], mode: 'lines', line: { color: "1f77b4", dash: "dot" }, yaxis: "y4", hoverlabel:{font:{size: hovsize}}, hovertemplate: "<b> RH Obs </b><br>" + "%{y:.2f} (%)<br>" + "<extra></extra>"}),
-                (dmc_fc = {x: dict['time_obs'], y: dict['rh_pfc'],mode: 'lines', line: { color: "1f77b4", width: 0.5 }, yaxis: "y4",   hoverlabel:{font:{size: hovsize}}, hovertemplate: "<b> RH Modeled </b><br>" + "%{y:.2f} (%)<br>" + "<extra></extra>"}),
-                (dmc_fc = { x: dict['time_fch'], y: dict['rh_fc'], mode: 'lines', line: { color: "1f77b4" }, yaxis: "y4",  hoverlabel:{font:{size: hovsize}}, hovertemplate: "<b> RH Forecast  </b><br>" + "%{y:.2f} (%)<br>" + "<extra></extra>"}),
+                (rh_obs = {x: dict['time_obs'], y: dict['rh_obs'], mode: 'lines', line: { color: "1f77b4", dash: "dot" }, yaxis: "y4", hoverlabel:{font:{size: hovsize}}, hovertemplate: "<b> RH Obs </b><br>" + "%{y:.2f} (%)<br>" + "<extra></extra>"}),
+                (rh_fc = {x: dict['time_obs'], y: dict['rh_pfc'],mode: 'lines', line: { color: "1f77b4", width: 0.5 }, yaxis: "y4",   hoverlabel:{font:{size: hovsize}}, hovertemplate: "<b> RH Modeled </b><br>" + "%{y:.2f} (%)<br>" + "<extra></extra>"}),
+                (rh_fc = { x: dict['time_fch'], y: dict['rh_fc'], mode: 'lines', line: { color: "1f77b4" }, yaxis: "y4",  hoverlabel:{font:{size: hovsize}}, hovertemplate: "<b> RH Forecast  </b><br>" + "%{y:.2f} (%)<br>" + "<extra></extra>"}),
                 
-                (dc_obs = {x: dict['time_obs'], y: dict['ws_obs'], mode: 'lines', line: { color: "202020", dash: "dot" }, yaxis: "y3", hoverlabel:{font:{size: hovsize}}, hovertemplate: "<b> WSP Obs </b><br>" + "%{y:.2f} (km/hr)<br>" + "<extra></extra>"}),
-                (dc_fc = {x: dict['time_obs'], y: dict['ws_pfc'],mode: 'lines', line: { color: "202020", width: 0.5 }, yaxis: "y3",  hoverlabel:{font:{size: hovsize}}, hovertemplate: "<b> WSP Modeled </b><br>" + "%{y:.2f} (km/hr)<br>" + "<extra></extra>" }),
-                (dc_fc = {x: dict['time_fch'], y: dict['ws_fc'], mode: 'lines', line: { color: "202020" }, yaxis: "y3",  hoverlabel:{font:{size: hovsize}}, hovertemplate: "<b> WSP Forecast </b><br>" + "%{y:.2f} (km/hr)<br>" + "<extra></extra>"}),
+                (ws_obs = {x: dict['time_obs'], y: dict['ws_obs'], mode: 'lines', line: { color: "202020", dash: "dot" }, yaxis: "y3", hoverlabel:{font:{size: hovsize}}, hovertemplate: "<b> WSP Obs </b><br>" + "%{y:.2f} (km/hr)<br>" + "<extra></extra>"}),
+                (ws_fc = {x: dict['time_obs'], y: dict['ws_pfc'],mode: 'lines', line: { color: "202020", width: 0.5 }, yaxis: "y3",  hoverlabel:{font:{size: hovsize}}, hovertemplate: "<b> WSP Modeled </b><br>" + "%{y:.2f} (km/hr)<br>" + "<extra></extra>" }),
+                (ws_fc = {x: dict['time_fch'], y: dict['ws_fc'], mode: 'lines', line: { color: "202020" }, yaxis: "y3",  hoverlabel:{font:{size: hovsize}}, hovertemplate: "<b> WSP Forecast </b><br>" + "%{y:.2f} (km/hr)<br>" + "<extra></extra>"}),
                 
-                (isi_obs = {x: dict['time_obs'], y: dict['wdir_obs'], mode: 'lines', line: { color: "7f7f7f", dash: "dot" }, yaxis: "y2",  hoverlabel:{font:{size: hovsize}}, hovertemplate: "<b> WDIR Obs </b><br>" + "%{y:.2f} (deg)<br>" + "<extra></extra>" }),
-                (isi_fc = {x: dict['time_obs'], y: dict['wdir_pfc'],mode: 'lines', line: { color: "7f7f7f", width: 0.5 }, yaxis: "y2",  hoverlabel:{font:{size: hovsize}}, hovertemplate: "<b> WDIR Modeled </b><br>" + "%{y:.2f} (deg)<br>" + "<extra></extra>"}),
-                (isi_fc = {x: dict['time_fch'], y: dict['wdir_fc'], mode: 'lines', line: { color: "7f7f7f" }, yaxis: "y2", hoverlabel:{font:{size: hovsize}}, hovertemplate: "<b> WDIR Forecast </b><br>" + "%{y:.2f} (deg)<br>" + "<extra></extra>" }),
+                (wdir_obs = {x: dict['time_obs'], y: dict['wdir_obs'], mode: 'lines', line: { color: "7f7f7f", dash: "dot" }, yaxis: "y2",  hoverlabel:{font:{size: hovsize}}, hovertemplate: "<b> WDIR Obs </b><br>" + "%{y:.2f} (deg)<br>" + "<extra></extra>" }),
+                (wdir_fc = {x: dict['time_obs'], y: dict['wdir_pfc'],mode: 'lines', line: { color: "7f7f7f", width: 0.5 }, yaxis: "y2",  hoverlabel:{font:{size: hovsize}}, hovertemplate: "<b> WDIR Modeled </b><br>" + "%{y:.2f} (deg)<br>" + "<extra></extra>"}),
+                (wdir_fc = {x: dict['time_fch'], y: dict['wdir_fc'], mode: 'lines', line: { color: "7f7f7f" }, yaxis: "y2", hoverlabel:{font:{size: hovsize}}, hovertemplate: "<b> WDIR Forecast </b><br>" + "%{y:.2f} (deg)<br>" + "<extra></extra>" }),
                 
-                (bui_obs = {x: dict['time_obs'], y: dict['precip_obs'], mode: 'lines', line: { color: "2ca02c", dash: "dot" }, yaxis: "y1",  hoverlabel:{font:{size: hovsize}}, hovertemplate: "<b> Precip Obs </b><br>" + "%{y:.2f} (mm)<br>" + "<extra></extra>" }),
-                (bui_fc = {x: dict['time_obs'], y: dict['precip_pfc'],mode: 'lines', line: { color: "2ca02c", width: 0.5 }, yaxis: "y1",  hoverlabel:{font:{size: hovsize}}, hovertemplate: "<b> Precip Modeled </b><br>" + "%{y:.2f} (mm)<br>" + "<extra></extra>" }),
-                (bui_fc = {x: dict['time_fch'], y: dict['precip_fc'], mode: 'lines', line: { color: "2ca02c" }, yaxis: "y1",   hoverlabel:{font:{size: hovsize}}, hovertemplate: "<b> Precip Forecast </b><br>" + "%{y:.2f} (mm)<br>" + "<extra></extra>" }),
+                (precip_obs = {x: dict['time_obs'], y: dict['precip_obs'], mode: 'lines', line: { color: "2ca02c", dash: "dot" }, yaxis: "y1",  hoverlabel:{font:{size: hovsize}}, hovertemplate: "<b> Precip Obs </b><br>" + "%{y:.2f} (mm)<br>" + "<extra></extra>" }),
+                (precip_fc = {x: dict['time_obs'], y: dict['precip_pfc'],mode: 'lines', line: { color: "2ca02c", width: 0.5 }, yaxis: "y1",  hoverlabel:{font:{size: hovsize}}, hovertemplate: "<b> Precip Modeled </b><br>" + "%{y:.2f} (mm)<br>" + "<extra></extra>" }),
+                (precip_fc = {x: dict['time_fch'], y: dict['precip_fc'], mode: 'lines', line: { color: "2ca02c" }, yaxis: "y1",   hoverlabel:{font:{size: hovsize}}, hovertemplate: "<b> Precip Forecast </b><br>" + "%{y:.2f} (mm)<br>" + "<extra></extra>" }),
                 
                 ]
                     

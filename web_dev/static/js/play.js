@@ -1,72 +1,48 @@
-NK7531L6
-NK7532L6
-NK7533L6
-NK7534L6
-NK7520L6
-NK7522L6
-NK7523L6
-OF0605L6
-OF0606L6
-OF0618L6
-OF0619L6
-OF0615L6
-OF0616L6
-OF0607L6
-OF0608L6
-OF0609L6
-OF0600L6
-OF0601L6
-OF0602L6
-OF0603L6
-OF0604L6
-OF0610L6
-OF0611L6
-OF6020L6
-OF6021L6
-OF6023L6
-OF6024L6
-OF6030L6
-OF6031L6
-OF6032L6
-OF6033L6
-OF6034L6
-OF6025L6
-OF6027L6
-OF6028L6
-OF6029L6
-OF6035L6
-OF6037L6
-OF6038L6
-601085L6
-OF6039L6
-601086L6
-601087L6
-601088L6
-601089L6
-601081L6
-601082L6
-601083L6
-601084L6
-601096L6
-601097L6
-601098L6
-601099L6
-601090L6
-601091L6
-601093L6
-601094L6
-OE9750L6
-OE9751L6
-OE9754L6
-OE9748L6
-OE9745L6
-OE9746L6
-OE9758L6
-OE9759L6
-OE9755L6
-OE9756L6
-OE9740L6
-OE9741L6
-OE9742L6
-OE9743L6
-OE9744L6
+/home/tuser/bin/BackupIndex-Raw-2018.csv:VolumeTag = NK7531L6,File number=0,/archives/forecasts/MMN00CP03/18040200
+/home/tuser/bin/BackupIndex-Raw-2018.csv:VolumeTag = NK7531L6,File number=1,/archives/forecasts/WAA00WG-01/18040200
+/home/tuser/bin/BackupIndex-Raw-2018.csv:VolumeTag = NK7531L6,File number=2,/archives/forecasts/WAG00WG-01/18040200
+/home/tuser/bin/BackupIndex-Raw-2018.csv:VolumeTag = NK7531L6,File number=3,/archives/forecasts/WAG00WP07/18040200
+/home/tuser/bin/BackupIndex-Raw-2018.csv:VolumeTag = NK7531L6,File number=4,/archives/forecasts/WAN00CP-04/18040200
+/home/tuser/bin/BackupIndex-Raw-2018.csv:VolumeTag = NK7531L6,File number=5,/archives/forecasts/WAN06CP03/18040206
+/home/tuser/bin/BackupIndex-Raw-2018.csv:VolumeTag = NK7531L6,File number=6,/archives/forecasts/WNG00WP07/18040200
+/home/tuser/bin/BackupIndex-Raw-2018.csv:VolumeTag = NK7531L6,File number=7,/archives/forecasts/WNN00WP03/18040200
+/home/tuser/bin/BackupIndex-Raw-2018.csv:VolumeTag = NK7531L6,File number=8,/archives/forecasts/MMG00CP03/18021500
+/home/tuser/bin/BackupIndex-Raw-2018.csv:VolumeTag = NK7531L6,File number=9,/archives/forecasts/MMN00CP03/18021500
+/home/tuser/bin/BackupIndex-Raw-2018.csv:VolumeTag = NK7531L6,File number=10,/archives/forecasts/WAA00WG-01/18021500
+/home/tuser/bin/BackupIndex-Raw-2018.csv:VolumeTag = NK7531L6,File number=11,/archives/forecasts/WAC00WP07/18021500
+/home/tuser/bin/BackupIndex-Raw-2018.csv:VolumeTag = NK7531L6,File number=12,/archives/forecasts/WAG00WP07/18021500
+/home/tuser/bin/BackupIndex-Raw-2018.csv:VolumeTag = NK7531L6,File number=13,/archives/forecasts/WAG12WP07/18021512
+/home/tuser/bin/BackupIndex-Raw-2018.csv:VolumeTag = NK7531L6,File number=14,/archives/forecasts/WAN00CP-04/18021500
+/home/tuser/bin/BackupIndex-Raw-2018.csv:VolumeTag = NK7531L6,File number=15,/archives/forecasts/WAN06CP03/18021506
+/home/tuser/bin/BackupIndex-Raw-2018.csv:VolumeTag = NK7531L6,File number=16,/archives/forecasts/WAN12CP03/18021512
+/home/tuser/bin/BackupIndex-Raw-2018.csv:VolumeTag = NK7531L6,File number=17,/archives/forecasts/WAN18EP03/18021518
+/home/tuser/bin/BackupIndex-Raw-2018.csv:VolumeTag = NK7531L6,File number=18,/archives/forecasts/WNG00WP07/18021500
+/home/tuser/bin/BackupIndex-Raw-2018.csv:VolumeTag = NK7531L6,File number=19,/archives/forecasts/WNG00WP07/18021512
+/home/tuser/bin/BackupIndex-Raw-2018.csv:VolumeTag = NK7531L6,File number=20,/archives/forecasts/WNN00WP03/18021500
+/home/tuser/bin/BackupIndex-Raw-2018.csv:VolumeTag = NK7531L6,File number=21,/archives/forecasts/WNN00WP03/18021512
+/home/tuser/bin/BackupIndex-Raw-2018.csv:VolumeTag = NK7531L6,File number=22,/archives/forecasts/MMG00CP03/18040300
+/home/tuser/bin/BackupIndex-Raw-2018.csv:VolumeTag = NK7531L6,File number=23,/archives/forecasts/WAA00WG-01/18040300
+/home/tuser/bin/BackupIndex-Raw-2018.csv:VolumeTag = NK7531L6,File number=24,/archives/forecasts/WAC00WP07/18040300
+/home/tuser/bin/BackupIndex-Raw-2018.csv:VolumeTag = NK7531L6,File number=25,/archives/forecasts/WAF00WP-01/18040300
+/home/tuser/bin/BackupIndex-Raw-2018.csv:VolumeTag = NK7531L6,File number=26,/archives/forecasts/WAG00WG-01/18040300
+/home/tuser/bin/BackupIndex-Raw-2018.csv:VolumeTag = NK7531L6,File number=27,/archives/forecasts/WAG00WP07/18040300
+/home/tuser/bin/BackupIndex-Raw-2018.csv:VolumeTag = NK7531L6,File number=28,/archives/forecasts/WAG12AP05/18040312
+/home/tuser/bin/BackupIndex-Raw-2018.csv:VolumeTag = NK7531L6,File number=29,/archives/forecasts/WAG12WP07/18040312
+/home/tuser/bin/BackupIndex-Raw-2018.csv:VolumeTag = NK7531L6,File number=30,/archives/forecasts/WAN00CP-04/18040300
+/home/tuser/bin/BackupIndex-Raw-2018.csv:VolumeTag = NK7531L6,File number=31,/archives/forecasts/WAN06CP03/18040306
+/home/tuser/bin/BackupIndex-Raw-2018.csv:VolumeTag = NK7531L6,File number=32,/archives/forecasts/WAN12CP03/18040312
+/home/tuser/bin/BackupIndex-Raw-2018.csv:VolumeTag = NK7531L6,File number=33,/archives/forecasts/WAN18EP03/18040318
+/home/tuser/bin/BackupIndex-Raw-2018.csv:VolumeTag = NK7531L6,File number=34,/archives/forecasts/WNG00WP07/18040300
+/home/tuser/bin/BackupIndex-Raw-2018.csv:VolumeTag = NK7531L6,File number=35,/archives/forecasts/WNG00WP07/18040312
+/home/tuser/bin/BackupIndex-Raw-2018.csv:VolumeTag = NK7531L6,File number=36,/archives/forecasts/WNN00WP03/18040300
+/home/tuser/bin/BackupIndex-Raw-2018.csv:VolumeTag = NK7531L6,File number=37,/archives/forecasts/WNN00WP03/18040312
+/home/tuser/bin/BackupIndex-Raw-2018.csv:VolumeTag = NK7531L6,File number=38,/archives/forecasts/MMG00CP03/18021600
+/home/tuser/bin/BackupIndex-Raw-2018.csv:VolumeTag = NK7531L6,File number=39,/archives/forecasts/MMN00CP03/18021600
+/home/tuser/bin/BackupIndex-Raw-2018.csv:VolumeTag = NK7531L6,File number=40,/archives/forecasts/WAA00WG-01/18021600
+/home/tuser/bin/BackupIndex-Raw-2018.csv:VolumeTag = NK7531L6,File number=41,/archives/forecasts/WAC00WP07/18021600
+/home/tuser/bin/BackupIndex-Raw-2018.csv:VolumeTag = NK7531L6,File number=42,/archives/forecasts/WAG00WP07/18021600
+/home/tuser/bin/BackupIndex-Raw-2018.csv:VolumeTag = NK7531L6,File number=43,/archives/forecasts/WAG12WP07/18021612
+/home/tuser/bin/BackupIndex-Raw-2018.csv:VolumeTag = NK7531L6,File number=44,/archives/forecasts/WAN00CP-04/18021600
+/home/tuser/bin/BackupIndex-Raw-2018.csv:VolumeTag = NK7531L6,File number=45,/archives/forecasts/WAN06CP03/18021606
+/home/tuser/bin/BackupIndex-Raw-2018.csv:VolumeTag = NK7531L6,File number=46,/archives/forecasts/WAN12CP03/18021612
+/home/tuser/bin/BackupIndex-Raw-2018.csv:VolumeTag = NK7531L6,File number=47,/archives/forecasts/WAN18EP03/18021618
