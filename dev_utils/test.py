@@ -36,104 +36,150 @@ from wrf import (getvar, omp_set_num_threads, omp_get_max_threads, ALL_TIMES)
 # test = np.power(e_full, ar)
 # print("power: ", datetime.now() - startTime)
 
-# domain = 'd03'
-# wrf_dir = "/Users/rodell/Google Drive/My Drive/wrfout_2018"
-# save_dir = "/Users/rodell/Desktop/wrfout_2018/"
-# pathlist = sorted(Path(wrf_dir).glob(f'wrfout-d03*'))
+domain = 'd03'
+wrf_dir = "/Users/rodell/Google Drive/My Drive/WAN00CG-01"
+save_dir = "/Users/rodell/Desktop/WAN00CG-01/"
+pathlist = sorted(Path(wrf_dir).glob(f'wrfout*'))
 
-# # pathlist = pathlist[-1]
+# pathlist = pathlist[-1]
 
-# for path in pathlist:
-#   path = str(pathlist)
-#   startTime = datetime.now()
-#   ds = xr.open_zarr(path)
-#   save_ds = str(path).rsplit('/',1)[1]
-#   print(save_dir + save_ds)
-#   ds.to_zarr(save_dir + save_ds)
-#   print("File RUn Time: ", datetime.now() - startTime)
-        ### Open time zones dataset...each grids offset from utc time
+for path in pathlist:
+  startTime = datetime.now()
+  ds = xr.open_zarr(path)
+  save_ds = str(path).rsplit('/',1)[1]
+  print(save_dir + save_ds)
+  ds.to_zarr(save_dir + save_ds)
+  print("File RUn Time: ", datetime.now() - startTime)
+        ## Open time zones dataset...each grids offset from utc time
 
-yesterdays_date, domain = '2021011606', 'd02'
-# hourly_file_dir = str(data_dir) + str(f"/FWF-WAN00CG-01/fwf-hourly-{yesterdays_date}-{domain}.zarr") 
+# yesterdays_date, domain = '2021011606', 'd02'
+# # hourly_file_dir = str(data_dir) + str(f"/FWF-WAN00CG-01/fwf-hourly-{yesterdays_date}-{domain}.zarr") 
 
-hourly_file_dir =  str(f"/Users/rodell/Desktop/WAN00CG-01/wrfout-{domain}-{yesterdays_date}.zarr") 
+# hourly_file_dir =  str(f"/Users/rodell/Desktop/WAN00CG-01/wrfout-{domain}-{yesterdays_date}.zarr") 
 
-wrf_ds = xr.open_zarr(hourly_file_dir)
-tzone_ds = xr.open_dataset(str(tzone_dir) + f"/tzone_wrf_{domain}.nc")
+# wrf_ds = xr.open_zarr(hourly_file_dir)
+# tzone_ds = xr.open_dataset(str(tzone_dir) + f"/tzone_wrf_{domain}.nc")
+
+# yesterdays_date, domain = '2021011906', 'd02'
+# hourly_file_dir = str(data_dir) + str(f"/FWF-WAN00CG-01/fwf-daily-{yesterdays_date}-{domain}.zarr") 
+# previous_daily_ds = xr.open_zarr(hourly_file_dir)
 
 
-print("Create Daily ds")
+# print("Create Daily ds")
 
-### Call on variables 
-tzone = tzone_ds.Zone.values
-shape = np.shape(wrf_ds.T[0,:,:])
+# ### Call on variables 
+# tzone = tzone_ds.Zone.values
+# shape = np.shape(wrf_ds.T[0,:,:])
 
-## create I, J for quick indexing 
-I,J = np.ogrid[:shape[0],:shape[1]]
+# ## create I, J for quick indexing 
+# I,J = np.ogrid[:shape[0],:shape[1]]
 
-## determine index for looping based on length of time array and initial time 
-time_array = wrf_ds.Time.values
-int_time = int(pd.Timestamp(time_array[0]).hour)
-length = len(time_array)
-num_days = [i-12 for i in range(1, length) if i%24 == 0]
-index    = [i-int_time if 12-int_time >= 0 else i+24-int_time for i in num_days]
-print(f'index of times {index} with initial time {int_time}Z')
-## loop every 24 hours at noon local
-files_ds = []
-for i in index:
-    # print(i)
-    ## loop each variable 
-    mean_da = []
-    for var in wrf_ds.data_vars:
-        if var == 'SNOWC':
-            var_array = wrf_ds[var].values
-            noon = var_array[(i + tzone), I, J]
-            day = np.array(wrf_ds.Time[i+1], dtype ='datetime64[D]')
-            var_da = xr.DataArray(noon, name=var, 
-            dims=('south_north', 'west_east'), coords= wrf_ds.isel(time = i).coords)
-            var_da["Time"] = day
-            mean_da.append(var_da)
-        else:
-            var_array = wrf_ds[var].values
-            noon_minus = var_array[(i + tzone - 1), I, J]
-            noon = var_array[(i + tzone), I, J]
-            noon_pluse = var_array[(i + tzone + 1), I, J]
-            noon_mean = (noon_minus + noon + noon_pluse) / 3
-            day = np.array(wrf_ds.Time[i+1], dtype ='datetime64[D]')
-            var_da = xr.DataArray(noon_mean, name=var, 
-                    dims=('south_north', 'west_east'), coords= wrf_ds.isel(time = i).coords)
-            var_da["Time"] = day
-            mean_da.append(var_da)
+# ## determine index for looping based on length of time array and initial time 
+# time_array = wrf_ds.Time.values
+# int_time = int(pd.Timestamp(time_array[0]).hour)
+# length = len(time_array)
+# num_days = [i-12 for i in range(1, length) if i%24 == 0]
+# index    = [i-int_time if 12-int_time >= 0 else i+24-int_time for i in num_days]
+# print(f'index of times {index} with initial time {int_time}Z')
+# ## loop every 24 hours at noon local
+# files_ds = []
+# for i in index:
+#     # print(i)
+#     ## loop each variable 
+#     mean_da = []
+#     for var in wrf_ds.data_vars:
+#         if var == 'SNOWC':
+#             var_array = wrf_ds[var].values
+#             noon = var_array[(i + tzone), I, J]
+#             day = np.array(wrf_ds.Time[i+1], dtype ='datetime64[D]')
+#             var_da = xr.DataArray(noon, name=var, 
+#             dims=('south_north', 'west_east'), coords= wrf_ds.isel(time = i).coords)
+#             var_da["Time"] = day
+#             mean_da.append(var_da)
+#         else:
+#             var_array = wrf_ds[var].values
+#             noon_minus = var_array[(i + tzone - 1), I, J]
+#             noon = var_array[(i + tzone), I, J]
+#             noon_pluse = var_array[(i + tzone + 1), I, J]
+#             noon_mean = (noon_minus + noon + noon_pluse) / 3
+#             day = np.array(wrf_ds.Time[i+1], dtype ='datetime64[D]')
+#             var_da = xr.DataArray(noon_mean, name=var, 
+#                     dims=('south_north', 'west_east'), coords= wrf_ds.isel(time = i).coords)
+#             var_da["Time"] = day
+#             mean_da.append(var_da)
     
-    mean_ds = xr.merge(mean_da)
-    files_ds.append(mean_ds)
+#     mean_ds = xr.merge(mean_da)
+#     files_ds.append(mean_ds)
 
-daily_ds = xr.combine_nested(files_ds, 'time')
-
-## create datarray for carry over rain, this will be added to the next days rain totals
-## NOTE: this is rain that fell from noon local until 00Z.
-r_o_tomorrow_i = wrf_ds.r_o.values[index[0]+24] - daily_ds.r_o.values[0]
-r_o_tomorrow = [r_o_tomorrow_i for i in range(len(num_days))]
-r_o_tomorrow = np.stack(r_o_tomorrow)
-r_o_tomorrow_da = xr.DataArray(r_o_tomorrow, name="r_o_tomorrow", 
-                dims=('time','south_north', 'west_east'), coords= daily_ds.coords)
-
-daily_ds["r_o_tomorrow"] = r_o_tomorrow_da
-
-print("Daily ds done")
+# daily_ds = xr.combine_nested(files_ds, 'time')
 
 
-# wrf_file_dir = str(data_dir) + "/test_wrf/wrfout-d02-2021011306.zarr"
-# wrf_file_dir = '/Users/rodell/Google Drive/Shared drives/WAN00CP-04/18043000/wrfout_d03_2018-04-30_06:00:00'
-# wrf_file = Dataset(wrf_file_dir,'r')
-
-# ds = xr.open_dataset(wrf_file_dir)
-# test_ds, xx = readwrf(wrf_file_dir,domain)
 
 
-# current_time = np.datetime_as_string(ds.Time[-1], unit='h')
+# x_prev = 0
+# for i, x_val in enumerate(daily_ds['r_o']):
+#     daily_ds['r_o'][i] -= x_prev
+#     x_prev = x_val
 
-# i = int(current_time[-2:])
+# # print(daily_ds['r_o'])
+# length = 35
+# test = [i for i in range(1, length) if i%24 == 0]
+# len(test)
+
+# length = len([i for i in range(1, 55) if i%24 == 0])
+
+# a = []
+# if not a:
+#   print("List is empty")
+# else:
+#     print(a)
+
+# ## create datarray for carry over rain, this will be added to the next days rain totals
+# ## NOTE: this is rain that fell from noon local until 00Z.
+# r_o_tomorrow_i = wrf_ds.r_o.values[index[0]+24] - daily_ds.r_o.values[0]
+# r_o_tomorrow = [r_o_tomorrow_i for i in range(len(num_days))]
+# r_o_tomorrow = np.stack(r_o_tomorrow)
+# r_o_tomorrow_da = xr.DataArray(r_o_tomorrow, name="r_o_tomorrow", 
+#                 dims=('time','south_north', 'west_east'), coords= daily_ds.coords)
+
+# daily_ds["r_o_tomorrow"] = r_o_tomorrow_da
+
+# print("Daily ds done")
+# try:
+#     current_time = np.datetime_as_string(daily_ds.Time[0], unit='D')
+# except:
+#     current_time = np.datetime_as_string(daily_ds.Time, unit='D')
+
+# previous_time = np.array(previous_daily_ds.Time.dt.strftime('%Y-%m-%dT%H'))
+# try:
+#     previous_time = datetime.strptime(str(previous_time[0]), '%Y-%m-%dT%H').strftime('%Y%m%d%H')
+# except:
+#     previous_time = datetime.strptime(str(previous_time), '%Y-%m-%dT%H').strftime('%Y%m%d%H')
+
+
+
+# # daily_ds.T[0]
+# previous_times = np.datetime_as_string(previous_daily_ds.Time, unit='D')
+# index, = np.where(previous_times == current_time)
+# index = int(index[0])
+
+# previous_daily_ds['r_o']
+
+
+
+# daily_ds['r_o'][0] = daily_ds['r_o'][0] 
+
+# # wrf_file_dir = str(data_dir) + "/test_wrf/wrfout-d02-2021011306.zarr"
+# # wrf_file_dir = '/Users/rodell/Google Drive/Shared drives/WAN00CP-04/18043000/wrfout_d03_2018-04-30_06:00:00'
+# # wrf_file = Dataset(wrf_file_dir,'r')
+
+# # ds = xr.open_dataset(wrf_file_dir)
+# # test_ds, xx = readwrf(wrf_file_dir,domain)
+
+
+# # current_time = np.datetime_as_string(ds.Time[-1], unit='h')
+
+# # i = int(current_time[-2:])
 
 
 

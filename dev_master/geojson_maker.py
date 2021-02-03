@@ -1,5 +1,10 @@
 #!/bluesky/fireweather/miniconda3/envs/fwf/bin/python
 
+"""
+__author__ = "Christopher Rodell"
+__email__ = "crodell@eoas.ubc.ca"
+
+"""
 import context
 import sys
 import json
@@ -24,7 +29,7 @@ warnings.filterwarnings("ignore", message="invalid value encountered in true_div
 with open('/bluesky/fireweather/fwf/json/colormaps-dev.json') as f:
   cmaps = json.load(f)
 
-### Open color map json
+### Open nested index json
 with open('/bluesky/fireweather/fwf/json/nested-index.json') as f:
   nested_index = json.load(f)
 

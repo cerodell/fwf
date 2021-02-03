@@ -1,4 +1,10 @@
 #!/bluesky/fireweather/miniconda3/envs/fwf/bin/python
+
+"""
+__author__ = "Christopher Rodell"
+__email__ = "crodell@eoas.ubc.ca"
+
+"""
 import context
 import math
 import numpy as np
@@ -18,7 +24,7 @@ import warnings
 warnings.filterwarnings("ignore", message="invalid value encountered in power")
 warnings.filterwarnings("ignore", message="invalid value encountered in log")
 
-date_range = pd.date_range('2021-01-01', '2021-02-02')
+date_range = pd.date_range('2021-01-28', '2021-02-02')
 
 """######### get directory to yesterdays hourly/daily .zarr files.  #############"""
 for date in date_range:

@@ -1,4 +1,16 @@
 #!/bluesky/fireweather/miniconda3/envs/fwf/bin/python
+"""
+__author__ = "Christopher Rodell"
+__email__ = "crodell@eoas.ubc.ca"
+
+This script creates a new domain removing bad boundary conditions. 
+
+Also makes the new domain evenly spaces based on user defined the number of grids
+The user defind number of grids are used to make each file for the point click forecasts
+
+"""
+
+
 import context
 import json
 import numpy as np
@@ -27,7 +39,7 @@ import salem
 
 
 ## define the number of grids you want in each file for the point click forecasts
-## for now it must be under 26 as files as deind by alphabet ie: file-ab.josn
+## for now it must be under 26 as files as defind by alphabet ie: file-ab.josn
 n = 24 
 
 ## define any date of the fwf datasets for d02 and d03
@@ -60,7 +72,8 @@ def mask_nested(array, mask):
 
 def new_domain(ds, n):
     """
-    Calculates the Fine Fuel Moisture Code at a one-hour interval writes/outputs as an xarray
+    Create new doamin shape removing bad boundary conditions. The new shape will be divisible by defind number of grids. 
+    This makes it much easier to generate the point click forecast kdtrees
     
     Parameters
     ----------
@@ -70,10 +83,14 @@ def new_domain(ds, n):
 
     Returns
     -------
-    
-    hourly_ds: DataSet
-        - Adds FFMC and m_o dataset
-        """
+    xlats: new array of latitudes with removing bad boundary conditions
+    xlons: new array of longitudes with removing bad boundary conditions
+    x1:    x indexes to use for removing bad boundary conditions 
+    x2:    x indexes to use for removing bad boundary conditions
+    y1:    y indexes to use for removing bad boundary conditions
+    y2:    y indexes to use for removing bad boundary conditions
+
+    """
     xlats = ds.XLAT.values
     xlons = ds.XLONG.values
     shape = xlats.shape

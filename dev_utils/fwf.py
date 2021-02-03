@@ -1,10 +1,18 @@
 #!/bluesky/fireweather/miniconda3/envs/fwf/bin/python
 
+"""
+__author__ = "Christopher Rodell"
+__email__ = "crodell@eoas.ubc.ca"
+
+Class to solve the Fire Weather Indices using output from a numerical weather model
+"""
+
 import context
 import math
 import errno
 import pickle
 import numpy as np
+import pandas as pd
 import xarray as xr
 from timezonefinder import TimezoneFinder
 
@@ -220,16 +228,29 @@ class FWF:
             ### Open previous days daily_ds
             previous_daily_ds = xr.open_zarr(daily_file_dir)
             previous_time = np.array(previous_daily_ds.Time.dt.strftime('%Y-%m-%dT%H'))
-            previous_time = datetime.strptime(str(previous_time[0]), '%Y-%m-%dT%H').strftime('%Y%m%d%H')
+            try:
+                previous_time = datetime.strptime(str(previous_time[0]), '%Y-%m-%dT%H').strftime('%Y%m%d%H')
+            except:
+                previous_time = datetime.strptime(str(previous_time), '%Y-%m-%dT%H').strftime('%Y%m%d%H')
+
             print(f"{Path(daily_file_dir).exists()}: Found previous DMC on date {previous_time}, will merge with daily_ds")
 
             ### Get last time step of P and r_o_previous (carry over rain)
             ### that coincides with the initialization time of current model run
-            current_time = np.datetime_as_string(self.daily_ds.Time[0], unit='D')
-            previous_times = np.datetime_as_string(previous_daily_ds.Time, unit='D')
-            index, = np.where(previous_times == current_time)
-            index = int(index[0])
+            try:
+                current_time = np.datetime_as_string(self.daily_ds.Time[0], unit='D')
+            except:
+                current_time = np.datetime_as_string(self.daily_ds.Time, unit='D')
+            print('current_time', current_time)
 
+            previous_times = np.datetime_as_string(previous_daily_ds.Time, unit='D')
+            print('previous_times', previous_times)
+            index, = np.where(previous_times == current_time)
+            if not index:
+                index = 0 
+            else:
+                index = int(index[0])
+            print(index)
             P = np.array(previous_daily_ds.P[index])
             r_o_previous = np.array(previous_daily_ds.r_o_tomorrow[index])
 
@@ -239,7 +260,7 @@ class FWF:
             ### Add dataarrays to daily dataset
             self.daily_ds['P']  = P
              ### Add carry over rain to first time step
-            self.daily_ds['r_o'][index] = self.daily_ds['r_o'][index] + np.array(r_o_previous)
+            self.daily_ds['r_o'][0] = self.daily_ds['r_o'][0] + np.array(r_o_previous)
             
             # """ #####################     Drought Code (DC)       ########################### """
             print(f"{Path(wrf_file_dir).exists()}: Found previous DC on date {previous_time}, will merge with daily_ds")
@@ -920,16 +941,20 @@ class FWF:
         f_D = f_D_a + f_D_b
 
         ########################################################################
-        ### (29a) Solve FWI intermediate form  for day 1(B_a)
-        B_a = 0.1 * R[:36] * f_D[0]
 
-        ########################################################################
-        ### (29b) Solve FWI intermediate form for day 2 (B_b)
-        B_b = 0.1 * R[36:] * f_D[1]
-
-        ########################################################################
-        ### (29c) COmbine FWI intermediate (B)
-        B   = xr.combine_nested([B_a,B_b], 'time')
+        index = [i for i in range(1, len(R)) if i%24 == 0]
+        if len(index) == 1:
+            ### (29a) Solve FWI intermediate form  for day 1(B_a)
+            B   = 0.1 * R[:] * f_D[0]
+        elif len(index) == 2: 
+            print('fwi index', index[0])
+            B_a = 0.1 * R[:index[0]] * f_D[0]
+            ### (29b) Solve FWI intermediate form for day 2 (B_b)
+            B_b = 0.1 * R[index[0]:] * f_D[1]
+            ### (29c) COmbine FWI intermediate (B)
+            B   = xr.combine_nested([B_a,B_b], 'time')
+        else:
+            raise SyntaxError('ERROR: Rodell was lazy and needs to rethink indexing of multi length wrf runs')
 
         #### HOPEFULLY SOLVES RUNTIME WARNING
         B = xr.where(B > 0, B, 1e-6)
@@ -1009,7 +1034,7 @@ class FWF:
         int_time = int(pd.Timestamp(time_array[0]).hour)
         length = len(time_array)
         num_days = [i-12 for i in range(1, length) if i%24 == 0]
-        index    = [i-int_time if 12-int_time >= 0 else i+24-int_time for i in list_i]
+        index    = [i-int_time if 12-int_time >= 0 else i+24-int_time for i in num_days]
         print(f'index of times {index} with initial time {int_time}Z')
         
         ## loop every 24 hours at noon local
@@ -1045,7 +1070,7 @@ class FWF:
         daily_ds = xr.combine_nested(files_ds, 'time')
 
         ## create datarray for carry over rain, this will be added to the next days rain totals
-        ## NOTE: this is rain that fell from noon local until 00Z.
+        ## NOTE: this is rain that fell from noon local until 24 hours past the model initial time ie 00Z, 06Z..
         r_o_tomorrow_i = wrf_ds.r_o.values[index[0]+24] - daily_ds.r_o.values[0]
         r_o_tomorrow = [r_o_tomorrow_i for i in range(len(num_days))]
         r_o_tomorrow = np.stack(r_o_tomorrow)
@@ -1109,13 +1134,20 @@ class FWF:
         """
 
         length = len(self.daily_ds.time)
-        r_o_list = []
-        r_o_list.append(self.zero_full)
-        r_o_list.append(np.array(self.daily_ds.r_o[0]))
-        r_o_list.append(np.array(self.daily_ds.r_o[1]))
-        for j in range(length):
-            r_o = r_o_list[j+1] - r_o_list[j]
-            self.daily_ds.r_o[j] = r_o
+        # r_o_list = []
+        # r_o_list.append(self.zero_full)
+        # r_o_list.append(np.array(self.daily_ds.r_o[0]))
+        # r_o_list.append(np.array(self.daily_ds.r_o[1]))
+        # for j in range(length):
+        #     r_o = r_o_list[j+1] - r_o_list[j]
+        #     self.daily_ds.r_o[j] = r_o
+
+        ## subtracks the folling time index precipitation amounts makeing them totlas of a single index
+        x_prev = 0
+        for i, x_val in enumerate(self.daily_ds['r_o']):
+            self.daily_ds['r_o'][i] -= x_prev
+            x_prev = x_val
+
         daily_list = []
         print("Start Daily loop length: ", length)
         for i in range(length):

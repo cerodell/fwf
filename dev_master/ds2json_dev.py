@@ -1,4 +1,11 @@
 #!/bluesky/fireweather/miniconda3/envs/fwf/bin/python
+
+"""
+__author__ = "Christopher Rodell"
+__email__ = "crodell@eoas.ubc.ca"
+
+"""
+
 import context
 import json
 import bson
@@ -36,6 +43,7 @@ with open(str(root_dir) + '/json/nested-index.json') as f:
 # make_dir.mkdir(parents=True, exist_ok=True)
 
 
+## loop both domains
 domains = ['d02','d03']
 for domain in domains:
     ## Get Path to most recent FWI forecast and open 
@@ -66,9 +74,11 @@ for domain in domains:
     with open(str(root_dir) + f"/json/fwf-zone-{domain}.json") as f:
         filezone = json.load(f)
 
+    ## get index to remove boundary conditions 
     n, y1, y2, x1, x2 = nested_index["n"], nested_index["y1_"+domain], nested_index["y2_"+domain], nested_index["x1_"+domain], nested_index["x2_"+domain] 
     # unique_y, unique_x = nested_index['unique_y'], nested_index['unique_x']
 
+    ## get unique time zone ids and remove nested d03 domain from d02.
     empty = np.array(filezone['ZONE'])
     unique_masked, index_masked, counts_masked = np.unique(empty, return_index = True, return_counts = True)
     unique_masked_list = unique_masked.tolist()
@@ -77,21 +87,25 @@ for domain in domains:
     else:
         pass
 
+    ## remove some unwanted variables from dataset
     hourly_var_list = list(hourly_ds)
     remove = ["SNOWC", "SNOWH", "U10", "V10", "m_o", "r_o_hourly"]
     hourly_var_list = list(set(hourly_var_list) - set(remove))
 
+    ## remove some unwanted variables from dataset
     daily_var_list = list(daily_ds)
     remove = ["SNOWC", "F", "H", "T", "R", "W", "WD", "r_o", "r_o_hourly", "r_o_tomorrow"]
     daily_var_list = list(set(daily_var_list) - set(remove))
 
-    ## get array of lats and longs and flatten
+    ## get array of lats and longs remove bad boundary conditions and flatten
     xlat = daily_ds.XLAT.values[y1:-y2,x1:-x2]
     xlon = daily_ds.XLONG.values[y1:-y2,x1:-x2]
 
     xlat = np.round(xlat.flatten(),5)
     xlon = np.round(xlon.flatten(),5)
 
+    ## build dictionary with removed bad boundary conditions fro each variable in dataset
+    ## also reshape into (time, (flatten XLAT/XLONG))
     dict_var = {}
     for var in hourly_var_list:
         var_name = cmaps[var]['name'].lower()
@@ -101,6 +115,8 @@ for domain in domains:
         var_array = var_array.reshape(time_shape[0],(time_shape[1]*time_shape[2]))
         dict_var.update({var_name:var_array})
 
+    ## build dictionary with removed bad boundary conditions fro each variable in dataset
+    ## also reshape into (time, (flatten XLAT/XLONG))
     for var in daily_var_list:
         var_name = cmaps[var]['name'].lower()
         var_array = daily_ds[var].values
@@ -112,6 +128,7 @@ for domain in domains:
     ## flatten empty array 
     empty = empty.flatten()
     # unique_masked_list = ['gk']
+    ## added to dictionary all variables with in there unique group
     for filename in unique_masked_list:
         print(filename)
         dict_file = {                
@@ -138,6 +155,8 @@ for domain in domains:
                           'XLAT': xlat_array.tolist(),
                           'XLONG': xlon_array.tolist(),
                          })
+
+        ## write json files :) 
         with open(str(make_dir) + f"/fwf-{filename}-{timestamp}-{domain}.json","w") as f:
             json.dump(dict_file,f, default=json_util.default, separators=(',', ':'), indent=None)
         print(f"{str(datetime.now())} ---> wrote json to:  " + str(make_dir) + f"/fwf-{filename}-{timestamp}-{domain}.json")

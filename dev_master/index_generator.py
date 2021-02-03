@@ -1,5 +1,10 @@
 #!/bluesky/fireweather/miniconda3/envs/fwf/bin/python
 
+"""
+__author__ = "Christopher Rodell"
+__email__ = "crodell@eoas.ubc.ca"
+
+"""
 import context
 import logging
 from shell import shell
