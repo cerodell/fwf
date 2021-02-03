@@ -24,6 +24,8 @@ domain = 'd02'
 
 # wrf_filein = date.today().strftime('/%y%m%d00/')
 wrf_filein = '/20121500/'
+
+wrf_dir_new = "/Users/rodell/fwf/data/test"
 wrf_file_dir = str(wrf_dir_new) + wrf_filein
 
 

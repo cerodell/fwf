@@ -34,8 +34,8 @@ zones = np.array(tzone_ds.Zone)
 
 
 ### Get Path to most recent FWI forecast and open 
-hourly_file_dir = str(xr_dir) + str("/current/fwf-hourly-current.zarr") 
-daily_file_dir = str(xr_dir) + str("/current/fwf-daily-current.zarr") 
+hourly_file_dir = str(root_dir) + str(f"/data/test/fwf-hourly-2021010700-d02.zarr") 
+daily_file_dir = str(root_dir) + str(f"/data/test/fwf-daily-2021010700-d02.zarr") 
 
 ### Open datasets
 hourly_ds = xr.open_zarr(hourly_file_dir)

@@ -24,16 +24,17 @@ from wrf import (getvar, g_uvmet, geo_bounds)
 
 
 ### Open color map json
-with open('/bluesky/fireweather/fwf/json/colormaps-dev.json') as f:
+with open(str(root_dir) + '/json/colormaps-dev.json') as f:
     cmaps = json.load(f)
 
 ### Open nested grid json
-with open('/bluesky/fireweather/fwf/json/nested-index.json') as f:
+with open(str(root_dir) + '/json/nested-index.json') as f:
     nested_index = json.load(f)
 
-# ### make dir for that days forecast files to be sotred...along woth index.html etc!!!!!
-make_dir = Path("/bluesky/fireweather/fwf/web_dev/data/plot/")
-make_dir.mkdir(parents=True, exist_ok=True)
+# # ### make dir for that days forecast files to be sotred...along woth index.html etc!!!!!
+# make_dir = Path("/bluesky/fireweather/fwf/web_dev/data/plot/")
+# make_dir.mkdir(parents=True, exist_ok=True)
+
 
 domains = ['d02','d03']
 for domain in domains:

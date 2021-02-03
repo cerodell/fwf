@@ -18,22 +18,29 @@ import warnings
 warnings.filterwarnings("ignore", message="invalid value encountered in power")
 warnings.filterwarnings("ignore", message="invalid value encountered in log")
 
+date_range = pd.date_range('2021-01-01', '2021-02-02')
 
 """######### get directory to yesterdays hourly/daily .zarr files.  #############"""
-for i in range(15,25):
+for date in date_range:
+    yesterdays_date = date - np.timedelta64(1,'D')
+    yesterdays_date = yesterdays_date.strftime('%Y%m%d06')
+    forecast_date = date.strftime('%Y%m%d06') 
     domains = ['d02','d03']
     for domain in domains:
         domain_startTime = datetime.now()
         print(f"start of domain {domain}: ", str(domain_startTime))
 
-        hourly_file_dir = str(data_dir) + str(f"/test/current/fwf-hourly-current-{domain}.zarr") 
-        daily_file_dir = str(data_dir) + str(f"/test/current/fwf-daily-current-{domain}.zarr") 
+        hourly_file_dir = str(data_dir) + str(f"/FWF-WAN00CG-01/fwf-hourly-{yesterdays_date}-{domain}.zarr") 
+        daily_file_dir = str(data_dir) + str(f"/FWF-WAN00CG-01/fwf-daily-{yesterdays_date}-{domain}.zarr") 
 
         """######### get directory to todays wrf_out .nc files.  #############"""
         # wrf_filein = date.today().strftime('/%y%m%d00/')
-        wrf_filein = f'/2012{i}00/'
-        print(wrf_filein)
-        wrf_file_dir = str(wrf_dir_new) + wrf_filein
+        # wrf_filein = f'/21010{i}00/'
+        # print(wrf_filein)
+        wrf_dir_new = "/Users/rodell/Desktop/WAN00CG-01"
+
+        wrf_file_dir = str(wrf_dir_new) + f"/wrfout-{domain}-{forecast_date}.zarr"
+        print(wrf_file_dir)
 
 
         """######### Open wrf_out.nc and write  new hourly/daily .zarr files #############"""

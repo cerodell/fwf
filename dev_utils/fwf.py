@@ -65,15 +65,23 @@ class FWF:
 
         """
         ### Read then open WRF dataset
-        wrf_ds, xy_np = readwrf(wrf_file_dir, domain)
+        if wrf_file_dir.endswith('.zarr'):
+            print('Re-run using zarr file')
+            wrf_ds = xr.open_zarr(wrf_file_dir)
+        else:
+            print('New-run, use readwrf to get vars from nc files')
+            wrf_ds, xy_np = readwrf(wrf_file_dir, domain)
+        ## Get dataset attributes 
         self.attrs    = wrf_ds.attrs
 
 
         ############ Mathematical Constants and Usefull Arrays ################ 
         ### Math Constants
-        e = math.e
-        self.P_inital = 6.0
-        self.D_inital = 15.0
+        # e = math.e
+        self.F_initial = 85.0
+        self.P_initial = 6.0
+        self.D_initial = 15.0
+        self.snowfact  = 0.6
 
         ### Shape of Domain make useful fill arrays
         shape = np.shape(wrf_ds.T[0,:,:])
@@ -81,7 +89,7 @@ class FWF:
         self.domain = domain
         print("Domain shape:  ",shape)
 
-        self.e_full    = np.full(shape,e, dtype=float)
+        # self.e_full    = np.full(shape,e, dtype=float)
         self.zero_full = np.zeros(shape, dtype=float)
         self.ones_full = np.full(shape,1, dtype=float)
 
@@ -98,16 +106,8 @@ class FWF:
         L_f = L_f[month]
         self.L_f = L_f
 
-        ### Time Zone classification method
-        # tzdict  = {"AKDT": {'zone_id':8, 'noon':20 , 'plus': 21, 'minus':19},
-        #             "PDT": {'zone_id':7, 'noon':19 , 'plus': 20, 'minus':18},
-        #             "MDT": {'zone_id':6, 'noon':18 , 'plus': 19, 'minus':17},
-        #             "CDT": {'zone_id':5, 'noon':17 , 'plus': 18, 'minus':16},
-        #             "EDT": {'zone_id':4, 'noon':16 , 'plus': 17, 'minus':15},
-        #             "ADT": {'zone_id':3, 'noon':15 , 'plus': 16, 'minus':14}}
-        # self.tzdict = tzdict
 
-        ### Open time zones dataset
+        ### Open time zones dataset...each grids offset from utc time
         tzone_ds = xr.open_dataset(str(tzone_dir) + f"/tzone_wrf_{self.domain}.nc")
         self.tzone_ds = tzone_ds
 
@@ -127,10 +127,10 @@ class FWF:
 
         ### Solve for hourly rain totals in mm....will be used in ffmc calculation 
         r_oi = np.array(self.hourly_ds.r_o)
-        r_o_pluse1 = np.dstack((self.zero_full.T,r_oi.T)).T
+        r_o_plus1 = np.dstack((self.zero_full.T,r_oi.T)).T
         r_hourly_list = []
         for i in range(len(self.hourly_ds.Time)):
-            r_hour =  self.hourly_ds.r_o[i] - r_o_pluse1[i]
+            r_hour =  self.hourly_ds.r_o[i] - r_o_plus1[i]
             r_hourly_list.append(r_hour)
         r_hourly = np.stack(r_hourly_list)
         r_hourly = xr.DataArray(r_hourly, name='r_o_hourly', dims=('time','south_north', 'west_east'))
@@ -138,10 +138,12 @@ class FWF:
         # self.hourly_ds['r_o_hourly'].attrs = self.daily_ds['r_o'].attrs
 
 
-        if hourly_file_dir == None:
+        if Path(hourly_file_dir).exists() == False:
+            previous_time = np.array(wrf_ds.Time.dt.strftime('%Y-%m-%dT%H'))
+            previous_time = datetime.strptime(str(previous_time[0]), '%Y-%m-%dT%H').strftime('%Y%m%d%H')
+            print(f"{Path(hourly_file_dir).exists()}: prior FFMC on date {previous_time}, will initialize with 85s")
             # """ ################## Fine Fuel Moisture Code (FFMC) ##################### """
-            print("No prior FFMC, initialize with 85s")
-            F_o      = 85.0   #Previous day's F becomes F_o
+            F_o      = self.F_initial   #Previous day's F becomes F_o
             F_o_full = np.full(shape,F_o, dtype=float)
 
             ### (1)
@@ -157,11 +159,13 @@ class FWF:
             self.hourly_ds['F']   = F
             self.hourly_ds['m_o'] = m_o
 
-        else:
+        elif Path(hourly_file_dir).exists() == True:
             # """ ################## Fine Fuel Moisture Code (FFMC) ##################### """
             ### Open previous days hourly_ds
             previous_hourly_ds = xr.open_zarr(hourly_file_dir)
-            print("Found previous FFMC, will merge with hourly_ds")
+            previous_time = np.array(previous_hourly_ds.Time.dt.strftime('%Y-%m-%dT%H'))
+            previous_time = datetime.strptime(str(previous_time[0]), '%Y-%m-%dT%H').strftime('%Y%m%d%H')
+            print(f"{Path(hourly_file_dir).exists()}: Found previous FFMC on date {previous_time}, will merge with hourly_ds")
             
             ### Get time step of F and m_o that coincides with the initialization time of current model run
             current_time = np.datetime_as_string(self.hourly_ds.Time[0], unit='h')
@@ -178,12 +182,16 @@ class FWF:
             ### Add dataarrays to hourly dataset
             self.hourly_ds['F']   = F
             self.hourly_ds['m_o'] = m_o
+        else:
+            raise SyntaxError('ERROR: Can Not Initialize FWF Model')
 
 
-        if daily_file_dir == None:
+        if Path(daily_file_dir).exists() == False:
             # """ ####################   Duff Moisture Code (DMC)    ##################### """
-            print("No prior DMC, initialize with 6s")
-            P_o      = self.P_inital
+            previous_time = np.array(wrf_ds.Time.dt.strftime('%Y-%m-%dT%H'))
+            previous_time = datetime.strptime(str(previous_time[0]), '%Y-%m-%dT%H').strftime('%Y%m%d%H')
+            print(f"{Path(daily_file_dir).exists()}: prior DMC on date {previous_time}, will initialize with 6s")
+            P_o      = self.P_initial
             P_o_full = np.full(shape, P_o, dtype=float)
 
             ### Solve for initial log drying rate (K_o)
@@ -199,19 +207,21 @@ class FWF:
             self.daily_ds['P'] = P
 
             # """ #####################     Drought Code (DC)       ########################### """
-            print("No prior DC, initialize with 15s")
-            D_o      = self.D_inital
+            print(f"{Path(daily_file_dir).exists()}: prior DC on date {previous_time}, will initialize with 15s")
+            D_o      = self.D_initial
 
             D_o_full = np.full(shape, D_o, dtype=float)
 
             D = xr.DataArray(D_o_full, name='D', dims=('south_north', 'west_east'))
             self.daily_ds['D'] = D
 
-        else:
+        elif Path(daily_file_dir).exists() == True:
             # """ ####################   Duff Moisture Code (DCM)    ##################### """
             ### Open previous days daily_ds
             previous_daily_ds = xr.open_zarr(daily_file_dir)
-            print("Found previous DMC, will merge with daily_ds")
+            previous_time = np.array(previous_daily_ds.Time.dt.strftime('%Y-%m-%dT%H'))
+            previous_time = datetime.strptime(str(previous_time[0]), '%Y-%m-%dT%H').strftime('%Y%m%d%H')
+            print(f"{Path(daily_file_dir).exists()}: Found previous DMC on date {previous_time}, will merge with daily_ds")
 
             ### Get last time step of P and r_o_previous (carry over rain)
             ### that coincides with the initialization time of current model run
@@ -232,7 +242,8 @@ class FWF:
             self.daily_ds['r_o'][index] = self.daily_ds['r_o'][index] + np.array(r_o_previous)
             
             # """ #####################     Drought Code (DC)       ########################### """
-            print("Found previous DC, will merge with daily_ds")
+            print(f"{Path(wrf_file_dir).exists()}: Found previous DC on date {previous_time}, will merge with daily_ds")
+
 
             ### Get last time step of D that coincides with the
             ### initialization time of current model run
@@ -243,6 +254,10 @@ class FWF:
 
             ### Add dataarrays to daily dataset
             self.daily_ds['D'] = D
+
+        else:
+            raise SyntaxError('ERROR: Can Not Initialize FWF Model')
+
 
         return
 
@@ -298,7 +313,8 @@ class FWF:
         ### Call on initial conditions
         W, T, H, r_o, m_o, F = hourly_ds.W, hourly_ds.T, hourly_ds.H, hourly_ds.r_o_hourly, hourly_ds.m_o, hourly_ds.F
 
-        e_full, zero_full = self.e_full, self.zero_full
+        # e_full, zero_full = self.e_full, self.zero_full
+        zero_full = self.zero_full
 
         ########################################################################
         ### (1b) Solve for the effective rain (r_f) 
@@ -309,20 +325,25 @@ class FWF:
 
 
         ########################################################################
-        ### (1c) Solve the Rainfall routine as defiend in  Van Wagner 1985 (m_r)
+        ### (1c) Solve the Rainfall routine as defined in  Van Wagner 1985 (m_r)
         m_o_limit = 150
-        a = -(100 / (251 - m_o))
-        b = -(6.93 / r_f)
-        m_r_low = xr.where(m_o >= m_o_limit, zero_full, m_o + \
-                            (42.5 * r_f * np.power(e_full,a) * (1- np.power(e_full,b))))
+        # a =  (-100 / (251 - m_o))
+        # b = (-6.93 / r_f)
+        # m_r_low = xr.where(m_o >= m_o_limit, zero_full, m_o + \
+        #                     (42.5 * r_f * np.power(e_full,a) * (1- np.power(e_full,b))))
 
+        m_r_low = xr.where(m_o >= m_o_limit, zero_full, m_o + \
+                            (42.5 * r_f * np.exp((-100 / (251 - m_o))) * (1- np.exp((-6.93 / r_f)))))
 
         ########################################################################
-        ### (1d) Solve the RainFall routine as defiend in  Van Wagner 1985 (m_r)
-        m_r_high = xr.where(m_o < m_o_limit, zero_full, m_o + \
-                            (42.5 * r_f * np.power(e_full, a) * (1 - np.power(e_full, b))) + \
-                                (0.0015 * np.power((m_o - 150),2) * np.power(r_f, 0.5)))
+        ### (1d) Solve the RainFall routine as defined in  Van Wagner 1985 (m_r)
+        # m_r_high = xr.where(m_o < m_o_limit, zero_full, m_o + \
+        #                     (42.5 * r_f * np.power(e_full, a) * (1 - np.power(e_full, b))) + \
+        #                         (0.0015 * np.power((m_o - 150),2) * np.power(r_f, 0.5)))
 
+        m_r_high = xr.where(m_o < m_o_limit, zero_full, m_o + \
+                            (42.5 * r_f * np.exp((-100 / (251 - m_o))) * (1 - np.exp((-6.93 / r_f)))) + \
+                                (0.0015 * np.power((m_o - 150),2) * np.power(r_f, 0.5)))
 
         ########################################################################
         ### (1e) Set new m_o with the rainfall routine (m_o)
@@ -335,64 +356,76 @@ class FWF:
         ### (2a) Solve Equilibrium Moisture content for drying (E_d)
         ## define powers
         a = 0.679
-        b = ((H-100)/ 10)
-        c = (-0.115 * H)
+        # b = ((H-100)/ 10)
+        # c = (-0.115 * H)
 
-        E_d = (0.942 * np.power(H,a)) + (11 * np.power(e_full,b)) \
-                    + (0.18 * (21.1 - T) * (1 - np.power(e_full,c)))
+        # E_d = (0.942 * np.power(H,a)) + (11 * np.power(e_full,b)) \
+        #             + (0.18 * (21.1 - T) * (1 - np.power(e_full,c)))
 
+        E_d = (0.942 * np.power(H,a)) + (11 * np.exp(((H-100)/ 10))) \
+                    + (0.18 * (21.1 - T) * (1 - np.exp((-0.115 * H))))
 
         ########################################################################
         ### (2b) Solve Equilibrium Moisture content for wetting (E_w)
         ## define powers (will use b and c from 2a)
         d = 0.753
 
-        E_w  = xr.where(m_o > E_d, zero_full,(0.618 * (np.power(H, d))) +  \
-                            (10 * np.power(e_full, b)) + (0.18 * (21.1 - T)  * \
-                            (1 - np.power(e_full, c))))
+        # E_w  = xr.where(m_o > E_d, zero_full,(0.618 * (np.power(H, d))) +  \
+        #                     (10 * np.power(e_full, b)) + (0.18 * (21.1 - T)  * \
+        #                     (1 - np.power(e_full, c))))
 
+        E_w  = xr.where(m_o > E_d, zero_full,(0.618 * (np.power(H, d))) +  \
+                            (10 * np.exp(((H-100)/ 10))) + (0.18 * (21.1 - T)  * \
+                            (1 - np.exp((-0.115 * H)))))
 
         ########################################################################
         ### (3a) intermediate step to k_d (k_a)
         # a = ((100 - H) / 100)   ## Van Wagner 1987
-        a = H/100               ## Van Wagner 1977
+        # a = H/100               ## Van Wagner 1977
 
-        k_a = xr.where(m_o < E_d, zero_full, 0.424 * (1 - np.power(a,1.7)) \
-                        + 0.0694 * (np.power(W, 0.5)) * (1 - np.power(a,8)) )
+        k_a = xr.where(m_o < E_d, zero_full, 0.424 * (1 - np.power(H/100,1.7)) \
+                        + 0.0694 * (np.power(W, 0.5)) * (1 - np.power(H/100,8)) )
 
 
         ########################################################################
         ### (3b) Log drying rate for hourly computation, log to base 10 (k_d)
         b = 0.0579    
 
-        k_d = xr.where(m_o < E_d, zero_full, b * k_a * np.power(e_full,(0.0365 * T)))
-
+        # k_d = xr.where(m_o < E_d, zero_full, b * k_a * np.power(e_full,(0.0365 * T)))
+        k_d = xr.where(m_o < E_d, zero_full, b * k_a * np.exp(0.0365 * T))
 
         ########################################################################
         ### (4a) intermediate steps to k_w (k_b)
-        a = ((100 - H) / 100)
+        # a = ((100 - H) / 100)
 
-        k_b = xr.where(m_o > E_w, zero_full, 0.424 * (1 - np.power(a,1.7)) + 0.0694 * \
-                    np.power(W,0.5) * (1 - np.power(a,8)))
+        k_b = xr.where(m_o > E_w, zero_full, 0.424 * (1 - np.power(((100 - H) / 100),1.7)) + 0.0694 * \
+                    np.power(W,0.5) * (1 - np.power(((100 - H) / 100),8)))
 
 
         ########################################################################
         ### (4b)  Log wetting rate for hourly computation, log to base 10 (k_w)
         b = 0.0579    
 
-        k_w = xr.where(m_o > E_w, zero_full, b * k_b * np.power(e_full,(0.0365 * T)))
+        # k_w = xr.where(m_o > E_w, zero_full, b * k_b * np.power(e_full,(0.0365 * T)))
+        k_w = xr.where(m_o > E_w, zero_full, b * k_b * np.exp(0.0365 * T))
 
 
         ########################################################################
         ### (5a) intermediate dry moisture code (m_d)
 
-        m_d = xr.where(m_o < E_d, zero_full, E_d + ((m_o - E_d) * np.power(e_full, -2.303*(k_d))))
+        # m_d = xr.where(m_o < E_d, zero_full, E_d + ((m_o - E_d) * np.power(e_full, -2.303*(k_d))))  ## Van Wagner 1977
+        # m_d = xr.where(m_o < E_d, zero_full, E_d + ((m_o - E_d) * np.power(10, -(k_d))))            ## Van Wagner 1985
+
+        m_d = xr.where(m_o < E_d, zero_full, E_d + ((m_o - E_d) * np.exp(-2.303*(k_d))))  ## Van Wagner 1977
 
 
         ########################################################################
         ### (5b) intermediate wet moisture code (m_w)
 
-        m_w = xr.where(m_o > E_w, zero_full, E_w - ((E_w - m_o) * np.power(e_full, -2.303*(k_w))))
+        # m_w = xr.where(m_o > E_w, zero_full, E_w - ((E_w - m_o) * np.power(e_full, -2.303*(k_w))))  ## Van Wagner 1977
+        # m_w = xr.where(m_o > E_w, zero_full, E_w - ((E_w - m_o) * np.power(10, -(k_w))))            ## Van Wagner 1985
+
+        m_w = xr.where(m_o > E_w, zero_full, E_w - ((E_w - m_o) * np.exp(-2.303*(k_w))))  ## Van Wagner 1977
 
 
         ########################################################################
@@ -470,15 +503,14 @@ class FWF:
 
         Returns
         -------
-        dialy_ds: DataSet
+        daily_ds: DataSet
             - Adds DMC to DataSet
         """
 
         W, T, H, r_o, P_o, L_e, SNOWC = daily_ds.W, daily_ds.T, daily_ds.H, daily_ds.r_o, daily_ds.P, self.L_e, daily_ds.SNOWC
 
-        e_full, zero_full, ones_full = self.e_full, self.zero_full, self.ones_full
-
-        # tzdict = self.tzdict
+        # e_full, zero_full, ones_full = self.e_full, self.zero_full, self.ones_full
+        zero_full, ones_full = self.zero_full, self.ones_full
 
         #### HOPEFULLY SOLVES RUNTIME WARNING
         P_o = xr.where(P_o > 0, P_o, 0.1)
@@ -493,9 +525,12 @@ class FWF:
         ########################################################################
         ### (12) Recast moisture content after rain (M_o)
         ##define power
-        a = (5.6348 - (P_o / 43.43))
-        M_o = xr.where(r_o < r_total, zero_full, 20 + np.power(e_full,a))
-        
+        # a = (5.6348 - (P_o / 43.43))
+        # M_o = xr.where(r_o < r_total, zero_full, 20 + np.power(e_full,a))
+        # M_o = xr.where(r_o < r_total, zero_full, 20 + np.exp(a))
+
+        ## Alteration to Eq. 12 to calculate more accurately (Lawson 2008)
+        M_o = 20 + 280/np.exp(0.023 * P_o)
 
         ########################################################################
         ### (13a) Solve for coefficients b where P_o <= 33 (b_low)
@@ -550,9 +585,11 @@ class FWF:
         ########################################################################
         ### (15) Duff moisture code after rain but prior to drying (P_r_pre_K)
         
-        P_r_pre_K = xr.where(r_o < r_total, zero_full, 244.72 - (43.43 * np.log(M_r - 20)))
-        # P_r_pre_K = xr.where(r_o < r_total, zero_full, \
-        #                         xr.where(P_r_pre_K>0,P_r_pre_K, 1e-6))
+        # P_r_pre_K = xr.where(r_o < r_total, zero_full, 244.72 - (43.43 * np.log(M_r - 20)))
+
+        ## Alteration to Eq. 15 to calculate more accurately  (Lawson 2008)
+        P_r_pre_K = xr.where(r_o < r_total, zero_full, 43.43 * (5.6348 - np.log(M_r - 20)))
+
         P_r_pre_K = xr.where(P_r_pre_K > 0, P_r_pre_K, 1e-6)
 
 
@@ -579,9 +616,9 @@ class FWF:
         P_i = P_d + P_r
 
         ########################################################################
-        ## keep grid to P intial (start up vlaue) if grid 
+        ## keep grid to P initial (start up value) if grid 
         ## is covered by more than 50% snow
-        P = xr.where(SNOWC < 0.8 , P_i, self.P_inital)
+        P = xr.where(SNOWC < self.snowfact , P_i, self.P_initial)
         P = xr.where(P > 0.0 , P, 0.1)
 
         self.daily_ds['P'] = P
@@ -642,10 +679,8 @@ class FWF:
         ### Call on initial conditions
         W, T, H, r_o, D_o, L_f, SNOWC = daily_ds.W, daily_ds.T, daily_ds.H, daily_ds.r_o, daily_ds.D, self.L_f, daily_ds.SNOWC
 
-        e_full, zero_full, ones_full = self.e_full, self.zero_full, self.ones_full
-
-        # tzdict = self.tzdict
-
+        # e_full, zero_full, ones_full = self.e_full, self.zero_full, self.ones_full
+        zero_full, ones_full = self.zero_full, self.ones_full
 
         ########################################################################
         ### (18) Solve for the effective rain (r_d) 
@@ -655,46 +690,53 @@ class FWF:
 
         ########################################################################
         ### (19) Solve for initial moisture equivalent (Q_o) 
-        a = (-D_o/400)
-        Q_o = xr.where(r_o < r_limit, zero_full, 800 * np.power(e_full,a))
+        # a = (-D_o/400)
+        # Q_o = xr.where(r_o < r_limit, zero_full, 800 * np.power(e_full,a))
+        Q_o = xr.where(r_o < r_limit, zero_full, 800 * np.exp((-D_o/400)))
 
 
         ########################################################################
         ### (20) Solve for moisture equivalent (Q_r) 
 
-        Q_r = xr.where(r_o < r_limit, zero_full, Q_o + (3.937 * r_d))
+        # Q_r = xr.where(r_o < r_limit, zero_full, Q_o + (3.937 * r_d))
         
         #### HOPEFULLY SOLVES RUNTIME WARNING
-        Q_r = xr.where(Q_r > 0, Q_r, 1e-6)
+        # Q_r = xr.where(Q_r > 0, Q_r, 1e-6)
 
         ########################################################################
         ### (21) Solve for DC after rain (D_r) 
-        a = (800/Q_r)
-        D_r = xr.where(r_o < r_limit, zero_full, 400 * np.log(a))
+        # a = (800/Q_r)
+        # D_r = xr.where(r_o < r_limit, zero_full, 400 * np.log(a))
+
+        ## Alteration to Eq. 21 (Lawson 2008)\
+        # a = 1 + 3.937 * r_d/Q_o
+        D_r = xr.where(r_o < r_limit, zero_full, D_o - 400 * np.log(1 + 3.937 * r_d/Q_o))
         D_r = xr.where(D_r > 0, D_r, 1e-6)
 
-
         ########################################################################
-        ### (21) Solve for potential evapotranspiration (V) 
+        ### (22) Solve for potential evapotranspiration (V) 
         T = np.where(T>-2.8,T, -2.8)
 
         V = (0.36 * (T + 2.8)) + L_f
 
-        ### V can not go negative, if V does go negative rasie to zero 
+        ### V can not go negative, if V does go negative raise to zero 
         V = xr.where(V > 0, V, 1e-6)
 
         ########################################################################
-        ### (21) Combine dry and moist D and Solve for Drought Code (D) 
+        ### (23) Combine dry and moist D and Solve for Drought Code (D) 
         D_d = xr.where(r_o > r_limit, zero_full, D_o)
         D_combine = D_d + D_r
-        D_i = D_combine + (0.5 * V)
+        # D_i = D_combine + (0.5 * V)
+
+        ## Alteration to Eq. 23 (Lawson 2008)
+        D_i = D_combine +  V
 
         ########################################################################
-        ## keep grid to D intial (start up vlaue) if grid 
+        ## keep grid to D initial (start up value) if grid 
         ## is covered by more than 50% snow
-        D = xr.where(SNOWC < 0.8 , D_i, self.D_inital)
+        D = xr.where(SNOWC < self.snowfact , D_i, self.D_initial)
 
-        ### D can not go negative, if D does go negative rasie to zero 
+        ### D can not go negative, if D does go negative raise to zero 
         D = xr.where(D > 0.0 , D, 0.1)
 
         self.daily_ds['D'] = D
@@ -729,19 +771,29 @@ class FWF:
         ### Call on initial conditions
         W, F, m_o = hourly_ds.W, hourly_ds.F, hourly_ds.m_o
 
-        e_full, zero_full = self.e_full, self.zero_full
+        # e_full, zero_full = self.e_full, self.zero_full
+        zero_full = self.zero_full
 
         ########################################################################
         ### (24) Solve for wind function (f_W) 
-        a = 0.05039 * W
-        f_W = np.power(e_full, a)
+        # a = 0.05039 * W
+        # f_W = np.power(e_full, a)
+
+        # This modification is Equation 53a in FCFDG (1992) (Lawson 2008)
+        W_limit = 40.0
+        f_W_low = xr.where(W > W_limit, zero_full, np.exp(0.05039 * W))
+        f_W_high = xr.where(W <= W_limit, zero_full, 12 * (1 - np.exp(-0.0818 * (W - 28))))
+        f_W = f_W_low + f_W_low
 
         ########################################################################
         ### (25) Solve for fine fuel moisture function (f_F) 
-        a = -0.1386 * m_o
-        b = np.power(e_full, a)
-        c = (1 + np.power(m_o, 5.31) / (4.93e7))
-        f_F = 91.9 * b * c
+        # a = -0.1386 * m_o
+        # # b = np.power(e_full, a)
+        # b = np.exp(a)
+        # c = (1 + np.power(m_o, 5.31) / (4.93e7))
+        # f_F = 91.9 * b * c
+
+        f_F = 91.9 * np.exp(-0.1386 * m_o) * (1 + np.power(m_o, 5.31) / (4.93e7))
         ########################################################################
         ### (26) Solve for initial spread index (R) 
 
@@ -791,21 +843,23 @@ class FWF:
         ########################################################################
         ### (27a) Solve for build up index where P =< 0.4D (U_a) 
         P_limit = 0.4 * D
-        U_a = (0.8 * P * D) / (P + (0.4 * D))
-        U_a = xr.where(P >= P_limit, zero_full, U_a)
+        # U_a = (0.8 * P * D) / (P + (0.4 * D))
+        U_a = xr.where(P >= P_limit, zero_full, (0.8 * P * D) / (P + (0.4 * D)))
 
         ########################################################################
         ### (27b) Solve for build up index where P > 0.4D (U_b) 
 
-        a   = 0.92 + np.power((0.0114 * P), 1.7)
-        U_b = P - ((1 - (0.8 * D)) / (P + (0.4 * D))) * a
-        U_b = xr.where(P < P_limit, zero_full, U_b)
+        # a   = 0.92 + np.power((0.0114 * P), 1.7)
+        # U_b = P - ((1 - (0.8 * D)) / (P + (0.4 * D))) * a
+        U_b = xr.where(P < P_limit, zero_full, P - ((1 - (0.8 * D)) / (P + (0.4 * D))) * (0.92 + np.power((0.0114 * P), 1.7)))
 
 
         ########################################################################
         ### (27c) Combine build up index (U) 
 
         U = U_a + U_b
+
+        U = np.where(U > 0, U, 1e4)    # Set lower limit of 0 
 
         U = xr.DataArray(U, name='U', dims=('time', 'south_north', 'west_east'))
 
@@ -845,19 +899,21 @@ class FWF:
         ### Call on initial conditions
 
         U, R = self.U, self.R
-        e_full, zero_full = self.e_full, self.zero_full
+        # e_full, zero_full = self.e_full, self.zero_full
+        zero_full = self.zero_full
 
         ########################################################################
         ### (28a) Solve for duff moisture function where U =< 80(f_D_a) 
         U_limit = 80
-        f_D_a = (0.626 * np.power(U, 0.809)) + 2
-        f_D_a = xr.where(U >= U_limit, zero_full, f_D_a)
+        # f_D_a = (0.626 * np.power(U, 0.809)) + 2
+        f_D_a = xr.where(U >= U_limit, zero_full, (0.626 * np.power(U, 0.809)) + 2)
 
         ########################################################################
         ### (28b) Solve for duff moisture function where U > 80 (f_D_b) 
-        a = np.power(e_full, (-0.023 * U))
-        f_D_b = 1000 / (25 + 108.64 * a)
-        f_D_a = xr.where(U < U_limit, zero_full, f_D_b)
+        # a = np.power(e_full, (-0.023 * U))
+        # a = np.exp(-0.023 * U)
+        # f_D_b = 1000 / (25 + 108.64 * a)
+        f_D_b = xr.where(U < U_limit, zero_full, 1000 / (25 + 108.64 * np.exp(-0.023 * U)))
 
         ########################################################################
         ### (28c) Combine duff moisture functions (f_D) 
@@ -881,9 +937,10 @@ class FWF:
         ########################################################################
         ### (30a) Solve FWI where B > 1 (S_a)
         B_limit = 1
-        a = np.power((0.434 * np.log(B)), 0.647)
-        S_a = np.power(e_full,2.72 * a)
-        S_a = xr.where(B < B_limit, zero_full, S_a)
+        # a = np.power((0.434 * np.log(B)), 0.647)
+        # S_a = np.power(e_full,2.72 * a)
+        # S_a = np.exp(2.72 * a)
+        S_a = xr.where(B < B_limit, zero_full, np.exp(2.72 * np.power((0.434 * np.log(B)), 0.647)))
 
         ########################################################################
         ### (30b) Solve FWI where B =< 1 (S_b)
@@ -946,12 +1003,19 @@ class FWF:
 
         ## create I, J for quick indexing 
         I,J = np.ogrid[:self.shape[0],:self.shape[1]]
+
+        ## determine index for looping based on length of time array and initial time 
+        time_array = wrf_ds.Time.values
+        int_time = int(pd.Timestamp(time_array[0]).hour)
+        length = len(time_array)
+        num_days = [i-12 for i in range(1, length) if i%24 == 0]
+        index    = [i-int_time if 12-int_time >= 0 else i+24-int_time for i in list_i]
+        print(f'index of times {index} with initial time {int_time}Z')
         
-        ## loop every 24 hours
+        ## loop every 24 hours at noon local
         files_ds = []
-        for i in [12,36]:
+        for i in index:
             # print(i)
-            
             ## loop each variable 
             mean_da = []
             for var in wrf_ds.data_vars:
@@ -982,13 +1046,14 @@ class FWF:
 
         ## create datarray for carry over rain, this will be added to the next days rain totals
         ## NOTE: this is rain that fell from noon local until 00Z.
-        r_o_tomorrow_i = wrf_ds.r_o.values[24] - daily_ds.r_o.values[0]
-        r_o_tomorrow = np.stack([r_o_tomorrow_i,r_o_tomorrow_i])
+        r_o_tomorrow_i = wrf_ds.r_o.values[index[0]+24] - daily_ds.r_o.values[0]
+        r_o_tomorrow = [r_o_tomorrow_i for i in range(len(num_days))]
+        r_o_tomorrow = np.stack(r_o_tomorrow)
         r_o_tomorrow_da = xr.DataArray(r_o_tomorrow, name="r_o_tomorrow", 
                         dims=('time','south_north', 'west_east'), coords= daily_ds.coords)
 
         daily_ds["r_o_tomorrow"] = r_o_tomorrow_da
-        
+
         print("Daily ds done")
 
         return daily_ds
@@ -1144,8 +1209,15 @@ class FWF:
         hourly_ds.r_o_hourly.attrs['description'] = "HOURLY PRECIPITATION TOTALS"
 
         for var in hourly_ds.data_vars:
-            del hourly_ds[var].attrs['coordinates']
-            hourly_ds[var].attrs['projection'] = str(hourly_ds[var].projection)
+            # if 'coordinates' in self.attrs:
+            #     del hourly_ds[var].attrs['coordinates']
+            # else:
+            #     pass
+            # if 'projection' in self.attrs:
+            #     hourly_ds[var].attrs['projection'] = str(hourly_ds[var].projection)
+            # else:
+            #     pass
+            hourly_ds[var] = hourly_ds[var].astype(dtype= 'float32')
 
 
         # ### Name file after initial time of wrf 
@@ -1154,15 +1226,15 @@ class FWF:
         print("Hourly zarr initialized at :", file_name)
 
         # # ## Write and save DataArray (.zarr) file
-        make_dir = Path(str(data_dir) + str('/test/fwf-hourly-') + file_name + str(f"-{self.domain}.zarr"))
+        make_dir = Path(str(data_dir) + str('/FWF-WAN00CG-01/fwf-hourly-') + file_name + str(f"-{self.domain}.zarr"))
         make_dir.mkdir(parents=True, exist_ok=True)
         hourly_ds = hourly_ds.compute()
-        hourly_ds.to_zarr(make_dir, "w")
+        hourly_ds.to_zarr(make_dir, mode = 'w')
         print(f"wrote archive {make_dir}")
     
-        current_dir_hourly = str(data_dir) + str(f'/test/current/fwf-hourly-current-{self.domain}.zarr')
-        hourly_ds.to_zarr(current_dir_hourly, "w")
-        print(f"wrote working {current_dir_hourly}")
+        # current_dir_hourly = str(data_dir) + str(f'/test/current/fwf-hourly-current-{self.domain}.zarr')
+        # hourly_ds.to_zarr(current_dir_hourly, "w")
+        # print(f"wrote working {current_dir_hourly}")
 
         # ## Write and save DataArray (.nc) file
         # make_dir = Path(str(nc_dir) + str('/fwf-hourly-') + file_name + str(f"-{self.domain}.nc"))
@@ -1209,8 +1281,15 @@ class FWF:
 
         for var in daily_ds.data_vars:
         #     print(var)
-            del daily_ds[var].attrs['coordinates']
-            daily_ds[var].attrs['projection'] = str(daily_ds[var].projection)
+            # if 'coordinates' in self.attrs:
+            #     del daily_ds[var].attrs['coordinates']
+            # else:
+            #     pass
+            # if 'projection' in self.attrs:
+            #     daily_ds[var].attrs['projection'] = str(daily_ds[var].projection)
+            # else:
+            #     pass
+            daily_ds[var] = daily_ds[var].astype(dtype= 'float32')
 
         daily_ds.r_o.attrs['description'] = "24 HOUR ACCUMULATED PRECIPITATION"
 
@@ -1222,15 +1301,15 @@ class FWF:
         print("Daily zarr initialized at :", file_name)
 
         # # ## Write and save DataArray (.zarr) file
-        make_dir = Path(str(data_dir) + str('/test/fwf-daily-') + file_name + str(f"-{self.domain}.zarr"))
+        make_dir = Path(str(data_dir) + str('/FWF-WAN00CG-01/fwf-daily-') + file_name + str(f"-{self.domain}.zarr"))
         make_dir.mkdir(parents=True, exist_ok=True)
         daily_ds = daily_ds.compute()
-        daily_ds.to_zarr(make_dir, "w")
+        daily_ds.to_zarr(make_dir, mode = 'w')
         print(f"wrote archive {make_dir}")
 
-        current_dir_daily = str(data_dir) + str(f'/test/current/fwf-daily-current-{self.domain}.zarr')
-        daily_ds.to_zarr(current_dir_daily, "w")
-        print(f"wrote working {current_dir_daily}")
+        # current_dir_daily = str(data_dir) + str(f'/test/current/fwf-daily-current-{self.domain}.zarr')
+        # daily_ds.to_zarr(current_dir_daily, "w")
+        # print(f"wrote working {current_dir_daily}")
 
         # # ## Write and save DataArray (.nc) file
         # make_dir = Path(str(nc_dir) + str('/fwf-daily-') + file_name + str(f"-{self.domain}.nc"))
