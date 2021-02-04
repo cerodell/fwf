@@ -28,8 +28,8 @@ today = current - timedelta(days=1)
 yesterday = today - timedelta(days=1)
 
 ##  Our machine is on an odd timezone so todays is yesterdays and yesterdays is two days ago....
-### example curent = 20200725, today = 20200724, yesterday = 20200723
-### Its confusing im sorry feel free to rename the varibles just know the date will all match up with the correct data.
+### example current = 20200725, today = 20200724, yesterday = 20200723
+### Its confusing im sorry feel free to rename the variables just know the date will all match up with the correct data.
 todays_date = today.strftime('%Y%m%d')
 yesterdays_date = yesterday.strftime('%Y%m%d')
 

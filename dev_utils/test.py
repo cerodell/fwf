@@ -21,7 +21,9 @@ from netCDF4 import Dataset
 from wrf import (getvar, omp_set_num_threads, omp_get_max_threads, ALL_TIMES)
 
 
+wrf_dir = "/Volumes/cer/fireweather/data/FWF-WAN00CG-01/fwf-daily-2021020106-d03.zarr/"
 
+ds = xr.open_zarr(wrf_dir)
 
 
 # ar = np.random.rand(1200,20000)
@@ -36,36 +38,51 @@ from wrf import (getvar, omp_set_num_threads, omp_get_max_threads, ALL_TIMES)
 # test = np.power(e_full, ar)
 # print("power: ", datetime.now() - startTime)
 
-domain = 'd03'
-wrf_dir = "/Users/rodell/Google Drive/My Drive/WAN00CG-01"
-save_dir = "/Users/rodell/Desktop/WAN00CG-01/"
-pathlist = sorted(Path(wrf_dir).glob(f'wrfout*'))
+wrf_model = 'WAN00CP-04' 
 
-# pathlist = pathlist[-1]
-
-for path in pathlist:
-  startTime = datetime.now()
-  ds = xr.open_zarr(path)
-  save_ds = str(path).rsplit('/',1)[1]
-  print(save_dir + save_ds)
-  ds.to_zarr(save_dir + save_ds)
-  print("File RUn Time: ", datetime.now() - startTime)
-        ## Open time zones dataset...each grids offset from utc time
-
-# yesterdays_date, domain = '2021011606', 'd02'
-# # hourly_file_dir = str(data_dir) + str(f"/FWF-WAN00CG-01/fwf-hourly-{yesterdays_date}-{domain}.zarr") 
-
-# hourly_file_dir =  str(f"/Users/rodell/Desktop/WAN00CG-01/wrfout-{domain}-{yesterdays_date}.zarr") 
-
-# wrf_ds = xr.open_zarr(hourly_file_dir)
-# tzone_ds = xr.open_dataset(str(tzone_dir) + f"/tzone_wrf_{domain}.nc")
-
-# yesterdays_date, domain = '2021011906', 'd02'
-# hourly_file_dir = str(data_dir) + str(f"/FWF-WAN00CG-01/fwf-daily-{yesterdays_date}-{domain}.zarr") 
-# previous_daily_ds = xr.open_zarr(hourly_file_dir)
+zarr_dir = f"/Users/rodell/Google Drive/My Drive/{wrf_model}/"
+save_dir = f"/Volumes/cer/fireweather/data/{wrf_model}/"
 
 
-# print("Create Daily ds")
+date_range = pd.date_range('2018-05-20', '2018-05-31')
+
+
+for domain in ['d02', 'd03']:
+  for date in date_range:
+    startTime = datetime.now()
+    zarr_date     = date.strftime('%Y%m%d06')
+    zarr_file     = f'wrfout-{domain}-{zarr_date}.zarr'
+    print(zarr_file)
+    zarr_file_dir = str(zarr_dir) + zarr_file
+    ds = xr.open_zarr(zarr_file_dir)
+    ds.to_zarr(save_dir + zarr_file)
+    print("File Run Time: ", datetime.now() - startTime)
+
+
+
+# for path in pathlist:
+#   startTime = datetime.now()
+#   ds = xr.open_zarr(path)
+#   save_ds = str(path).rsplit('/',1)[1]
+#   print(save_dir + save_ds)
+#   ds.to_zarr(save_dir + save_ds)
+#   print("File RUn Time: ", datetime.now() - startTime)
+#         ## Open time zones dataset...each grids offset from utc time
+
+# # yesterdays_date, domain = '2021011606', 'd02'
+# # # hourly_file_dir = str(data_dir) + str(f"/FWF-WAN00CG-01/fwf-hourly-{yesterdays_date}-{domain}.zarr") 
+
+# # hourly_file_dir =  str(f"/Users/rodell/Desktop/WAN00CG-01/wrfout-{domain}-{yesterdays_date}.zarr") 
+
+# # wrf_ds = xr.open_zarr(hourly_file_dir)
+# # tzone_ds = xr.open_dataset(str(tzone_dir) + f"/tzone_wrf_{domain}.nc")
+
+# # yesterdays_date, domain = '2021011906', 'd02'
+# # hourly_file_dir = str(data_dir) + str(f"/FWF-WAN00CG-01/fwf-daily-{yesterdays_date}-{domain}.zarr") 
+# # previous_daily_ds = xr.open_zarr(hourly_file_dir)
+
+
+# # print("Create Daily ds")
 
 # ### Call on variables 
 # tzone = tzone_ds.Zone.values
