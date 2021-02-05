@@ -16,16 +16,15 @@ from pathlib import Path
 path = Path(__file__).resolve()  # this file
 this_dir = path.parent  # this folder
 notebooks_dir = this_dir
-root_dir = notebooks_dir.parents[0]
+root_dir = notebooks_dir.parents[1]
 data_dir = root_dir / Path("data")
 tzone_dir = root_dir / Path("data/tzone/")
-xr_dir   = root_dir / Path("data/xr/")
-nc_dir   = root_dir / Path("data/nc/")
+html_dir = root_dir / Path("firewx_website/html/")
+ops_dir = Path("/bluesky/archive/fireweather/forecasts/")
+xr_dir = root_dir / Path("data/xr/")
 
 
 wrf_dir = Path("/nfs/kitsault/archives/forecasts/WAN00CP-04/")
-wrf_dir_new = Path("/nfs/kitsault/archives/forecasts/WAN00CG-01/")
-
 
 
 sys.path.insert(0, str(root_dir))
