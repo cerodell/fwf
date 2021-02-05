@@ -8,14 +8,17 @@ from netCDF4 import Dataset
 from datetime import datetime
 from context import data_dir, xr_dir, wrf_dir
 
-from wrf import (getvar, g_uvmet,get_cartopy, ll_to_xy)
+from wrf import (getvar, g_uvmet,get_cartopy, ll_to_xy, interplevel, omp_set_num_threads, omp_get_max_threads)
 
 
 
 """ ####################################################################### """
 """ ###################### Grab WRF Variables ####################### """
 
-def readwrf(filein, *args):
+""" ####################################################################### """
+""" ###################### Grab WRF Variables ####################### """
+
+def readwrf(filein, domain,  *args):
     """
     This function reads wrfout files and grabs required met variables for fire weather index calculations.  Writes/outputs as a xarray    
     
@@ -37,64 +40,115 @@ def readwrf(filein, *args):
     ds_wrf: DataSet
         xarray DataSet
     """
-   
-    ds_list, time_list, attributes = [], [], []
-    pathlist = sorted(Path(filein).glob('wrfout_d03_*'))
-    # print(pathlist)
+    omp_set_num_threads(4)
+    print(f"read files with {omp_get_max_threads()} threads")
+    startTime = datetime.now()
+    print("begin readwrf: ", str(startTime))
+    ds_list = []
+    pathlist = sorted(Path(filein).glob(f'wrfout_{domain}_*00'))
+    if domain == 'd02':
+        pathlist = pathlist[6:61]
+    else:
+        pathlist = pathlist[6:]
+
     for path in pathlist:
         path_in_str = str(path)
+        print(path_in_str)
         wrf_file = Dataset(path_in_str,'r')
 
-        time         = getvar(wrf_file, "times", timeidx=0)
-        Ti           = getvar(wrf_file, "T2")
-        T            = Ti-273.15
-        T.attrs      = Ti.attrs
-        T.attrs['description'] = "2m TEMP"
-        T.attrs['units'] = "C"
-        Hi           = np.array(getvar(wrf_file, "rh2")) * 1.0
+        T            = getvar(wrf_file, "T2")
+        T            = T.rename("T") - 273.15
+
+        TDi          = getvar(wrf_file, "td2", units = "degC",meta=False)
+        TD            = xr.DataArray(TDi, name='TD', dims=('south_north', 'west_east'))
+
+        Hi           = getvar(wrf_file, "rh2", meta=False)
         H            = xr.DataArray(Hi, name='H', dims=('south_north', 'west_east'))
-        H.attrs      = Ti.attrs
-        H.attrs['units'] = "(%)"
-        H.attrs['description'] = "2m RELATIVE HUMIDITY"
+
         wsp_wdir     = g_uvmet.get_uvmet10_wspd_wdir(wrf_file,units='km h-1')
         wsp_array    = np.array(wsp_wdir[0])
         wdir_array   = np.array(wsp_wdir[1])
         W            = xr.DataArray(wsp_array, name='W', dims=('south_north', 'west_east'))
         WD           = xr.DataArray(wdir_array, name='WD', dims=('south_north', 'west_east'))
-        W.attrs      = wsp_wdir.attrs
-        W.attrs['description'] = "10m WIND SPEED"
-        WD.attrs      = wsp_wdir.attrs
-        WD.attrs['description'] = "10m WIND DIRECTION"
-        WD.attrs['units'] = "degrees"
+
+        U10i           = getvar(wrf_file, "U10", meta=False)
+        U10            = xr.DataArray(U10i, name='U10', dims=('south_north', 'west_east'))
+
+        V10i           = getvar(wrf_file, "V10", meta=False)
+        V10            = xr.DataArray(V10i, name='V10', dims=('south_north', 'west_east'))
 
         ##varied parameterization scheme to forecast rain..note this is a sum of rain from the starts of the model run  
-        rain_ci   = getvar(wrf_file, "RAINC")
-        rain_c    = np.array(rain_ci)
-        rain_sh   = np.array(getvar(wrf_file, "RAINSH"))
-        rain_nc   = np.array(getvar(wrf_file, "RAINNC"))
-        qpf_i     = rain_c + rain_sh + rain_nc
-        qpf       = np.where(qpf_i>0,qpf_i, qpf_i*0)
-        r_o       = xr.DataArray(qpf, name='r_o', dims=('south_north', 'west_east'))
-        r_o.attrs = rain_ci.attrs
-        r_o.attrs['description'] = "ACCUMULATED TOTAL PRECIPITATION"
+        rain_c    = getvar(wrf_file, "RAINC", meta=False)
+        rain_sh   = getvar(wrf_file, "RAINSH", meta=False)
+        rain_nc   = getvar(wrf_file, "RAINNC", meta=False)
+        r_o_i     = rain_c + rain_sh + rain_nc
+        r_o       = xr.DataArray(r_o_i, name='r_o', dims=('south_north', 'west_east'))
 
-        SNWi           = np.array(getvar(wrf_file, "SNOWNC")) *1.0
-        SNW            = xr.DataArray(SNWi, name='SNW', dims=('south_north', 'west_east'))
-        SNW.attrs      = Ti.attrs
-        SNW.attrs['units'] = "cm"
-        SNW.attrs['description'] = "ACCUMULATED TOTAL GRID SCALE SNOW AND ICE"
+        SNWi            = getvar(wrf_file, "SNOWNC", meta=False)
+        SNW             = xr.DataArray(SNWi, name='SNW', dims=('south_north', 'west_east'))
 
-        var_list = [H,T,W,WD,r_o, SNW]
+        SNOWCi           = getvar(wrf_file, "SNOWC", meta=False)
+        SNOWC            = xr.DataArray(SNOWCi, name='SNOWC', dims=('south_north', 'west_east'))
+
+        SNOWHi           = getvar(wrf_file, "SNOWH", meta=False)
+        SNOWH            = xr.DataArray(SNOWHi, name='SNOWH', dims=('south_north', 'west_east'))
+
+        var_list = [H,T,TD,W,WD,r_o, SNW, SNOWC, SNOWH, U10, V10]
         ds = xr.merge(var_list)
         ds_list.append(ds)
-        time_list.append(time)
-        attributes.append(path_in_str)
 
     ### Combine xarrays and rename to match van wangers defs 
     wrf_ds = xr.combine_nested(ds_list, 'time')
-    wrf_ds = wrf_ds.rename_vars({"T2":"T"})
 
-    wrf_file = Dataset(attributes[0],'r')
+    wrf_file = Dataset(str(pathlist[0]),'r')
+
+    Ti                                = getvar(wrf_file, "T2")
+    attrs                             = Ti.attrs
+    attrs['projection']               = str(attrs['projection'])
+    wrf_ds.T.attrs                    =  attrs
+    wrf_ds.T.attrs['description']     = "2m TEMP"
+    wrf_ds.T.attrs['units']           = "C"
+
+    wrf_ds.TD.attrs                   = attrs
+    wrf_ds.TD.attrs['description']    = "2m DEW POINT TEMP"
+    wrf_ds.TD.attrs['units']          = "C"
+
+
+    wrf_ds.W.attrs                    =  attrs
+    wrf_ds.WD.attrs['units']          = "km hr^-1"
+    wrf_ds.W.attrs['description']     = "10m WIND SPEED"
+    wrf_ds.WD.attrs                   =  attrs
+    wrf_ds.WD.attrs['description']    = "10m WIND DIRECTION"
+    wrf_ds.WD.attrs['units']          = "degrees"
+
+    wrf_ds.H.attrs                    =  attrs
+    wrf_ds.H.attrs['units']           = "(%)"
+    wrf_ds.H.attrs['description']     = "2m RELATIVE HUMIDITY"
+
+
+    wrf_ds.U10.attrs                  =  attrs
+    wrf_ds.U10.attrs['units']         = "m s-1"
+    wrf_ds.U10.attrs['description']   = "U at 10 M"
+
+
+    wrf_ds.V10.attrs                  =  attrs
+    wrf_ds.V10.attrs['units']         = "m s-1"
+    wrf_ds.V10.attrs['description']   = "V at 10 M"
+    
+    wrf_ds.r_o.attrs['units']         = "mm"
+    r_o.attrs['description']          = "ACCUMULATED TOTAL PRECIPITATION"
+
+    wrf_ds.SNW.attrs['units']         = "cm"
+    wrf_ds.SNW.attrs['description']   = "ACCUMULATED TOTAL GRID SCALE SNOW AND ICE"
+
+    wrf_ds.SNOWC.attrs['units']       = ""
+    wrf_ds.SNOWC.attrs['description'] = "FLAG INDICATING SNOW COVERAGE (1 FOR SNOW COVER)"
+
+    wrf_ds.SNOWH.attrs['units']       = "m"
+    wrf_ds.SNOWH.attrs['description'] = "PHYSICAL SNOW DEPTH"
+
+
+
     nc_attrs = wrf_file.ncattrs()
     for nc_attr in nc_attrs:
         # print('\t%s:' % nc_attr, repr(wrf_file.getncattr(nc_attr)))
@@ -105,35 +159,19 @@ def readwrf(filein, *args):
     else:
         xy_np    = None
 
-    ### Name file after initial time of wrf 
-    # file_name = np.datetime_as_string(time_list[0],unit='h')
-    # print("WRF initialized at :",str(file_name))
+    # print(wrf_ds)
+    # print(wrf_ds.T)
+    # time = np.array(wrf_ds.Time.dt.strftime('%Y-%m-%dT%H'))
+    # timestamp = datetime.strptime(str(time[0]), '%Y-%m-%dT%H').strftime('%Y%m%d%H')
 
-    # ## Write and save DataArray (.zarr) file
-    # make_dir = Path(str(xr_dir) + str('/') + file_name + str(f"_wrf_ds.zarr"))
+    # wrf_ds_dir = str(save_dir) + str(f'wrfout-{domain}-{timestamp}.zarr')
+    # wrf_ds.to_zarr(wrf_ds_dir, "w")
+    # print(f"wrote {wrf_ds_dir}")
+    print("readwrf run time: ", datetime.now() - startTime)
 
-    ### Check if file exists....else write file
-    # if make_dir.exists():
-    #     the_size = make_dir.stat().st_size
-    #     print(
-    #         ("\n{} already exists\n" "and is {} bytes\n" "will not overwrite\n").format(
-    #             file_name, the_size
-    #         )
-    #     )
-    # else:
-    #     make_dir.mkdir(parents=True, exist_ok=True)
-    #     wrf_ds.compute()
-    #     wrf_ds.to_zarr(make_dir, "w")
-    #     print(f"wrote {make_dir}")
-
-    # make_dir.mkdir(parents=True, exist_ok=True)
-    # wrf_ds.compute()
-    # wrf_ds.to_zarr(make_dir, "w")
-    # print(f"wrote {make_dir}")
-    
-    ### return path to xr file to open
-    # return str(make_dir)
     return wrf_ds, xy_np
+
+
 
 
 
