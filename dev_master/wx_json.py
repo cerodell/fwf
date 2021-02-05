@@ -127,7 +127,6 @@ time_obs = np.array(obs_final.time.dt.strftime('%Y-%m-%d'), dtype = '<U10')
 timestamp = datetime.strptime(str(time[0]), '%Y-%m-%dT%H').strftime('%Y%m%d%H')
 
 
-
 ## Get uniquie variables from all the datasets 
 var_list = list(hourly_ds)
 obs_list = list(obs_final)
