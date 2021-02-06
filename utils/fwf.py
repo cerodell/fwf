@@ -1,9 +1,6 @@
 #!/bluesky/fireweather/miniconda3/envs/fwf/bin/python
 
 """
-__author__ = "Christopher Rodell"
-__email__ = "crodell@eoas.ubc.ca"
-
 Class to solve the Fire Weather Indices using output from a numerical weather model
 """
 
@@ -22,6 +19,9 @@ from netCDF4 import Dataset
 from datetime import datetime
 from dev_utils.read_wrfout import readwrf
 from context import xr_dir, wrf_dir, tzone_dir, nc_dir, data_dir
+
+__author__ = "Christopher Rodell"
+__email__ = "crodell@eoas.ubc.ca"
 
 
 class FWF:
