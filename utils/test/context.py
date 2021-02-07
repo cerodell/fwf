@@ -22,6 +22,7 @@ tzone_dir = root_dir / Path("data/tzone/")
 
 wrf_dir = Path("/nfs/kitsault/archives/forecasts/WAN00CP-04/")
 xr_dir = Path("/bluesky/archive/fireweather/")
+fwf_zarr_dir = root_dir / Path("data/fwf-zarr/")
 
 
 sys.path.insert(0, str(root_dir))

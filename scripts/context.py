@@ -21,6 +21,8 @@ data_dir = root_dir / Path("data")
 tzone_dir = root_dir / Path("data/tzone/")
 xr_dir = root_dir / Path("data/xr/")
 nc_dir = root_dir / Path("data/nc/")
+fwf_zarr_dir = root_dir / Path("data/fwf-zarr/")
+
 
 html_dir = root_dir / Path("html/")
 ops_dir = Path("/bluesky/archive/fireweather/forecasts/")

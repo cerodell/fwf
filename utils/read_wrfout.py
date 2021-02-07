@@ -20,13 +20,10 @@ from wrf import (
 
 
 """ ####################################################################### """
-""" ###################### Grab WRF Variables ####################### """
-
-""" ####################################################################### """
-""" ###################### Grab WRF Variables ####################### """
+""" ######################### Grab WRF Variables ########################## """
 
 
-def readwrf(filein, domain, *args):
+def readwrf(filein, domain, wright):
     """
     This function reads wrfout files and grabs required met variables for fire weather index calculations.  Writes/outputs as a xarray
 
@@ -68,8 +65,9 @@ def readwrf(filein, domain, *args):
         V10: DataArray
             - 10 meter V Compentent of Wind
 
-    *xy_np: list
-        - i and j index of lat and long
+    wright: boolean
+        - True: write wrfout to zarr
+        - False: do not write wrfout to zarr
 
     """
     omp_set_num_threads(4)
@@ -130,7 +128,7 @@ def readwrf(filein, domain, *args):
         ds = xr.merge(var_list)
         ds_list.append(ds)
 
-    ### Combine xarrays and rename to match van wangers defs
+    ### Combine xarray and rename to match van wangers defs
     wrf_ds = xr.combine_nested(ds_list, "time")
 
     wrf_file = Dataset(str(pathlist[0]), "r")
@@ -183,18 +181,16 @@ def readwrf(filein, domain, *args):
     for nc_attr in nc_attrs:
         wrf_ds.attrs[nc_attr] = repr(wrf_file.getncattr(nc_attr))
 
-    if args:
-        xy_np = np.array(ll_to_xy(wrf_file, float(args[0]), float(args[1])))
+    if wright == True:
+        print(wrf_ds)
+        time = np.array(wrf_ds.Time.dt.strftime("%Y-%m-%dT%H"))
+        timestamp = datetime.strptime(str(time[0]), "%Y-%m-%dT%H").strftime("%Y%m%d%H")
+
+        wrf_ds_dir = str(save_dir) + str(f"wrfout-{domain}-{timestamp}.zarr")
+        wrf_ds.to_zarr(wrf_ds_dir, mode="w")
+        print(f"wrote {wrf_ds_dir}")
     else:
-        xy_np = None
-
-    print(wrf_ds)
-    time = np.array(wrf_ds.Time.dt.strftime("%Y-%m-%dT%H"))
-    timestamp = datetime.strptime(str(time[0]), "%Y-%m-%dT%H").strftime("%Y%m%d%H")
-
-    wrf_ds_dir = str(save_dir) + str(f"wrfout-{domain}-{timestamp}.zarr")
-    wrf_ds.to_zarr(wrf_ds_dir, mode="w")
-    print(f"wrote {wrf_ds_dir}")
+        pass
     print("readwrf run time: ", datetime.now() - startTime)
 
-    return wrf_ds, xy_np
+    return wrf_ds

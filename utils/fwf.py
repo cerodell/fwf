@@ -18,7 +18,7 @@ from pathlib import Path
 from netCDF4 import Dataset
 from datetime import datetime
 from dev_utils.read_wrfout import readwrf
-from context import xr_dir, wrf_dir, tzone_dir, nc_dir, data_dir
+from context import xr_dir, wrf_dir, tzone_dir, nc_dir, data_dir, fwf_zarr_dir
 
 __author__ = "Christopher Rodell"
 __email__ = "crodell@eoas.ubc.ca"
@@ -62,7 +62,7 @@ class FWF:
     """ ######################## Initialize FWI model #########################"""
     """########################################################################"""
 
-    def __init__(self, wrf_file_dir, hourly_file_dir, daily_file_dir, domain):
+    def __init__(self, wrf_file_dir, domain, initialize):
         """
         Initialize Fire Weather Index Model
 
@@ -74,7 +74,7 @@ class FWF:
             wrf_ds = xr.open_zarr(wrf_file_dir)
         else:
             print("New-run, use readwrf to get vars from nc files")
-            wrf_ds, xy_np = readwrf(wrf_file_dir, domain)
+            wrf_ds = readwrf(wrf_file_dir, domain, wright=False)
         ## Get dataset attributes
         self.attrs = wrf_ds.attrs
 
@@ -84,7 +84,7 @@ class FWF:
         self.F_initial = 85.0
         self.P_initial = 6.0
         self.D_initial = 15.0
-        self.snowfact = 0.6
+        self.snowfract = 0.6
 
         ### Shape of Domain make useful fill arrays
         shape = np.shape(wrf_ds.T[0, :, :])
@@ -140,14 +140,12 @@ class FWF:
         self.hourly_ds["r_o_hourly"] = r_hourly
         # self.hourly_ds['r_o_hourly'].attrs = self.daily_ds['r_o'].attrs
 
-        if Path(hourly_file_dir).exists() == False:
-            previous_time = np.array(wrf_ds.Time.dt.strftime("%Y-%m-%dT%H"))
-            previous_time = datetime.strptime(
-                str(previous_time[0]), "%Y-%m-%dT%H"
-            ).strftime("%Y%m%d%H")
-            print(
-                f"{Path(hourly_file_dir).exists()}: prior FFMC on date {previous_time}, will initialize with 85s"
+        if initialize == True:
+            int_time = np.array(wrf_ds.Time.dt.strftime("%Y-%m-%dT%H"))
+            int_time = datetime.strptime(str(int_time[0]), "%Y-%m-%dT%H").strftime(
+                "%Y%m%d%H"
             )
+            print(f"{initialize}: Initialize FFMC on date {int_time}, will 85s")
             # """ ################## Fine Fuel Moisture Code (FFMC) ##################### """
             F_o = self.F_initial  # Previous day's F becomes F_o
             F_o_full = np.full(shape, F_o, dtype=float)
@@ -165,45 +163,12 @@ class FWF:
             self.hourly_ds["F"] = F
             self.hourly_ds["m_o"] = m_o
 
-        elif Path(hourly_file_dir).exists() == True:
-            # """ ################## Fine Fuel Moisture Code (FFMC) ##################### """
-            ### Open previous days hourly_ds
-            previous_hourly_ds = xr.open_zarr(hourly_file_dir)
-            previous_time = np.array(previous_hourly_ds.Time.dt.strftime("%Y-%m-%dT%H"))
-            previous_time = datetime.strptime(
-                str(previous_time[0]), "%Y-%m-%dT%H"
-            ).strftime("%Y%m%d%H")
-            print(
-                f"{Path(hourly_file_dir).exists()}: Found previous FFMC on date {previous_time}, will merge with hourly_ds"
-            )
-
-            ### Get time step of F and m_o that coincides with the initialization time of current model run
-            current_time = np.datetime_as_string(self.hourly_ds.Time[0], unit="h")
-            previous_times = np.datetime_as_string(previous_hourly_ds.Time, unit="h")
-            (index,) = np.where(previous_times == current_time)
-            index = int(index[0])
-            F = np.array(previous_hourly_ds.F[index])
-            m_o = np.array(previous_hourly_ds.m_o[index])
-
-            ### Create dataarrays for F and m_m
-            F = xr.DataArray(F, name="F", dims=("south_north", "west_east"))
-            m_o = xr.DataArray(m_o, name="m_o", dims=("south_north", "west_east"))
-
-            ### Add dataarrays to hourly dataset
-            self.hourly_ds["F"] = F
-            self.hourly_ds["m_o"] = m_o
-        else:
-            raise SyntaxError("ERROR: Can Not Initialize FWF Model")
-
-        if Path(daily_file_dir).exists() == False:
             # """ ####################   Duff Moisture Code (DMC)    ##################### """
             previous_time = np.array(wrf_ds.Time.dt.strftime("%Y-%m-%dT%H"))
             previous_time = datetime.strptime(
                 str(previous_time[0]), "%Y-%m-%dT%H"
             ).strftime("%Y%m%d%H")
-            print(
-                f"{Path(daily_file_dir).exists()}: prior DMC on date {previous_time}, will initialize with 6s"
-            )
+            print(f"{initialize}: Initialize DMC on date {previous_time}, will 6s")
             P_o = self.P_initial
             P_o_full = np.full(shape, P_o, dtype=float)
 
@@ -235,7 +200,44 @@ class FWF:
             D = xr.DataArray(D_o_full, name="D", dims=("south_north", "west_east"))
             self.daily_ds["D"] = D
 
-        elif Path(daily_file_dir).exists() == True:
+        elif initialize == False:
+            # TODO: make intelligent file search function
+
+            int_time = wrf_ds.Time.values
+            retrive_time = pd.to_datetime(
+                str(int_time[0] - np.timedelta64(1, "D"))
+            ).strftime("%Y%m%d%H")
+            hourly_file_dir = (
+                str(fwf_zarr_dir) + f"/fwf-hourly-{retrive_time}-{domain}.zarr"
+            )
+
+            # """ ################## Fine Fuel Moisture Code (FFMC) ##################### """
+            ### Open previous days hourly_ds
+            previous_hourly_ds = xr.open_zarr(hourly_file_dir)
+            previous_time = np.array(previous_hourly_ds.Time.dt.strftime("%Y-%m-%dT%H"))
+            previous_time = datetime.strptime(
+                str(previous_time[0]), "%Y-%m-%dT%H"
+            ).strftime("%Y%m%d%H")
+            print(
+                f"{Path(hourly_file_dir).exists()}: Found previous FFMC on date {previous_time}, will merge with hourly_ds"
+            )
+
+            ### Get time step of F and m_o that coincides with the initialization time of current model run
+            current_time = np.datetime_as_string(self.hourly_ds.Time[0], unit="h")
+            previous_times = np.datetime_as_string(previous_hourly_ds.Time, unit="h")
+            (index,) = np.where(previous_times == current_time)
+            index = int(index[0])
+            F = np.array(previous_hourly_ds.F[index])
+            m_o = np.array(previous_hourly_ds.m_o[index])
+
+            ### Create dataarrays for F and m_m
+            F = xr.DataArray(F, name="F", dims=("south_north", "west_east"))
+            m_o = xr.DataArray(m_o, name="m_o", dims=("south_north", "west_east"))
+
+            ### Add dataarrays to hourly dataset
+            self.hourly_ds["F"] = F
+            self.hourly_ds["m_o"] = m_o
+
             # """ ####################   Duff Moisture Code (DCM)    ##################### """
             ### Open previous days daily_ds
             previous_daily_ds = xr.open_zarr(daily_file_dir)
@@ -296,7 +298,9 @@ class FWF:
             self.daily_ds["D"] = D
 
         else:
-            raise SyntaxError("ERROR: Can Not Initialize FWF Model")
+            raise SyntaxError(
+                "ERROR: Can Not Run FWF Model With initialize Option Provided"
+            )
 
         return
 
@@ -707,7 +711,7 @@ class FWF:
         ########################################################################
         ## keep grid to P initial (start up value) if grid
         ## is covered by more than 50% snow
-        P = xr.where(SNOWC < self.snowfact, P_i, self.P_initial)
+        P = xr.where(SNOWC < self.snowfract, P_i, self.P_initial)
         P = xr.where(P > 0.0, P, 0.1)
 
         self.daily_ds["P"] = P
@@ -832,7 +836,7 @@ class FWF:
         ########################################################################
         ## keep grid to D initial (start up value) if grid
         ## is covered by more than 50% snow
-        D = xr.where(SNOWC < self.snowfact, D_i, self.D_initial)
+        D = xr.where(SNOWC < self.snowfract, D_i, self.D_initial)
 
         ### D can not go negative, if D does go negative raise to zero
         D = xr.where(D > 0.0, D, 0.1)
