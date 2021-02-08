@@ -211,6 +211,34 @@ class FWF:
                 str(fwf_zarr_dir) + f"/fwf-hourly-{retrive_time}-{domain}.zarr"
             )
 
+            try:
+                retrive_time = pd.to_datetime(str(int_time[0] - np.timedelta64(1, "D")))
+                retrive_time = retrive_time.strftime("%Y%m%d%H")
+                hourly_file_dir = (
+                    str(fwf_zarr_dir) + f"/fwf-hourly-{retrive_time}-{domain}.zarr"
+                )
+                previous_hourly_ds = xr.open_zarr(hourly_file_dir)
+                print(
+                    f"{Path(hourly_file_dir).exists()}: Found previous FFMC on date {retrive_time}, will merge with hourly_ds"
+                )
+            except:
+                try:
+                    retrive_time = pd.to_datetime(
+                        str(int_time[0] - np.timedelta64(2, "D"))
+                    )
+                    retrive_time = retrive_time.strftime("%Y%m%d%H")
+                    hourly_file_dir = (
+                        str(fwf_zarr_dir) + f"/fwf-hourly-{retrive_time}-{domain}.zarr"
+                    )
+                    previous_hourly_ds = xr.open_zarr(hourly_file_dir)
+                    print(
+                        f"{Path(hourly_file_dir).exists()}: Found previous FFMC on date {retrive_time}, will merge with hourly_ds"
+                    )
+                except:
+                    raise FileNotFoundError(
+                        "ERROR: Can Not Find Previous dataset to initialize model, consider running with initialize = True"
+                    )
+
             # """ ################## Fine Fuel Moisture Code (FFMC) ##################### """
             ### Open previous days hourly_ds
             previous_hourly_ds = xr.open_zarr(hourly_file_dir)
@@ -298,7 +326,7 @@ class FWF:
             self.daily_ds["D"] = D
 
         else:
-            raise SyntaxError(
+            raise ValueError(
                 "ERROR: Can Not Run FWF Model With initialize Option Provided"
             )
 
@@ -1041,7 +1069,7 @@ class FWF:
             ### (29c) COmbine FWI intermediate (B)
             B = xr.combine_nested([B_a, B_b], "time")
         else:
-            raise SyntaxError(
+            raise ValueError(
                 "ERROR: Rodell was lazy and needs to rethink indexing of multi length wrf runs"
             )
 
