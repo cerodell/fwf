@@ -22,10 +22,16 @@ tzone_dir = root_dir / Path("data/tzone/")
 html_dir = root_dir / Path("firewx_website/html/")
 ops_dir = Path("/bluesky/archive/fireweather/forecasts/")
 xr_dir = root_dir / Path("data/xr/")
-fwf_zarr_dir = root_dir / Path("data/fwf-zarr/")
+fwf_zarr_dir = Path("/Volumes/cer/fireweather/data/FWF-WAN00CG-01/")
+# fwf_zarr_dir = root_dir / Path("data/FWF-WAN00CG-01/")
 
 
-wrf_dir = Path("/nfs/kitsault/archives/forecasts/WAN00CP-04/")
+html_dir = root_dir / Path("html/")
+ops_dir = Path("/bluesky/archive/fireweather/forecasts/")
+
+
+wrf_dir = Path("/Volumes/cer/fireweather/data/WAN00CG-01/")
+# wrf_dir_new = Path("/nfs/kitsault/archives/forecasts/WAN00CG-01/")
 
 
 sys.path.insert(0, str(root_dir))
