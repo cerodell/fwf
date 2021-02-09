@@ -14,7 +14,7 @@ import cartopy.crs as ccrs
 import cartopy.feature as cfeature
 
 from datetime import datetime, date, timedelta
-# from scipy.stats.stats import pearsonr
+from scipy.stats.stats import pearsonr
 
 startTime = datetime.now()
 from matplotlib.dates import DateFormatter
