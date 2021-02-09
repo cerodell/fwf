@@ -35,7 +35,8 @@ div2.appendChild(btn_wx2);
 // fwfmodellocation.bindPopup(div2, {maxWidth: "auto", maxHeight: "auto"});
 // fwfmodellocation.setZIndexOffset(1000);
 let fwfclicklocation;
-fwfclicklocation = new L.marker().bindPopup("<b>Hello!</b><br />The blue icon is where you clicked or searched on the map. <br /> <br />The red icon is the closest model grid point to where you clicked or searched on the map. <br />  <br /> Click the red icon for a point forecast");
+fwfclicklocation = new L.marker();
+// fwfclicklocation.bindPopup("<b>Hello!</b><br />The blue icon is where you clicked or searched on the map. <br /> <br />The red icon is the closest model grid point to where you clicked or searched on the map. <br />  <br /> Click the red icon for a point forecast");
 
 var searchboxControl=createSearchboxControl();
                         const control = new searchboxControl({
@@ -46,10 +47,13 @@ var searchboxControl=createSearchboxControl();
                                     { type: "link", name: "Weather Research Forecast Team", href: "https://weather.eos.ubc.ca/cgi-bin/index.cgi", icon: "icon-cloudy" },
                                     { type: "link", name: "Contact Inforamtion", href: "https://firesmoke.ca/contact/", icon: "icon-phone" },
                                     { type: "link", name: "Documentation", href: "https://cerodell.github.io/fwf-docs/index.html", icon: "icon-git" },
+                                    { type: "text", id: "myTextField" },
+                                    { type: "button", name: "myTextButton", id: "myTextButton", value: "Select a date" },
 
                                 ]
                             }
                         });
+
 
 
 
@@ -132,12 +136,48 @@ function makeplotly(e) {
         );
 
 
-            
+        if( /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ) {
+
+        
+        S = {
+            autosize: false, 
+            width: 320,
+            height: 400,
+            margin: {
+              l: 50,
+              r: 30,
+              b: 50,
+              t: 68,
+              pad: 1
+            },              
+            title: {text: "Fire Weather Forecast " + "<br>Lat: " + w.toString().slice(0,6) + ", Lon: " + v.toString().slice(0,8) , x:0.05}, 
+            titlefont: { color: "#444444", size: 12 },
+            showlegend: !1,
+            yaxis2: {domain: [.26, .52], title: { text: "FFMC", font: { size: 10, color: "ff7f0e" } }, tickfont: {size: ticksize, color: "ff7f0e"}},
+            yaxis1: { domain: [0.0, 0.24], title: { text: "ISI", font: {size: 10, color: "9467bd" } }, tickfont: {size: ticksize, color: "9467bd"}},
+            // yaxis1: {domain: [0.0, 0.4], title: { text: "DMC", font: { size: labelsize,color: "2ca02c" } }, tickfont: {size: ticksize, color: "2ca02c"}},
+            // yaxis4: { domain: [0.48, 0.62], title: { text: "DC", font: { size: labelsize,color: "8c564b" } }, tickfont: {size: ticksize, color: "8c564b"}},
+            // yaxis3: { domain: [0.32, 0.46], title: { text: "ISI", font: {size: labelsize, color: "9467bd" } }, tickfont: {size: ticksize, color: "9467bd"}},
+            // yaxis2: { domain: [0.16, 0.30], title: { text: "BUI", font: { size: labelsize, color: "7f7f7f" } }, tickfont: {size: ticksize, color: "7f7f7f"}},
+            // yaxis1: { domain: [0, 0.14], title: { text: "FWI", font: {size: labelsize, color: "d62728" } }, tickfont: {size: ticksize, color: "d62728"}},
+            xaxis: { title: "Date (UTC)", titlefont: { size: 10, color: "444444" }, tickfont: {size: ticksize, color: "444444"}}
+        };
+
+        }else{
 
         S = {
-            autosize: true, 
+            autosize: false, 
+            width: 600,
+            height: 450,
+            margin: {
+              l: 50,
+              r: 30,
+              b: 50,
+              t: 100,
+              pad: 2
+            },
             title: {text: "Fire Weather Forecast " + "<br>Lat: " + w.toString().slice(0,6) + ", Lon: " + v.toString().slice(0,8) , x:0.05}, 
-            titlefont: { color: "#444444", size: 13 },
+            titlefont: { color: "#444444", size: 14 },
             showlegend: !1,
             yaxis2: {domain: [.26, .52], title: { text: "FFMC", font: { size: labelsize, color: "ff7f0e" } }, tickfont: {size: ticksize, color: "ff7f0e"}},
             yaxis1: { domain: [0.0, 0.24], title: { text: "ISI", font: {size: labelsize, color: "9467bd" } }, tickfont: {size: ticksize, color: "9467bd"}},
@@ -146,7 +186,9 @@ function makeplotly(e) {
             // yaxis3: { domain: [0.32, 0.46], title: { text: "ISI", font: {size: labelsize, color: "9467bd" } }, tickfont: {size: ticksize, color: "9467bd"}},
             // yaxis2: { domain: [0.16, 0.30], title: { text: "BUI", font: { size: labelsize, color: "7f7f7f" } }, tickfont: {size: ticksize, color: "7f7f7f"}},
             // yaxis1: { domain: [0, 0.14], title: { text: "FWI", font: {size: labelsize, color: "d62728" } }, tickfont: {size: ticksize, color: "d62728"}},
-            xaxis: { title: "Date (UTC)", font: { size: labelsize, color: "444444" }}
+            xaxis: { title: "Date (UTC)", titlefont: { size: 12, color: "444444" }}
+        };
+        
         };
             Plotly.newPlot(C,  N, S);
             });
@@ -191,26 +233,62 @@ function makeplotly(e) {
             (wdir = {x: dict['time'], y: dict['wdir'], mode: 'lines', line: { color: "7f7f7f" }, yaxis: "y2",  hoverlabel:{font:{size: hovsize}}, hovertemplate: "<b> WDIR </b><br>" + "%{y:.2f} (deg)<br>" + "<extra></extra>" }),
             (precip = {x: dict['time'], y: dict['precip'], mode: 'lines', line: { color: "2ca02c" }, yaxis: "y1",  hoverlabel:{font:{size: hovsize}}, hovertemplate: "<b> Precip </b><br>" + "%{y:.2f} (mm)<br>" + "<extra></extra>" }),
             
-            ]
+            ];
                 
      
 
-            labelsize = 12,
-            ticksize = 9,
+            labelsize = 10;
+            ticksize = 9;
+            if( /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ) {
+
             S = {
-                autosize: true, 
+                autosize: false, 
+                width: 320,
+                height: 400,
+                margin: {
+                  l: 50,
+                  r: 30,
+                  b: 50,
+                  t: 68,
+                  pad: 1
+                },                
                 title: {text: "Weather Forecast " + "<br>Lat: " + w.toString().slice(0,6) + ", Lon: " + v.toString().slice(0,8) , x:0.05}, 
-                titlefont: { color: "#444444", size: 13 },
+                titlefont: { color: "#444444", size: 12 },
                 showlegend: !1,
                 yaxis5: { domain: [0.80, 0.98], title: { text: "Temp<br>(C)", font: {size: labelsize, color: "d62728" } }, tickfont: {size: ticksize, color: "d62728"}},
                 yaxis4: { domain: [0.60, 0.78],  title: { text: "RH<br>(%)", font: {size: labelsize, color: "1f77b4" } }, tickfont: {size: ticksize, color: "1f77b4"}},
                 yaxis3: { domain: [0.40, 0.58], title: { text: "WSP<br>(km/hr)", font: {size: labelsize, color: "202020" } } , tickfont: {size: ticksize, color: "202020"}},
                 yaxis2: { domain: [0.20, 0.38], title: { text: "WDIR<br>(deg)", font: {size: labelsize, color: "7f7f7f" } }, tickfont: {size: ticksize, color: "7f7f7f"}, range: [0, 360], tickvals:[0, 90, 180, 270, 360]},
                 yaxis1: { domain: [0, 0.18], title: { text: "Precip<br>(mm)", font: {size: labelsize, color: "2ca02c" } }, tickfont: {size: ticksize, color: "2ca02c"}},
-                xaxis: { title: "Date (UTC)", font: { size: labelsize, color: "#444444" }},
-                };
+                xaxis: { title: "Date (UTC)", titlefont: { size: 10, color: "444444" }, tickfont: {size: ticksize, color: "444444"}}
+            };
+            }else{
+
+                S = {
+                    autosize: false, 
+                    width: 600,
+                    height: 450,
+                    margin: {
+                      l: 50,
+                      r: 30,
+                      b: 50,
+                      t: 100,
+                      pad: 2
+                    },                    
+                    title: {text: "Weather Forecast " + "<br>Lat: " + w.toString().slice(0,6) + ", Lon: " + v.toString().slice(0,8) , x:0.05}, 
+                    titlefont: { color: "#444444", size: 14 },
+                    showlegend: !1,
+                    yaxis5: { domain: [0.80, 0.98], title: { text: "Temp<br>(C)", font: {size: labelsize, color: "d62728" } }, tickfont: {size: ticksize, color: "d62728"}},
+                    yaxis4: { domain: [0.60, 0.78],  title: { text: "RH<br>(%)", font: {size: labelsize, color: "1f77b4" } }, tickfont: {size: ticksize, color: "1f77b4"}},
+                    yaxis3: { domain: [0.40, 0.58], title: { text: "WSP<br>(km/hr)", font: {size: labelsize, color: "202020" } } , tickfont: {size: ticksize, color: "202020"}},
+                    yaxis2: { domain: [0.20, 0.38], title: { text: "WDIR<br>(deg)", font: {size: labelsize, color: "7f7f7f" } }, tickfont: {size: ticksize, color: "7f7f7f"}, range: [0, 360], tickvals:[0, 90, 180, 270, 360]},
+                    yaxis1: { domain: [0, 0.18], title: { text: "Precip<br>(mm)", font: {size: labelsize, color: "2ca02c" } }, tickfont: {size: ticksize, color: "2ca02c"}},
+                    xaxis: { title: "Date (UTC)", titlefont: { size: 12, color: "#444444" }},
+                    };
+            }
                 Plotly.newPlot(C,  N, S);
                 });
+        
             }
 };
 
@@ -247,6 +325,8 @@ function makeplots(n) {
                 });
                 const u = new KDBush(s);
 
+
+
                 for (var tt = o.ZONE_d03, ee = o.XLAT_d03, ll = o.XLONG_d03, aa = [], rr = [], cc = [(cc = [ee.length, ee[0].length])[1], cc[0]], ii = 0; ii < ee.length; ii++) aa = aa.concat(ee[ii]);
                 for (ii = 0; ii < ll.length; ii++) rr = rr.concat(ll[ii]);
                 (aa = aa.map(Number)), (rr = rr.map(Number));
@@ -255,9 +335,17 @@ function makeplots(n) {
                 });
                 const d3_tree = new KDBush(d3); 
 
-                (loaded_zones = ["he"]),
-                (loaded_zones_d3 = ["he"]),
-                    map.on("dblclick", function (o) {
+                (loaded_zones = ["he"]);
+                (loaded_zones_d3 = ["he"]);
+                if( /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ) {
+                    var activate = 'click'
+                    
+                }else{
+                    var activate = 'dblclick'
+                    console.log('desktop')
+                
+                };
+                    map.on(activate, function (o) {
                         if (fwfmodellocation != undefined) {
                             fwfmodellocation.remove(map);
                         };
@@ -661,3 +749,23 @@ window.onload = function () {
 
 };
 
+
+// $(function() {
+//     $( "#myTextField" ).datepicker({
+//         onClose: function(){
+//             validate($(this).val());
+//         }
+//     });
+    
+//     $("#myTextButton").click(function(){
+//         alert("You have selected :" + $( "#myTextField" ).val());
+//     });
+    
+//     function validate(dateText){
+//         try {
+//             alert("You selected is : "+ $.datepicker.parseDate('mm/dd/yy',dateText));
+//             } catch (e) {
+//             alert("invalid date");
+//             }; 
+//     }
+//     });

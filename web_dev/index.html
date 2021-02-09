@@ -2,6 +2,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>    
+    <!-- <meta content="charset=UTF-8" /> -->
     <meta http-equiv="content-type" content="text/html; charset=UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
     <title>Fire Weather Forecast</title>
@@ -27,6 +28,7 @@
     <script src="/static/js/fwf-L.Control.Layers.Tree-0.0.1.min.js"></script>
     <script src="static/js/fwf-leaflet.polygon.gradient.js"></script> 
     <link rel="stylesheet" href="static/css/popup.css" />
+    
 
 
 
@@ -50,6 +52,7 @@
     <script src="/static/js/fwf-kdbush-0.0.1.min.js"></script>
     <script src="static/js/rbush.min.js"></script>
     <script src="static/js/fwf-time-layer-group.js"></script>
+    <!-- <script src="static/js/smoothzoom.js"></script> -->
     <script>
         var timeInterval = "2020-12-24T12:00:00Z/2020-12-26T12:00:00Z"
         var tinital = timeInterval.slice(0,20)
@@ -73,6 +76,7 @@
                 [90,-360]
                 ], 
                 zoomControl: true,
+                zoomOffset: -1,
                 preferCanvas: false,
                 fullscreenControl: true,
                 timeDimension: true,
@@ -98,7 +102,7 @@
             {
                 center: [56.89589, -107.58885],
                 crs: L.CRS.EPSG3857,
-                zoomSnap: 0.25,
+                zoomSnap: 0.5,
                 zoom: 3.5,
                 minZoom: 3,
                 maxZoom: 18,
@@ -150,10 +154,10 @@
     </script>
     <script src="/static/js/fwf-basemaps.min.js"></script>
     <script src="static/js/fwf-wxstations-0.0.2.js"></script>
+    <script src="static/js/fwf-plotly-test.js"></script>
     <script src="static/js/fwf-layer-controler.js"></script>
     <script src="static/js/fwf-colors-manager.js"></script>
-    <script src="static/js/fwf-plotly-test.js"></script>
-
+    <!-- <script src="static/js/fwf-plotly-test.js"></script> -->
 
     <!-- Google analytics -->
     <script>

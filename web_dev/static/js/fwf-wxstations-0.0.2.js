@@ -146,7 +146,7 @@ function circleClick(e) {
     
                 C = document.getElementById('wx_plot');
                 console.log(C);
-                hovsize = 10
+                hovsize = 10;
                 N =
                 [(ffmc_obs = {x: dict['time_obs'], y: dict['ffmc_obs'], mode: 'lines', line: { color: "ff7f0e", dash: "dot" }, yaxis: "y6",  hoverlabel:{font:{size: hovsize, color: "#ffffff"}, bordercolor: "#ffffff"}, hovertemplate: "<b> FFMC Obs </b><br>" + "%{y:.2f} <br>" + "<extra></extra>" }),
                 (ffmc_fc = {x: dict['time_obs'], y: dict['ffmc_pfc'],mode: 'lines', line: { color: "ff7f0e", width: 0.5 }, yaxis: "y6",  hoverlabel:{font:{size: hovsize, color: "#ffffff"}, bordercolor: "#ffffff"}, hovertemplate: "<b> FFMC Modeled </b><br>" + "%{y:.2f} <br>" + "<extra></extra>" }),
@@ -171,14 +171,52 @@ function circleClick(e) {
                 (fwi_obs = {x: dict['time_obs'], y: dict['fwi_obs'], mode: 'lines', line: { color: "d62728", dash: "dot" }, yaxis: "y1",  hoverlabel:{font:{size: hovsize}}, hovertemplate: "<b> FWI Obs </b><br>" + "%{y:.2f} <br>" + "<extra></extra>" }),
                 (fwi_fc = {x: dict['time_obs'], y: dict['fwi_pfc'],mode: 'lines', line: { color: "d62728", width: 0.5 }, yaxis: "y1", hoverlabel:{font:{size: hovsize}}, hovertemplate: "<b> FWI Modeled </b><br>" + "%{y:.2f} <br>" + "<extra></extra>" }),
                 (fwi_fc = {x: dict['time_fcd'], y: dict['fwi_fc'], mode: 'lines', line: { color: "d62728" }, yaxis: "y1", hoverlabel:{font:{size: hovsize}}, hovertemplate: "<b> FWI Forecast </b><br>" + "%{y:.2f} <br>" + "<extra></extra>"}),
-                ]
+                ];
                     
         
     
-                labelsize = 12,
-                ticksize = 9,
+
+                if( /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ) {
+                labelsize = 10;
+                ticksize = 9;
+                
                 S = {
-                    autosize: true, 
+                    autosize: false, 
+                    width: 320,
+                    height: 400,
+                    margin: {
+                      l: 50,
+                      r: 30,
+                      b: 50,
+                      t: 68,
+                      pad: 1
+                    },                     
+                    title: {text: "  WMO Station " + dict.wmo.toString() + " <br>Lat: " + dict.lats.toString().slice(0,6)+ ", Lon: " + dict.lons.toString().slice(0,8) + " <br>Elevation: " + dict.elev.toString().slice(0,8) + " m", x:0.05}, 
+                    titlefont: { color: "#444444", size: 11 },
+                    showlegend: !1,
+                    yaxis6: {domain: [.8, .94], title: { text: "FFMC", font: { size: labelsize, color: "ff7f0e" } }, tickfont: {size: ticksize, color: "ff7f0e"}},
+                    yaxis5: {domain: [0.64, 0.78], title: { text: "DMC", font: { size: labelsize,color: "2ca02c" } }, tickfont: {size: ticksize, color: "2ca02c"}},
+                    yaxis4: { domain: [0.48, 0.62], title: { text: "DC", font: { size: labelsize,color: "8c564b" } }, tickfont: {size: ticksize, color: "8c564b"}},
+                    yaxis3: { domain: [0.32, 0.46], title: { text: "ISI", font: {size: labelsize, color: "9467bd" } }, tickfont: {size: ticksize, color: "9467bd"}},
+                    yaxis2: { domain: [0.16, 0.30], title: { text: "BUI", font: { size: labelsize, color: "7f7f7f" } }, tickfont: {size: ticksize, color: "7f7f7f"}},
+                    yaxis1: { domain: [0, 0.14], title: { text: "FWI", font: {size: labelsize, color: "d62728" } }, tickfont: {size: ticksize, color: "d62728"}},
+                    xaxis: { title: "Date (UTC)", titlefont: { size: 10, color: "444444" }, tickfont: {size: ticksize, color: "444444"}}
+                };
+                }else{
+                labelsize = 10;
+                ticksize = 9;
+
+                S = {
+                    autosize: false, 
+                    width: 600,
+                    height: 450,
+                    margin: {
+                      l: 50,
+                      r: 30,
+                      b: 50,
+                      t: 100,
+                      pad: 2
+                    },                    
                     title: {text: "  WMO Station " + dict.wmo.toString() + " <br>Lat: " + dict.lats.toString().slice(0,6)+ ", Lon: " + dict.lons.toString().slice(0,8) + " <br>Elevation: " + dict.elev.toString().slice(0,8) + " m", x:0.05}, 
                     titlefont: { color: "#444444", size: 13 },
                     showlegend: !1,
@@ -188,9 +226,11 @@ function circleClick(e) {
                     yaxis3: { domain: [0.32, 0.46], title: { text: "ISI", font: {size: labelsize, color: "9467bd" } }, tickfont: {size: ticksize, color: "9467bd"}},
                     yaxis2: { domain: [0.16, 0.30], title: { text: "BUI", font: { size: labelsize, color: "7f7f7f" } }, tickfont: {size: ticksize, color: "7f7f7f"}},
                     yaxis1: { domain: [0, 0.14], title: { text: "FWI", font: {size: labelsize, color: "d62728" } }, tickfont: {size: ticksize, color: "d62728"}},
-                    xaxis: { title: "Date (UTC)", font: { size: labelsize, color: "444444" }}
+                    xaxis: { title: "Date (UTC)", titlefont: { size: 12, color: "444444" }}
                 };
-                    Plotly.newPlot(C,  N, S);
+                    
+                }
+                Plotly.newPlot(C,  N, S);
                     });
                 }
     
@@ -270,14 +310,47 @@ function circleClick(e) {
                 (precip_fc = {x: dict['time_obs'], y: dict['precip_pfc'],mode: 'lines', line: { color: "2ca02c", width: 0.5 }, yaxis: "y1",  hoverlabel:{font:{size: hovsize}}, hovertemplate: "<b> Precip Modeled </b><br>" + "%{y:.2f} (mm)<br>" + "<extra></extra>" }),
                 (precip_fc = {x: dict['time_fch'], y: dict['precip_fc'], mode: 'lines', line: { color: "2ca02c" }, yaxis: "y1",   hoverlabel:{font:{size: hovsize}}, hovertemplate: "<b> Precip Forecast </b><br>" + "%{y:.2f} (mm)<br>" + "<extra></extra>" }),
                 
-                ]
+                ];
                     
          
-    
-                labelsize = 12,
-                ticksize = 9,
+                if( /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ) {
+                labelsize = 10;
+                ticksize = 9;
                 S = {
-                    autosize: true, 
+                    autosize: false, 
+                    width: 320,
+                    height: 400,
+                    margin: {
+                      l: 50,
+                      r: 30,
+                      b: 50,
+                      t: 68,
+                      pad: 1
+                    }, 
+                   title: {text: "  WMO Station " + dict.wmo.toString() + " <br>Lat: " + dict.lats.toString().slice(0,6)+ ", Lon: " + dict.lons.toString().slice(0,8) + " <br>Elevation: " + dict.elev.toString().slice(0,8) + " m", x:0.05}, 
+                    titlefont: { color: "#444444", size: 11 },
+                    showlegend: !1,
+                    yaxis5: { domain: [0.80, 0.98], title: { text: "Temp<br>(C)", font: {size: labelsize, color: "d62728" } }, tickfont: {size: ticksize, color: "d62728"}},
+                    yaxis4: { domain: [0.60, 0.78],  title: { text: "RH<br>(%)", font: {size: labelsize, color: "1f77b4" } }, tickfont: {size: ticksize, color: "1f77b4"}},
+                    yaxis3: { domain: [0.40, 0.58], title: { text: "WSP<br>(km/hr)", font: {size: labelsize, color: "202020" } } , tickfont: {size: ticksize, color: "202020"}},
+                    yaxis2: { domain: [0.20, 0.38], title: { text: "WDIR<br>(deg)", font: {size: labelsize, color: "7f7f7f" } }, tickfont: {size: ticksize, color: "7f7f7f"}, range: [0, 360], tickvals:[0, 90, 180, 270, 360]},
+                    yaxis1: { domain: [0, 0.18], title: { text: "Precip<br>(mm)", font: {size: labelsize, color: "2ca02c" } }, tickfont: {size: ticksize, color: "2ca02c"}},
+                    xaxis: { title: "Date (UTC)", titlefont: { size: 10, color: "444444" }, tickfont: {size: ticksize, color: "444444"}}
+                };
+                }else{
+                labelsize = 12;
+                ticksize = 9;
+                S = {
+                    autosize: false, 
+                    width: 600,
+                    height: 450,
+                    margin: {
+                      l: 50,
+                      r: 30,
+                      b: 50,
+                      t: 100,
+                      pad: 2
+                    },
                     title: {text: "  WMO Station " + dict.wmo.toString() + " <br>Lat: " + dict.lats.toString().slice(0,6)+ ", Lon: " + dict.lons.toString().slice(0,8) + " <br>Elevation: " + dict.elev.toString().slice(0,8) + " m", x:0.05}, 
                     titlefont: { color: "#444444", size: 13 },
                     showlegend: !1,
@@ -286,8 +359,9 @@ function circleClick(e) {
                     yaxis3: { domain: [0.40, 0.58], title: { text: "WSP<br>(km/hr)", font: {size: labelsize, color: "202020" } } , tickfont: {size: ticksize, color: "202020"}},
                     yaxis2: { domain: [0.20, 0.38], title: { text: "WDIR<br>(deg)", font: {size: labelsize, color: "7f7f7f" } }, tickfont: {size: ticksize, color: "7f7f7f"}, range: [0, 360], tickvals:[0, 90, 180, 270, 360]},
                     yaxis1: { domain: [0, 0.18], title: { text: "Precip<br>(mm)", font: {size: labelsize, color: "2ca02c" } }, tickfont: {size: ticksize, color: "2ca02c"}},
-                    xaxis: { title: "Date (UTC)", font: { size: labelsize, color: "#444444" }},
-                    };
+                    xaxis: { title: "Date (UTC)", titlefont: { size: 12, color: "#444444" }},
+                    };           
+                }
                     Plotly.newPlot(C,  N, S);
                     });
                 }

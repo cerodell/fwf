@@ -129,8 +129,8 @@ color: white;
 @media (max-width: 1000px) {
 
   .wx-plot {
-    width: 340px;
-    height: 420px;
+    width: 320px;
+    height: 400px;
     border: 2px ridge #969696;
     background-color: white;   
     border-radius: 2px;
@@ -138,8 +138,8 @@ color: white;
   }
 
   .wx-plot2 {
-    width: 340px;
-    height: 420px;
+    width: 320px;
+    height: 400px;
     border: 2px ridge #969696;
     background-color: white;   
     border-radius: 2px;
@@ -149,10 +149,10 @@ color: white;
 
 .btn_fire{
     position: absolute;
-    right:80px;
+    right:66px;
     z-index:1000;
     float: right;
-    top: 60px;
+    top: 48px;
     padding: 4px 2px;
     background-color: white;
     color: #444444;
@@ -176,7 +176,7 @@ color: white;
     right:20px;
     z-index:1000;
     float: right;
-    top: 60px;
+    top: 48px;
     padding: 4px 2px;
     background-color: white;
     color: #444444;
@@ -199,10 +199,10 @@ color: white;
 
 .btn_fire2{
   position: absolute;
-  right:80px;
+  right:66px;
   z-index:1000;
   float: right;
-  top: 60px;
+  top: 48px;
   padding: 4px 2px;
   background-color: white;
   color: #444444;
@@ -226,7 +226,7 @@ color: white;
   right:20px;
   z-index:1000;
   float: right;
-  top: 60px;
+  top: 48px;
   padding: 4px 2px;
   background-color: white;
   color: #444444;
