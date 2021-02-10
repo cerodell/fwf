@@ -1067,7 +1067,7 @@ class FWF:
             ### (29a) Solve FWI intermediate form  for day 1(B_a)
             B = 0.1 * R[:] * f_D[0]
         elif len(index) == 2:
-            print("fwi index", index[0])
+            # print("fwi index", index[0])
             B_a = 0.1 * R[: index[0]] * f_D[0]
             ### (29b) Solve FWI intermediate form for day 2 (B_b)
             B_b = 0.1 * R[index[0] :] * f_D[1]
@@ -1369,14 +1369,6 @@ class FWF:
         hourly_ds.r_o_hourly.attrs["description"] = "HOURLY PRECIPITATION TOTALS"
 
         for var in hourly_ds.data_vars:
-            # if 'coordinates' in self.attrs:
-            #     del hourly_ds[var].attrs['coordinates']
-            # else:
-            #     pass
-            # if 'projection' in self.attrs:
-            #     hourly_ds[var].attrs['projection'] = str(hourly_ds[var].projection)
-            # else:
-            #     pass
             hourly_ds[var] = hourly_ds[var].astype(dtype="float32")
 
         # ### Name file after initial time of wrf
@@ -1396,7 +1388,7 @@ class FWF:
         make_dir.mkdir(parents=True, exist_ok=True)
         hourly_ds = hourly_ds.compute()
         hourly_ds.to_zarr(make_dir, mode="w")
-        print(f"wrote archive {make_dir}")
+        print(f"wrote working {make_dir}")
 
         return str(make_dir)
 
@@ -1430,15 +1422,6 @@ class FWF:
         daily_ds.U.attrs["description"] = "BUILD UP INDEX"
 
         for var in daily_ds.data_vars:
-            #     print(var)
-            # if 'coordinates' in self.attrs:
-            #     del daily_ds[var].attrs['coordinates']
-            # else:
-            #     pass
-            # if 'projection' in self.attrs:
-            #     daily_ds[var].attrs['projection'] = str(daily_ds[var].projection)
-            # else:
-            #     pass
             daily_ds[var] = daily_ds[var].astype(dtype="float32")
 
         daily_ds.r_o.attrs["description"] = "24 HOUR ACCUMULATED PRECIPITATION"
@@ -1461,6 +1444,6 @@ class FWF:
         make_dir.mkdir(parents=True, exist_ok=True)
         daily_ds = daily_ds.compute()
         daily_ds.to_zarr(make_dir, mode="w")
-        print(f"wrote archive {make_dir}")
+        print(f"wrote working {make_dir}")
 
         return str(make_dir)

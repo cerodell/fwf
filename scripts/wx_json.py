@@ -21,9 +21,9 @@ from netCDF4 import Dataset
 import matplotlib.pyplot as plt
 from wrf import ll_to_xy, xy_to_ll
 from datetime import datetime, date, timedelta
-from dev_utils.make_intercomp import daily_merge_ds
+from utils.make_intercomp import daily_merge_ds
 
-from context import data_dir, root_dir, wrf_dir_new, tzone_dir
+from context import data_dir, root_dir, tzone_dir, fwf_zarr_dir
 
 startTime = datetime.now()
 print("RUN STARTED AT: ", str(startTime))
@@ -32,7 +32,7 @@ __author__ = "Christopher Rodell"
 __email__ = "crodell@eoas.ubc.ca"
 
 ## Open color map json
-with open("/bluesky/fireweather/fwf/json/colormaps-dev.json") as f:
+with open(str(data_dir) + "/json/colormaps-dev.json") as f:
     cmaps = json.load(f)
 name_list = list(cmaps)
 
@@ -44,16 +44,15 @@ make_dir.mkdir(parents=True, exist_ok=True)
 domain = "d03"
 # for i in range(13,1,-1):
 # print(i)
-d = datetime.today() - timedelta(days=4)
-obs_date = d.strftime("%Y%m%d")
-obs_date = "20201223"
-print(obs_date)
+# obs_date = pd.Timestamp("today").strftime("%Y%m%d")
+obs_date = pd.Timestamp(2021, 2, 9).strftime("%Y%m%d")
+
 
 obs_d2_ds = xr.open_zarr(
-    str(data_dir) + "/intercomp/" + f"intercomp-{obs_date}-d02.zarr"
+    str(data_dir) + "/intercomp/" + f"intercomp-d02-{obs_date}.zarr"
 )
 obs_d3_ds = xr.open_zarr(
-    str(data_dir) + "/intercomp/" + f"intercomp-{obs_date}-d03.zarr"
+    str(data_dir) + "/intercomp/" + f"intercomp-d02-{obs_date}.zarr"
 )
 
 ## make array of the wmo in each obs file
@@ -206,7 +205,7 @@ with open(str(make_dir) + f"/wx-{timestamp}.json", "w") as f:
 print(
     f"{str(datetime.now())} ---> wrote json to:  "
     + str(make_dir)
-    + f"/wx-{timestamp}-{domain}.json"
+    + f"/wx-{timestamp}.json"
 )
 
 

@@ -28,27 +28,25 @@ __email__ = "crodell@eoas.ubc.ca"
 warnings.filterwarnings("ignore", message="invalid value encountered in power")
 warnings.filterwarnings("ignore", message="invalid value encountered in log")
 
-date_range = pd.date_range("2021-01-02", "2021-02-07")
 
 # """######### get directory to yesterdays hourly/daily .zarr files.  #############"""
-for date in date_range:
-    forecast_date = date.strftime("%Y%m%d06")
-    domains = ["d02", "d03"]
-    for domain in domains:
-        domain_startTime = datetime.now()
-        print(f"start of domain {domain}: ", str(domain_startTime))
-        # """######### get directory to todays wrf_out .nc files.  #############"""
+forecast_date = pd.Timestamp("today").strftime("%Y%m%d00")
+domains = ["d02", "d03"]
+for domain in domains:
+    domain_startTime = datetime.now()
+    print(f"start of domain {domain}: ", str(domain_startTime))
+    # """######### get directory to todays wrf_out .nc files.  #############"""
 
-        wrf_file_dir = str(wrf_dir) + f"/wrfout-{domain}-{forecast_date}.zarr"
-        print(wrf_file_dir)
+    wrf_file_dir = str(wrf_dir) + f"/{forecast_date}/"
+    print(wrf_file_dir)
 
-        # """######### Open wrf_out.nc and write  new hourly/daily .zarr files #############"""
-        coeff = FWF(wrf_file_dir, domain, initialize=False)
+    # """######### Open wrf_out.nc and write  new hourly/daily .zarr files #############"""
+    coeff = FWF(wrf_file_dir, domain, initialize=False)
 
-        coeff.daily()
-        coeff.hourly()
+    coeff.daily()
+    coeff.hourly()
 
-        print(f"Domain {domain} run time: ", datetime.now() - domain_startTime)
+    print(f"Domain {domain} run time: ", datetime.now() - domain_startTime)
 
-    ### Timer
-    print("Total Run Time: ", datetime.now() - startTime)
+### Timer
+print("Total Run Time: ", datetime.now() - startTime)

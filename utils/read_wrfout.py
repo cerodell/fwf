@@ -70,7 +70,7 @@ def readwrf(filein, domain, wright):
         - False: do not write wrfout to zarr
 
     """
-    omp_set_num_threads(4)
+    omp_set_num_threads(8)
     print(f"read files with {omp_get_max_threads()} threads")
     startTime = datetime.now()
     print("begin readwrf: ", str(startTime))

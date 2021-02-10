@@ -26,7 +26,6 @@ def daily_merge_ds(obs_date, domain):
         hourly_ds = xr.open_zarr(hourly_file_dir)
 
         daily_ds = xr.open_zarr(daily_file_dir)
-
         ### Call on variables
         tzone_ds = xr.open_dataset(str(tzone_dir) + f"/tzone_wrf_{domain}.nc")
         tzone = tzone_ds.Zone.values
@@ -44,7 +43,7 @@ def daily_merge_ds(obs_date, domain):
         index = [
             i - int_time if 12 - int_time >= 0 else i + 24 - int_time for i in num_days
         ]
-        print(f"index of times {index} with initial time {int_time}Z")
+        # print(f"index of times {index} with initial time {int_time}Z")
 
         ## loop every 24 hours
         files_ds = []
@@ -58,7 +57,7 @@ def daily_merge_ds(obs_date, domain):
                     var_array = hourly_ds[var].values
                     noon = var_array[(i + tzone), I, J]
                     day = np.array(hourly_ds.Time[i + 1], dtype="datetime64[D]")
-                    print(np.array(hourly_ds.Time[i]))
+                    # print(np.array(hourly_ds.Time[i]))
                     var_da = xr.DataArray(
                         noon,
                         name=var,
@@ -90,6 +89,7 @@ def daily_merge_ds(obs_date, domain):
 
         hourly_daily_ds = xr.combine_nested(files_ds, "time")
         final_ds = xr.merge([daily_ds, hourly_daily_ds], compat="override")
+        final_ds.attrs = hourly_ds.attrs
 
     else:
         final_ds = None

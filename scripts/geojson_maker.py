@@ -10,17 +10,18 @@ import context
 import sys
 import json
 import numpy as np
+import pandas as pd
 import xarray as xr
 import geojsoncontour
 from pathlib import Path
 from netCDF4 import Dataset
 import matplotlib.pyplot as plt
-from dev_utils.geoutils import mask, mycontourf_to_geojson
+from utils.geoutils import mask, mycontourf_to_geojson
 from datetime import datetime, date, timedelta
 
 startTime = datetime.now()
 
-from context import data_dir, xr_dir, wrf_dir, root_dir
+from context import data_dir, xr_dir, wrf_dir, root_dir, fwf_zarr_dir
 
 __author__ = "Christopher Rodell"
 __email__ = "crodell@eoas.ubc.ca"
@@ -32,24 +33,24 @@ warnings.filterwarnings("ignore", message="invalid value encountered in true_div
 
 
 ### Open color map json
-with open("/bluesky/fireweather/fwf/json/colormaps-dev.json") as f:
+with open(str(data_dir) + "/json/colormaps-dev.json") as f:
     cmaps = json.load(f)
 
 ### Open nested index json
-with open("/bluesky/fireweather/fwf/json/nested-index.json") as f:
+with open(str(data_dir) + "/json/nested-index.json") as f:
     nested_index = json.load(f)
 
-### Get Path to most recent FWI forecast and open
-# hourly_file_dir = str(xr_dir) + str("/current/fwf-hourly-current.zarr")
-# daily_file_dir = str(xr_dir) + str("/current/fwf-daily-current.zarr")
+### Get ForecastTime
+# forecast_date = pd.Timestamp("today").strftime("%Y%m%d00")
+forecast_date = pd.Timestamp(2021, 2, 9).strftime("%Y%m%d06")
 
 # for domain in ['d02','d03']:
 for domain in ["d03"]:
-    hourly_file_dir = str(data_dir) + str(
-        f"/test/current/fwf-hourly-current-{domain}.zarr"
+    hourly_file_dir = str(fwf_zarr_dir) + str(
+        f"/fwf-hourly-{domain}-{forecast_date}.zarr"
     )
-    daily_file_dir = str(data_dir) + str(
-        f"/test/current/fwf-daily-current-{domain}.zarr"
+    daily_file_dir = str(fwf_zarr_dir) + str(
+        f"/fwf-daily-{domain}-{forecast_date}.zarr"
     )
 
     hourly_ds = xr.open_zarr(hourly_file_dir)

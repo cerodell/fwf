@@ -15,10 +15,10 @@ import xarray as xr
 from pathlib import Path
 from netCDF4 import Dataset
 from datetime import datetime
-from dev_utils.make_intercomp import daily_merge_ds
+from utils.make_intercomp import daily_merge_ds
 import string
 
-from context import data_dir, xr_dir, wrf_dir, root_dir
+from context import data_dir, xr_dir, wrf_dir, fwf_zarr_dir
 from datetime import datetime, date, timedelta
 
 startTime = datetime.now()
@@ -36,29 +36,30 @@ __email__ = "crodell@eoas.ubc.ca"
 
 
 ### Open color map json
-with open(str(root_dir) + "/json/colormaps-dev.json") as f:
+with open(str(data_dir) + "/json/colormaps-dev.json") as f:
     cmaps = json.load(f)
 
 ### Open nested grid json
-with open(str(root_dir) + "/json/nested-index.json") as f:
+with open(str(data_dir) + "/json/nested-index.json") as f:
     nested_index = json.load(f)
 
 # # ### make dir for that days forecast files to be sotred
 # make_dir = Path("/bluesky/fireweather/fwf/web_dev/data/plot/")
 # make_dir.mkdir(parents=True, exist_ok=True)
 
+# forecast_date = pd.Timestamp("today").strftime("%Y%m%d00")
+forecast_date = pd.Timestamp(2021, 2, 9).strftime("%Y%m%d06")
 
 ## loop both domains
 domains = ["d02", "d03"]
 for domain in domains:
     ## Get Path to most recent FWI forecast and open
-    hourly_file_dir = str(data_dir) + str(
-        f"/test/current/fwf-hourly-current-{domain}.zarr"
+    hourly_file_dir = str(fwf_zarr_dir) + str(
+        f"/fwf-hourly-{domain}-{forecast_date}.zarr"
     )
-    daily_file_dir = str(data_dir) + str(
-        f"/test/current/fwf-daily-current-{domain}.zarr"
+    daily_file_dir = str(fwf_zarr_dir) + str(
+        f"/fwf-daily-{domain}-{forecast_date}.zarr"
     )
-    forecast_date = datetime.today().strftime("%Y%m%d")
 
     ### Open datasets
     hourly_ds = xr.open_zarr(hourly_file_dir)
@@ -76,7 +77,7 @@ for domain in domains:
     timestamp = datetime.strptime(str(time[0]), "%Y-%m-%dT%H").strftime("%Y%m%d%H")
 
     ### Open web grid json
-    with open(str(root_dir) + f"/json/fwf-zone-{domain}.json") as f:
+    with open(str(data_dir) + f"/json/fwf-zone-{domain}.json") as f:
         filezone = json.load(f)
 
     ## get index to remove boundary conditions

@@ -1,0 +1,251 @@
+#map {
+    width: 1000px;
+    height: 1000px
+}
+
+
+
+.wx-plot {
+    width: 600px;
+    height: 450px;
+    border: 2px ridge #969696;
+    background-color: white;
+    border-radius: 2px;
+    text-align: center;
+  }
+
+  .wx-plot2 {
+    width: 600px;
+    height: 450px;
+    border: 2px ridge #969696;
+    background-color: white;
+    border-radius: 2px;
+    text-align: center;
+  }
+
+
+.btn_fire{
+    position: absolute;
+    right:112px;
+    z-index:1000;
+    float: right;
+    top: 60px;
+    padding: 8px 4px;
+    background-color: white;
+    color: #444444;
+    border: 1px solid #555555;
+    border-radius: 4px;
+    font-family: Verdana, sans-serif;
+    display: inline-block;
+    font-size: 14px;
+    margin: 4px 2px;
+    cursor: pointer;
+}
+
+
+.btn_fire:hover {
+  background-color: #555555;
+  color: white;
+}
+
+.btn_wx{
+    position: absolute;
+    right:40px;
+    z-index:1000;
+    float: right;
+    top: 60px;
+    padding: 8px 4px;
+    background-color: white;
+    color: #444444;
+    border: 1px solid #555555;
+    border-radius: 4px;
+    font-family: Verdana, sans-serif;
+    display: inline-block;
+    font-size: 14px;
+    margin: 4px 2px;
+    cursor: pointer;
+}
+
+
+.btn_wx:hover {
+  background-color: #555555;
+  color: white;
+}
+
+
+
+
+
+
+.btn_fire2{
+  position: absolute;
+  right:112px;
+  z-index:1000;
+  float: right;
+  top: 60px;
+  padding: 8px 4px;
+  background-color: white;
+  color: #444444;
+  border: 1px solid #555555;
+  border-radius: 4px;
+  font-family: Verdana, sans-serif;
+  display: inline-block;
+  font-size: 14px;
+  margin: 4px 2px;
+  cursor: pointer;
+}
+
+
+.btn_fire2:hover {
+background-color: #555555;
+color: white;
+}
+
+.btn_wx2{
+  position: absolute;
+  right:40px;
+  z-index:1000;
+  float: right;
+  top: 60px;
+  padding: 8px 4px;
+  background-color: white;
+  color: #444444;
+  border: 1px solid #555555;
+  border-radius: 4px;
+  font-family: Verdana, sans-serif;
+  display: inline-block;
+  font-size: 14px;
+  margin: 4px 2px;
+  cursor: pointer;
+}
+
+
+.btn_wx2:hover {
+background-color: #555555;
+color: white;
+}
+
+
+@media (max-width: 1000px) {
+
+  .wx-plot {
+    width: 340px;
+    height: 420px;
+    border: 2px ridge #969696;
+    background-color: white;
+    border-radius: 2px;
+    text-align: center;
+  }
+
+  .wx-plot2 {
+    width: 340px;
+    height: 420px;
+    border: 2px ridge #969696;
+    background-color: white;
+    border-radius: 2px;
+    text-align: center;
+  }
+
+
+.btn_fire{
+    position: absolute;
+    right:80px;
+    z-index:1000;
+    float: right;
+    top: 60px;
+    padding: 4px 2px;
+    background-color: white;
+    color: #444444;
+    border: 1px solid #555555;
+    border-radius: 4px;
+    font-family: Verdana, sans-serif;
+    display: inline-block;
+    font-size: 10px;
+    margin: 2px 2px;
+    cursor: pointer;
+}
+
+
+.btn_fire:hover {
+  background-color: #555555;
+  color: white;
+}
+
+.btn_wx{
+    position: absolute;
+    right:20px;
+    z-index:1000;
+    float: right;
+    top: 60px;
+    padding: 4px 2px;
+    background-color: white;
+    color: #444444;
+    border: 1px solid #555555;
+    border-radius: 4px;
+    font-family: Verdana, sans-serif;
+    display: inline-block;
+    font-size: 10px;
+    margin: 2px 1px;
+    cursor: pointer;
+}
+
+
+.btn_wx:hover {
+  background-color: #555555;
+  color: white;
+}
+
+
+
+.btn_fire2{
+  position: absolute;
+  right:80px;
+  z-index:1000;
+  float: right;
+  top: 60px;
+  padding: 4px 2px;
+  background-color: white;
+  color: #444444;
+  border: 1px solid #555555;
+  border-radius: 4px;
+  font-family: Verdana, sans-serif;
+  display: inline-block;
+  font-size: 10px;
+  margin: 2px 2px;
+  cursor: pointer;
+}
+
+
+.btn_fire2:hover {
+background-color: #555555;
+color: white;
+}
+
+.btn_wx2{
+  position: absolute;
+  right:20px;
+  z-index:1000;
+  float: right;
+  top: 60px;
+  padding: 4px 2px;
+  background-color: white;
+  color: #444444;
+  border: 1px solid #555555;
+  border-radius: 4px;
+  font-family: Verdana, sans-serif;
+  display: inline-block;
+  font-size: 10px;
+  margin: 2px 1px;
+  cursor: pointer;
+}
+
+
+.btn_wx2:hover {
+background-color: #555555;
+color: white;
+}
+
+
+
+
+}
