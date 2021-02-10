@@ -1,0 +1,38 @@
+# Install pre-commit hooks via
+# pre-commit install
+
+exclude: >
+    (?x)^(
+      \.vscode/settings\.json|
+      tests/test_tocdirective/.*
+    )$
+repos:
+
+  - repo: git://github.com/pre-commit/pre-commit-hooks
+    rev: v2.2.3
+    hooks:
+    - id: check-json
+    - id: check-yaml
+    - id: end-of-file-fixer
+    - id: trailing-whitespace
+
+  # - repo: https://github.com/mgedmin/check-manifest
+  #   rev: "0.39"
+  #   hooks:
+  #   - id: check-manifest
+
+  # - repo: https://gitlab.com/pycqa/flake8
+  #   rev: 3.7.9
+  #   hooks:
+  #   - id: flake8
+
+  - repo: https://github.com/psf/black
+    rev: 20.8b1
+    hooks:
+    - id: black
+
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v3.3.0
+    hooks:
+    - id: no-commit-to-branch
+      args: ['--branch', 'dev-wrf4', '--branch', 'wrf3']
