@@ -63,8 +63,8 @@ def mycontourf_to_geojson(
         nested_index["x2_" + domain],
     )
     # timestamp  = str(np.array(ds.Time[index], dtype ='datetime64[h]'))
-    timestamp = ds.Time.values[index].dtype("datetime64[h]")
-    timestamp = datetime.strptime(str(timestamp), "%Y-%m-%dT%H").strftime("%Y%m%d%H")
+    timestamp = np.array(ds.Time.dt.strftime("%Y%m%d%H"))
+    timestamp = timestamp[index]
     vmin, vmax = cmaps[var]["vmin"], cmaps[var]["vmax"]
     name, colors, sigma = (
         str(cmaps[var]["name"]),
@@ -89,7 +89,7 @@ def mycontourf_to_geojson(
     fillarray = np.round(fillarray, 0)
     fillarray = ndimage.gaussian_filter(fillarray, sigma=sigma)
 
-    geojson_filepath = str(name + "-" + domain + "-" + timestamp)
+    geojson_filepath = str(name + "-" + timestamp + "-" + domain)
     levels = cmaps[var]["levels"]
     Cnorm = matplotlib.colors.Normalize(vmin=vmin, vmax=vmax + 1)
     contourf = plt.contourf(

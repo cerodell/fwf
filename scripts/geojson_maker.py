@@ -1,6 +1,7 @@
 #!/bluesky/fireweather/miniconda3/envs/fwf/bin/python
 
 """
+/bluesky/bsf-ops/modules/HYSPLIT/v7/
 Creates geojson files for each fwf forecast prodcut. Used as intermediate step for dispaly on leaflet map.
 NOTE: The geojson file get post processed to topojson for use on leaflet.
       The node_module geo2topo in topojson-server handles convertion
@@ -41,11 +42,10 @@ with open(str(data_dir) + "/json/nested-index.json") as f:
     nested_index = json.load(f)
 
 ### Get ForecastTime
-# forecast_date = pd.Timestamp("today").strftime("%Y%m%d00")
-forecast_date = pd.Timestamp(2021, 2, 9).strftime("%Y%m%d06")
+forecast_date = pd.Timestamp("today").strftime("%Y%m%d06")
+# forecast_date = pd.Timestamp(2021, 2, 9).strftime("%Y%m%d06")
 
-# for domain in ['d02','d03']:
-for domain in ["d03"]:
+for domain in ["d02", "d03"]:
     hourly_file_dir = str(fwf_zarr_dir) + str(
         f"/fwf-hourly-{domain}-{forecast_date}.zarr"
     )
@@ -83,9 +83,8 @@ for domain in ["d03"]:
         )
 
     # ## Get first timestamp of forecast and make dir to store files
-    timestamp = str(np.array(hourly_ds.Time[0], dtype="datetime64[h]"))
-    folderdate = datetime.strptime(str(timestamp), "%Y-%m-%dT%H").strftime("%Y%m%d%H")
-
+    timestamp = np.array(hourly_ds.Time.dt.strftime("%Y%m%d%H"))
+    folderdate = timestamp[0]
     # ### make dir for that days forecast files
     # forecast_dir = Path("/bluesky/archive/fireweather/forecasts/" + str(folderdate) + "/data/plot")
     # forecast_dir = Path("/bluesky/fireweather/fwf/web_dev/data/")

@@ -161,7 +161,7 @@ L.TimeDimension.Layer.LayerGroup = L.TimeDimension.Layer.extend({
         UTCTimeMap = new Date(time).toISOString();
         UTCTimeMap = UTCTimeMap.slice(0,19)
         console.log(UTCTimeMap);
-        makeplotly(file_list.slice(-1)[0], point_list.slice(-1)[0], UTCTimeMap);
+        // makeplotly(file_list.slice(-1)[0], point_list.slice(-1)[0], UTCTimeMap);
         this._evictCachedTimes(this._timeCacheForward, this._timeCacheBackward);
     },
 

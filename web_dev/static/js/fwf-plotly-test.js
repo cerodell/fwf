@@ -29,6 +29,23 @@ btn_wx2.className = "btn_wx2";
 btn_wx2.innerHTML = "Weather";                   // Insert text
 div2.appendChild(btn_wx2);
 
+// //Create array of options to be added
+// var array = ["UTC","Geo Local","Your Local"];
+
+// //Create and append select list
+// var selectList = document.createElement("select");
+// selectList.setAttribute("id", "mySelect");
+// selectList.className = "time_wx";
+// div2.appendChild(selectList);
+
+// //Create and append the options
+// for (var i = 0; i < array.length; i++) {
+//     var option = document.createElement("option");
+//     option.setAttribute("value", array[i]);
+//     option.text = array[i];
+//     selectList.appendChild(option);
+// }
+
 
 
 // const fwfmodellocation = L.marker([51.5, -0.09],{icon: redIcon});
@@ -78,8 +95,29 @@ function makeplotly(e) {
         var h = index
         var w = n.XLAT[h];
         var v = n.XLONG[h];
+        var tz = n.TZONE[h];
         console.log(n);
         console.log(w);
+        console.log('TIME ZONE');
+        console.log(tz);
+
+        //Create array of options to be added
+        var array = ["UTC","Geo Local","Your Local"];
+
+        //Create and append select list
+        var selectList = document.createElement("select");
+        selectList.setAttribute("id", "mySelect");
+        selectList.className = "time_wx";
+        div2.appendChild(selectList);
+
+        //Create and append the options
+        for (var i = 0; i < array.length; i++) {
+            var option = document.createElement("option");
+            option.setAttribute("value", array[i]);
+            option.text = array[i];
+            selectList.appendChild(option);
+        }
+
 
 
         var dict = {};
@@ -98,7 +136,104 @@ function makeplotly(e) {
 
         console.log(dict);
 
+        selectList.onchange = function (){
+            var value = this.value
+            console.log(value);
 
+            if (value == "UTC"){
+                N =
+                ((ffmc = {x: dict['time'], y: dict['ffmc'], mode: 'lines', line: { color: "ff7f0e" }, yaxis: "y2",  hoverlabel:{font:{size: hovsize, color: "#ffffff"}, bordercolor: "#ffffff"}, hovertemplate: "<b> FFMC </b><br>" + "%{y:.2f} <br>" + "<extra></extra>" }),
+                (isi = {x: dict['time'], y: dict['isi'], mode: 'lines', line: { color: "9467bd" }, yaxis: "y1",  hoverlabel:{font:{size: hovsize}}, hovertemplate: "<b> ISI </b><br>" + "%{y:.2f} <br>" + "<extra></extra>" }),
+
+                [
+                    {
+                        type: "table",
+                        header: { values: [["Index/Code"], [dict['day'][0]], [dict['day'][1]]], align: "center", height:18, line: {color: "444444" }, fill: { color: "444444E6" }, font: { family: "inherit", size: 10, color: "white" } },
+                        // cells: { values: T, align: "center",  height:18, line: { color: "444444", width: 1 }, fill: { color: ["white", "white", "white", "white"], fillopacity:0.5 }, font: { family: "inherit", size: 10, color:[["#2ca02c", "#8c564b", "7f7f7f", "d62728", "000000"]] } },
+                        cells: { values: T, align: "center",  height:18, line: { color: "444444", width: 1 }, fill: { color:[["#2ca02c1A", "#8c564b1A", "7f7f7f1A", "d627281A", "0000001A"]] }, font: { family: "inherit", size: 10, color:[["#2ca02c", "#8c564b", "7f7f7f", "d62728", "000000"]]} },
+
+                        xaxis: "x",
+                        yaxis: "y",
+                        domain: { x: [0.0, 1.0], y: [0.54, 1] },
+                    },
+                    ffmc,
+                    isi,
+                ]
+                );
+                Plotly.react(C,  N, S);
+
+
+            }else if (value == "Geo Local"){
+
+                N =
+                ((ffmc = {x: dict['geo_time'], y: dict['ffmc'], mode: 'lines', line: { color: "ff7f0e" }, yaxis: "y2",  hoverlabel:{font:{size: hovsize, color: "#ffffff"}, bordercolor: "#ffffff"}, hovertemplate: "<b> FFMC </b><br>" + "%{y:.2f} <br>" + "<extra></extra>" }),
+                (isi = {x: dict['geo_time'], y: dict['isi'], mode: 'lines', line: { color: "9467bd" }, yaxis: "y1",  hoverlabel:{font:{size: hovsize}}, hovertemplate: "<b> ISI </b><br>" + "%{y:.2f} <br>" + "<extra></extra>" }),
+
+                [
+                    {
+                        type: "table",
+                        header: { values: [["Index/Code"], [dict['day'][0]], [dict['day'][1]]], align: "center", height:18, line: {color: "444444" }, fill: { color: "444444E6" }, font: { family: "inherit", size: 10, color: "white" } },
+                        // cells: { values: T, align: "center",  height:18, line: { color: "444444", width: 1 }, fill: { color: ["white", "white", "white", "white"], fillopacity:0.5 }, font: { family: "inherit", size: 10, color:[["#2ca02c", "#8c564b", "7f7f7f", "d62728", "000000"]] } },
+                        cells: { values: T, align: "center",  height:18, line: { color: "444444", width: 1 }, fill: { color:[["#2ca02c1A", "#8c564b1A", "7f7f7f1A", "d627281A", "0000001A"]] }, font: { family: "inherit", size: 10, color:[["#2ca02c", "#8c564b", "7f7f7f", "d62728", "000000"]]} },
+
+                        xaxis: "x",
+                        yaxis: "y",
+                        domain: { x: [0.0, 1.0], y: [0.54, 1] },
+                    },
+                    ffmc,
+                    isi,
+                ]
+                );
+                Plotly.react(C,  N, S);
+            }
+            else if (value == "Your Local"){
+
+            N =
+            ((ffmc = {x: dict['local_time'], y: dict['ffmc'], mode: 'lines', line: { color: "ff7f0e" }, yaxis: "y2",  hoverlabel:{font:{size: hovsize, color: "#ffffff"}, bordercolor: "#ffffff"}, hovertemplate: "<b> FFMC </b><br>" + "%{y:.2f} <br>" + "<extra></extra>" }),
+            (isi = {x: dict['local_time'], y: dict['isi'], mode: 'lines', line: { color: "9467bd" }, yaxis: "y1",  hoverlabel:{font:{size: hovsize}}, hovertemplate: "<b> ISI </b><br>" + "%{y:.2f} <br>" + "<extra></extra>" }),
+
+            [
+                {
+                    type: "table",
+                    header: { values: [["Index/Code"], [dict['day'][0]], [dict['day'][1]]], align: "center", height:18, line: {color: "444444" }, fill: { color: "444444E6" }, font: { family: "inherit", size: 10, color: "white" } },
+                    // cells: { values: T, align: "center",  height:18, line: { color: "444444", width: 1 }, fill: { color: ["white", "white", "white", "white"], fillopacity:0.5 }, font: { family: "inherit", size: 10, color:[["#2ca02c", "#8c564b", "7f7f7f", "d62728", "000000"]] } },
+                    cells: { values: T, align: "center",  height:18, line: { color: "444444", width: 1 }, fill: { color:[["#2ca02c1A", "#8c564b1A", "7f7f7f1A", "d627281A", "0000001A"]] }, font: { family: "inherit", size: 10, color:[["#2ca02c", "#8c564b", "7f7f7f", "d62728", "000000"]]} },
+
+                    xaxis: "x",
+                    yaxis: "y",
+                    domain: { x: [0.0, 1.0], y: [0.54, 1] },
+                },
+                ffmc,
+                isi,
+            ]
+            );
+            Plotly.react(C,  N, S);
+
+          }};
+
+        local_list = []
+        arrayLength = dict['time'].length;
+        for (i = 0; i < arrayLength; i++) {
+            a = new Date(dict['time'][i] + ':00Z').toLocaleString()
+            local_list.push(moment(a).format('YYYY-MM-DD HH:mm'))
+        }
+        dict['local_time'] = local_list
+        console.log(local_list);
+
+        local_list2 = []
+        arrayLength = n["Time"].length;
+        for (i = 0; i < arrayLength; i++) {
+        var tz_time = tz +":00";
+        console.log(tz_time);
+        var time = moment.duration(tz_time);
+        a = new Date(n["Time"][i] + ':00Z')
+        var date = moment(a)
+        var newtime = date.subtract(time).format('YYYY-MM-DD HH:mm');
+
+        local_list2.push(newtime)
+        }
+        dict['geo_time'] = local_list2;
+        console.log(local_list2);
 
         console.log(C);
         hovsize = 10;
@@ -149,7 +284,7 @@ function makeplotly(e) {
             xaxis: { title: "Date (UTC)", font: { size: labelsize, color: "444444" }}
         };
             Plotly.newPlot(C,  N, S);
-            });
+        });
 
         };
 
@@ -160,8 +295,11 @@ function makeplotly(e) {
             var h = index
             var w = n.XLAT[h];
             var v = n.XLONG[h];
+            var tz = n.TZONE[h];
             console.log(n);
             console.log(w);
+            console.log('TIME ZONE');
+            console.log(tz);
 
 
             var dict = {};

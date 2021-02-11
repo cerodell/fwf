@@ -40,19 +40,18 @@ make_dir = Path("/bluesky/fireweather/fwf/web_dev/data/")
 make_dir.mkdir(parents=True, exist_ok=True)
 
 
-## Get Path to most recent FWI forecast and open
-domain = "d03"
-# for i in range(13,1,-1):
-# print(i)
-# obs_date = pd.Timestamp("today").strftime("%Y%m%d")
-obs_date = pd.Timestamp(2021, 2, 9).strftime("%Y%m%d")
+date = pd.Timestamp("today")
+# date = pd.Timestamp(2021, 2, 9)
+forecast_date = date.strftime("%Y%m%d06")
+obs_date = (date - np.timedelta64(1, "D")).strftime("%Y%m%d")
+yesterday_forecast_date = obs_date + "06"
 
 
 obs_d2_ds = xr.open_zarr(
     str(data_dir) + "/intercomp/" + f"intercomp-d02-{obs_date}.zarr"
 )
 obs_d3_ds = xr.open_zarr(
-    str(data_dir) + "/intercomp/" + f"intercomp-d02-{obs_date}.zarr"
+    str(data_dir) + "/intercomp/" + f"intercomp-d03-{obs_date}.zarr"
 )
 
 ## make array of the wmo in each obs file
@@ -65,7 +64,6 @@ indices = np.nonzero(mask[:, None] == wmo_d2)[1]
 obs_d2_ds = obs_d2_ds.isel(wmo=indices)
 ## combine the obs to  final obs xarray
 obs_final = xr.concat([obs_d2_ds, obs_d3_ds], dim="wmo")
-# obs_final = obs_final.compute()
 
 
 coords_list = list(obs_final.coords)
@@ -84,18 +82,13 @@ for coords in coords_list:
 
 
 ## Open datasets of both domains
-forecast_date = "20201224"
-hourly_file_dir = str(data_dir) + str(f"/test/fwf-hourly-{forecast_date}00-d02.zarr")
-# daily_file_dir = str(data_dir) + str(f"/test/fwf-daily-{forecast_date}00-d02.zarr")
+hourly_file_dir = str(data_dir) + str(f"/test/fwf-hourly-d02-{forecast_date}06.zarr")
 hourly_d2_ds = xr.open_zarr(hourly_file_dir)
 daily_d2_ds = daily_merge_ds(forecast_date, "d02")
-# daily_d2_ds = xr.open_zarr(daily_file_dir)
 
-hourly_file_dir = str(data_dir) + str(f"/test/fwf-hourly-{forecast_date}00-d03.zarr")
-# daily_file_dir = str(data_dir) + str(f"/test/fwf-daily-{forecast_date}00-d03.zarr")
+hourly_file_dir = str(data_dir) + str(f"/test/fwf-hourly-d03-{forecast_date}06.zarr")
 hourly_d3_ds = xr.open_zarr(hourly_file_dir)
 daily_d3_ds = daily_merge_ds(forecast_date, "d03")
-# daily_d3_ds = xr.open_zarr(daily_file_dir)
 
 
 def wmo_locs(hourly_ds, daily_ds, obs_ds, domain):

@@ -18,7 +18,7 @@ from datetime import datetime
 from utils.make_intercomp import daily_merge_ds
 import string
 
-from context import data_dir, xr_dir, wrf_dir, fwf_zarr_dir
+from context import data_dir, xr_dir, wrf_dir, fwf_zarr_dir, tzone_dir
 from datetime import datetime, date, timedelta
 
 startTime = datetime.now()
@@ -44,11 +44,11 @@ with open(str(data_dir) + "/json/nested-index.json") as f:
     nested_index = json.load(f)
 
 # # ### make dir for that days forecast files to be sotred
-# make_dir = Path("/bluesky/fireweather/fwf/web_dev/data/plot/")
-# make_dir.mkdir(parents=True, exist_ok=True)
+make_dir = Path("/bluesky/fireweather/fwf/web_dev/data/plot/")
+make_dir.mkdir(parents=True, exist_ok=True)
 
-# forecast_date = pd.Timestamp("today").strftime("%Y%m%d00")
-forecast_date = pd.Timestamp(2021, 2, 9).strftime("%Y%m%d06")
+forecast_date = pd.Timestamp("today").strftime("%Y%m%d06")
+# forecast_date = pd.Timestamp(2021, 2, 9).strftime("%Y%m%d06")
 
 ## loop both domains
 domains = ["d02", "d03"]
@@ -60,6 +60,9 @@ for domain in domains:
     daily_file_dir = str(fwf_zarr_dir) + str(
         f"/fwf-daily-{domain}-{forecast_date}.zarr"
     )
+
+    ### Open time zones dataset...each grids offset from utc time
+    tzone_ds = xr.open_dataset(str(tzone_dir) + f"/tzone_wrf_{domain}.nc")
 
     ### Open datasets
     hourly_ds = xr.open_zarr(hourly_file_dir)
@@ -125,9 +128,11 @@ for domain in domains:
     ## get array of lats and longs remove bad boundary conditions and flatten
     xlat = daily_ds.XLAT.values[y1:-y2, x1:-x2]
     xlon = daily_ds.XLONG.values[y1:-y2, x1:-x2]
+    tzon = tzone_ds.Zone.values[y1:-y2, x1:-x2]
 
     xlat = np.round(xlat.flatten(), 5)
     xlon = np.round(xlon.flatten(), 5)
+    tzon = tzon.flatten()
 
     ## build dictionary with removed bad boundary conditions fro each variable in dataset
     ## also reshape into (time, (flatten XLAT/XLONG))
@@ -155,7 +160,7 @@ for domain in domains:
     # unique_masked_list = ['gk']
     ## added to dictionary all variables with in there unique group
     for filename in unique_masked_list:
-        print(filename)
+        # print(filename)
         dict_file = {"Time": time.tolist(), "Day": day.tolist()}
         inds = np.where(empty == filename)
         for var in dict_var:
@@ -172,11 +177,14 @@ for domain in domains:
         xlat_array = xlat_array.astype("<U8")
         xlon_array = xlon[inds[0]]
         xlon_array = xlon_array.astype("<U8")
+        tzon_array = tzon[inds[0]]
+        tzon_array = tzon_array.astype("<U2")
 
         dict_file.update(
             {
                 "XLAT": xlat_array.tolist(),
                 "XLONG": xlon_array.tolist(),
+                "TZONE": tzon_array.tolist(),
             }
         )
 
