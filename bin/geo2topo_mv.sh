@@ -3,7 +3,7 @@
 # cp /bluesky/fireweather/fwf/json/fwf-zone.json /bluesky/archive/fireweather/forecasts/$(date '+%Y%m%d06')/
 # cp /bluesky/fireweather/fwf/json/topo-notab.json /bluesky/archive/fireweather/forecasts/$(date '+%Y%m%d06')/
 
-### Convert FFMC to topojson and move to website directory
+# ### Convert FFMC to topojson and move to website directory
 cd /bluesky/fireweather/fwf/data/geojson/$(date '+%Y%m%d06')/
 declare -a arr=("06" "09" "12" "15" "18" "21")
 for i in "${arr[@]}"
@@ -96,7 +96,6 @@ done
 
 
 
-
 ## Convert FWI to topojson and move to website directory
 declare -a arr=("06" "09" "12" "15" "18" "21")
 for i in "${arr[@]}"
@@ -107,7 +106,7 @@ done
 declare -a arr=("00" "03" "06" "09" "12" "15" "18" "21")
 for i in "${arr[@]}"
 do
-    /bluesky/fireweather/fwf/node_modules/@mapbox/geojson-merge/geojson-merge fwi-$(date '+%Y%m%d')"$i"-d02.geojson fwi-$(date '+%Y%m%d')"$i"-d03.geojson > fwi-merge-$(date '+%Y%m%d')"$i".geojson
+    /bluesky/fireweather/fwf/node_modules/@mapbox/geojson-merge/geojson-merge fwi-$(date -d "+1 days" '+%Y%m%d')"$i"-d02.geojson fwi-$(date -d "+1 days" '+%Y%m%d')"$i"-d03.geojson > fwi-merge-$(date -d "+1 days" '+%Y%m%d')"$i".geojson
 done
 
 declare -a arr=("00" "03" "06" "09" "12")

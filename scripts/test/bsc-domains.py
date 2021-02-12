@@ -36,7 +36,7 @@ lat = np.array(df["lat_degr"])
 lon = np.array(df["lon_degr"])
 
 ### Open old WRF domain
-filein = str(data_dir) + f"/domain/wrfout_{domain}_old.nc"
+filein = str(wrf_dir) + f"/2021021100/wrfout_d01_2021-02-11_00:00:00"
 ds_wrf_old = xr.open_dataset(filein)
 
 ### Open new WRF domain
@@ -124,6 +124,7 @@ lat_f = (nrows * ycell) + lat_i
 lon_f = (ncols * xcell) + lon_i
 lats = np.arange(lat_i, lat_f + ycell, ycell)
 lons = np.arange(lon_i, lon_f + xcell, xcell)
+
 lons, lats = np.meshgrid(lons, lats)
 
 
@@ -157,4 +158,4 @@ ax.legend(
 
 plt.tight_layout()
 
-fig.savefig(f"/Users/rodell/Desktop/{domain}-" + save_file + ".png", dpi=240)
+# fig.savefig(f"/Users/rodell/Desktop/{domain}-" + save_file + ".png", dpi=240)

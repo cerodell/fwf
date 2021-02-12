@@ -1,40 +1,37 @@
 # FWF
 ---
-## Fire Weather Forecast Model 
-
-tar -xzf fwf-daily-2020092600.tgz
-mv fwf-daily-2020092600.zarr /bluesky/fireweather/fwf/data/xr/
+## Fire Weather Forecast Model
 
 This project aims to create a  Fire Weather Forecast (FWF) Model. FWF will be
 constructed off preexisting fire weather models such as the Fire Weather Index
 System (FWI) and the Fire behavior Prediction Model (FBP). The indices that
 make each of the models will be calculated using a numerical weather prediction
-model WRF-ARW. 
+model WRF-ARW.
 
 
-The new FWI System hereafter referred to as FWI-UBC, will make use of 
-equations developed by Van Wagner (1977) and Van Wanger and Pickett (1985). 
-The moisture codes that are the foundation of the FWI system the; Fine Fuel 
+The new FWI System hereafter referred to as FWI-UBC, will make use of
+equations developed by Van Wagner (1977) and Van Wanger and Pickett (1985).
+The moisture codes that are the foundation of the FWI system the; Fine Fuel
 Moisture Code (FFMC), Duff Moisture Code (DMC) and Drought Code (DC), will be
 validated against FWI in-situ measurements at weather stations across Canada,
 to ensure accuracy of our product. The mentioned moisture codes along with
-the; Initial Spread Index (ISI), Buildup Index (BUI) and the Fire Weather 
+the; Initial Spread Index (ISI), Buildup Index (BUI) and the Fire Weather
 Index (FWI) will be graphically displayed via FWF online maps encompassing
-regions of interest to the user.  Also, for large fires, point-location 
-forecast(s) will be disseminated online in Meteogram format. Product variables 
-will include maps of high-resolution FWI-system indices and surface weather 
-variables such as wind speed/ direction, temperature, and relative humidity 
+regions of interest to the user.  Also, for large fires, point-location
+forecast(s) will be disseminated online in Meteogram format. Product variables
+will include maps of high-resolution FWI-system indices and surface weather
+variables such as wind speed/ direction, temperature, and relative humidity
 
 ---
 ## Model structure
 
-- `/bluesky/fireweather/fwf/` is the operational directory, its where the model code resides and current forecast data 
+- `/bluesky/fireweather/fwf/` is the operational directory, its where the model code resides and current forecast data
 resides.
 
 - the current forecast data is broken up into two groups `hourly` and `daily` the table below shows whats in each group.
 
 
-| Hourly Dataset `hourly_ds`  | Daily Dataset `daily_ds`  | 
+| Hourly Dataset `hourly_ds`  | Daily Dataset `daily_ds`  |
  --------------------------- | ------------------------- |
 | Fine Fuel Moisture Code **FFMC**  | Duff Moisture Code **DMC**  |
 | Initial Spread INdex **ISI**  | Drought Moisture Code **DC**  |
@@ -47,13 +44,13 @@ resides.
     - `../daily/` for the daily forecasts
 
 - `/nfs/kitsault/archives/forecasts/WAN00CP-04/YYMMDD00/` is the WRF directory where the model pulls in `.nc` files
-- the model currently uses 4-km WRF 00Z but is adaptable to other domains. 
+- the model currently uses 4-km WRF 00Z but is adaptable to other domains.
     - Youll first need to run `timezone.py` to generate a tzone_ds.zarr file (Note it takes awhile to generate ~3 hours)
     - after it should run as per normal
 
-    
+
 - `fwf/fwi/utils/ubc_fwi/fwf.py` contains the FWF class that does all the calculations.
-	- note FWF calls on function `read_wrf` in `fwf/fwi/utils/wrf/read_wrfout.py` this script compiles the `.nc` wrfout files into a compact `.zarr` file 
+	- note FWF calls on function `read_wrf` in `fwf/fwi/utils/wrf/read_wrfout.py` this script compiles the `.nc` wrfout files into a compact `.zarr` file
 
 - `fwf/py/ubc_fwi/run.py` is the script that runs the model
 
@@ -79,17 +76,17 @@ resides.
 `conda install -c conda-forge pandas`
 
 ---
-## Website 
+## Website
 
-To visualize the data on leaflet several steps are made to simplify and reduce the file as much as possible. 
+To visualize the data on leaflet several steps are made to simplify and reduce the file as much as possible.
 
 #### Data
 - 1\) zarr file data is first masked to remove all lakes, oceans, and snow cover.
 - 2\) after mask is applied fire weather indices/codes are made into contourf
 - 3\) from contourf they are converted to geojson files using geojsoncontour
     - https://pypi.org/project/geojsoncontour/
-    - the method for writing/saving the geojson took me a sec to figure out...look at...https://gl.tawhiri.eos.ubc.ca/bluesky/fwf/-/blob/master/firewx_website/python/geoutils.py#L34 
-- note all indices and moisture codes are rounded to the third decimal 
+    - the method for writing/saving the geojson took me a sec to figure out...look at...https://gl.tawhiri.eos.ubc.ca/bluesky/fwf/-/blob/master/firewx_website/python/geoutils.py#L34
+- note all indices and moisture codes are rounded to the third decimal
     - steps 1-3 are done in python all in `/bluesky/fireweather/fwf/firewx_website/python/geojson_maker.py`
 
 - 4\) next geojsons are converted to topojsons using `geo2topo`
@@ -98,7 +95,6 @@ To visualize the data on leaflet several steps are made to simplify and reduce t
     - reference: https://github.com/topojson/topojson-server
     - a `q` (ie quantization count) of `1e4` reduces the geojson file by about half and doest take away for the quality of the visualization on leaflet
         - there are many ways to simplify topojson and reduce the file size further
-            - reference: https://github.com/topojson/topojson-simplify 
+            - reference: https://github.com/topojson/topojson-simplify
 
-- 5\) topojsons are stored: `/bluesky/fireweather/fwf/data/topojson/` 
-
+- 5\) topojsons are stored: `/bluesky/fireweather/fwf/data/topojson/`
