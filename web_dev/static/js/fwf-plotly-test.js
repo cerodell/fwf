@@ -29,30 +29,14 @@ btn_wx2.className = "btn_wx2";
 btn_wx2.innerHTML = "Weather";                   // Insert text
 div2.appendChild(btn_wx2);
 
-// //Create array of options to be added
-// var array = ["UTC","Geo Local","Your Local"];
-
-// //Create and append select list
-// var selectList = document.createElement("select");
-// selectList.setAttribute("id", "mySelect");
-// selectList.className = "time_wx";
-// div2.appendChild(selectList);
-
-// //Create and append the options
-// for (var i = 0; i < array.length; i++) {
-//     var option = document.createElement("option");
-//     option.setAttribute("value", array[i]);
-//     option.text = array[i];
-//     selectList.appendChild(option);
-// }
-
 
 
 // const fwfmodellocation = L.marker([51.5, -0.09],{icon: redIcon});
 // fwfmodellocation.bindPopup(div2, {maxWidth: "auto", maxHeight: "auto"});
 // fwfmodellocation.setZIndexOffset(1000);
 let fwfclicklocation;
-fwfclicklocation = new L.marker().bindPopup("<b>Hello!</b><br />The blue icon is where you clicked or searched on the map. <br /> <br />The red icon is the closest model grid point to where you clicked or searched on the map. <br />  <br /> Click the red icon for a point forecast");
+fwfclicklocation = new L.marker();
+// fwfclicklocation.bindPopup("<b>Hello!</b><br />The blue icon is where you clicked or searched on the map. <br /> <br />The red icon is the closest model grid point to where you clicked or searched on the map. <br />  <br /> Click the red icon for a point forecast");
 
 var searchboxControl=createSearchboxControl();
                         const control = new searchboxControl({
@@ -63,10 +47,13 @@ var searchboxControl=createSearchboxControl();
                                     { type: "link", name: "Weather Research Forecast Team", href: "https://weather.eos.ubc.ca/cgi-bin/index.cgi", icon: "icon-cloudy" },
                                     { type: "link", name: "Contact Inforamtion", href: "https://firesmoke.ca/contact/", icon: "icon-phone" },
                                     { type: "link", name: "Documentation", href: "https://cerodell.github.io/fwf-docs/index.html", icon: "icon-git" },
+                                    { type: "text", id: "myTextField" },
+                                    { type: "button", name: "myTextButton", id: "myTextButton", value: "Select a date" },
 
                                 ]
                             }
                         });
+
 
 
 
@@ -101,8 +88,12 @@ function makeplotly(e) {
         console.log('TIME ZONE');
         console.log(tz);
 
+        console.log(Intl.DateTimeFormat().resolvedOptions().timeZone)
+        var timezone = moment.tz(Intl.DateTimeFormat().resolvedOptions().timeZone).zoneAbbr();
+        console.log(timezone);
+
         //Create array of options to be added
-        var array = ["UTC","Geo Local","Your Local"];
+        var array = [timezone ,"UTC","Geo Local"];
 
         //Create and append select list
         var selectList = document.createElement("select");
@@ -134,11 +125,10 @@ function makeplotly(e) {
         dict['time'] = n["Time"];
         dict['day'] = n["Day"];
 
-        console.log(dict);
-
+        // console.log(dict);
         selectList.onchange = function (){
             var value = this.value
-            console.log(value);
+            // console.log(value);
 
             if (value == "UTC"){
                 N =
@@ -186,7 +176,7 @@ function makeplotly(e) {
                 );
                 Plotly.react(C,  N, S);
             }
-            else if (value == "Your Local"){
+            else if (value == timezone){
 
             N =
             ((ffmc = {x: dict['local_time'], y: dict['ffmc'], mode: 'lines', line: { color: "ff7f0e" }, yaxis: "y2",  hoverlabel:{font:{size: hovsize, color: "#ffffff"}, bordercolor: "#ffffff"}, hovertemplate: "<b> FFMC </b><br>" + "%{y:.2f} <br>" + "<extra></extra>" }),
@@ -211,6 +201,23 @@ function makeplotly(e) {
 
           }};
 
+          local_list2 = []
+          arrayLength = dict['time'].length;
+          for (i = 0; i < arrayLength; i++) {
+          // var tz_time = tz +":00";
+        //   console.log(parseFloat(tz));
+          // var time = moment.duration(tz_time);
+          d = dict['time'][i] + ':00:00.000Z'
+          var newtime2 = moment(d).subtract({'hours': tz}).format('YYYY-MM-DD HH:mm z');
+          var res = newtime2.slice(0, 16);
+          local_list2.push(res)
+          }
+          dict['geo_time'] = local_list2;
+          console.log('UTC TIME');
+          console.log(dict['time']);
+          console.log('GEO TIME');
+          console.log(local_list2);
+
         local_list = []
         arrayLength = dict['time'].length;
         for (i = 0; i < arrayLength; i++) {
@@ -218,24 +225,11 @@ function makeplotly(e) {
             local_list.push(moment(a).format('YYYY-MM-DD HH:mm'))
         }
         dict['local_time'] = local_list
+        console.log('LOCAL TIME');
         console.log(local_list);
 
-        local_list2 = []
-        arrayLength = n["Time"].length;
-        for (i = 0; i < arrayLength; i++) {
-        var tz_time = tz +":00";
-        console.log(tz_time);
-        var time = moment.duration(tz_time);
-        a = new Date(n["Time"][i] + ':00Z')
-        var date = moment(a)
-        var newtime = date.subtract(time).format('YYYY-MM-DD HH:mm');
 
-        local_list2.push(newtime)
-        }
-        dict['geo_time'] = local_list2;
-        console.log(local_list2);
-
-        console.log(C);
+        // console.log(C);
         hovsize = 10;
         labelsize = 12;
         ticksize = 9;
@@ -247,8 +241,8 @@ function makeplotly(e) {
         ],
 
         N =
-        ((ffmc = {x: dict['time'], y: dict['ffmc'], mode: 'lines', line: { color: "ff7f0e" }, yaxis: "y2",  hoverlabel:{font:{size: hovsize, color: "#ffffff"}, bordercolor: "#ffffff"}, hovertemplate: "<b> FFMC </b><br>" + "%{y:.2f} <br>" + "<extra></extra>" }),
-        (isi = {x: dict['time'], y: dict['isi'], mode: 'lines', line: { color: "9467bd" }, yaxis: "y1",  hoverlabel:{font:{size: hovsize}}, hovertemplate: "<b> ISI </b><br>" + "%{y:.2f} <br>" + "<extra></extra>" }),
+        ((ffmc = {x: dict['local_time'], y: dict['ffmc'], mode: 'lines', line: { color: "ff7f0e" }, yaxis: "y2",  hoverlabel:{font:{size: hovsize, color: "#ffffff"}, bordercolor: "#ffffff"}, hovertemplate: "<b> FFMC </b><br>" + "%{y:.2f} <br>" + "<extra></extra>" }),
+        (isi = {x: dict['local_time'], y: dict['isi'], mode: 'lines', line: { color: "9467bd" }, yaxis: "y1",  hoverlabel:{font:{size: hovsize}}, hovertemplate: "<b> ISI </b><br>" + "%{y:.2f} <br>" + "<extra></extra>" }),
 
         [
             {
@@ -267,12 +261,49 @@ function makeplotly(e) {
         );
 
 
+        if( /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ) {
 
 
         S = {
-            autosize: true,
+            autosize: false,
+            width: 320,
+            height: 400,
+            margin: {
+              l: 50,
+              r: 30,
+              b: 60,
+              t: 68,
+              pad: 1
+            },
             title: {text: "Fire Weather Forecast " + "<br>Lat: " + w.toString().slice(0,6) + ", Lon: " + v.toString().slice(0,8) , x:0.05},
-            titlefont: { color: "#444444", size: 13 },
+            titlefont: { color: "#444444", size: 12 },
+            showlegend: !1,
+            yaxis2: {domain: [.26, .52], title: { text: "FFMC", font: { size: 10, color: "ff7f0e" } }, tickfont: {size: ticksize, color: "ff7f0e"}},
+            yaxis1: { domain: [0.0, 0.24], title: { text: "ISI", font: {size: 10, color: "9467bd" } }, tickfont: {size: ticksize, color: "9467bd"}},
+            // yaxis1: {domain: [0.0, 0.4], title: { text: "DMC", font: { size: labelsize,color: "2ca02c" } }, tickfont: {size: ticksize, color: "2ca02c"}},
+            // yaxis4: { domain: [0.48, 0.62], title: { text: "DC", font: { size: labelsize,color: "8c564b" } }, tickfont: {size: ticksize, color: "8c564b"}},
+            // yaxis3: { domain: [0.32, 0.46], title: { text: "ISI", font: {size: labelsize, color: "9467bd" } }, tickfont: {size: ticksize, color: "9467bd"}},
+            // yaxis2: { domain: [0.16, 0.30], title: { text: "BUI", font: { size: labelsize, color: "7f7f7f" } }, tickfont: {size: ticksize, color: "7f7f7f"}},
+            // yaxis1: { domain: [0, 0.14], title: { text: "FWI", font: {size: labelsize, color: "d62728" } }, tickfont: {size: ticksize, color: "d62728"}},
+            // xaxis: { title: "Date (UTC)", titlefont: { size: 10, color: "444444" }, tickfont: {size: ticksize, color: "444444"}}
+            xaxis: { tickfont: {size: ticksizex, color: "444444"}},
+        };
+
+        }else{
+
+        S = {
+            autosize: false,
+            width: 600,
+            height: 450,
+            margin: {
+              l: 50,
+              r: 30,
+              b: 80,
+              t: 100,
+              pad: 2
+            },
+            title: {text: "Fire Weather Forecast " + "<br>Lat: " + w.toString().slice(0,6) + ", Lon: " + v.toString().slice(0,8) , x:0.05},
+            titlefont: { color: "#444444", size: 14 },
             showlegend: !1,
             yaxis2: {domain: [.26, .52], title: { text: "FFMC", font: { size: labelsize, color: "ff7f0e" } }, tickfont: {size: ticksize, color: "ff7f0e"}},
             yaxis1: { domain: [0.0, 0.24], title: { text: "ISI", font: {size: labelsize, color: "9467bd" } }, tickfont: {size: ticksize, color: "9467bd"}},
@@ -281,10 +312,13 @@ function makeplotly(e) {
             // yaxis3: { domain: [0.32, 0.46], title: { text: "ISI", font: {size: labelsize, color: "9467bd" } }, tickfont: {size: ticksize, color: "9467bd"}},
             // yaxis2: { domain: [0.16, 0.30], title: { text: "BUI", font: { size: labelsize, color: "7f7f7f" } }, tickfont: {size: ticksize, color: "7f7f7f"}},
             // yaxis1: { domain: [0, 0.14], title: { text: "FWI", font: {size: labelsize, color: "d62728" } }, tickfont: {size: ticksize, color: "d62728"}},
-            xaxis: { title: "Date (UTC)", font: { size: labelsize, color: "444444" }}
+            // xaxis: { title: "Date (UTC)", titlefont: { size: 12, color: "444444" }}
+            xaxis: { tickfont: {size: 11, color: "444444"}},
+        };
+
         };
             Plotly.newPlot(C,  N, S);
-        });
+            });
 
         };
 
@@ -296,10 +330,32 @@ function makeplotly(e) {
             var w = n.XLAT[h];
             var v = n.XLONG[h];
             var tz = n.TZONE[h];
-            console.log(n);
-            console.log(w);
-            console.log('TIME ZONE');
-            console.log(tz);
+            // console.log(n);
+            // console.log(w);
+            // console.log('TIME ZONE');
+            // console.log(tz);
+
+            console.log(Intl.DateTimeFormat().resolvedOptions().timeZone)
+            var timezone = moment.tz(Intl.DateTimeFormat().resolvedOptions().timeZone).zoneAbbr();
+            console.log(timezone);
+
+            //Create array of options to be added
+            var array = [timezone ,"UTC", "Geo Local"];
+
+            //Create and append select list
+            var selectList = document.createElement("select");
+            selectList.setAttribute("id", "mySelect");
+            selectList.className = "time_wx";
+            div2.appendChild(selectList);
+
+            //Create and append the options
+            for (var i = 0; i < array.length; i++) {
+                var option = document.createElement("option");
+                option.setAttribute("value", array[i]);
+                option.text = array[i];
+                selectList.appendChild(option);
+            }
+
 
 
             var dict = {};
@@ -316,39 +372,147 @@ function makeplotly(e) {
             dict['time'] = n["Time"];
             dict['day'] = n["Day"];
 
-            console.log(dict);
+            // console.log(dict);
+            selectList.onchange = function (){
+                var value = this.value
+                // console.log(value);
+
+                if (value == "UTC"){
+                    N =
+                    [(temp = {x: dict['time'], y: dict['temp'], mode: 'lines', line: { color: "d62728" }, yaxis: "y5", hoverlabel:{font:{size: hovsize}}, hovertemplate: "<b> Temp </b><br>" + "%{y:.2f} (C)<br>" + "<extra></extra>"}),
+                    (rh = {x: dict['time'], y: dict['rh'], mode: 'lines', line: { color: "1f77b4" }, yaxis: "y4", hoverlabel:{font:{size: hovsize}}, hovertemplate: "<b> RH </b><br>" + "%{y:.2f} (%)<br>" + "<extra></extra>"}),
+                    (ws = {x: dict['time'], y: dict['ws'], mode: 'lines', line: { color: "202020" }, yaxis: "y3", hoverlabel:{font:{size: hovsize}}, hovertemplate: "<b> WSP </b><br>" + "%{y:.2f} (km/hr)<br>" + "<extra></extra>"}),
+                    (wdir = {x: dict['time'], y: dict['wdir'], mode: 'lines', line: { color: "7f7f7f" }, yaxis: "y2",  hoverlabel:{font:{size: hovsize}}, hovertemplate: "<b> WDIR </b><br>" + "%{y:.2f} (deg)<br>" + "<extra></extra>" }),
+                    (precip = {x: dict['time'], y: dict['precip'], mode: 'lines', line: { color: "2ca02c" }, yaxis: "y1",  hoverlabel:{font:{size: hovsize}}, hovertemplate: "<b> Precip </b><br>" + "%{y:.2f} (mm)<br>" + "<extra></extra>" }),
+
+                    ];
+                    Plotly.react(C,  N, S);
+
+
+                }else if (value == "Geo Local"){
+
+                    N =
+                    [(temp = {x: dict['geo_time'], y: dict['temp'], mode: 'lines', line: { color: "d62728" }, yaxis: "y5", hoverlabel:{font:{size: hovsize}}, hovertemplate: "<b> Temp </b><br>" + "%{y:.2f} (C)<br>" + "<extra></extra>"}),
+                    (rh = {x: dict['geo_time'], y: dict['rh'], mode: 'lines', line: { color: "1f77b4" }, yaxis: "y4", hoverlabel:{font:{size: hovsize}}, hovertemplate: "<b> RH </b><br>" + "%{y:.2f} (%)<br>" + "<extra></extra>"}),
+                    (ws = {x: dict['geo_time'], y: dict['ws'], mode: 'lines', line: { color: "202020" }, yaxis: "y3", hoverlabel:{font:{size: hovsize}}, hovertemplate: "<b> WSP </b><br>" + "%{y:.2f} (km/hr)<br>" + "<extra></extra>"}),
+                    (wdir = {x: dict['geo_time'], y: dict['wdir'], mode: 'lines', line: { color: "7f7f7f" }, yaxis: "y2",  hoverlabel:{font:{size: hovsize}}, hovertemplate: "<b> WDIR </b><br>" + "%{y:.2f} (deg)<br>" + "<extra></extra>" }),
+                    (precip = {x: dict['geo_time'], y: dict['precip'], mode: 'lines', line: { color: "2ca02c" }, yaxis: "y1",  hoverlabel:{font:{size: hovsize}}, hovertemplate: "<b> Precip </b><br>" + "%{y:.2f} (mm)<br>" + "<extra></extra>" }),
+
+                    ];
+                    Plotly.react(C,  N, S);
+                }
+                else if (value == timezone){
+
+                    N =
+                    [(temp = {x: dict['local_time'], y: dict['temp'], mode: 'lines', line: { color: "d62728" }, yaxis: "y5", hoverlabel:{font:{size: hovsize}}, hovertemplate: "<b> Temp </b><br>" + "%{y:.2f} (C)<br>" + "<extra></extra>"}),
+                    (rh = {x: dict['local_time'], y: dict['rh'], mode: 'lines', line: { color: "1f77b4" }, yaxis: "y4", hoverlabel:{font:{size: hovsize}}, hovertemplate: "<b> RH </b><br>" + "%{y:.2f} (%)<br>" + "<extra></extra>"}),
+                    (ws = {x: dict['local_time'], y: dict['ws'], mode: 'lines', line: { color: "202020" }, yaxis: "y3", hoverlabel:{font:{size: hovsize}}, hovertemplate: "<b> WSP </b><br>" + "%{y:.2f} (km/hr)<br>" + "<extra></extra>"}),
+                    (wdir = {x: dict['local_time'], y: dict['wdir'], mode: 'lines', line: { color: "7f7f7f" }, yaxis: "y2",  hoverlabel:{font:{size: hovsize}}, hovertemplate: "<b> WDIR </b><br>" + "%{y:.2f} (deg)<br>" + "<extra></extra>" }),
+                    (precip = {x: dict['local_time'], y: dict['precip'], mode: 'lines', line: { color: "2ca02c" }, yaxis: "y1",  hoverlabel:{font:{size: hovsize}}, hovertemplate: "<b> Precip </b><br>" + "%{y:.2f} (mm)<br>" + "<extra></extra>" }),
+
+                    ];
+                Plotly.react(C,  N, S);
+
+              }};
+
+              local_list2 = []
+              arrayLength = dict['time'].length;
+              for (i = 0; i < arrayLength; i++) {
+              // var tz_time = tz +":00";
+            //   console.log(parseFloat(tz));
+              // var time = moment.duration(tz_time);
+              d = dict['time'][i] + ':00Z'
+            //   var newtime2 = moment(d.setHours(d.getHours() - 1)).format('YYYY-MM-DD HH:mm');
+              var newtime2 = moment.utc(d).subtract({'hours': tz}).format('YYYY-MM-DD HH:mm z');
+              var res = newtime2.slice(0, 16);
+              local_list2.push(res)
+              }
+              dict['geo_time'] = local_list2;
+            //   console.log('UTC TIME');
+            //   console.log(dict['time']);
+            //   console.log('GEO TIME');
+            //   console.log(local_list2);
+
+            local_list = []
+            arrayLength = dict['time'].length;
+            for (i = 0; i < arrayLength; i++) {
+                a = new Date(dict['time'][i] + ':00Z').toLocaleString()
+                local_list.push(moment(a).format('YYYY-MM-DD HH:mm'))
+            }
+            dict['local_time'] = local_list
+            // console.log('LOCAL TIME');
+            // console.log(local_list);
 
 
 
-            console.log(C);
+            // console.log(C);
             hovsize = 10;
             N =
-            [(temp = {x: dict['time'], y: dict['temp'], mode: 'lines', line: { color: "d62728" }, yaxis: "y5", hoverlabel:{font:{size: hovsize}}, hovertemplate: "<b> Temp </b><br>" + "%{y:.2f} (C)<br>" + "<extra></extra>"}),
-            (rh = {x: dict['time'], y: dict['rh'], mode: 'lines', line: { color: "1f77b4" }, yaxis: "y4", hoverlabel:{font:{size: hovsize}}, hovertemplate: "<b> RH </b><br>" + "%{y:.2f} (%)<br>" + "<extra></extra>"}),
-            (ws = {x: dict['time'], y: dict['ws'], mode: 'lines', line: { color: "202020" }, yaxis: "y3", hoverlabel:{font:{size: hovsize}}, hovertemplate: "<b> WSP </b><br>" + "%{y:.2f} (km/hr)<br>" + "<extra></extra>"}),
-            (wdir = {x: dict['time'], y: dict['wdir'], mode: 'lines', line: { color: "7f7f7f" }, yaxis: "y2",  hoverlabel:{font:{size: hovsize}}, hovertemplate: "<b> WDIR </b><br>" + "%{y:.2f} (deg)<br>" + "<extra></extra>" }),
-            (precip = {x: dict['time'], y: dict['precip'], mode: 'lines', line: { color: "2ca02c" }, yaxis: "y1",  hoverlabel:{font:{size: hovsize}}, hovertemplate: "<b> Precip </b><br>" + "%{y:.2f} (mm)<br>" + "<extra></extra>" }),
+            [(temp = {x: dict['local_time'], y: dict['temp'], mode: 'lines', line: { color: "d62728" }, yaxis: "y5", hoverlabel:{font:{size: hovsize}}, hovertemplate: "<b> Temp </b><br>" + "%{y:.2f} (C)<br>" + "<extra></extra>"}),
+            (rh = {x: dict['local_time'], y: dict['rh'], mode: 'lines', line: { color: "1f77b4" }, yaxis: "y4", hoverlabel:{font:{size: hovsize}}, hovertemplate: "<b> RH </b><br>" + "%{y:.2f} (%)<br>" + "<extra></extra>"}),
+            (ws = {x: dict['local_time'], y: dict['ws'], mode: 'lines', line: { color: "202020" }, yaxis: "y3", hoverlabel:{font:{size: hovsize}}, hovertemplate: "<b> WSP </b><br>" + "%{y:.2f} (km/hr)<br>" + "<extra></extra>"}),
+            (wdir = {x: dict['local_time'], y: dict['wdir'], mode: 'lines', line: { color: "7f7f7f" }, yaxis: "y2",  hoverlabel:{font:{size: hovsize}}, hovertemplate: "<b> WDIR </b><br>" + "%{y:.2f} (deg)<br>" + "<extra></extra>" }),
+            (precip = {x: dict['local_time'], y: dict['precip'], mode: 'lines', line: { color: "2ca02c" }, yaxis: "y1",  hoverlabel:{font:{size: hovsize}}, hovertemplate: "<b> Precip </b><br>" + "%{y:.2f} (mm)<br>" + "<extra></extra>" }),
 
-            ]
+            ];
 
 
 
-            labelsize = 12,
-            ticksize = 9,
+            labelsize = 10;
+            ticksize = 8;
+            ticksizex = 6;
+            if( /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ) {
+
             S = {
-                autosize: true,
+                autosize: false,
+                width: 320,
+                height: 400,
+                margin: {
+                  l: 50,
+                  r: 30,
+                  b: 60,
+                  t: 68,
+                  pad: 1
+                },
                 title: {text: "Weather Forecast " + "<br>Lat: " + w.toString().slice(0,6) + ", Lon: " + v.toString().slice(0,8) , x:0.05},
-                titlefont: { color: "#444444", size: 13 },
+                titlefont: { color: "#444444", size: 12 },
                 showlegend: !1,
                 yaxis5: { domain: [0.80, 0.98], title: { text: "Temp<br>(C)", font: {size: labelsize, color: "d62728" } }, tickfont: {size: ticksize, color: "d62728"}},
                 yaxis4: { domain: [0.60, 0.78],  title: { text: "RH<br>(%)", font: {size: labelsize, color: "1f77b4" } }, tickfont: {size: ticksize, color: "1f77b4"}},
                 yaxis3: { domain: [0.40, 0.58], title: { text: "WSP<br>(km/hr)", font: {size: labelsize, color: "202020" } } , tickfont: {size: ticksize, color: "202020"}},
                 yaxis2: { domain: [0.20, 0.38], title: { text: "WDIR<br>(deg)", font: {size: labelsize, color: "7f7f7f" } }, tickfont: {size: ticksize, color: "7f7f7f"}, range: [0, 360], tickvals:[0, 90, 180, 270, 360]},
                 yaxis1: { domain: [0, 0.18], title: { text: "Precip<br>(mm)", font: {size: labelsize, color: "2ca02c" } }, tickfont: {size: ticksize, color: "2ca02c"}},
-                xaxis: { title: "Date (UTC)", font: { size: labelsize, color: "#444444" }},
-                };
+                // xaxis: { title: "Date (UTC)", titlefont: { size: 10, color: "444444" }, tickfont: {size: ticksize, color: "444444"}}
+                xaxis: { tickfont: {size: ticksizex, color: "444444"}},
+            };
+            }else{
+
+                S = {
+                    autosize: false,
+                    width: 600,
+                    height: 450,
+                    margin: {
+                      l: 50,
+                      r: 30,
+                      b: 80,
+                      t: 100,
+                      pad: 2
+                    },
+                    title: {text: "Weather Forecast " + "<br>Lat: " + w.toString().slice(0,6) + ", Lon: " + v.toString().slice(0,8) , x:0.05},
+                    titlefont: { color: "#444444", size: 14 },
+                    showlegend: !1,
+                    yaxis5: { domain: [0.80, 0.98], title: { text: "Temp<br>(C)", font: {size: labelsize, color: "d62728" } }, tickfont: {size: ticksize, color: "d62728"}},
+                    yaxis4: { domain: [0.60, 0.78],  title: { text: "RH<br>(%)", font: {size: labelsize, color: "1f77b4" } }, tickfont: {size: ticksize, color: "1f77b4"}},
+                    yaxis3: { domain: [0.40, 0.58], title: { text: "WSP<br>(km/hr)", font: {size: labelsize, color: "202020" } } , tickfont: {size: ticksize, color: "202020"}},
+                    yaxis2: { domain: [0.20, 0.38], title: { text: "WDIR<br>(deg)", font: {size: labelsize, color: "7f7f7f" } }, tickfont: {size: ticksize, color: "7f7f7f"}, range: [0, 360], tickvals:[0, 90, 180, 270, 360]},
+                    yaxis1: { domain: [0, 0.18], title: { text: "Precip<br>(mm)", font: {size: labelsize, color: "2ca02c" } }, tickfont: {size: ticksize, color: "2ca02c"}},
+                    // xaxis: { title: "Date (UTC)", titlefont: { size: 12, color: "#444444" }},
+                    xaxis: { tickfont: {size: 11, color: "444444"}},
+                    };
+            }
                 Plotly.newPlot(C,  N, S);
                 });
+
             }
 };
 
@@ -385,6 +549,8 @@ function makeplots(n) {
                 });
                 const u = new KDBush(s);
 
+
+
                 for (var tt = o.ZONE_d03, ee = o.XLAT_d03, ll = o.XLONG_d03, aa = [], rr = [], cc = [(cc = [ee.length, ee[0].length])[1], cc[0]], ii = 0; ii < ee.length; ii++) aa = aa.concat(ee[ii]);
                 for (ii = 0; ii < ll.length; ii++) rr = rr.concat(ll[ii]);
                 (aa = aa.map(Number)), (rr = rr.map(Number));
@@ -393,11 +559,22 @@ function makeplots(n) {
                 });
                 const d3_tree = new KDBush(d3);
 
-                (loaded_zones = ["he"]),
-                (loaded_zones_d3 = ["he"]),
-                    map.on("dblclick", function (o) {
+                (loaded_zones = ["he"]);
+                (loaded_zones_d3 = ["he"]);
+                if( /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ) {
+                    var activate = 'click'
+
+                }else{
+                    var activate = 'dblclick'
+                    console.log('desktop')
+
+                };
+                    map.on(activate, function (o) {
                         if (fwfmodellocation != undefined) {
                             fwfmodellocation.remove(map);
+                        };
+                        if (fwfclicklocation != undefined) {
+                            fwfclicklocation.remove(map);
                         };
                         fwfclicklocation.setLatLng(o.latlng).addTo(map);
                         var e = [parseFloat(o.latlng.lat.toFixed(4)), parseFloat(o.latlng.lng.toFixed(4))];
@@ -716,7 +893,7 @@ function makeplots(n) {
                                 var ww = nn.XLAT[hh];
                                 var vv = nn.XLONG[hh];
 
-                                console.log(zone_json_d3);
+                                // console.log(zone_json_d3);
                                 fwfmodellocation = new L.marker([ww,vv],{icon: redIcon, customId: zone_json_d3, customIdx: hh});
                                 fwfmodellocation.bindPopup(div2, {maxWidth: "auto", maxHeight: "auto"});
                                 fwfmodellocation.setZIndexOffset(1000);
@@ -798,3 +975,24 @@ window.onload = function () {
     // alert("Hello WFRT Team tester, please click on the map for point forecasts. Youll's see a red icon where you clicked. Click that red icon for a popup Meteogram. \n \n Also, please test the weather station layer. Look under the drop-down menu in the upper right to active the Weather Station layer. Each WxStation has a popup plot bound to it with past observations and model forecasts. \n \n Thank you :)");
 
 };
+
+
+// $(function() {
+//     $( "#myTextField" ).datepicker({
+//         onClose: function(){
+//             validate($(this).val());
+//         }
+//     });
+
+//     $("#myTextButton").click(function(){
+//         alert("You have selected :" + $( "#myTextField" ).val());
+//     });
+
+//     function validate(dateText){
+//         try {
+//             alert("You selected is : "+ $.datepicker.parseDate('mm/dd/yy',dateText));
+//             } catch (e) {
+//             alert("invalid date");
+//             };
+//     }
+//     });

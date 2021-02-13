@@ -1,3 +1,18 @@
+var ffmc_topo_file = 'data/map/ffmc-merge-2020011106.josn';
+var dmc_topo_file = 'data/map/dmc-merge-20200111.json';
+var dc_topo_file = 'data/map/dc-merge-20200111.json';
+var isi_topo_file = 'data/map/isi-merge-2020011106.json';
+var bui_topo_file = 'data/map/bui-merge-20200111.json';
+var fwi_topo_file = 'data/map/fwi-merge-2020011106.json';
+var wsp_topo_file = 'data/map/ws-merge-2020011106.json';
+var temp_topo_file = 'data/map/temp-merge-2020011106.json';
+var rh_topo_file = 'data/map/rh-merge-2020011106.json';
+var qpf_topo_file = 'data/map/precip-merge-2020011106.json';
+var qpf_3h_topo_file = 'data/map/precip_3h-merge-2020011106.json';
+var snw_topo_file = 'data/map/snw-merge-2020011106.json';
+
+
+
 var geo_json_ffmc = L.layerGroup();
 var geo_json_dmc = L.layerGroup();
 var geo_json_dc = L.layerGroup();

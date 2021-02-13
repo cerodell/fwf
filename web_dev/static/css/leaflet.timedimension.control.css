@@ -246,22 +246,6 @@ a.timecontrol-play.loading:before {
 .timecontrol-loop:before {
   content: "\e030";
 }
-@media (max-width: 767px) {
-  .leaflet-bar-timecontrol .timecontrol-date,
-  .leaflet-bar-timecontrol .timecontrol-slider {
-      clear: both;
-      float: none;
-      border-right: none;
-  }
-}
-.leaflet-touch .leaflet-bar-timecontrol .leaflet-control-timecontrol {
-  height: 30px;
-  line-height: 30px;
-}
-.leaflet-touch .timecontrol-slider .slider {
-  margin-top: 10px;
-}
-
 
 
 

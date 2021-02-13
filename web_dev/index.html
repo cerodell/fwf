@@ -2,8 +2,8 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta http-equiv="content-type" content="text/html; charset=UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <meta charset="utf-8">
+     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
     <title>Fire Weather Forecast</title>
     <link rel="stylesheet" href="static/css/leaflet.min.css" />
     <script src="static/js/leaflet-1.7.1.min.js"></script>
@@ -16,7 +16,7 @@
     <style>html, body {width: 100%;height: 100%;margin: 0;padding: 0;}</style>
     <!-- <style>#map {position:absolute;top:0;bottom:0;right:0;left:0;}</style> -->
     <style>#map_fwi{width:100.0%;height:100.0%;left:0.0%;top:0.0%}</style>
-
+    <style>@media (max-width: 850px) { body { padding: 0; margin: 0; } html, body, #map_fwi { height: 100%; width: 100vw; } }</style>
     <script src="static/js/d3-3.5.5.min.js"></script>
     <script src="/static/js/fwf-jquery-1.9.1.min.js"></script>
     <script src="/static/js/fwf-jquery-ui-1.10.3.custom.min.js"></script>
@@ -50,9 +50,10 @@
     <script src="/static/js/fwf-kdbush-0.0.1.min.js"></script>
     <script src="static/js/rbush.min.js"></script>
     <script src="static/js/moment.min.js"></script>
+    <script src="static/js/moment-timezone-with-data.js"></script>
     <script src="static/js/fwf-time-layer-group.js"></script>
     <script>
-        var timeInterval = "2021-02-11T06:00:00Z/2021-02-13T12:00:00Z"
+        var timeInterval = "2021-02-12T06:00:00Z/2021-02-14T12:00:00Z"
         var tinital = timeInterval.slice(0,20)
         var endtime = timeInterval.slice(21,)
         var now = new Date;
@@ -87,7 +88,7 @@
                     autoPlay: false,
                     playButton: false,
                     speedSlider: false,
-                    timeZones: ["UTC", "Local"],
+                    timeZones: ["Local", "UTC"],
                     playerOptions: {
                         transitionTime: 10,
                     },
@@ -121,7 +122,7 @@
                     autoPlay: false,
                     playButton: false,
                     speedSlider: false,
-                    timeZones: ["UTC", "Local"],
+                    timeZones: ["Local", "UTC"],
                     playerOptions: {
                         transitionTime: 10,
                     },
@@ -133,20 +134,7 @@
 
 
 
-        var json_fwf  = 'data/plot/fwf-gk-2021021106-d03.json';
-        var ffmc_topo_file = 'data/map/ffmc-merge-2021021106.josn';
-        var dmc_topo_file = 'data/map/dmc-merge-20210211.json';
-        var dc_topo_file = 'data/map/dc-merge-20210211.json';
-        var isi_topo_file = 'data/map/isi-merge-2021021106.json';
-        var bui_topo_file = 'data/map/bui-merge-20210211.json';
-        var fwi_topo_file = 'data/map/fwi-merge-2021021106.json';
-        var wsp_topo_file = 'data/map/ws-merge-2021021106.json';
-        var temp_topo_file = 'data/map/temp-merge-2021021106.json';
-        var rh_topo_file = 'data/map/rh-merge-2021021106.json';
-        var qpf_topo_file = 'data/map/precip-merge-2021021106.json';
-        var qpf_3h_topo_file = 'data/map/precip_3h-merge-2021021106.json';
-        var snw_topo_file = 'data/map/snw-merge-2021021106.json';
-
+        var json_fwf  = 'data/plot/fwf-gk-2021021206-d03.json';
         var wxstations = 'data/wx-2021021106.json';
     </script>
     <script src="/static/js/fwf-basemaps.min.js"></script>
