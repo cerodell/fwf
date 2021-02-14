@@ -51,7 +51,7 @@ stations_df_og = stations_df_og.drop(
     columns=["tmm", "ua", "the_geom", "h_bul", "s_bul", "hly", "syn"]
 )
 
-date_range = pd.date_range("2021-02-07", "2021-02-09")
+date_range = pd.date_range("2021-02-10", "2021-02-12")
 domains = ["d02", "d03"]
 
 # """######### get directory to yesterdays hourly/daily .zarr files.  #############"""

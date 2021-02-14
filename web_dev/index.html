@@ -53,12 +53,17 @@
     <script src="static/js/moment-timezone-with-data.js"></script>
     <script src="static/js/fwf-time-layer-group.js"></script>
     <script>
-        var timeInterval = "2021-02-12T06:00:00Z/2021-02-14T12:00:00Z"
-        var tinital = timeInterval.slice(0,20)
+        var timeInterval = "2021-02-13T06:00:00Z/2021-02-15T12:00:00Z"
+        let tinital = timeInterval.slice(0,20)
+        console.log(tinital);
         var endtime = timeInterval.slice(21,)
+        console.log(endtime);
+
         var now = new Date;
-        UTCTimeMap = formatMapDate(now, endtime, tinital);
-        UTCTimePlot = formatPlotDate(now, endtime, tinital);
+        let UTCTimeMap = formatMapDate(now, endtime, tinital);
+        console.log(UTCTimeMap);
+        let UTCTimePlot = formatPlotDate(now, endtime, tinital);
+        console.log(UTCTimePlot);
 
         if( /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ) {
         var map = L.map(
@@ -66,8 +71,8 @@
             {
                 center: [56.89589, -107.58885],
                 crs: L.CRS.EPSG3857,
-                zoomSnap: 0.25,
-                zoom: 3.5,
+                // zoomSnap: 0.25,
+                zoom: 3,
                 minZoom: 3,
                 maxZoom: 18,
                 maxBounds: [
@@ -100,8 +105,8 @@
             {
                 center: [56.89589, -107.58885],
                 crs: L.CRS.EPSG3857,
-                zoomSnap: 0.25,
-                zoom: 3.5,
+                // zoomSnap: 0.25,
+                zoom: 3,
                 minZoom: 3,
                 maxZoom: 18,
                 maxBounds: [
@@ -134,14 +139,14 @@
 
 
 
-        var json_fwf  = 'data/plot/fwf-gk-2021021206-d03.json';
-        var wxstations = 'data/wx-2021021106.json';
+        var json_fwf  = 'data/plot/fwf-gk-2021021306-d03.json';
+        var wxstations = 'data/wx-2021021306.json';
     </script>
-    <script src="/static/js/fwf-basemaps.min.js"></script>
+    <script src="static/js/fwf-basemaps.min.js"></script>
     <script src="static/js/fwf-wxstations-0.0.2.js"></script>
+    <script src="static/js/fwf-plotly-test.js"></script>
     <script src="static/js/fwf-layer-controler.js"></script>
     <script src="static/js/fwf-colors-manager.js"></script>
-    <script src="static/js/fwf-plotly-test.js"></script>
 
 
     <!-- Google analytics -->

@@ -30,7 +30,7 @@
   height: 48px;
   border-bottom: 1px solid transparent;
   padding: 12px 70px 11px;
-  transition-property: background, box-shadow;
+  transition-property: box-shadow;
   transition-duration: 0.3s;
 }
 .searchbox-shadow {

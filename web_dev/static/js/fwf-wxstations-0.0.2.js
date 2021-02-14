@@ -1,21 +1,11 @@
 var wx_station = L.layerGroup();
 
-
 const div = document.createElement("div");
 const div2 = div.cloneNode(true);
 
 div.className = "wx-plot";
-
-// const width =  '600px';
-// const height =  '450px';
-
-// div.style.width = width;
-// div.style.height = height;
 div.setAttribute("id", "wx_plot");
 
-
-// h3= document.createElement("h3");
-// div.appendChild(h3);
 var btn_fire = document.createElement("BUTTON");   // Create a <button> element
 btn_fire.setAttribute("id", "button");
 btn_fire.className = "btn_fire";
@@ -30,10 +20,6 @@ btn_wx.className = "btn_wx";
 btn_wx.innerHTML = "Weather";                   // Insert text
 div.appendChild(btn_wx);
 
-
-// const div2 = div.cloneNode(true);
-// const div2 = document.createElement("div");
-// document.body.appendChild(div2);
 
 
 
@@ -95,6 +81,8 @@ function circleClick(e) {
             return response.json();
         }).then(function(json){
 
+                console.log(json);
+
                 var wmo = JSON.parse(json.wmo);
                 var index = wmo.indexOf(parseInt(target_wmo));
 
@@ -128,13 +116,6 @@ function circleClick(e) {
                     dict[key] = array[index];
                 };
 
-                // var id = json['id']
-                // var id = id.split(',');
-                // dict['id'] = id[index];
-
-                // var name = json['name']
-                // var name = name.split(',');
-                // dict['name'] = name[index];
 
                 keys = ['time_obs','time_fch', 'time_fcd']
                 for (var key of keys) {
@@ -142,6 +123,18 @@ function circleClick(e) {
                     dict[key] = array;
                 };
                 console.log(dict['precip_fc']);
+
+
+                Array.prototype.insert = function ( index, item ) {
+                    this.splice( index, 0, item );
+                };
+
+                dict['time_fcd'].insert(0, dict['time_obs'][0]);
+                dict['dmc_fc'].insert(0, dict['dmc_pfc'][0]);
+                dict['dc_fc'].insert(0, dict['dc_pfc'][0]);
+                dict['bui_fc'].insert(0, dict['bui_pfc'][0]);
+                dict['fwi_fc'].insert(0, dict['fwi_pfc'][0]);
+
 
 
                 C = document.getElementById('wx_plot');

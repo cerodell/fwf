@@ -40,8 +40,8 @@ make_dir = Path("/bluesky/fireweather/fwf/web_dev/data/")
 make_dir.mkdir(parents=True, exist_ok=True)
 
 
-date = pd.Timestamp("today")
-# date = pd.Timestamp(2021, 2, 9)
+# date = pd.Timestamp("today")
+date = pd.Timestamp(2021, 2, 13)
 forecast_date = date.strftime("%Y%m%d06")
 obs_date = (date - np.timedelta64(1, "D")).strftime("%Y%m%d")
 yesterday_forecast_date = obs_date + "06"
@@ -82,13 +82,82 @@ for coords in coords_list:
 
 
 ## Open datasets of both domains
-hourly_file_dir = str(data_dir) + str(f"/test/fwf-hourly-d02-{forecast_date}06.zarr")
+hourly_file_dir = str(fwf_zarr_dir) + str(f"/fwf-hourly-d02-{forecast_date}.zarr")
 hourly_d2_ds = xr.open_zarr(hourly_file_dir)
 daily_d2_ds = daily_merge_ds(forecast_date, "d02")
 
-hourly_file_dir = str(data_dir) + str(f"/test/fwf-hourly-d03-{forecast_date}06.zarr")
+hourly_file_dir = str(fwf_zarr_dir) + str(f"/fwf-hourly-d03-{forecast_date}.zarr")
 hourly_d3_ds = xr.open_zarr(hourly_file_dir)
 daily_d3_ds = daily_merge_ds(forecast_date, "d03")
+
+
+domain = "d02"
+
+hourly_file_dir = str(fwf_zarr_dir) + str(
+    f"/fwf-hourly-{domain}-{yesterday_forecast_date}.zarr"
+)
+### Open datasets
+my_dir = Path(hourly_file_dir)
+if my_dir.is_dir():
+    hourly_ds = xr.open_zarr(hourly_file_dir)
+
+    ### Get timezone mask
+    tzone_ds = xr.open_dataset(str(tzone_dir) + f"/tzone_wrf_{domain}.nc")
+    tzone = tzone_ds.Zone.values
+    shape = tzone.shape
+    ## create I, J for quick indexing
+    I, J = np.ogrid[: shape[0], : shape[1]]
+    time_array = hourly_ds.Time.values
+    try:
+        int_time = int(pd.Timestamp(time_array[0]).hour)
+    except:
+        int_time = int(pd.Timestamp(time_array).hour)
+
+    length = len(time_array) + 1
+    num_days = [i - 12 for i in range(1, length) if i % 24 == 0]
+    index = [
+        i - int_time if 12 - int_time >= 0 else i + 24 - int_time for i in num_days
+    ]
+    # print(f"index of times {index} with initial time {int_time}Z")
+
+    # try:
+    # except:
+    #     pass
+
+    ## loop every 24 hours
+    # var_list  = list(hourly_ds)
+    # remove = ["DSR", "F", "R", "S"]
+    # hourly_list = list(set(var_list) - set(remove))
+
+    # time+array = hourly_ds.Time.values.
+    # time_grid = []
+    # for i in range(len(hourly_ds.Time.values)):
+    #     time_layer = np.full_like(hourly_ds.XLAT.values, hourly_ds.Time.values[i])
+    #     time_grid.append(time_layer)
+
+    # time_grid = np.stack(time_grid)
+    mean_da = []
+    for var in ["F", "H", "R", "T", "W", "WD", "r_o"]:
+        # print(np.array(hourly_ds.Time[i]))
+        var_array = hourly_ds[var].values
+        noon = var_array[(index[0] + tzone), I, J]
+        time_hours = hourly_ds.Time.values[index[0]]
+        var_da = xr.DataArray(
+            noon,
+            name=var,
+            dims=("south_north", "west_east"),
+            # coords=hourly_ds.isel(time=i).coords,
+        )
+        var_da["Time"] = time_hours
+        var_da.attrs = hourly_ds[var].attrs
+        mean_da.append(var_da)
+
+    mean_ds = xr.merge(mean_da)
+    # files_ds.append(mean_ds)
+
+    hourly_daily_ds = xr.combine_nested(files_ds, "time")
+    final_ds = xr.merge([daily_ds, hourly_daily_ds], compat="override")
+    final_ds.attrs = hourly_ds.attrs
 
 
 def wmo_locs(hourly_ds, daily_ds, obs_ds, domain):

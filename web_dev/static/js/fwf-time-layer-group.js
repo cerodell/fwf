@@ -11,9 +11,13 @@ function formatMapDate(date, endtime, starttime) {
         day = '0' + day;
     hour = 3.0*Math.floor(parseInt(hour)/3.0)
     hour = hour.toString()
+    if (hour.length < 2)
+        hour = '0' + hour;
     var UTCTimeMap = [year, month, day].join('-')
     UTCTimeMap = [UTCTimeMap,hour].join('T')
+    console.log(UTCTimeMap);
     UTCTimeMap = UTCTimeMap + ':00:00Z'
+    console.log('if');
     }else{
     UTCTimeMap = starttime
     }
@@ -31,6 +35,8 @@ function formatPlotDate(date, endtime, starttime) {
         month = '0' + month;
     if (day.length < 2)
         day = '0' + day;
+    if (hour.length < 2)
+        hour = '0' + hour;
     var UTCTimePlot = [year, month, day].join('-')
     UTCTimePlot = [UTCTimePlot,hour].join('T')
     UTCTimePlot = UTCTimePlot + ':00:00Z'

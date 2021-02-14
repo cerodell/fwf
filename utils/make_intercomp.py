@@ -16,10 +16,14 @@ from datetime import datetime, date, timedelta
 from context import data_dir, root_dir, tzone_dir, fwf_zarr_dir
 
 
-def daily_merge_ds(obs_date, domain):
+def daily_merge_ds(date_to_merge, domain):
 
-    hourly_file_dir = str(fwf_zarr_dir) + str(f"/fwf-hourly-{domain}-{obs_date}.zarr")
-    daily_file_dir = str(fwf_zarr_dir) + str(f"/fwf-daily-{domain}-{obs_date}.zarr")
+    hourly_file_dir = str(fwf_zarr_dir) + str(
+        f"/fwf-hourly-{domain}-{date_to_merge}.zarr"
+    )
+    daily_file_dir = str(fwf_zarr_dir) + str(
+        f"/fwf-daily-{domain}-{date_to_merge}.zarr"
+    )
     ### Open datasets
     my_dir = Path(hourly_file_dir)
     if my_dir.is_dir():
