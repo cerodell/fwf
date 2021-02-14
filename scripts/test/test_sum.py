@@ -1,5 +1,5 @@
 import context
-from utils.test.sumdef import summe
+from utils.test_sum.sumdef import summe
 
 
 ## Test of the repo fwf
