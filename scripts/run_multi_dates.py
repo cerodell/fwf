@@ -28,7 +28,7 @@ __email__ = "crodell@eoas.ubc.ca"
 warnings.filterwarnings("ignore", message="invalid value encountered in power")
 warnings.filterwarnings("ignore", message="invalid value encountered in log")
 
-date_range = pd.date_range("2021-02-09", "2021-02-09")
+date_range = pd.date_range("2021-02-14", "2021-02-14")
 
 # """######### get directory to yesterdays hourly/daily .zarr files.  #############"""
 for date in date_range:
@@ -39,7 +39,8 @@ for date in date_range:
         print(f"start of domain {domain}: ", str(domain_startTime))
         # """######### get directory to todays wrf_out .nc files.  #############"""
 
-        wrf_file_dir = str(wrf_dir) + f"/{forecast_date}/"
+        # wrf_file_dir = str(wrf_dir) + f"/{forecast_date}/"
+        wrf_file_dir = str(wrf_dir) + f"/wrfout-{domain}-{forecast_date[:-2]}06.zarr"
         print(wrf_file_dir)
 
         # """######### Open wrf_out.nc and write  new hourly/daily .zarr files #############"""

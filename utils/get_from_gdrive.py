@@ -19,10 +19,10 @@ save_dir = f"/Volumes/cer/fireweather/data/{wrf_model}/"
 
 
 # date_range = pd.date_range('2018-05-20', '2018-05-31')
-date_range = pd.date_range("2021-02-03", "2021-02-07")
+date_range = pd.date_range("2021-02-14", "2021-02-14")
 
 
-for domain in ["d02", "d03"]:
+for domain in ["d03"]:
     for date in date_range:
         startTime = datetime.now()
         zarr_date = date.strftime("%Y%m%d06")
@@ -30,5 +30,5 @@ for domain in ["d02", "d03"]:
         print(zarr_file)
         zarr_file_dir = str(zarr_dir) + zarr_file
         ds = xr.open_zarr(zarr_file_dir)
-        ds.to_zarr(save_dir + zarr_file)
+        ds.to_zarr(save_dir + zarr_file, mode="w")
         print("File Run Time: ", datetime.now() - startTime)

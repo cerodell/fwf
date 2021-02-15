@@ -158,8 +158,13 @@ class FWF:
             m_o = xr.DataArray(m_o, name="m_o", dims=("south_north", "west_east"))
 
             ### Add dataarrays to hourly dataset
-            self.hourly_ds["F"] = F
-            self.hourly_ds["m_o"] = m_o
+            # self.hourly_ds["F"] = F
+            # self.hourly_ds["m_o"] = m_o
+
+            F = F.to_dataset(name="F")
+            F["m_o"] = m_o
+
+            self.F_ds = F
 
             # """ ####################   Duff Moisture Code (DMC)    ##################### """
             previous_time = np.array(wrf_ds.Time.dt.strftime("%Y-%m-%dT%H"))
@@ -185,7 +190,8 @@ class FWF:
             P = xr.DataArray(P_o, name="P", dims=("south_north", "west_east"))
 
             ### Add dataarrays to daily dataset
-            self.daily_ds["P"] = P
+            # self.daily_ds["P"] = P
+            self.P = P
 
             # """ #####################     Drought Code (DC)       ########################### """
             print(f"{initialize}: Initialize DC on date {previous_time}, with 15s")
@@ -194,7 +200,8 @@ class FWF:
             D_o_full = np.full(shape, D_o, dtype=float)
 
             D = xr.DataArray(D_o_full, name="D", dims=("south_north", "west_east"))
-            self.daily_ds["D"] = D
+            # self.daily_ds["D"] = D
+            self.D = D
 
         elif initialize == False:
 
@@ -274,10 +281,15 @@ class FWF:
             m_o = xr.DataArray(m_o, name="m_o", dims=("south_north", "west_east"))
 
             ### Add dataarrays to hourly dataset
-            self.hourly_ds["F"] = F
-            self.hourly_ds["m_o"] = m_o
+            # self.hourly_ds["F"] = F
+            # self.hourly_ds["m_o"] = m_o
 
-            # """ ####################   Duff Moisture Code (DCM)    ##################### """
+            F = F.to_dataset(name="F")
+            F["m_o"] = m_o
+
+            self.F_ds = F
+
+            # """ ####################   Daily Dataset    ##################### """
             ### Open previous days daily_ds
             previous_daily_ds = xr.open_zarr(daily_file_dir)
             previous_time = np.array(previous_daily_ds.Time.dt.strftime("%Y-%m-%dT%H"))
@@ -316,11 +328,13 @@ class FWF:
             P = np.array(previous_daily_ds.P[index])
             r_o_previous = np.array(previous_daily_ds.r_o_tomorrow[0])
 
+            # """ ####################   Duff Moisture Code (DCM)    ##################### """
             ### Create dataarrays for P
             P = xr.DataArray(P, name="P", dims=("south_north", "west_east"))
 
             ### Add dataarrays to daily dataset
-            self.daily_ds["P"] = P
+            # self.daily_ds["P"] = P
+            self.P = P
             ### Add carry over rain to first time step
             self.daily_ds["r_o"][0] = self.daily_ds["r_o"][0] + np.array(r_o_previous)
 
@@ -333,7 +347,8 @@ class FWF:
             D = xr.DataArray(D, name="D", dims=("south_north", "west_east"))
 
             ### Add dataarrays to daily dataset
-            self.daily_ds["D"] = D
+            # self.daily_ds["D"] = D
+            self.D = D
 
         else:
             raise ValueError(
@@ -396,8 +411,8 @@ class FWF:
             hourly_ds.T,
             hourly_ds.H,
             hourly_ds.r_o_hourly,
-            hourly_ds.m_o,
-            hourly_ds.F,
+            self.F_ds.m_o,
+            self.F_ds.F,
         )
 
         # e_full, zero_full = self.e_full, self.zero_full
@@ -556,11 +571,13 @@ class FWF:
         # m_o = (205.2 * (101 - F)) / (82.9 + F)  ## Van 1977
         m_o = (147.27723 * (101 - F)) / (59.5 + F)  ## Van 1985
 
-        self.hourly_ds["F"] = F
-        self.hourly_ds["m_o"] = m_o
+        F = F.to_dataset(name="F")
+        F["m_o"] = m_o
+
+        self.F_ds = F
 
         ### Return dataarray
-        return hourly_ds
+        return F
 
     """########################################################################"""
     """ ########################## Duff Moisture Code #########################"""
@@ -620,7 +637,7 @@ class FWF:
             daily_ds.T,
             daily_ds.H,
             daily_ds.r_o,
-            daily_ds.P,
+            self.P,
             self.L_e,
             daily_ds.SNOWC,
         )
@@ -749,10 +766,9 @@ class FWF:
         P = xr.where(SNOWC < self.snowfract, P_i, self.P_initial)
         P = xr.where(P > 0.0, P, 0.1)
 
-        self.daily_ds["P"] = P
+        self.P = P
 
-        ### Return dataarray
-        return daily_ds
+        return P
 
     """########################################################################"""
     """ ############################ Drought Code #############################"""
@@ -810,7 +826,7 @@ class FWF:
             daily_ds.T,
             daily_ds.H,
             daily_ds.r_o,
-            daily_ds.D,
+            self.D,
             self.L_f,
             daily_ds.SNOWC,
         )
@@ -876,9 +892,9 @@ class FWF:
         ### D can not go negative, if D does go negative raise to zero
         D = xr.where(D > 0.0, D, 0.1)
 
-        self.daily_ds["D"] = D
+        self.D = D
 
-        return daily_ds
+        return D
 
     """########################################################################"""
     """ #################### Initial Spread Index #############################"""
@@ -1250,6 +1266,7 @@ class FWF:
         print("Hourly loop done")
         # hourly_ds = self.combine_by_time(hourly_list)
         hourly_ds = xr.combine_nested(hourly_list, "time")
+        hourly_ds = xr.merge([hourly_ds, self.hourly_ds])
 
         ISI = self.solve_isi(hourly_ds)
         hourly_ds["R"] = ISI
@@ -1280,14 +1297,15 @@ class FWF:
         daily_list = []
         print("Start Daily loop length: ", length)
         for i in range(length):
-            DMC = self.solve_dmc(self.daily_ds.isel(time=i))
-            DC = self.solve_dc(self.daily_ds.isel(time=i))
-            DMC["D"] = DC["D"]
-            daily_list.append(DMC)
+            P = self.solve_dmc(self.daily_ds.isel(time=i))
+            D = self.solve_dc(self.daily_ds.isel(time=i))
+            ds = P.to_dataset(name="P")
+            ds["D"] = D
+            daily_list.append(ds)
 
         print("Daily loop done")
-        # daily_ds = self.combine_by_time(daily_list)
         daily_ds = xr.combine_nested(daily_list, "time")
+        daily_ds = xr.merge([daily_ds, self.daily_ds])
         U = self.solve_bui(daily_ds)
         daily_ds["U"] = U
         self.U = U
