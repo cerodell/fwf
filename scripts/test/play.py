@@ -33,13 +33,13 @@ for var in list(ds):
     print(f"min of {var}: {float(ds[var].min(skipna= True))}")
     print(f"mean of {var}: {float(ds[var].mean(skipna= True))}")
 
-var = "D"
-for i in range(len(ds.Time)):
-    print(str(ds.Time.values[i]))
+var = "DC_day1"
+for i in range(len(ds.time)):
+    print(str(ds.time.values[i]))
     print(float(ds.isel(time=i)[var].max(skipna=True)))
     print(float(ds.isel(time=i)[var].min(skipna=True)))
     print(float(ds.isel(time=i)[var].mean(skipna=True)))
 
-air1d = ds[var].isel(south_north=200, west_east=-1)
+air1d = ds[var].isel(wmo=200)
 
 air1d.plot()
