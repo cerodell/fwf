@@ -25,8 +25,8 @@ __author__ = "Christopher Rodell"
 __email__ = "crodell@eoas.ubc.ca"
 
 # ignore warnings by message
-# warnings.filterwarnings("ignore", message="invalid value encountered in power")
-# warnings.filterwarnings("ignore", message="invalid value encountered in log")
+warnings.filterwarnings("ignore", message="invalid value encountered in power")
+warnings.filterwarnings("ignore", message="invalid value encountered in log")
 
 
 # """######### get directory to yesterdays hourly/daily .zarr files.  #############"""

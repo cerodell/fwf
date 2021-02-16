@@ -24,31 +24,30 @@ div.appendChild(btn_wx);
 
 
 wx_station.onAdd = function(){
-fetch(wxstations).then(function(response){
+fetch(wx_keys).then(function(response){
     return response.json();
 }).then(function(json){
-        var wmo = JSON.parse(json.wmo);
+
+        var wmos = JSON.parse(json.wmo);
         var lats = JSON.parse(json.lats);
         var lons = JSON.parse(json.lons);
+        var elev = JSON.parse(json.elev);
         var ffmc_obs = JSON.parse(json.ffmc_obs);
         var temp_obs = JSON.parse(json.temp_obs);
-
+        var tz_correct = JSON.parse(json.tz_correct);
+        var name = json['name']
+        var name = name.split(',');
         for (index = 0; index < lats.length; ++index) {
         var colors = ['#ff6760', '#ffff73', '#63a75c']
-        if (temp_obs[temp_obs.length - 1][index] != -99 && ffmc_obs[temp_obs.length - 1][index] != -99) {
+        if (temp_obs[index] != -99 && ffmc_obs[index] != -99) {
             color = colors[2];
-        } else if (temp_obs[temp_obs.length - 1][index] != -99 && ffmc_obs[temp_obs.length - 1][index] == -99) {
+        } else if (temp_obs[index] != -99 && ffmc_obs[index] == -99) {
             color = colors[1];
         }else {
                 color = colors[0];
               }
 
-        var dict = {}
-        keys = ['elev', 'lats', 'lons','tz_correct', 'wmo']
-        for (var key of keys) {
-            var array = JSON.parse(json[key]);
-            dict[key] = array[index];
-        };
+
 
 
 
@@ -58,8 +57,12 @@ fetch(wxstations).then(function(response){
             color: color,
             fillColor: color,
             fillOpacity: 1,
-            customId: wmo[index].toString()
-
+            customId: wmos[index].toString(),
+            customTZ: Math.abs(tz_correct[index]).toString(),
+            customLAT: lats[index].toString(),
+            customLON: lons[index].toString(),
+            customEL: elev[index].toString(),
+            customNM: name[index].toString()
 
         // }).bindPopup(createPopupContent(dict)).on("click", circleClick));
         }).bindPopup(div, {maxWidth: "auto", maxHeight: "auto"}).on("click", circleClick));
@@ -72,16 +75,22 @@ fetch(wxstations).then(function(response){
 
 function circleClick(e) {
     var clickedCircle = e.target;
-    const target_wmo = clickedCircle.options.customId;
+    var target_wmo = clickedCircle.options.customId;
+    var tzone = clickedCircle.options.customTZ;
+    var lat = clickedCircle.options.customLAT;
+    var lon = clickedCircle.options.customLON;
+    var elev = clickedCircle.options.customEL;
+    var name = clickedCircle.options.customNM;
+    console.log(name);
     btn_fire.onclick = fwiplot;
     btn_wx.onclick = wxplot;
+    var target_json = wxstations.slice(0,13) + String(tzone) + wxstations.slice(14,);
     fwiplot();
     function fwiplot() {
-        fetch(wxstations).then(function(response){
+        fetch(target_json).then(function(response){
             return response.json();
         }).then(function(json){
 
-                console.log(json);
 
                 var wmo = JSON.parse(json.wmo);
                 var index = wmo.indexOf(parseInt(target_wmo));
@@ -111,6 +120,7 @@ function circleClick(e) {
                     dict[key] = array;
             };
                 keys = ['elev', 'lats', 'lons','tz_correct', 'wmo']
+                keys = ['wmo']
                 for (var key of keys) {
                     var array = JSON.parse(json[key]);
                     dict[key] = array[index];
@@ -122,23 +132,21 @@ function circleClick(e) {
                     var array = json[key];
                     dict[key] = array;
                 };
-                console.log(dict['precip_fc']);
 
 
                 Array.prototype.insert = function ( index, item ) {
                     this.splice( index, 0, item );
                 };
 
-                dict['time_fcd'].insert(0, dict['time_obs'][0]);
-                dict['dmc_fc'].insert(0, dict['dmc_pfc'][0]);
-                dict['dc_fc'].insert(0, dict['dc_pfc'][0]);
-                dict['bui_fc'].insert(0, dict['bui_pfc'][0]);
-                dict['fwi_fc'].insert(0, dict['fwi_pfc'][0]);
+                dict['time_fcd'].insert(0, dict['time_obs'][dict['time_obs'].length - 1]);
+                dict['dmc_fc'].insert(0, dict['dmc_pfc'][dict['dmc_pfc'].length - 1]);
+                dict['dc_fc'].insert(0, dict['dc_pfc'][dict['dc_pfc'].length - 1]);
+                dict['bui_fc'].insert(0, dict['bui_pfc'][dict['bui_pfc'].length - 1]);
+                dict['fwi_fc'].insert(0, dict['fwi_pfc'][dict['fwi_pfc'].length - 1]);
 
 
 
                 C = document.getElementById('wx_plot');
-                console.log(C);
                 hovsize = 10
                 N =
                 [(ffmc_obs = {x: dict['time_obs'], y: dict['ffmc_obs'], mode: 'lines', line: { color: "ff7f0e", dash: "dot" }, yaxis: "y6",  hoverlabel:{font:{size: hovsize, color: "#ffffff"}, bordercolor: "#ffffff"}, hovertemplate: "<b> FFMC Obs </b><br>" + "%{y:.2f} <br>" + "<extra></extra>" }),
@@ -172,7 +180,7 @@ function circleClick(e) {
                 ticksize = 9,
                 S = {
                     autosize: true,
-                    title: {text: "  WMO Station " + dict.wmo.toString() + " <br>Lat: " + dict.lats.toString().slice(0,6)+ ", Lon: " + dict.lons.toString().slice(0,8) + " <br>Elevation: " + dict.elev.toString().slice(0,8) + " m", x:0.05},
+                    title: {text: "  WMO Station " + dict.wmo.toString() + " <br>Lat: " + lat.toString().slice(0,6)+ ", Lon: " + lon.toString().slice(0,8) + " <br>Elevation: " + elev.toString().slice(0,8) + " m", x:0.05},
                     titlefont: { color: "#444444", size: 13 },
                     showlegend: !1,
                     yaxis6: {domain: [.8, .94], title: { text: "FFMC", font: { size: labelsize, color: "ff7f0e" } }, tickfont: {size: ticksize, color: "ff7f0e"}},
@@ -190,7 +198,7 @@ function circleClick(e) {
 
 
     function wxplot() {
-        fetch(wxstations).then(function(response){
+        fetch(target_json).then(function(response){
             return response.json();
         }).then(function(json){
                 var wmo = JSON.parse(json.wmo);
@@ -220,7 +228,8 @@ function circleClick(e) {
                     array = change99(array);
                     dict[key] = array;
             };
-                keys = ['elev', 'lats', 'lons','tz_correct', 'wmo']
+                // keys = ['elev', 'lats', 'lons','tz_correct', 'wmo']
+                keys = ['wmo']
                 for (var key of keys) {
                     var array = JSON.parse(json[key]);
                     dict[key] = array[index];
@@ -271,7 +280,7 @@ function circleClick(e) {
                 ticksize = 9,
                 S = {
                     autosize: true,
-                    title: {text: "  WMO Station " + dict.wmo.toString() + " <br>Lat: " + dict.lats.toString().slice(0,6)+ ", Lon: " + dict.lons.toString().slice(0,8) + " <br>Elevation: " + dict.elev.toString().slice(0,8) + " m", x:0.05},
+                    title: {text: "  WMO Station " + dict.wmo.toString() + " <br>Lat: " + lat.toString().slice(0,6)+ ", Lon: " + lon.toString().slice(0,8) + " <br>Elevation: " +  elev.toString().slice(0,8) + " m", x:0.05},
                     titlefont: { color: "#444444", size: 13 },
                     showlegend: !1,
                     yaxis5: { domain: [0.80, 0.98], title: { text: "Temp<br>(C)", font: {size: labelsize, color: "d62728" } }, tickfont: {size: ticksize, color: "d62728"}},

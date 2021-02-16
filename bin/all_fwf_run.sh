@@ -16,7 +16,7 @@ echo "$(date) ---> start ds2json for plotly line plts"
 echo "$(date) ---> ds2json done"
 
 
-echo "$(date) ---> convert geojson to topojson then mv and gzip all data to forecast folder"
+echo "$(date) ---> convert geojson to topojson then mv all data to forecast folder"
 ### Convert gejsons to topojsons and move to current forecast folder
 /bluesky/fireweather/fwf/bin/geo2topo_mv.sh
 echo "$(date) ---> convert/mv  done"
