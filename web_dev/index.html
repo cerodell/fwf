@@ -53,17 +53,13 @@
     <script src="static/js/moment-timezone-with-data.js"></script>
     <script src="static/js/fwf-time-layer-group.js"></script>
     <script>
-        var timeInterval = "2021-02-15T06:00:00Z/2021-02-17T12:00:00Z"
+        var timeInterval = "2021-02-16T06:00:00Z/2021-02-18T12:00:00Z"
         let tinital = timeInterval.slice(0,20)
-        console.log(tinital);
         var endtime = timeInterval.slice(21,)
-        console.log(endtime);
 
         var now = new Date;
         let UTCTimeMap = formatMapDate(now, endtime, tinital);
-        console.log(UTCTimeMap);
         let UTCTimePlot = formatPlotDate(now, endtime, tinital);
-        console.log(UTCTimePlot);
 
         if( /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ) {
         var map = L.map(
@@ -139,9 +135,9 @@
 
 
 
-        var json_fwf  = 'data/plot/fwf-gk-2021021506-d03.json';
-        var wxstations = 'data/wx-zone-X-2021021506.json';
-        var wx_keys = 'data/wx-keys-2021021506.json';
+        var json_fwf  = 'data/plot/fwf-gk-2021021606-d03.json';
+        var wxstations = 'data/wx-zone-X-20210215.json';
+        var wx_keys = 'data/wx-keys-20210215.json';
 
     </script>
     <script src="static/js/fwf-basemaps.min.js"></script>

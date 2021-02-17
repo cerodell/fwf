@@ -96,14 +96,14 @@ for var in ["F", "T"]:
 
 # values, counts = np.unique(obs_final.tz_correct.values, return_counts=True)
 
-with open(str(make_dir) + f"/wx-keys-{forecast_date}.json", "w") as f:
+with open(str(make_dir) + f"/wx-keys-{obs_date}.json", "w") as f:
     json.dump(
         dict_var, f, default=json_util.default, separators=(",", ":"), indent=None
     )
 print(
     f"{str(datetime.now())} ---> wrote json to:  "
     + str(make_dir)
-    + f"/wx-keys-{forecast_date}.json"
+    + f"/wx-keys-{obs_date}.json"
 )
 
 

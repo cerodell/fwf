@@ -10,8 +10,8 @@ var redIcon = new L.Icon({
 // let UTCTimeMap = UTCTimeMap
 let intimeutc = tinital
 // let UTCTimePlot = UTCTimePlot
-console.log('len')
-console.log(UTCTimeMap.length)
+// console.log('len')
+// console.log(UTCTimeMap.length)
 
 const buffer = 0.5
 var point_list = [];
@@ -49,8 +49,8 @@ const control = new searchboxControl({
             { type: "link", name: "Weather Research Forecast Team", href: "https://weather.eos.ubc.ca/cgi-bin/index.cgi", icon: "icon-cloudy" },
             { type: "link", name: "Contact Inforamtion", href: "https://firesmoke.ca/contact/", icon: "icon-phone" },
             { type: "link", name: "Documentation", href: "https://cerodell.github.io/fwf-docs/index.html", icon: "icon-git" },
-            { type: "text", id: "myTextField" },
-            { type: "button", name: "myTextButton", id: "myTextButton", value: "Select a date" },
+            // { type: "text", id: "myTextField" },
+            // { type: "button", name: "myTextButton", id: "myTextButton", value: "Select a date" },
 
         ]
     }
@@ -64,18 +64,18 @@ function makeplotly(e) {
     var json_dir = clickedCircle.options.customId;
     var index = clickedCircle.options.customIdx;
 
-    console.log(clickedCircle);
-    console.log(index);
+    // console.log(clickedCircle);
+    // console.log(index);
 
 
 
     var ll = clickedCircle._latlng
-    console.log(ll);
+    // console.log(ll);
     btn_fire2.onclick = fwiplot2;
     btn_wx2.onclick = wxplot2;
 
     var o = [ll.lat,ll.lng]
-    console.log(o);
+    // console.log(o);
     var C = document.getElementById('wx_plot2');
 
     fwiplot2();
@@ -87,14 +87,14 @@ function makeplotly(e) {
         var w = n.XLAT[h];
         var v = n.XLONG[h];
         var tz = n.TZONE[h];
-        console.log(n);
-        console.log(w);
-        console.log('TIME ZONE');
-        console.log(tz);
+        // console.log(n);
+        // console.log(w);
+        // console.log('TIME ZONE');
+        // console.log(tz);
 
-        console.log(Intl.DateTimeFormat().resolvedOptions().timeZone)
+        // console.log(Intl.DateTimeFormat().resolvedOptions().timeZone)
         var timezone = moment.tz(Intl.DateTimeFormat().resolvedOptions().timeZone).zoneAbbr();
-        console.log(timezone);
+        // console.log(timezone);
 
         //Create array of options to be added
         var array = [timezone ,"UTC","Geo Local"];
@@ -137,10 +137,10 @@ function makeplotly(e) {
         local_list2.push(res);
         };
         dict['geo_time'] = local_list2;
-        console.log('UTC TIME');
-        console.log(dict['time']);
-        console.log('GEO TIME');
-        console.log(local_list2);
+        // console.log('UTC TIME');
+        // console.log(dict['time']);
+        // console.log('GEO TIME');
+        // console.log(local_list2);
 
         local_list = [];
         arrayLength = dict['time'].length;
@@ -149,8 +149,8 @@ function makeplotly(e) {
             local_list.push(moment(a).format('YYYY-MM-DD HH:mm'));
         };
         dict['local_time'] = local_list;
-        console.log('LOCAL TIME');
-        console.log(local_list);
+        // console.log('LOCAL TIME');
+        // console.log(local_list);
 
         selectList.onchange = function (){
             var value = this.value
@@ -296,9 +296,9 @@ function makeplotly(e) {
             var v = n.XLONG[h];
             var tz = n.TZONE[h];
 
-            console.log(Intl.DateTimeFormat().resolvedOptions().timeZone)
+            // console.log(Intl.DateTimeFormat().resolvedOptions().timeZone)
             var timezone = moment.tz(Intl.DateTimeFormat().resolvedOptions().timeZone).zoneAbbr();
-            console.log(timezone);
+            // console.log(timezone);
 
             //Create array of options to be added
             var array = [timezone ,"UTC", "Geo Local"];
@@ -525,7 +525,7 @@ function makeplots(n) {
 
                 }else{
                     var activate = 'dblclick'
-                    console.log('desktop')
+                    // console.log('desktop')
 
                 };
                     map.on(activate, function (o) {
@@ -627,8 +627,8 @@ function makeplots(n) {
                                 fetch(zone_json_d3).then(function(response){
                                     return response.json();
                                 }).then(function(nn){
-                                    console.log(nn);
-                                    console.log(oo);
+                                    // console.log(nn);
+                                    // console.log(oo);
 
                                  var buff = 0.2
                                 for (var t = nn.XLAT, e = nn.XLONG, l = [], a = [], r = [(r = [t.length, t[0].length])[1], r[0]], c = 0; c < t.length; c++) l = l.concat(t[c]);
@@ -637,12 +637,12 @@ function makeplots(n) {
                                     return [nn, e[oo]];
                                 });
                                 var ss = new KDBush(i);
-                                console.log(ss);
+                                // console.log(ss);
 
                                 point_list.push(oo);
                                 file_list.push(nn);
                                 var uu = ss.range(oo[0] - buff, oo[1] - buff, oo[0] + buff, oo[1] + buff).map((nn) => i[nn]);
-                                console.log(uu);
+                                // console.log(uu);
 
                                 (ll_diff = []),
                                     (function (nn, oo) {
@@ -653,10 +653,10 @@ function makeplots(n) {
                                     })(uu, oo);
 
                                 var hh = ll_diff.indexOf(Math.min(...ll_diff));
-                                console.log(hh);
+                                // console.log(hh);
                                 var mm = ss.range(oo[0] - buff, oo[1] - buff, oo[0] + buff, oo[1] + buff);
                                 var hh = mm[hh];
-                                console.log(hh);
+                                // console.log(hh);
 
                                 var ww = nn.XLAT[hh];
                                 var vv = nn.XLONG[hh];
@@ -677,8 +677,8 @@ function makeplots(n) {
                             fetch(zone_json).then(function(response){
                                 return response.json();
                             }).then(function(n){
-                                console.log(n);
-                                console.log(o);
+                                // console.log(n);
+                                // console.log(o);
 
                              var buff = 0.2
                             for (var t = n.XLAT, e = n.XLONG, l = [], a = [], r = [(r = [t.length, t[0].length])[1], r[0]], c = 0; c < t.length; c++) l = l.concat(t[c]);
@@ -687,13 +687,13 @@ function makeplots(n) {
                                 return [n, e[o]];
                             });
                             var s = new KDBush(i);
-                            console.log(s);
+                            // console.log(s);
 
                             point_list.push(o);
                             file_list.push(n);
-                            console.log(o);
+                            // console.log(o);
                             var u = s.range(o[0] - buff, o[1] - buff, o[0] + buff, o[1] + buff).map((n) => i[n]);
-                            console.log(u);
+                            // console.log(u);
 
                             (ll_diff = []),
                                 (function (n, o) {
@@ -704,15 +704,15 @@ function makeplots(n) {
                                 })(u, o);
 
                             var h = ll_diff.indexOf(Math.min(...ll_diff));
-                            console.log(h);
+                            // console.log(h);
                             var m = s.range(o[0] - buff, o[1] - buff, o[0] + buff, o[1] + buff);
                             var h = m[h];
-                            console.log(h);
+                            // console.log(h);
 
                             var w = n.XLAT[h];
                             var v = n.XLONG[h];
 
-                            console.log(zone_json);
+                            // console.log(zone_json);
                             fwfmodellocation = new L.marker([w,v],{icon: redIcon, customId: zone_json, customIdx: h});
                             fwfmodellocation.bindPopup(div2, {maxWidth: "auto", maxHeight: "auto"});
                             fwfmodellocation.setZIndexOffset(1000);
@@ -818,8 +818,8 @@ function makeplots(n) {
                                 fetch(zone_json_d3).then(function(response){
                                     return response.json();
                                 }).then(function(nn){
-                                    console.log(nn);
-                                    console.log(oo);
+                                    // console.log(nn);
+                                    // console.log(oo);
 
                                  var buff = 0.2
                                 for (var t = nn.XLAT, e = nn.XLONG, l = [], a = [], r = [(r = [t.length, t[0].length])[1], r[0]], c = 0; c < t.length; c++) l = l.concat(t[c]);
@@ -828,12 +828,12 @@ function makeplots(n) {
                                     return [nn, e[oo]];
                                 });
                                 var ss = new KDBush(i);
-                                console.log(ss);
+                                // console.log(ss);
 
                                 point_list.push(oo);
                                 file_list.push(nn);
                                 var uu = ss.range(oo[0] - buff, oo[1] - buff, oo[0] + buff, oo[1] + buff).map((nn) => i[nn]);
-                                console.log(uu);
+                                // console.log(uu);
 
                                 (ll_diff = []),
                                     (function (nn, oo) {
@@ -844,10 +844,10 @@ function makeplots(n) {
                                     })(uu, oo);
 
                                 var hh = ll_diff.indexOf(Math.min(...ll_diff));
-                                console.log(hh);
+                                // console.log(hh);
                                 var mm = ss.range(oo[0] - buff, oo[1] - buff, oo[0] + buff, oo[1] + buff);
                                 var hh = mm[hh];
-                                console.log(hh);
+                                // console.log(hh);
 
                                 var ww = nn.XLAT[hh];
                                 var vv = nn.XLONG[hh];
@@ -878,13 +878,13 @@ function makeplots(n) {
                                 return [n, e[o]];
                             });
                             var s = new KDBush(i);
-                            console.log(s);
+                            // console.log(s);
 
                             point_list.push(o);
                             file_list.push(n);
-                            console.log(o);
+                            // console.log(o);
                             var u = s.range(o[0] - buff, o[1] - buff, o[0] + buff, o[1] + buff).map((n) => i[n]);
-                            console.log(u);
+                            // console.log(u);
 
                             (ll_diff = []),
                                 (function (n, o) {
@@ -895,15 +895,15 @@ function makeplots(n) {
                                 })(u, o);
 
                             var h = ll_diff.indexOf(Math.min(...ll_diff));
-                            console.log(h);
+                            // console.log(h);
                             var m = s.range(o[0] - buff, o[1] - buff, o[0] + buff, o[1] + buff);
                             var h = m[h];
-                            console.log(h);
+                            // console.log(h);
 
                             var w = n.XLAT[h];
                             var v = n.XLONG[h];
 
-                            console.log(zone_json);
+                            // console.log(zone_json);
                             fwfmodellocation = new L.marker([w,v],{icon: redIcon, customId: zone_json, customIdx: h});
                             fwfmodellocation.bindPopup(div2, {maxWidth: "auto", maxHeight: "auto"});
                             fwfmodellocation.setZIndexOffset(1000);

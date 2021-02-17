@@ -42,10 +42,12 @@ make_dir = Path("/bluesky/fireweather/fwf/web_dev/data/")
 make_dir.mkdir(parents=True, exist_ok=True)
 
 
-# date = pd.Timestamp("today")
-date = pd.Timestamp(2021, 2, 15)
+date = pd.Timestamp("today")
+# date = pd.Timestamp(2021, 2, 15)
 forecast_date = date.strftime("%Y%m%d06")
 obs_date = (date - np.timedelta64(1, "D")).strftime("%Y%m%d")
+obs_date_int = (date - np.timedelta64(14, "D")).strftime("%Y%m%d")
+
 yesterday_forecast_date = obs_date + "06"
 
 
@@ -67,6 +69,7 @@ obs_d2_ds = obs_d2_ds.isel(wmo=indices)
 ## combine the obs to  final obs xarray
 obs_ds = xr.concat([obs_d2_ds, obs_d3_ds], dim="wmo")
 
+obs_ds = obs_ds.sel(time=slice(obs_date_int, obs_date))
 
 ## Open todays datasets of both domains
 hourly_file_dir = str(fwf_zarr_dir) + str(f"/fwf-hourly-d02-{forecast_date}.zarr")
@@ -241,14 +244,14 @@ for ztu in unique:
         pfc_array = pfc_array.tolist()
         dict_var.update({var_name.lower() + "_pfc": str(pfc_array)})
 
-    with open(str(make_dir) + f"/wx-zone-{abs(ztu)}-{forecast_date}.json", "w") as f:
+    with open(str(make_dir) + f"/wx-zone-{abs(ztu)}-{obs_date}.json", "w") as f:
         json.dump(
             dict_var, f, default=json_util.default, separators=(",", ":"), indent=None
         )
     print(
         f"{str(datetime.now())} ---> wrote json to:  "
         + str(make_dir)
-        + f"/wx-zone-{abs(ztu)}-{forecast_date}.json"
+        + f"/wx-zone-{abs(ztu)}-{obs_date}.json"
     )
 
 

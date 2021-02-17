@@ -15,9 +15,9 @@ function formatMapDate(date, endtime, starttime) {
         hour = '0' + hour;
     var UTCTimeMap = [year, month, day].join('-')
     UTCTimeMap = [UTCTimeMap,hour].join('T')
-    console.log(UTCTimeMap);
+    // console.log(UTCTimeMap);
     UTCTimeMap = UTCTimeMap + ':00:00Z'
-    console.log('if');
+    // console.log('if');
     }else{
     UTCTimeMap = starttime
     }
@@ -181,7 +181,7 @@ L.TimeDimension.Layer.LayerGroup = L.TimeDimension.Layer.extend({
         }
 
         var url = this._getUrlFunction(this._thisFileDir, time);
-        console.log(url);
+        // console.log(url);
 
         var newLayer = L.layerGroup();
         var varibale = this._thisVar;

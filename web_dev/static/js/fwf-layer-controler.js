@@ -34,7 +34,7 @@ var ffmcTimeLayer = L.timeDimension.layer.layerGroup(geo_json_ffmc, {
 
 });
 ffmcTimeLayer.addTo(map);
-console.log(ffmcTimeLayer);
+// console.log(ffmcTimeLayer);
 
 var dmcTimeLayer = L.timeDimension.layer.layerGroup(geo_json_dmc, {
     getUrlFunction: getDailyForecast,
