@@ -3,7 +3,7 @@
 <html lang="en">
 <head>
     <meta charset="utf-8">
-     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0" />
     <title>Fire Weather Forecast</title>
     <link rel="stylesheet" href="static/css/leaflet.min.css" />
     <script src="static/js/leaflet-1.7.1.min.js"></script>
@@ -14,7 +14,6 @@
     <link rel="stylesheet" href="/static/css/fwf-leaflet.zoomhome-0.0.1.min.css"/>
     <link rel="stylesheet" href="/static/css/fwf-map-style-0.0.1.min.css"/>
     <style>html, body {width: 100%;height: 100%;margin: 0;padding: 0;}</style>
-    <!-- <style>#map {position:absolute;top:0;bottom:0;right:0;left:0;}</style> -->
     <style>#map_fwi{width:100.0%;height:100.0%;left:0.0%;top:0.0%}</style>
     <style>@media (max-width: 850px) { body { padding: 0; margin: 0; } html, body, #map_fwi { height: 100%; width: 100vw; } }</style>
     <script src="static/js/d3-3.5.5.min.js"></script>
@@ -27,8 +26,6 @@
     <script src="/static/js/fwf-L.Control.Layers.Tree-0.0.1.min.js"></script>
     <script src="static/js/fwf-leaflet.polygon.gradient.js"></script>
     <link rel="stylesheet" href="static/css/popup.css" />
-
-
 
 
 </head>
@@ -53,7 +50,7 @@
     <script src="static/js/moment-timezone-with-data.js"></script>
     <script src="static/js/fwf-time-layer-group.js"></script>
     <script>
-        var timeInterval = "2021-02-16T06:00:00Z/2021-02-18T12:00:00Z"
+        var timeInterval = "2021-02-17T06:00:00Z/2021-02-19T12:00:00Z"
         let tinital = timeInterval.slice(0,20)
         var endtime = timeInterval.slice(21,)
 
@@ -66,8 +63,8 @@
             "map_fwi",
             {
                 center: [56.89589, -107.58885],
-                crs: L.CRS.EPSG3857,
-                // zoomSnap: 0.25,
+                // crs: L.CRS.EPSG3857,
+                preferCanvas: true,
                 zoom: 3,
                 minZoom: 3,
                 maxZoom: 18,
@@ -76,7 +73,7 @@
                 [90,-360]
                 ],
                 zoomControl: true,
-                preferCanvas: false,
+                preferCanvas: true,
                 fullscreenControl: true,
                 timeDimension: true,
                 timeDimensionOptions: {
@@ -100,7 +97,8 @@
             "map_fwi",
             {
                 center: [56.89589, -107.58885],
-                crs: L.CRS.EPSG3857,
+                // crs: L.CRS.EPSG3857,
+                preferCanvas: true,
                 // zoomSnap: 0.25,
                 zoom: 3,
                 minZoom: 3,
@@ -135,9 +133,9 @@
 
 
 
-        var json_fwf  = 'data/plot/fwf-gk-2021021606-d03.json';
-        var wxstations = 'data/wx-zone-X-20210215.json';
-        var wx_keys = 'data/wx-keys-20210215.json';
+        var json_fwf  = 'data/plot/fwf-gk-2021021706-d03.json';
+        var wxstations = 'data/wx-zone-X-20210216.json';
+        var wx_keys = 'data/wx-keys-20210216.json';
 
     </script>
     <script src="static/js/fwf-basemaps.min.js"></script>

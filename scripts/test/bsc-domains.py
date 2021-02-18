@@ -25,34 +25,39 @@ from context import data_dir, root_dir, fwf_zarr_dir, wrf_dir
 startTime = datetime.now()
 
 domain = "d03"
-## Set path to data
-filein = str(data_dir) + "/domain/n_hem.csv"
+# ## Set path to data
+# filein = str(data_dir) + "/domain/n_hem.csv"
 
-## Read data
-df = pd.read_csv(filein)
+# ## Read data
+# df = pd.read_csv(filein)
 
-## Make 1D arrays of lat and lon
-lat = np.array(df["lat_degr"])
-lon = np.array(df["lon_degr"])
+# ## Make 1D arrays of lat and lon
+# lat = np.array(df["lat_degr"])
+# lon = np.array(df["lon_degr"])
 
 ### Open old WRF domain
-filein = str(wrf_dir) + f"/2021021100/wrfout_d01_2021-02-11_00:00:00"
-ds_wrf_old = xr.open_dataset(filein)
+filein = str(wrf_dir) + f"/2021021700/wrfout_d01_2021-02-17_00:00:00"
+wrf_d01 = xr.open_dataset(filein)
 
 ### Open new WRF domain
-filein = str(data_dir) + f"/wrf/wrfout_{domain}_2021-01-14_00:00:00"
-ds_wrf_new = xr.open_dataset(filein)
+filein = str(wrf_dir) + f"/2021021700/wrfout_d02_2021-02-17_00:00:00"
+wrf_d02 = xr.open_dataset(filein)
 
-### Open new hysplit domain
+### Open new WRF domain
+filein = str(wrf_dir) + f"/2021021700/wrfout_d03_2021-02-17_00:00:00"
+wrf_d03 = xr.open_dataset(filein)
+
+# ### Open new hysplit domain
 filein = str(data_dir) + "/domain/dispersion.nc"
 ds_hysplit = xr.open_dataset(filein)
 
 
 Plot_Title = "Model Domains in Mercator Projection"
-save_file = "model-domains"
+save_file = "/images/wrf4-hysplit-model-domains.png"
+save_dir = str(data_dir) + save_file
 # fig, ax = plt.subplots(figsize=[12, 8])
-canada_east, canada_west = -60, -138
-canada_north, canada_south = 62, 38
+canada_east, canada_west = -20, -180
+canada_north, canada_south = 90, 20
 
 states_provinces = cfeature.NaturalEarthFeature(
     category="cultural",
@@ -61,9 +66,10 @@ states_provinces = cfeature.NaturalEarthFeature(
     facecolor="none",
 )
 
+
 fig = plt.figure(figsize=[16, 8])
-ax = fig.add_subplot(1, 1, 1, projection=ccrs.PlateCarree())
-ax.set_extent([canada_west, canada_east, canada_south, canada_north])
+ax = fig.add_subplot(1, 1, 1, projection=ccrs.PlateCarree(central_longitude=0))
+
 
 ax.gridlines()
 ax.add_feature(cfeature.LAND, zorder=1)
@@ -75,33 +81,42 @@ ax.add_feature(states_provinces, edgecolor="gray", zorder=2)
 ax.set_xlabel("Longitude", fontsize=18)
 ax.set_ylabel("Latitude", fontsize=18)
 
+yticks = list(np.arange(10, 100, 10))
+xticks = list(np.arange(10, 180, 10))
 
+yticks[-1] = 89
 ax.set_xticks(list(np.arange(-180, -10, 10)), crs=ccrs.PlateCarree())
-ax.set_yticks(list(np.arange(20, 90, 10)), crs=ccrs.PlateCarree())
+ax.set_yticks(list(np.arange(10, 90, 10)), crs=ccrs.PlateCarree())
+ax.yaxis.tick_right()
+ax.yaxis.set_label_position("right")
 
+ax.tick_params(axis="both", which="major", labelsize=14)
+ax.tick_params(axis="both", which="minor", labelsize=14)
 
 ax.set_title(Plot_Title, fontsize=20, weight="bold")
 fig.subplots_adjust(hspace=0.8)
-lats, lons = np.array(ds_wrf_old.XLAT), np.array(ds_wrf_old.XLONG)
+lats, lons = np.array(wrf_d01.XLAT), np.array(wrf_d01.XLONG)
 lats, lons = lats[0], lons[0]
+lons = np.where(lons > -179, lons, np.nan)
+# lons += 180
 
-
-ax.plot(lons[0], lats[0], color="blue", linewidth=2, zorder=8, alpha=1)
-ax.plot(lons[-1].T, lats[-1].T, color="blue", linewidth=2, zorder=8, alpha=1)
-ax.plot(lons[:, 0], lats[:, 0], color="blue", linewidth=2, zorder=8, alpha=1)
+ax.plot(lons[0], lats[0], color="green", linewidth=2, zorder=8, alpha=1)
+ax.plot(lons[-1].T, lats[-1].T, color="green", linewidth=2, zorder=8, alpha=1)
+ax.plot(lons[:, 0], lats[:, 0], color="green", linewidth=2, zorder=8, alpha=1)
 ax.plot(
     lons[:, -1].T,
     lats[:, -1].T,
-    color="blue",
+    color="green",
     linewidth=2,
     zorder=8,
     alpha=1,
-    label="Current 4 km WRF",
+    label="36 km WRF Domain",
 )
 
-lats, lons = np.array(ds_wrf_new.XLAT), np.array(ds_wrf_new.XLONG)
+lats, lons = np.array(wrf_d02.XLAT), np.array(wrf_d02.XLONG)
 lats, lons = lats[0], lons[0]
-lons = np.where(lons < 179, lons, np.nan)
+# lons = np.where(lons < 179, lons, np.nan)
+# lons += 180
 
 ax.plot(lons[0], lats[0], color="red", linewidth=2, zorder=8, alpha=1)
 ax.plot(lons[-1].T, lats[-1].T, color="red", linewidth=2, zorder=8, alpha=1)
@@ -113,7 +128,25 @@ ax.plot(
     linewidth=2,
     zorder=8,
     alpha=1,
-    label="New 4 km WRF",
+    label="12 km WRF Domain",
+)
+
+lats, lons = np.array(wrf_d03.XLAT), np.array(wrf_d03.XLONG)
+lats, lons = lats[0], lons[0]
+# lons = np.where(lons < -179, lons, np.nan)
+# lons += 180
+
+ax.plot(lons[0], lats[0], color="blue", linewidth=2, zorder=8, alpha=1)
+ax.plot(lons[-1].T, lats[-1].T, color="blue", linewidth=2, zorder=8, alpha=1)
+ax.plot(lons[:, 0], lats[:, 0], color="blue", linewidth=2, zorder=8, alpha=1)
+ax.plot(
+    lons[:, -1].T,
+    lats[:, -1].T,
+    color="blue",
+    linewidth=2,
+    zorder=8,
+    alpha=1,
+    label="4 km WRF Domain",
 )
 
 
@@ -122,8 +155,8 @@ nrows, ncols = ds_hysplit.NROWS, ds_hysplit.NCOLS
 xcell, ycell = ds_hysplit.XCELL, ds_hysplit.YCELL
 lat_f = (nrows * ycell) + lat_i
 lon_f = (ncols * xcell) + lon_i
-lats = np.arange(lat_i, lat_f + ycell, ycell)
-lons = np.arange(lon_i, lon_f + xcell, xcell)
+lats = np.arange(32, 70.1 + ycell, ycell)
+lons = np.arange(-160, -52.4 + xcell, xcell)
 
 lons, lats = np.meshgrid(lons, lats)
 
@@ -138,24 +171,22 @@ ax.plot(
     linewidth=2,
     zorder=8,
     alpha=1,
-    label="Hysplit",
+    label="Hysplit Domain",
 )
 
-# ax.plot(lon, lat)
-ax.set_xlabel("Lon")
-ax.set_ylabel("Lat")
 
-# ax.set_xlim([-190, -30])
-# ax.set_ylim([25, 85])
+ax.set_xlim([-190, -30])
+ax.set_ylim([20, 90])
 
 ax.legend(
     loc="upper center",
-    bbox_to_anchor=(0.5, 1.01),
-    ncol=3,
+    bbox_to_anchor=(0.5, 1.0),
+    ncol=4,
     fancybox=True,
     shadow=True,
 )
 
 plt.tight_layout()
 
-# fig.savefig(f"/Users/rodell/Desktop/{domain}-" + save_file + ".png", dpi=240)
+
+fig.savefig(save_dir, dpi=240)

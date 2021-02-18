@@ -7,6 +7,12 @@ var redIcon = new L.Icon({
     shadowSize: [41, 41]
 });
 
+// let UTCTimeMap = UTCTimeMap
+let intimeutc = tinital
+// let UTCTimePlot = UTCTimePlot
+// console.log('len')
+// console.log(UTCTimeMap.length)
+
 const buffer = 0.5
 var point_list = [];
 var file_list = [];
@@ -29,41 +35,47 @@ btn_wx2.className = "btn_wx2";
 btn_wx2.innerHTML = "Weather";                   // Insert text
 div2.appendChild(btn_wx2);
 
-
 let fwfclicklocation;
-fwfclicklocation = new L.marker().bindPopup("<b>Hello!</b><br />The blue icon is where you clicked or searched on the map. <br /> <br />The red icon is the closest model grid point to where you clicked or searched on the map. <br />  <br /> Click the red icon for a point forecast");
+fwfclicklocation = new L.marker();
+
+
 
 var searchboxControl=createSearchboxControl();
-                        const control = new searchboxControl({
-                            sidebarTitleText: 'Information',
-                            sidebarMenuItems: {
-                                Items: [
-                                    { type: "link", name: "Smoke Forecasts", href: "https://firesmoke.ca/", icon: "icon-fire" },
-                                    { type: "link", name: "Weather Research Forecast Team", href: "https://weather.eos.ubc.ca/cgi-bin/index.cgi", icon: "icon-cloudy" },
-                                    { type: "link", name: "Contact Inforamtion", href: "https://firesmoke.ca/contact/", icon: "icon-phone" },
-                                    { type: "link", name: "Documentation", href: "https://cerodell.github.io/fwf-docs/index.html", icon: "icon-git" },
+const control = new searchboxControl({
+    sidebarTitleText: 'Information',
+    sidebarMenuItems: {
+        Items: [
+            { type: "link", name: "Smoke Forecasts", href: "https://firesmoke.ca/", icon: "icon-fire" },
+            { type: "link", name: "Weather Research Forecast Team", href: "https://weather.eos.ubc.ca/cgi-bin/index.cgi", icon: "icon-cloudy" },
+            { type: "link", name: "Contact Inforamtion", href: "https://firesmoke.ca/contact/", icon: "icon-phone" },
+            { type: "link", name: "Documentation", href: "https://cerodell.github.io/fwf-docs/index.html", icon: "icon-git" },
+            // { type: "text", id: "myTextField" },
+            // { type: "button", name: "myTextButton", id: "myTextButton", value: "Select a date" },
 
-                                ]
-                            }
-                        });
+        ]
+    }
+});
 
 
 
 function makeplotly(e) {
+    let hovsize = 10;
     var clickedCircle = e.target;
     var json_dir = clickedCircle.options.customId;
     var index = clickedCircle.options.customIdx;
 
-    console.log(clickedCircle);
-    console.log(index);
+    // console.log(clickedCircle);
+    // console.log(index);
+
+
 
     var ll = clickedCircle._latlng
-    console.log(ll);
+    // console.log(ll);
     btn_fire2.onclick = fwiplot2;
     btn_wx2.onclick = wxplot2;
 
     var o = [ll.lat,ll.lng]
-    console.log(o);
+    // console.log(o);
     var C = document.getElementById('wx_plot2');
 
     fwiplot2();
@@ -75,13 +87,17 @@ function makeplotly(e) {
         var w = n.XLAT[h];
         var v = n.XLONG[h];
         var tz = n.TZONE[h];
-        console.log(n);
-        console.log(w);
-        console.log('TIME ZONE');
-        console.log(tz);
+        // console.log(n);
+        // console.log(w);
+        // console.log('TIME ZONE');
+        // console.log(tz);
+
+        // console.log(Intl.DateTimeFormat().resolvedOptions().timeZone)
+        var timezone = moment.tz(Intl.DateTimeFormat().resolvedOptions().timeZone).zoneAbbr();
+        // console.log(timezone);
 
         //Create array of options to be added
-        var array = ["UTC","Geo Local","Your Local"];
+        var array = [timezone ,"UTC","Geo Local"];
 
         //Create and append select list
         var selectList = document.createElement("select");
@@ -95,8 +111,7 @@ function makeplotly(e) {
             option.setAttribute("value", array[i]);
             option.text = array[i];
             selectList.appendChild(option);
-        }
-
+        };
 
 
         var dict = {};
@@ -113,71 +128,98 @@ function makeplotly(e) {
         dict['time'] = n["Time"];
         dict['day'] = n["Day"];
 
-        console.log(dict);
+        local_list2 = [];
+        arrayLength = dict['time'].length;
+        for (i = 0; i < arrayLength; i++) {
+        d = dict['time'][i] + ':00:00.000Z'
+        var newtime2 = moment.utc(d).subtract({'hours': tz}).format('YYYY-MM-DD HH:mm z');
+        var res = newtime2.slice(0, 16);
+        local_list2.push(res);
+        };
+        dict['geo_time'] = local_list2;
+        // console.log('UTC TIME');
+        // console.log(dict['time']);
+        // console.log('GEO TIME');
+        // console.log(local_list2);
+
+        local_list = [];
+        arrayLength = dict['time'].length;
+        for (i = 0; i < arrayLength; i++) {
+            a = new Date(dict['time'][i] + ':00Z').toLocaleString();
+            local_list.push(moment(a).format('YYYY-MM-DD HH:mm'));
+        };
+        dict['local_time'] = local_list;
+        // console.log('LOCAL TIME');
+        // console.log(local_list);
 
         selectList.onchange = function (){
             var value = this.value
-            console.log(value);
-
             if (value == "UTC"){
-                N =
-                ((ffmc = {x: dict['time'], y: dict['ffmc'], mode: 'lines', line: { color: "ff7f0e" }, yaxis: "y2",  hoverlabel:{font:{size: hovsize, color: "#ffffff"}, bordercolor: "#ffffff"}, hovertemplate: "<b> FFMC </b><br>" + "%{y:.2f} <br>" + "<extra></extra>" }),
-                (isi = {x: dict['time'], y: dict['isi'], mode: 'lines', line: { color: "9467bd" }, yaxis: "y1",  hoverlabel:{font:{size: hovsize}}, hovertemplate: "<b> ISI </b><br>" + "%{y:.2f} <br>" + "<extra></extra>" }),
-
-                [
-                    {
-                        type: "table",
-                        header: { values: [["Index/Code"], [dict['day'][0]], [dict['day'][1]]], align: "center", height:18, line: {color: "444444" }, fill: { color: "444444E6" }, font: { family: "inherit", size: 10, color: "white" } },
-                        // cells: { values: T, align: "center",  height:18, line: { color: "444444", width: 1 }, fill: { color: ["white", "white", "white", "white"], fillopacity:0.5 }, font: { family: "inherit", size: 10, color:[["#2ca02c", "#8c564b", "7f7f7f", "d62728", "000000"]] } },
-                        cells: { values: T, align: "center",  height:18, line: { color: "444444", width: 1 }, fill: { color:[["#2ca02c1A", "#8c564b1A", "7f7f7f1A", "d627281A", "0000001A"]] }, font: { family: "inherit", size: 10, color:[["#2ca02c", "#8c564b", "7f7f7f", "d62728", "000000"]]} },
-
-                        xaxis: "x",
-                        yaxis: "y",
-                        domain: { x: [0.0, 1.0], y: [0.54, 1] },
-                    },
-                    ffmc,
-                    isi,
-                ]
-                );
-                Plotly.react(C,  N, S);
-
-
+                doplots(dict['time'],UTCTimeMap, intimeutc, UTCTimePlot)
             }else if (value == "Geo Local"){
+                var geomaptimei = moment.utc(UTCTimeMap).subtract({'hours': tz}).format('YYYY-MM-DD HH:mm z');
+                var geomaptime = geomaptimei.slice(0, 16);
+                var geointtimei = moment.utc(intimeutc).subtract({'hours': tz}).format('YYYY-MM-DD HH:mm z');
+                var geointtime = geointtimei.slice(0, 16);
+                var geoplottimei = moment.utc(UTCTimePlot).subtract({'hours': tz}).format('YYYY-MM-DD HH:mm z');
+                var geoplottime = geoplottimei.slice(0, 16);
+                doplots(dict['geo_time'],geomaptime, geointtime, geoplottime)
+            }else if (value == timezone){
+                if (UTCTimeMap.length < 20)
+                    UTCTimeMap = UTCTimeMap + 'Z';
+                var localmaptime = moment(new Date(UTCTimeMap).toLocaleString()).format('YYYY-MM-DD HH:mm');
+                var localinttime = moment(new Date(intimeutc).toLocaleString()).format('YYYY-MM-DD HH:mm');
+                var localplottime = moment(new Date(UTCTimePlot).toLocaleString()).format('YYYY-MM-DD HH:mm');
+                doplots(dict['local_time'],localmaptime, localinttime, localplottime)
+          }};
 
-                N =
-                ((ffmc = {x: dict['geo_time'], y: dict['ffmc'], mode: 'lines', line: { color: "ff7f0e" }, yaxis: "y2",  hoverlabel:{font:{size: hovsize, color: "#ffffff"}, bordercolor: "#ffffff"}, hovertemplate: "<b> FFMC </b><br>" + "%{y:.2f} <br>" + "<extra></extra>" }),
-                (isi = {x: dict['geo_time'], y: dict['isi'], mode: 'lines', line: { color: "9467bd" }, yaxis: "y1",  hoverlabel:{font:{size: hovsize}}, hovertemplate: "<b> ISI </b><br>" + "%{y:.2f} <br>" + "<extra></extra>" }),
 
-                [
-                    {
-                        type: "table",
-                        header: { values: [["Index/Code"], [dict['day'][0]], [dict['day'][1]]], align: "center", height:18, line: {color: "444444" }, fill: { color: "444444E6" }, font: { family: "inherit", size: 10, color: "white" } },
-                        // cells: { values: T, align: "center",  height:18, line: { color: "444444", width: 1 }, fill: { color: ["white", "white", "white", "white"], fillopacity:0.5 }, font: { family: "inherit", size: 10, color:[["#2ca02c", "#8c564b", "7f7f7f", "d62728", "000000"]] } },
-                        cells: { values: T, align: "center",  height:18, line: { color: "444444", width: 1 }, fill: { color:[["#2ca02c1A", "#8c564b1A", "7f7f7f1A", "d627281A", "0000001A"]] }, font: { family: "inherit", size: 10, color:[["#2ca02c", "#8c564b", "7f7f7f", "d62728", "000000"]]} },
+        function doplots(final_time,maptime, intitme, plottime) {
 
-                        xaxis: "x",
-                        yaxis: "y",
-                        domain: { x: [0.0, 1.0], y: [0.54, 1] },
-                    },
-                    ffmc,
-                    isi,
-                ]
-                );
-                Plotly.react(C,  N, S);
-            }
-            else if (value == "Your Local"){
+            if( /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ) {
+                var swidth = 320;
+                var sheight = 400;
+                var sl = 50;
+                var sr = 30;
+                var sb = 60;
+                var st = 68;
+                var spad = 1;
+                var xticksize = 6;
+                var labelsize = 10;
+                var ticksize = 8;
+                var tsize = 12;
+
+            }else{
+
+                var swidth = 600;
+                var sheight = 450;
+                var sl = 50;
+                var sr = 30;
+                var sb = 80;
+                var st = 100;
+                var spad = 2;
+                var xticksize = 11;
+                var labelsize = 12;
+                var ticksize = 9;
+                var tsize = 14;
+
+            };
+
+            T = [
+                ["DMC", "DC", "BUI", "FWI", "DSR"],
+                [dict['dmc'][0], dict['dc'][0], dict['bui'][0], dict['fwi'][0], dict['dsr'][0]],
+                [dict['dmc'][1], dict['dc'][1], dict['bui'][1], dict['fwi'][1], dict['dsr'][1]],
+            ];
 
             N =
-            ((ffmc = {x: dict['local_time'], y: dict['ffmc'], mode: 'lines', line: { color: "ff7f0e" }, yaxis: "y2",  hoverlabel:{font:{size: hovsize, color: "#ffffff"}, bordercolor: "#ffffff"}, hovertemplate: "<b> FFMC </b><br>" + "%{y:.2f} <br>" + "<extra></extra>" }),
-            (isi = {x: dict['local_time'], y: dict['isi'], mode: 'lines', line: { color: "9467bd" }, yaxis: "y1",  hoverlabel:{font:{size: hovsize}}, hovertemplate: "<b> ISI </b><br>" + "%{y:.2f} <br>" + "<extra></extra>" }),
+            ((ffmc = {x: final_time, y: dict['ffmc'], mode: 'lines', line: { color: "ff7f0e" }, yaxis: "y2",  hoverlabel:{font:{size: hovsize, color: "#ffffff"}, bordercolor: "#ffffff"}, hovertemplate: "<b> FFMC </b><br>" + "%{y:.2f} <br>" + "<extra></extra>" }),
+            (isi = {x: final_time, y: dict['isi'], mode: 'lines', line: { color: "9467bd" }, yaxis: "y1",  hoverlabel:{font:{size: hovsize}}, hovertemplate: "<b> ISI </b><br>" + "%{y:.2f} <br>" + "<extra></extra>" }),
 
             [
                 {
                     type: "table",
                     header: { values: [["Index/Code"], [dict['day'][0]], [dict['day'][1]]], align: "center", height:18, line: {color: "444444" }, fill: { color: "444444E6" }, font: { family: "inherit", size: 10, color: "white" } },
-                    // cells: { values: T, align: "center",  height:18, line: { color: "444444", width: 1 }, fill: { color: ["white", "white", "white", "white"], fillopacity:0.5 }, font: { family: "inherit", size: 10, color:[["#2ca02c", "#8c564b", "7f7f7f", "d62728", "000000"]] } },
                     cells: { values: T, align: "center",  height:18, line: { color: "444444", width: 1 }, fill: { color:[["#2ca02c1A", "#8c564b1A", "7f7f7f1A", "d627281A", "0000001A"]] }, font: { family: "inherit", size: 10, color:[["#2ca02c", "#8c564b", "7f7f7f", "d62728", "000000"]]} },
-
                     xaxis: "x",
                     yaxis: "y",
                     domain: { x: [0.0, 1.0], y: [0.54, 1] },
@@ -186,83 +228,61 @@ function makeplotly(e) {
                 isi,
             ]
             );
-            Plotly.react(C,  N, S);
 
-          }};
+            S = {
+                autosize: false,
+                width: swidth,
+                height: sheight,
+                margin: {
+                  l: sl,
+                  r: sr,
+                  b: sb,
+                  t: st,
+                  pad: spad
+                },
+                title: {text: "Fire Weather Forecast " + "<br>Lat: " + w.toString().slice(0,6) + ", Lon: " + v.toString().slice(0,8) , x:0.05},
+                titlefont: { color: "#444444", size: tsize },
+                showlegend: !1,
+                yaxis2: {domain: [.26, .52], title: { text: "FFMC", font: { size: labelsize, color: "ff7f0e" } }, tickfont: {size: ticksize, color: "ff7f0e"}},
+                yaxis1: { domain: [0.0, 0.24], title: { text: "ISI", font: {size: labelsize, color: "9467bd" } }, tickfont: {size: ticksize, color: "9467bd"}},
+                xaxis: { tickfont: {size: xticksize, color: "444444"}},
+                shapes: [{
+                    type: 'line',
+                    x0: maptime,
+                    y0: 0,
+                    x1: maptime,
+                    yref: 'paper',
+                    y1: 0.52,
+                    line: {
+                      color: 'grey',
+                      width: 1.5,
+                      dash: 'dot'
+                    }},
+                    {
+                        type: 'rect',
+                        xref: 'x',
+                        yref: 'paper',
+                        x0: intitme,
+                        y0: 0,
+                        x1: plottime,
+                        y1: 0.52,
+                        fillcolor: '#A7A7A7',
+                        opacity: 0.2,
+                        line: {
+                            width: 0
+                        }
+                    }]
+            }
 
-        local_list = []
-        arrayLength = dict['time'].length;
-        for (i = 0; i < arrayLength; i++) {
-            a = new Date(dict['time'][i] + ':00Z').toLocaleString()
-            local_list.push(moment(a).format('YYYY-MM-DD HH:mm'))
-        }
-        dict['local_time'] = local_list
-        console.log(local_list);
-
-        local_list2 = []
-        arrayLength = n["Time"].length;
-        for (i = 0; i < arrayLength; i++) {
-        var tz_time = tz +":00";
-        console.log(tz_time);
-        var time = moment.duration(tz_time);
-        a = new Date(n["Time"][i] + ':00Z')
-        var date = moment(a)
-        var newtime = date.subtract(time).format('YYYY-MM-DD HH:mm');
-
-        local_list2.push(newtime)
-        }
-        dict['geo_time'] = local_list2;
-        console.log(local_list2);
-
-        console.log(C);
-        hovsize = 10;
-        labelsize = 12;
-        ticksize = 9;
-
-        T = [
-            ["DMC", "DC", "BUI", "FWI", "DSR"],
-            [dict['dmc'][0], dict['dc'][0], dict['bui'][0], dict['fwi'][0], dict['dsr'][0]],
-            [dict['dmc'][1], dict['dc'][1], dict['bui'][1], dict['fwi'][1], dict['dsr'][1]],
-        ],
-
-        N =
-        ((ffmc = {x: dict['time'], y: dict['ffmc'], mode: 'lines', line: { color: "ff7f0e" }, yaxis: "y2",  hoverlabel:{font:{size: hovsize, color: "#ffffff"}, bordercolor: "#ffffff"}, hovertemplate: "<b> FFMC </b><br>" + "%{y:.2f} <br>" + "<extra></extra>" }),
-        (isi = {x: dict['time'], y: dict['isi'], mode: 'lines', line: { color: "9467bd" }, yaxis: "y1",  hoverlabel:{font:{size: hovsize}}, hovertemplate: "<b> ISI </b><br>" + "%{y:.2f} <br>" + "<extra></extra>" }),
-
-        [
-            {
-                type: "table",
-                header: { values: [["Index/Code"], [dict['day'][0]], [dict['day'][1]]], align: "center", height:18, line: {color: "444444" }, fill: { color: "444444E6" }, font: { family: "inherit", size: 10, color: "white" } },
-                // cells: { values: T, align: "center",  height:18, line: { color: "444444", width: 1 }, fill: { color: ["white", "white", "white", "white"], fillopacity:0.5 }, font: { family: "inherit", size: 10, color:[["#2ca02c", "#8c564b", "7f7f7f", "d62728", "000000"]] } },
-                cells: { values: T, align: "center",  height:18, line: { color: "444444", width: 1 }, fill: { color:[["#2ca02c1A", "#8c564b1A", "7f7f7f1A", "d627281A", "0000001A"]] }, font: { family: "inherit", size: 10, color:[["#2ca02c", "#8c564b", "7f7f7f", "d62728", "000000"]]} },
-
-                xaxis: "x",
-                yaxis: "y",
-                domain: { x: [0.0, 1.0], y: [0.54, 1] },
-            },
-            ffmc,
-            isi,
-        ]
-        );
-
-
-
-
-        S = {
-            autosize: true,
-            title: {text: "Fire Weather Forecast " + "<br>Lat: " + w.toString().slice(0,6) + ", Lon: " + v.toString().slice(0,8) , x:0.05},
-            titlefont: { color: "#444444", size: 13 },
-            showlegend: !1,
-            yaxis2: {domain: [.26, .52], title: { text: "FFMC", font: { size: labelsize, color: "ff7f0e" } }, tickfont: {size: ticksize, color: "ff7f0e"}},
-            yaxis1: { domain: [0.0, 0.24], title: { text: "ISI", font: {size: labelsize, color: "9467bd" } }, tickfont: {size: ticksize, color: "9467bd"}},
-            // yaxis1: {domain: [0.0, 0.4], title: { text: "DMC", font: { size: labelsize,color: "2ca02c" } }, tickfont: {size: ticksize, color: "2ca02c"}},
-            // yaxis4: { domain: [0.48, 0.62], title: { text: "DC", font: { size: labelsize,color: "8c564b" } }, tickfont: {size: ticksize, color: "8c564b"}},
-            // yaxis3: { domain: [0.32, 0.46], title: { text: "ISI", font: {size: labelsize, color: "9467bd" } }, tickfont: {size: ticksize, color: "9467bd"}},
-            // yaxis2: { domain: [0.16, 0.30], title: { text: "BUI", font: { size: labelsize, color: "7f7f7f" } }, tickfont: {size: ticksize, color: "7f7f7f"}},
-            // yaxis1: { domain: [0, 0.14], title: { text: "FWI", font: {size: labelsize, color: "d62728" } }, tickfont: {size: ticksize, color: "d62728"}},
-            xaxis: { title: "Date (UTC)", font: { size: labelsize, color: "444444" }}
+        Plotly.newPlot(C,  N, S);
         };
-            Plotly.newPlot(C,  N, S);
+        if (UTCTimeMap.length < 20)
+            UTCTimeMap = UTCTimeMap + 'Z';
+        var maptime = moment(new Date(UTCTimeMap).toLocaleString()).format('YYYY-MM-DD HH:mm');
+        var inttime = moment(new Date(intimeutc).toLocaleString()).format('YYYY-MM-DD HH:mm');
+        var plottime = moment(new Date(UTCTimePlot).toLocaleString()).format('YYYY-MM-DD HH:mm');
+        doplots(dict['local_time'],maptime, inttime, plottime);
+
         });
 
         };
@@ -275,11 +295,39 @@ function makeplotly(e) {
             var w = n.XLAT[h];
             var v = n.XLONG[h];
             var tz = n.TZONE[h];
-            console.log(n);
-            console.log(w);
-            console.log('TIME ZONE');
-            console.log(tz);
 
+            // console.log(Intl.DateTimeFormat().resolvedOptions().timeZone)
+            var timezone = moment.tz(Intl.DateTimeFormat().resolvedOptions().timeZone).zoneAbbr();
+            // console.log(timezone);
+
+            //Create array of options to be added
+            var array = [timezone ,"UTC", "Geo Local"];
+
+            //Create and append select list
+            var selectList = document.createElement("select");
+            selectList.setAttribute("id", "mySelect");
+            selectList.className = "time_wx";
+            div2.appendChild(selectList);
+
+            //Create and append the options
+            for (var i = 0; i < array.length; i++) {
+                var option = document.createElement("option");
+                option.setAttribute("value", array[i]);
+                option.text = array[i];
+                selectList.appendChild(option);
+            }
+
+            // var geomaptimei = moment.utc(UTCTimeMap).subtract({'hours': tz}).format('YYYY-MM-DD HH:mm z');
+            // var geomaptime = geomaptimei.slice(0, 16);
+            // var localmaptime = moment(new Date(UTCTimeMap).toLocaleString()).format('YYYY-MM-DD HH:mm');
+
+            // var geointtimei = moment.utc(intimeutc).subtract({'hours': tz}).format('YYYY-MM-DD HH:mm z');
+            // var geointtime = geointtimei.slice(0, 16);
+            // var localinttime = moment(new Date(intimeutc).toLocaleString()).format('YYYY-MM-DD HH:mm');
+
+            // var geoplottimei = moment.utc(UTCTimePlot).subtract({'hours': tz}).format('YYYY-MM-DD HH:mm z');
+            // var geoplottime = geoplottimei.slice(0, 16);
+            // var localplottime = moment(new Date(UTCTimePlot).toLocaleString()).format('YYYY-MM-DD HH:mm');
 
             var dict = {};
             var arrayColumn = (arr, n) => arr.map(x => x[n]);
@@ -295,43 +343,148 @@ function makeplotly(e) {
             dict['time'] = n["Time"];
             dict['day'] = n["Day"];
 
-            console.log(dict);
+
+            local_list2 = [];
+            arrayLength = dict['time'].length;
+            for (i = 0; i < arrayLength; i++) {
+            d = dict['time'][i]
+            var newtime2 = moment.utc(d).subtract({'hours': tz}).format('YYYY-MM-DD HH:mm z');
+            var res = newtime2.slice(0, 16);
+            local_list2.push(res)
+            };
+            dict['geo_time'] = local_list2;
+
+            local_list = [];
+            arrayLength = dict['time'].length;
+            for (i = 0; i < arrayLength; i++) {
+                a = new Date(dict['time'][i] + ':00Z').toLocaleString()
+                local_list.push(moment(a).format('YYYY-MM-DD HH:mm'))
+            };
+
+            dict['local_time'] = local_list;
+
+            selectList.onchange = function (){
+                var value = this.value
+                if (value == "UTC"){
+
+                    doplots2(dict['time'],UTCTimeMap, intimeutc, UTCTimePlot)
+                }else if (value == "Geo Local"){
+                    var geomaptimei = moment.utc(UTCTimeMap).subtract({'hours': tz}).format('YYYY-MM-DD HH:mm z');
+                    var geomaptime = geomaptimei.slice(0, 16);
+                    var geointtimei = moment.utc(intimeutc).subtract({'hours': tz}).format('YYYY-MM-DD HH:mm z');
+                    var geointtime = geointtimei.slice(0, 16);
+                    var geoplottimei = moment.utc(UTCTimePlot).subtract({'hours': tz}).format('YYYY-MM-DD HH:mm z');
+                    var geoplottime = geoplottimei.slice(0, 16);
+                    doplots2(dict['geo_time'],geomaptime, geointtime, geoplottime)
+                }else if (value == timezone){
+                    if (UTCTimeMap.length < 20)
+                        UTCTimeMap = UTCTimeMap + 'Z';
+                    var localmaptime = moment(new Date(UTCTimeMap).toLocaleString()).format('YYYY-MM-DD HH:mm');
+                    var localinttime = moment(new Date(intimeutc).toLocaleString()).format('YYYY-MM-DD HH:mm');
+                    var localplottime = moment(new Date(UTCTimePlot).toLocaleString()).format('YYYY-MM-DD HH:mm');
+                    doplots2(dict['local_time'],localmaptime, localinttime, localplottime)
+              }};
 
 
+              if( /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ) {
+                var swidth = 320;
+                var sheight = 400;
+                var sl = 50;
+                var sr = 30;
+                var sb = 60;
+                var st = 68;
+                var spad = 1;
+                var xticksize = 6;
+                var labelsize = 9;
+                var ticksize = 8;
+                var tsize = 12;
 
-            console.log(C);
-            hovsize = 10;
-            N =
-            [(temp = {x: dict['time'], y: dict['temp'], mode: 'lines', line: { color: "d62728" }, yaxis: "y5", hoverlabel:{font:{size: hovsize}}, hovertemplate: "<b> Temp </b><br>" + "%{y:.2f} (C)<br>" + "<extra></extra>"}),
-            (rh = {x: dict['time'], y: dict['rh'], mode: 'lines', line: { color: "1f77b4" }, yaxis: "y4", hoverlabel:{font:{size: hovsize}}, hovertemplate: "<b> RH </b><br>" + "%{y:.2f} (%)<br>" + "<extra></extra>"}),
-            (ws = {x: dict['time'], y: dict['ws'], mode: 'lines', line: { color: "202020" }, yaxis: "y3", hoverlabel:{font:{size: hovsize}}, hovertemplate: "<b> WSP </b><br>" + "%{y:.2f} (km/hr)<br>" + "<extra></extra>"}),
-            (wdir = {x: dict['time'], y: dict['wdir'], mode: 'lines', line: { color: "7f7f7f" }, yaxis: "y2",  hoverlabel:{font:{size: hovsize}}, hovertemplate: "<b> WDIR </b><br>" + "%{y:.2f} (deg)<br>" + "<extra></extra>" }),
-            (precip = {x: dict['time'], y: dict['precip'], mode: 'lines', line: { color: "2ca02c" }, yaxis: "y1",  hoverlabel:{font:{size: hovsize}}, hovertemplate: "<b> Precip </b><br>" + "%{y:.2f} (mm)<br>" + "<extra></extra>" }),
+            }else{
 
-            ]
+                var swidth = 600;
+                var sheight = 450;
+                var sl = 50;
+                var sr = 30;
+                var sb = 80;
+                var st = 100;
+                var spad = 2;
+                var xticksize = 11;
+                var labelsize = 10;
+                var ticksize = 9;
+                var tsize = 14;
+
+            };
 
 
-
-            labelsize = 12,
-            ticksize = 9,
-            S = {
-                autosize: true,
-                title: {text: "Weather Forecast " + "<br>Lat: " + w.toString().slice(0,6) + ", Lon: " + v.toString().slice(0,8) , x:0.05},
-                titlefont: { color: "#444444", size: 13 },
-                showlegend: !1,
-                yaxis5: { domain: [0.80, 0.98], title: { text: "Temp<br>(C)", font: {size: labelsize, color: "d62728" } }, tickfont: {size: ticksize, color: "d62728"}},
-                yaxis4: { domain: [0.60, 0.78],  title: { text: "RH<br>(%)", font: {size: labelsize, color: "1f77b4" } }, tickfont: {size: ticksize, color: "1f77b4"}},
-                yaxis3: { domain: [0.40, 0.58], title: { text: "WSP<br>(km/hr)", font: {size: labelsize, color: "202020" } } , tickfont: {size: ticksize, color: "202020"}},
-                yaxis2: { domain: [0.20, 0.38], title: { text: "WDIR<br>(deg)", font: {size: labelsize, color: "7f7f7f" } }, tickfont: {size: ticksize, color: "7f7f7f"}, range: [0, 360], tickvals:[0, 90, 180, 270, 360]},
-                yaxis1: { domain: [0, 0.18], title: { text: "Precip<br>(mm)", font: {size: labelsize, color: "2ca02c" } }, tickfont: {size: ticksize, color: "2ca02c"}},
-                xaxis: { title: "Date (UTC)", font: { size: labelsize, color: "#444444" }},
-                };
+            function doplots2(final_time,maptime, intitme, plottime) {
+                N =
+                [(temp = {x: final_time, y: dict['temp'], mode: 'lines', line: { color: "d62728" }, yaxis: "y5", hoverlabel:{font:{size: hovsize}}, hovertemplate: "<b> Temp </b><br>" + "%{y:.2f} (C)<br>" + "<extra></extra>"}),
+                (rh = {x: final_time, y: dict['rh'], mode: 'lines', line: { color: "1f77b4" }, yaxis: "y4", hoverlabel:{font:{size: hovsize}}, hovertemplate: "<b> RH </b><br>" + "%{y:.2f} (%)<br>" + "<extra></extra>"}),
+                (ws = {x: final_time, y: dict['ws'], mode: 'lines', line: { color: "202020" }, yaxis: "y3", hoverlabel:{font:{size: hovsize}}, hovertemplate: "<b> WSP </b><br>" + "%{y:.2f} (km/hr)<br>" + "<extra></extra>"}),
+                (wdir = {x: final_time, y: dict['wdir'], mode: 'lines', line: { color: "7f7f7f" }, yaxis: "y2",  hoverlabel:{font:{size: hovsize}}, hovertemplate: "<b> WDIR </b><br>" + "%{y:.2f} (deg)<br>" + "<extra></extra>" }),
+                (precip = {x: final_time, y: dict['precip'], mode: 'lines', line: { color: "2ca02c" }, yaxis: "y1",  hoverlabel:{font:{size: hovsize}}, hovertemplate: "<b> Precip </b><br>" + "%{y:.2f} (mm)<br>" + "<extra></extra>" }),
+                ];
+                S = {
+                    autosize: false,
+                    width: swidth,
+                    height: sheight,
+                    margin: {
+                        l: sl,
+                        r: sr,
+                        b: sb,
+                        t: st,
+                        pad: spad
+                    },
+                    title: {text: "Weather Forecast " + "<br>Lat: " + w.toString().slice(0,6) + ", Lon: " + v.toString().slice(0,8) , x:0.05},
+                    titlefont: { color: "#444444", size: tsize },
+                    showlegend: !1,
+                    yaxis5: { domain: [0.80, 0.98], title: { text: "Temp<br>(C)", font: {size: labelsize, color: "d62728" } }, tickfont: {size: ticksize, color: "d62728"}},
+                    yaxis4: { domain: [0.60, 0.78],  title: { text: "RH<br>(%)", font: {size: labelsize, color: "1f77b4" } }, tickfont: {size: ticksize, color: "1f77b4"}},
+                    yaxis3: { domain: [0.40, 0.58], title: { text: "WSP<br>(km/hr)", font: {size: labelsize, color: "202020" } } , tickfont: {size: ticksize, color: "202020"}},
+                    yaxis2: { domain: [0.20, 0.38], title: { text: "WDIR<br>(deg)", font: {size: labelsize, color: "7f7f7f" } }, tickfont: {size: ticksize, color: "7f7f7f"}, range: [0, 360], tickvals:[0, 90, 180, 270, 360]},
+                    yaxis1: { domain: [0, 0.18], title: { text: "Precip<br>(mm)", font: {size: labelsize, color: "2ca02c" } }, tickfont: {size: ticksize, color: "2ca02c"}},
+                    xaxis: { tickfont: {size: xticksize, color: "444444"}},
+                    shapes: [{
+                        type: 'line',
+                        x0: maptime,
+                        y0: 0,
+                        x1: maptime,
+                        yref: 'paper',
+                        y1: 0.98,
+                        line: {
+                            color: 'grey',
+                            width: 1.5,
+                            dash: 'dot'
+                        }},
+                        {
+                            type: 'rect',
+                            xref: 'x',
+                            yref: 'paper',
+                            x0: intitme,
+                            y0: 0,
+                            x1: plottime,
+                            y1: 0.98,
+                            fillcolor: '#A7A7A7',
+                            opacity: 0.2,
+                            line: {
+                                width: 0
+                            }
+                        },],
+                    };
                 Plotly.newPlot(C,  N, S);
-                });
-            }
+            };
+            if (UTCTimeMap.length < 20)
+                UTCTimeMap = UTCTimeMap + 'Z';
+            var maptime = moment(new Date(UTCTimeMap).toLocaleString()).format('YYYY-MM-DD HH:mm');
+            var inttime = moment(new Date(intimeutc).toLocaleString()).format('YYYY-MM-DD HH:mm');
+            var plottime = moment(new Date(UTCTimePlot).toLocaleString()).format('YYYY-MM-DD HH:mm');
+
+            doplots2(dict['local_time'],maptime, inttime, plottime);
+
+            });
 };
 
-
+};
 
 
 
@@ -339,7 +492,8 @@ function makeplotly(e) {
 
 var fwfmodellocation;
 
-function makeplots(n) {
+function makeplots() {
+
     (json_dir = "static/json/fwf-zone-merge.json"),
         fetch(json_dir, { cache: "default"})
             .then(function (n) {
@@ -362,11 +516,22 @@ function makeplots(n) {
                 });
                 const d3_tree = new KDBush(d3);
 
-                (loaded_zones = ["he"]),
-                (loaded_zones_d3 = ["he"]),
-                    map.on("dblclick", function (o) {
+                (loaded_zones = ["he"]);
+                (loaded_zones_d3 = ["he"]);
+                if( /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ) {
+                    var activate = 'click'
+
+                }else{
+                    var activate = 'dblclick'
+                    // console.log('desktop')
+
+                };
+                    map.on(activate, function (o) {
                         if (fwfmodellocation != undefined) {
                             fwfmodellocation.remove(map);
+                        };
+                        if (fwfclicklocation != undefined) {
+                            fwfclicklocation.remove(map);
                         };
                         fwfclicklocation.setLatLng(o.latlng).addTo(map);
                         var e = [parseFloat(o.latlng.lat.toFixed(4)), parseFloat(o.latlng.lng.toFixed(4))];
@@ -410,10 +575,10 @@ function makeplots(n) {
                             y = g[0],
                             x = [p, y];
                         var _ = t[p][y];
-
-
                         if ( _ == 'd3'){
                                 var ee = [parseFloat(o.latlng.lat.toFixed(4)), parseFloat(o.latlng.lng.toFixed(4))];
+                                // console.log(ee);
+                                // console.log(nn);
                                 var ll = d3_tree.range(ee[0] - buffer, ee[1] - buffer, ee[0] + buffer, ee[1] + buffer).map((nn) => d3[nn]);
                                 (ll_diff2 = []),
                                     (function (nn, oo) {
@@ -460,8 +625,8 @@ function makeplots(n) {
                                 fetch(zone_json_d3).then(function(response){
                                     return response.json();
                                 }).then(function(nn){
-                                    console.log(nn);
-                                    console.log(oo);
+                                    // console.log(nn);
+                                    // console.log(oo);
 
                                  var buff = 0.2
                                 for (var t = nn.XLAT, e = nn.XLONG, l = [], a = [], r = [(r = [t.length, t[0].length])[1], r[0]], c = 0; c < t.length; c++) l = l.concat(t[c]);
@@ -470,12 +635,12 @@ function makeplots(n) {
                                     return [nn, e[oo]];
                                 });
                                 var ss = new KDBush(i);
-                                console.log(ss);
+                                // console.log(ss);
 
                                 point_list.push(oo);
                                 file_list.push(nn);
                                 var uu = ss.range(oo[0] - buff, oo[1] - buff, oo[0] + buff, oo[1] + buff).map((nn) => i[nn]);
-                                console.log(uu);
+                                // console.log(uu);
 
                                 (ll_diff = []),
                                     (function (nn, oo) {
@@ -486,10 +651,10 @@ function makeplots(n) {
                                     })(uu, oo);
 
                                 var hh = ll_diff.indexOf(Math.min(...ll_diff));
-                                console.log(hh);
+                                // console.log(hh);
                                 var mm = ss.range(oo[0] - buff, oo[1] - buff, oo[0] + buff, oo[1] + buff);
                                 var hh = mm[hh];
-                                console.log(hh);
+                                // console.log(hh);
 
                                 var ww = nn.XLAT[hh];
                                 var vv = nn.XLONG[hh];
@@ -510,8 +675,8 @@ function makeplots(n) {
                             fetch(zone_json).then(function(response){
                                 return response.json();
                             }).then(function(n){
-                                console.log(n);
-                                console.log(o);
+                                // console.log(n);
+                                // console.log(o);
 
                              var buff = 0.2
                             for (var t = n.XLAT, e = n.XLONG, l = [], a = [], r = [(r = [t.length, t[0].length])[1], r[0]], c = 0; c < t.length; c++) l = l.concat(t[c]);
@@ -520,13 +685,13 @@ function makeplots(n) {
                                 return [n, e[o]];
                             });
                             var s = new KDBush(i);
-                            console.log(s);
+                            // console.log(s);
 
                             point_list.push(o);
                             file_list.push(n);
-                            console.log(o);
+                            // console.log(o);
                             var u = s.range(o[0] - buff, o[1] - buff, o[0] + buff, o[1] + buff).map((n) => i[n]);
-                            console.log(u);
+                            // console.log(u);
 
                             (ll_diff = []),
                                 (function (n, o) {
@@ -537,15 +702,15 @@ function makeplots(n) {
                                 })(u, o);
 
                             var h = ll_diff.indexOf(Math.min(...ll_diff));
-                            console.log(h);
+                            // console.log(h);
                             var m = s.range(o[0] - buff, o[1] - buff, o[0] + buff, o[1] + buff);
                             var h = m[h];
-                            console.log(h);
+                            // console.log(h);
 
                             var w = n.XLAT[h];
                             var v = n.XLONG[h];
 
-                            console.log(zone_json);
+                            // console.log(zone_json);
                             fwfmodellocation = new L.marker([w,v],{icon: redIcon, customId: zone_json, customIdx: h});
                             fwfmodellocation.bindPopup(div2, {maxWidth: "auto", maxHeight: "auto"});
                             fwfmodellocation.setZIndexOffset(1000);
@@ -651,8 +816,8 @@ function makeplots(n) {
                                 fetch(zone_json_d3).then(function(response){
                                     return response.json();
                                 }).then(function(nn){
-                                    console.log(nn);
-                                    console.log(oo);
+                                    // console.log(nn);
+                                    // console.log(oo);
 
                                  var buff = 0.2
                                 for (var t = nn.XLAT, e = nn.XLONG, l = [], a = [], r = [(r = [t.length, t[0].length])[1], r[0]], c = 0; c < t.length; c++) l = l.concat(t[c]);
@@ -661,12 +826,12 @@ function makeplots(n) {
                                     return [nn, e[oo]];
                                 });
                                 var ss = new KDBush(i);
-                                console.log(ss);
+                                // console.log(ss);
 
                                 point_list.push(oo);
                                 file_list.push(nn);
                                 var uu = ss.range(oo[0] - buff, oo[1] - buff, oo[0] + buff, oo[1] + buff).map((nn) => i[nn]);
-                                console.log(uu);
+                                // console.log(uu);
 
                                 (ll_diff = []),
                                     (function (nn, oo) {
@@ -677,15 +842,15 @@ function makeplots(n) {
                                     })(uu, oo);
 
                                 var hh = ll_diff.indexOf(Math.min(...ll_diff));
-                                console.log(hh);
+                                // console.log(hh);
                                 var mm = ss.range(oo[0] - buff, oo[1] - buff, oo[0] + buff, oo[1] + buff);
                                 var hh = mm[hh];
-                                console.log(hh);
+                                // console.log(hh);
 
                                 var ww = nn.XLAT[hh];
                                 var vv = nn.XLONG[hh];
 
-                                console.log(zone_json_d3);
+                                // console.log(zone_json_d3);
                                 fwfmodellocation = new L.marker([ww,vv],{icon: redIcon, customId: zone_json_d3, customIdx: hh});
                                 fwfmodellocation.bindPopup(div2, {maxWidth: "auto", maxHeight: "auto"});
                                 fwfmodellocation.setZIndexOffset(1000);
@@ -711,13 +876,13 @@ function makeplots(n) {
                                 return [n, e[o]];
                             });
                             var s = new KDBush(i);
-                            console.log(s);
+                            // console.log(s);
 
                             point_list.push(o);
                             file_list.push(n);
-                            console.log(o);
+                            // console.log(o);
                             var u = s.range(o[0] - buff, o[1] - buff, o[0] + buff, o[1] + buff).map((n) => i[n]);
-                            console.log(u);
+                            // console.log(u);
 
                             (ll_diff = []),
                                 (function (n, o) {
@@ -728,15 +893,15 @@ function makeplots(n) {
                                 })(u, o);
 
                             var h = ll_diff.indexOf(Math.min(...ll_diff));
-                            console.log(h);
+                            // console.log(h);
                             var m = s.range(o[0] - buff, o[1] - buff, o[0] + buff, o[1] + buff);
                             var h = m[h];
-                            console.log(h);
+                            // console.log(h);
 
                             var w = n.XLAT[h];
                             var v = n.XLONG[h];
 
-                            console.log(zone_json);
+                            // console.log(zone_json);
                             fwfmodellocation = new L.marker([w,v],{icon: redIcon, customId: zone_json, customIdx: h});
                             fwfmodellocation.bindPopup(div2, {maxWidth: "auto", maxHeight: "auto"});
                             fwfmodellocation.setZIndexOffset(1000);
@@ -744,22 +909,19 @@ function makeplots(n) {
                             loaded_zones.push(_);
                     });
                         };
-                    };
-
-                        control._searchfunctionCallBack = function (searchkeywords){
-                            if (!searchkeywords) {
-                                searchkeywords = "The search call back is clicked !!"
-                            }
-                            var o = searchkeywords.split(',').map(Number);
-                            searchcontrol(o);
+                    }
+                    control._searchfunctionCallBack = function (searchkeywords){
+                        if (!searchkeywords) {
+                            searchkeywords = "The search call back is clicked !!"
                         }
-
-                        map.addControl(control);
+                        var o = searchkeywords.split(',').map(Number);
+                        searchcontrol(o);
+                    }
+                    map.addControl(control);
 
 });
 }
-window.onload = function () {
-    makeplots(json_fwf);
-    // alert("Hello WFRT Team tester, please click on the map for point forecasts. Youll's see a red icon where you clicked. Click that red icon for a popup Meteogram. \n \n Also, please test the weather station layer. Look under the drop-down menu in the upper right to active the Weather Station layer. Each WxStation has a popup plot bound to it with past observations and model forecasts. \n \n Thank you :)");
 
+window.onload = function () {
+    makeplots();
 };

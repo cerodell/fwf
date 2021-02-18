@@ -493,10 +493,12 @@ function makeplotly(e) {
 var fwfmodellocation;
 
 function makeplots(n) {
+    console.log(n);
 
     (json_dir = "static/json/fwf-zone-merge.json"),
         fetch(json_dir, { cache: "default"})
             .then(function (n) {
+                console.log(n);
                 return n.json();
             })
             .then(function (o) {
@@ -522,6 +524,7 @@ function makeplots(n) {
                 (loaded_zones_d3 = ["he"]);
                 if( /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ) {
                     var activate = 'click'
+
 
                 }else{
                     var activate = 'dblclick'
