@@ -14,9 +14,10 @@ date = pd.Timestamp("today")
 # date = pd.Timestamp(2021, 2, 15)
 forecast_date = date.strftime("%Y%m%d06")
 
-file_dir = str(fwf_zarr_dir) + f"/fwf-hourly-{domain}-{forecast_date}.zarr"
+file_dir = str(fwf_zarr_dir) + f"/fwf-daily-{domain}-{forecast_date}.zarr"
 ds = xr.open_zarr(file_dir)
 
+print(ds.P)
 # ds = ds.isel(time=0)
 
 # filein = str(wrf_dir) + f"/wrfout-{domain}-2021010306.zarr"

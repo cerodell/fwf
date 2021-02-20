@@ -165,8 +165,6 @@ ax.plot(
 )
 
 
-# HYSPLIT 4 km domain = [70.0, 40.0, -101.0, -143.0]
-
 ## make hysplit 4 km domain
 lats = np.arange(40, 70 + 0.1, 0.1)
 lons = np.arange(-143, -101 + 0.1, 0.1)
