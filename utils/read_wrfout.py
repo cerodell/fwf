@@ -163,9 +163,11 @@ def readwrf(filein, domain, wright):
     wrf_ds.V10.attrs["units"] = "m s-1"
     wrf_ds.V10.attrs["description"] = "V at 10 M"
 
+    wrf_ds["r_o"] = wrf_ds.r_o - wrf_ds.r_o.isel(time=0)
     wrf_ds.r_o.attrs["units"] = "mm"
-    r_o.attrs["description"] = "ACCUMULATED TOTAL PRECIPITATION"
+    wrf_ds.r_o.attrs["description"] = "ACCUMULATED TOTAL PRECIPITATION"
 
+    wrf_ds["SNW"] = wrf_ds.SNW - wrf_ds.SNW.isel(time=0)
     wrf_ds.SNW.attrs["units"] = "cm"
     wrf_ds.SNW.attrs["description"] = "ACCUMULATED TOTAL GRID SCALE SNOW AND ICE"
 

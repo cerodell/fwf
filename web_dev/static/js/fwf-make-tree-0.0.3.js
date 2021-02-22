@@ -493,12 +493,9 @@ function makeplotly(e) {
 var fwfmodellocation;
 
 function makeplots(n) {
-    console.log(n);
-
-    (json_dir = "static/json/fwf-zone-merge.json"),
+    (json_dir = "../json/fwf-zone-merge.json"),
         fetch(json_dir, { cache: "default"})
             .then(function (n) {
-                console.log(n);
                 return n.json();
             })
             .then(function (o) {
@@ -584,6 +581,7 @@ function makeplots(n) {
 
                         if ( _ == 'd3'){
                                 var ee = [parseFloat(o.latlng.lat.toFixed(4)), parseFloat(o.latlng.lng.toFixed(4))];
+                                console.log(ee);
                                 var ll = d3_tree.range(ee[0] - buffer, ee[1] - buffer, ee[0] + buffer, ee[1] + buffer).map((nn) => d3[nn]);
                                 (ll_diff2 = []),
                                     (function (nn, oo) {

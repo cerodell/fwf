@@ -4,6 +4,7 @@ import pandas as pd
 import xarray as xr
 from pathlib import Path
 from netCDF4 import Dataset
+from utils.read_wrfout import readwrf
 
 from context import data_dir, xr_dir, wrf_dir, tzone_dir, fwf_zarr_dir
 from datetime import datetime, date, timedelta
@@ -11,25 +12,46 @@ from datetime import datetime, date, timedelta
 
 domain = "d02"
 date = pd.Timestamp("today")
-# date = pd.Timestamp(2021, 2, 15)
+# date = pd.Timestamp(2021, 2, 20)
 forecast_date = date.strftime("%Y%m%d06")
 
-file_dir = str(fwf_zarr_dir) + f"/fwf-daily-{domain}-{forecast_date}.zarr"
+file_dir = str(fwf_zarr_dir) + f"/fwf-hourly-{domain}-{forecast_date}.zarr"
 ds = xr.open_zarr(file_dir)
 
-print(ds.P)
+# print(ds.P)
 # ds = ds.isel(time=0)
 
 # filein = str(wrf_dir) + f"/wrfout-{domain}-2021010306.zarr"
 # # pathlist = sorted(Path(filein).glob(f"wrfout_{domain}_*00"))
 
-# # wrf_file = Dataset(file_dir, "r")
-# wrf_ds = xr.open_zarr(file_dir)
+# # # wrf_file = Dataset(file_dir, "r")
+# forecast_date = pd.Timestamp("today").strftime("%Y%m%d00")
+# domains = ["d02"]
+# for domain in domains:
+#     domain_startTime = datetime.now()
+#     print(f"start of domain {domain}: ", str(domain_startTime))
+#     # """######### get directory to todays wrf_out .nc files.  #############"""
 
+#     wrf_file_dir = str(wrf_dir) + f"/{forecast_date}/"
+#     print(wrf_file_dir)
+
+#     wrf_ds = readwrf(wrf_file_dir, domain, wright=False)
+#     print(float(wrf_ds.r_o.isel(time=-1).max()))
+
+#     wrf_ds.SNW = wrf_ds.SNW - wrf_ds.SNW.values[0]
+#     print(float(wrf_ds.SNW.isel(time=0).max()))
+
+
+# file_dir =  '/bluesky/working/wrf2arl/WAN00CG-01/2021022100/download/wrfout_d03_2021-02-21_00:00:00'
+# wrf_ds = xr.open_dataset(file_dir)
 
 # ds = xr.open_zarr(
-#     str(data_dir) + "/intercomp/" + f"intercomp-{domain}-{file_date}.zarr"
+#     str(data_dir) + "/intercomp/" + f"intercomp-{domain}-{forecast_date[:-2]}.zarr"
 # )
+
+# qpf = ['RAINC', 'RAINSH', 'RAINNC']
+
+# qpf = wrf_ds.RAINC + wrf_ds.RAINSH + wrf_ds.RAINNC
 
 # for var in list(ds):
 #     # print(f"max of {var}: {str(ds.Time.values)}")
