@@ -35,4 +35,4 @@ repos:
     rev: v3.3.0
     hooks:
     - id: no-commit-to-branch
-      args: ['--branch', 'master', '--branch', 'wrf3']
+      args: ['--branch', 'wrf3-og', '--branch', 'wrf3', '--branch', 'dev-wrf4']
