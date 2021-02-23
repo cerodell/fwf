@@ -1,27 +1,25 @@
 #!/bluesky/fireweather/miniconda3/envs/fwf/bin/python
 
 """
-__author__ = "Christopher Rodell"
-__email__ = "crodell@eoas.ubc.ca"
-
 Class to solve the Fire Weather Indices using output from a numerical weather model
 """
 
 import context
 import math
-import errno
-import pickle
 import numpy as np
 import pandas as pd
 import xarray as xr
-from timezonefinder import TimezoneFinder
 
 
 from pathlib import Path
-from netCDF4 import Dataset
+
+# from netCDF4 import Dataset
 from datetime import datetime
-from dev_utils.read_wrfout import readwrf
-from context import xr_dir, wrf_dir, tzone_dir, nc_dir, data_dir
+from utils.read_wrfout import readwrf
+from context import tzone_dir, fwf_zarr_dir
+
+__author__ = "Christopher Rodell"
+__email__ = "crodell@eoas.ubc.ca"
 
 
 class FWF:
@@ -62,7 +60,7 @@ class FWF:
     """ ######################## Initialize FWI model #########################"""
     """########################################################################"""
 
-    def __init__(self, wrf_file_dir, hourly_file_dir, daily_file_dir, domain):
+    def __init__(self, wrf_file_dir, domain, initialize):
         """
         Initialize Fire Weather Index Model
 
@@ -72,9 +70,18 @@ class FWF:
         if wrf_file_dir.endswith(".zarr"):
             print("Re-run using zarr file")
             wrf_ds = xr.open_zarr(wrf_file_dir)
+            attrs = wrf_ds.r_o.attrs
+            wrf_ds["r_o"] = wrf_ds.r_o - wrf_ds.r_o.isel(time=0)
+            wrf_ds["r_o"].attrs = attrs
+            wrf_ds.r_o.attrs["description"] = "ACCUMULATED TOTAL PRECIPITATION"
+            print(wrf_ds["r_o"])
+            print(float(wrf_ds.r_o.isel(time=0).max()))
+            attrs = wrf_ds.SNW.attrs
+            wrf_ds["SNW"] = wrf_ds.SNW - wrf_ds.SNW.isel(time=0)
+            wrf_ds["SNW"].attrs = attrs
         else:
             print("New-run, use readwrf to get vars from nc files")
-            wrf_ds, xy_np = readwrf(wrf_file_dir, domain)
+            wrf_ds = readwrf(wrf_file_dir, domain, wright=False)
         ## Get dataset attributes
         self.attrs = wrf_ds.attrs
 
@@ -84,7 +91,7 @@ class FWF:
         self.F_initial = 85.0
         self.P_initial = 6.0
         self.D_initial = 15.0
-        self.snowfact = 0.6
+        self.snowfract = 0.6
 
         ### Shape of Domain make useful fill arrays
         shape = np.shape(wrf_ds.T[0, :, :])
@@ -110,12 +117,15 @@ class FWF:
         self.L_f = L_f
 
         ### Open time zones dataset...each grids offset from utc time
-        tzone_ds = xr.open_dataset(str(tzone_dir) + f"/tzone_wrf_{self.domain}.nc")
+        tzone_ds = xr.open_dataset(str(tzone_dir) + f"/tzone_wrf_{self.domain}_old.nc")
         self.tzone_ds = tzone_ds
 
         # ### Create an hourly datasets for use with their respected codes/indices
         self.hourly_ds = wrf_ds
-        wrf_ds = wrf_ds.drop_vars(["SNW", "SNOWH", "U10", "V10"])
+        try:
+            wrf_ds = wrf_ds.drop_vars(["SNW", "SNOWH", "U10", "V10"])
+        except:
+            wrf_ds = wrf_ds.drop_vars(["SNW", "U10", "V10"])
 
         ### Create an hourly and daily datasets for use with their respected codes/indices
         self.daily_ds = self.create_daily_ds(wrf_ds)
@@ -140,14 +150,12 @@ class FWF:
         self.hourly_ds["r_o_hourly"] = r_hourly
         # self.hourly_ds['r_o_hourly'].attrs = self.daily_ds['r_o'].attrs
 
-        if Path(hourly_file_dir).exists() == False:
-            previous_time = np.array(wrf_ds.Time.dt.strftime("%Y-%m-%dT%H"))
-            previous_time = datetime.strptime(
-                str(previous_time[0]), "%Y-%m-%dT%H"
-            ).strftime("%Y%m%d%H")
-            print(
-                f"{Path(hourly_file_dir).exists()}: prior FFMC on date {previous_time}, will initialize with 85s"
+        if initialize == True:
+            int_time = np.array(wrf_ds.Time.dt.strftime("%Y-%m-%dT%H"))
+            int_time = datetime.strptime(str(int_time[0]), "%Y-%m-%dT%H").strftime(
+                "%Y%m%d%H"
             )
+            print(f"{initialize}: Initialize FFMC on date {int_time}, with 85s")
             # """ ################## Fine Fuel Moisture Code (FFMC) ##################### """
             F_o = self.F_initial  # Previous day's F becomes F_o
             F_o_full = np.full(shape, F_o, dtype=float)
@@ -162,48 +170,20 @@ class FWF:
             m_o = xr.DataArray(m_o, name="m_o", dims=("south_north", "west_east"))
 
             ### Add dataarrays to hourly dataset
-            self.hourly_ds["F"] = F
-            self.hourly_ds["m_o"] = m_o
+            # self.hourly_ds["F"] = F
+            # self.hourly_ds["m_o"] = m_o
 
-        elif Path(hourly_file_dir).exists() == True:
-            # """ ################## Fine Fuel Moisture Code (FFMC) ##################### """
-            ### Open previous days hourly_ds
-            previous_hourly_ds = xr.open_zarr(hourly_file_dir)
-            previous_time = np.array(previous_hourly_ds.Time.dt.strftime("%Y-%m-%dT%H"))
-            previous_time = datetime.strptime(
-                str(previous_time[0]), "%Y-%m-%dT%H"
-            ).strftime("%Y%m%d%H")
-            print(
-                f"{Path(hourly_file_dir).exists()}: Found previous FFMC on date {previous_time}, will merge with hourly_ds"
-            )
+            F = F.to_dataset(name="F")
+            F["m_o"] = m_o
 
-            ### Get time step of F and m_o that coincides with the initialization time of current model run
-            current_time = np.datetime_as_string(self.hourly_ds.Time[0], unit="h")
-            previous_times = np.datetime_as_string(previous_hourly_ds.Time, unit="h")
-            (index,) = np.where(previous_times == current_time)
-            index = int(index[0])
-            F = np.array(previous_hourly_ds.F[index])
-            m_o = np.array(previous_hourly_ds.m_o[index])
+            self.F_ds = F
 
-            ### Create dataarrays for F and m_m
-            F = xr.DataArray(F, name="F", dims=("south_north", "west_east"))
-            m_o = xr.DataArray(m_o, name="m_o", dims=("south_north", "west_east"))
-
-            ### Add dataarrays to hourly dataset
-            self.hourly_ds["F"] = F
-            self.hourly_ds["m_o"] = m_o
-        else:
-            raise SyntaxError("ERROR: Can Not Initialize FWF Model")
-
-        if Path(daily_file_dir).exists() == False:
             # """ ####################   Duff Moisture Code (DMC)    ##################### """
             previous_time = np.array(wrf_ds.Time.dt.strftime("%Y-%m-%dT%H"))
             previous_time = datetime.strptime(
                 str(previous_time[0]), "%Y-%m-%dT%H"
             ).strftime("%Y%m%d%H")
-            print(
-                f"{Path(daily_file_dir).exists()}: prior DMC on date {previous_time}, will initialize with 6s"
-            )
+            print(f"{initialize}: Initialize DMC on date {previous_time}, with 6s")
             P_o = self.P_initial
             P_o_full = np.full(shape, P_o, dtype=float)
 
@@ -222,21 +202,106 @@ class FWF:
             P = xr.DataArray(P_o, name="P", dims=("south_north", "west_east"))
 
             ### Add dataarrays to daily dataset
-            self.daily_ds["P"] = P
+            # self.daily_ds["P"] = P
+            self.P = P
 
             # """ #####################     Drought Code (DC)       ########################### """
-            print(
-                f"{Path(daily_file_dir).exists()}: prior DC on date {previous_time}, will initialize with 15s"
-            )
+            print(f"{initialize}: Initialize DC on date {previous_time}, with 15s")
             D_o = self.D_initial
 
             D_o_full = np.full(shape, D_o, dtype=float)
 
             D = xr.DataArray(D_o_full, name="D", dims=("south_north", "west_east"))
-            self.daily_ds["D"] = D
+            # self.daily_ds["D"] = D
+            self.D = D
 
-        elif Path(daily_file_dir).exists() == True:
-            # """ ####################   Duff Moisture Code (DCM)    ##################### """
+        elif initialize == False:
+
+            int_time = wrf_ds.Time.values
+            try:
+                retrive_time = pd.to_datetime(str(int_time[0] - np.timedelta64(1, "D")))
+                retrive_time = retrive_time.strftime("%Y%m%d%H")
+                hourly_file_dir = (
+                    str(fwf_zarr_dir) + f"/fwf-hourly-{domain}-{retrive_time}.zarr"
+                )
+                daily_file_dir = (
+                    str(fwf_zarr_dir) + f"/fwf-daily-{domain}-{retrive_time}.zarr"
+                )
+
+                previous_hourly_ds = xr.open_zarr(hourly_file_dir)
+                previous_daily_ds = xr.open_zarr(daily_file_dir)
+                print(
+                    f"{Path(hourly_file_dir).exists()}: Found previous FFMC on date {retrive_time}, will merge with hourly_ds"
+                )
+                print(
+                    f"{Path(daily_file_dir).exists()}: Found previous DMC on date {retrive_time}, will merge with daily_ds"
+                )
+                print(
+                    f"{Path(daily_file_dir).exists()}: Found previous DC on date {retrive_time}, will merge with daily_ds"
+                )
+            except:
+                try:
+                    retrive_time = pd.to_datetime(
+                        str(int_time[0] - np.timedelta64(2, "D"))
+                    )
+                    retrive_time = retrive_time.strftime("%Y%m%d%H")
+                    hourly_file_dir = (
+                        str(fwf_zarr_dir) + f"/fwf-hourly-{domain}-{retrive_time}.zarr"
+                    )
+                    daily_file_dir = (
+                        str(fwf_zarr_dir) + f"/fwf-daily-{domain}-{retrive_time}.zarr"
+                    )
+
+                    previous_hourly_ds = xr.open_zarr(hourly_file_dir)
+                    previous_daily_ds = xr.open_zarr(daily_file_dir)
+                    print(
+                        f"{Path(hourly_file_dir).exists()}: Found previous FFMC on date {retrive_time}, will merge with hourly_ds"
+                    )
+                    print(
+                        f"{Path(daily_file_dir).exists()}: Found previous DMC on date {retrive_time}, will merge with daily_ds"
+                    )
+                    print(
+                        f"{Path(daily_file_dir).exists()}: Found previous DC on date {retrive_time}, will merge with daily_ds"
+                    )
+                except:
+                    raise FileNotFoundError(
+                        "ERROR: Can Not Find Previous dataset to initialize model, consider running with initialize as True"
+                    )
+
+            # """ ################## Fine Fuel Moisture Code (FFMC) ##################### """
+            ### Open previous days hourly_ds
+            previous_hourly_ds = xr.open_zarr(hourly_file_dir)
+            previous_time = np.array(previous_hourly_ds.Time.dt.strftime("%Y-%m-%dT%H"))
+            previous_time = datetime.strptime(
+                str(previous_time[0]), "%Y-%m-%dT%H"
+            ).strftime("%Y%m%d%H")
+
+            ### Get time step of F and m_o that coincides with the initialization time of current model run
+            # current_time = np.datetime_as_string(self.hourly_ds.Time[0], unit="h")
+            int_time = pd.to_datetime(
+                str(self.hourly_ds.Time.values[0] - np.timedelta64(1, "h"))
+            )
+            int_time = int_time.strftime("%Y-%m-%dT%H")
+            previous_times = np.datetime_as_string(previous_hourly_ds.Time, unit="h")
+            (index,) = np.where(previous_times == int_time)
+            index = int(index[0])
+            F = np.array(previous_hourly_ds.F[index])
+            m_o = np.array(previous_hourly_ds.m_o[index])
+
+            ### Create dataarrays for F and m_m
+            F = xr.DataArray(F, name="F", dims=("south_north", "west_east"))
+            m_o = xr.DataArray(m_o, name="m_o", dims=("south_north", "west_east"))
+
+            ### Add dataarrays to hourly dataset
+            # self.hourly_ds["F"] = F
+            # self.hourly_ds["m_o"] = m_o
+
+            F = F.to_dataset(name="F")
+            F["m_o"] = m_o
+
+            self.F_ds = F
+
+            # """ ####################   Daily Dataset    ##################### """
             ### Open previous days daily_ds
             previous_daily_ds = xr.open_zarr(daily_file_dir)
             previous_time = np.array(previous_daily_ds.Time.dt.strftime("%Y-%m-%dT%H"))
@@ -249,42 +314,43 @@ class FWF:
                     str(previous_time), "%Y-%m-%dT%H"
                 ).strftime("%Y%m%d%H")
 
-            print(
-                f"{Path(daily_file_dir).exists()}: Found previous DMC on date {previous_time}, will merge with daily_ds"
-            )
-
             ### Get last time step of P and r_o_previous (carry over rain)
             ### that coincides with the initialization time of current model run
             try:
-                current_time = np.datetime_as_string(self.daily_ds.Time[0], unit="D")
+                # current_time = np.datetime_as_string(self.daily_ds.Time[0], unit="D")
+                int_time = pd.to_datetime(
+                    str(self.daily_ds.Time.values[0] - np.timedelta64(1, "D"))
+                )
+                int_time = int_time.strftime("%Y-%m-%dT%H")
             except:
-                current_time = np.datetime_as_string(self.daily_ds.Time, unit="D")
-            print("current_time", current_time)
-
+                # current_time = np.datetime_as_string(self.daily_ds.Time, unit="D")
+                int_time = pd.to_datetime(
+                    str(self.daily_ds.Time.values - np.timedelta64(1, "D"))
+                )
+                int_time = int_time.strftime("%Y-%m-%dT%H")
+            print("looking for initialize time", int_time)
             previous_times = np.datetime_as_string(previous_daily_ds.Time, unit="D")
-            print("previous_times", previous_times)
-            (index,) = np.where(previous_times == current_time)
+            print("available time options to initialize", previous_times)
+            (index,) = np.where(previous_times == int_time)
             if not index:
                 index = 0
             else:
                 index = int(index[0])
-            print(index)
+            print(f"Using {previous_times[index]} to initialize")
             P = np.array(previous_daily_ds.P[index])
-            r_o_previous = np.array(previous_daily_ds.r_o_tomorrow[index])
+            r_o_previous = np.array(previous_daily_ds.r_o_tomorrow[0])
 
+            # """ ####################   Duff Moisture Code (DCM)    ##################### """
             ### Create dataarrays for P
             P = xr.DataArray(P, name="P", dims=("south_north", "west_east"))
 
             ### Add dataarrays to daily dataset
-            self.daily_ds["P"] = P
+            # self.daily_ds["P"] = P
+            self.P = P
             ### Add carry over rain to first time step
             self.daily_ds["r_o"][0] = self.daily_ds["r_o"][0] + np.array(r_o_previous)
 
             # """ #####################     Drought Code (DC)       ########################### """
-            print(
-                f"{Path(wrf_file_dir).exists()}: Found previous DC on date {previous_time}, will merge with daily_ds"
-            )
-
             ### Get last time step of D that coincides with the
             ### initialization time of current model run
             D = np.array(previous_daily_ds.D[index])
@@ -293,10 +359,13 @@ class FWF:
             D = xr.DataArray(D, name="D", dims=("south_north", "west_east"))
 
             ### Add dataarrays to daily dataset
-            self.daily_ds["D"] = D
+            # self.daily_ds["D"] = D
+            self.D = D
 
         else:
-            raise SyntaxError("ERROR: Can Not Initialize FWF Model")
+            raise ValueError(
+                "ERROR: Can Not Run FWF Model With initialize Option Provided"
+            )
 
         return
 
@@ -354,8 +423,8 @@ class FWF:
             hourly_ds.T,
             hourly_ds.H,
             hourly_ds.r_o_hourly,
-            hourly_ds.m_o,
-            hourly_ds.F,
+            self.F_ds.m_o,
+            self.F_ds.F,
         )
 
         # e_full, zero_full = self.e_full, self.zero_full
@@ -366,7 +435,7 @@ class FWF:
         ## Van/Pick define as 0.5
         r_limit = 0.5
         r_fi = xr.where(r_o < r_limit, r_o, (r_o - r_limit))
-        r_f = xr.where(r_fi > 1e-7, r_fi, 1e-7)
+        r_f = xr.where(r_fi > 1e-7, r_fi, 0.0)
 
         ########################################################################
         ### (1c) Solve the Rainfall routine as defined in  Van Wagner 1985 (m_r)
@@ -514,11 +583,13 @@ class FWF:
         # m_o = (205.2 * (101 - F)) / (82.9 + F)  ## Van 1977
         m_o = (147.27723 * (101 - F)) / (59.5 + F)  ## Van 1985
 
-        self.hourly_ds["F"] = F
-        self.hourly_ds["m_o"] = m_o
+        F = F.to_dataset(name="F")
+        F["m_o"] = m_o
+
+        self.F_ds = F
 
         ### Return dataarray
-        return hourly_ds
+        return F
 
     """########################################################################"""
     """ ########################## Duff Moisture Code #########################"""
@@ -578,7 +649,7 @@ class FWF:
             daily_ds.T,
             daily_ds.H,
             daily_ds.r_o,
-            daily_ds.P,
+            self.P,
             self.L_e,
             daily_ds.SNOWC,
         )
@@ -592,11 +663,8 @@ class FWF:
         ########################################################################
         ### (11) Solve for the effective rain (r_e)
         r_total = 1.5
-        r_ei = xr.where(
-            r_o < r_total, r_o, (0.92 * r_o) - 1.27
-        )  ### Im confusing myself here
-
-        r_e = xr.where(r_ei > 1e-7, r_ei, 1e-7)
+        r_ei = xr.where(r_o < r_total, r_o, (0.92 * r_o) - 1.27)
+        r_e = xr.where(r_ei > 1e-7, r_ei, 0.0)
 
         ########################################################################
         ### (12) Recast moisture content after rain (M_o)
@@ -707,13 +775,12 @@ class FWF:
         ########################################################################
         ## keep grid to P initial (start up value) if grid
         ## is covered by more than 50% snow
-        P = xr.where(SNOWC < self.snowfact, P_i, self.P_initial)
+        P = xr.where(SNOWC < self.snowfract, P_i, self.P_initial)
         P = xr.where(P > 0.0, P, 0.1)
 
-        self.daily_ds["P"] = P
+        self.P = P
 
-        ### Return dataarray
-        return daily_ds
+        return P
 
     """########################################################################"""
     """ ############################ Drought Code #############################"""
@@ -771,7 +838,7 @@ class FWF:
             daily_ds.T,
             daily_ds.H,
             daily_ds.r_o,
-            daily_ds.D,
+            self.D,
             self.L_f,
             daily_ds.SNOWC,
         )
@@ -783,7 +850,7 @@ class FWF:
         ### (18) Solve for the effective rain (r_d)
         r_limit = 2.8
         r_di = xr.where(r_o < r_limit, r_o, (0.83 * r_o) - 1.27)
-        r_d = xr.where(r_di > 1e-7, r_di, 1e-7)
+        r_d = xr.where(r_di > 1e-7, r_di, 0.0)
 
         ########################################################################
         ### (19) Solve for initial moisture equivalent (Q_o)
@@ -809,7 +876,7 @@ class FWF:
         D_r = xr.where(
             r_o < r_limit, zero_full, D_o - 400 * np.log(1 + 3.937 * r_d / Q_o)
         )
-        D_r = xr.where(D_r > 0, D_r, 1e-6)
+        D_r = xr.where(D_r > 0, D_r, 0.1)
 
         ########################################################################
         ### (22) Solve for potential evapotranspiration (V)
@@ -818,7 +885,7 @@ class FWF:
         V = (0.36 * (T + 2.8)) + L_f
 
         ### V can not go negative, if V does go negative raise to zero
-        V = xr.where(V > 0, V, 1e-6)
+        V = xr.where(V > 0, V, 0.1)
 
         ########################################################################
         ### (23) Combine dry and moist D and Solve for Drought Code (D)
@@ -832,14 +899,14 @@ class FWF:
         ########################################################################
         ## keep grid to D initial (start up value) if grid
         ## is covered by more than 50% snow
-        D = xr.where(SNOWC < self.snowfact, D_i, self.D_initial)
+        D = xr.where(SNOWC < self.snowfract, D_i, self.D_initial)
 
         ### D can not go negative, if D does go negative raise to zero
         D = xr.where(D > 0.0, D, 0.1)
 
-        self.daily_ds["D"] = D
+        self.D = D
 
-        return daily_ds
+        return D
 
     """########################################################################"""
     """ #################### Initial Spread Index #############################"""
@@ -944,7 +1011,7 @@ class FWF:
         ### (27a) Solve for build up index where P =< 0.4D (U_a)
         P_limit = 0.4 * D
         # U_a = (0.8 * P * D) / (P + (0.4 * D))
-        U_a = xr.where(P >= P_limit, zero_full, (0.8 * P * D) / (P + (0.4 * D)))
+        U_a = xr.where(P >= P_limit, zero_full, 0.8 * P * D / (P + (0.4 * D)))
 
         ########################################################################
         ### (27b) Solve for build up index where P > 0.4D (U_b)
@@ -954,9 +1021,7 @@ class FWF:
         U_b = xr.where(
             P < P_limit,
             zero_full,
-            P
-            - ((1 - (0.8 * D)) / (P + (0.4 * D)))
-            * (0.92 + np.power((0.0114 * P), 1.7)),
+            P - (1 - 0.8 * D / (P + (0.4 * D))) * (0.92 + np.power((0.0114 * P), 1.7)),
         )
 
         ########################################################################
@@ -964,7 +1029,7 @@ class FWF:
 
         U = U_a + U_b
 
-        U = np.where(U > 0, U, 1e4)  # Set lower limit of 0
+        U = np.where(U > 0, U, 0.1)  # Set lower limit of 0
 
         U = xr.DataArray(U, name="U", dims=("time", "south_north", "west_east"))
 
@@ -1025,19 +1090,19 @@ class FWF:
 
         ########################################################################
 
-        index = [i for i in range(1, len(R)) if i % 24 == 0]
+        index = [i for i in range(1, len(R) + 1) if i % 24 == 0]
         if len(index) == 1:
             ### (29a) Solve FWI intermediate form  for day 1(B_a)
             B = 0.1 * R[:] * f_D[0]
         elif len(index) == 2:
-            print("fwi index", index[0])
+            # print("fwi index", index[0])
             B_a = 0.1 * R[: index[0]] * f_D[0]
             ### (29b) Solve FWI intermediate form for day 2 (B_b)
             B_b = 0.1 * R[index[0] :] * f_D[1]
             ### (29c) COmbine FWI intermediate (B)
             B = xr.combine_nested([B_a, B_b], "time")
         else:
-            raise SyntaxError(
+            raise ValueError(
                 "ERROR: Rodell was lazy and needs to rethink indexing of multi length wrf runs"
             )
 
@@ -1118,7 +1183,7 @@ class FWF:
         ## determine index for looping based on length of time array and initial time
         time_array = wrf_ds.Time.values
         int_time = int(pd.Timestamp(time_array[0]).hour)
-        length = len(time_array)
+        length = len(time_array) + 1
         num_days = [i - 12 for i in range(1, length) if i % 24 == 0]
         index = [
             i - int_time if 12 - int_time >= 0 else i + 24 - int_time for i in num_days
@@ -1167,7 +1232,7 @@ class FWF:
 
         ## create datarray for carry over rain, this will be added to the next days rain totals
         ## NOTE: this is rain that fell from noon local until 24 hours past the model initial time ie 00Z, 06Z..
-        r_o_tomorrow_i = wrf_ds.r_o.values[index[0] + 24] - daily_ds.r_o.values[0]
+        r_o_tomorrow_i = wrf_ds.r_o.values[23] - daily_ds.r_o.values[0]
         r_o_tomorrow = [r_o_tomorrow_i for i in range(len(num_days))]
         r_o_tomorrow = np.stack(r_o_tomorrow)
         r_o_tomorrow_da = xr.DataArray(
@@ -1176,8 +1241,15 @@ class FWF:
             dims=("time", "south_north", "west_east"),
             coords=daily_ds.coords,
         )
+        r_o_tomorrow_da = xr.where(r_o_tomorrow_da > 1e-4, r_o_tomorrow_da, 0.0)
 
         daily_ds["r_o_tomorrow"] = r_o_tomorrow_da
+
+        ## create daily 24 accumulated precipitation totals
+        x_prev = 0
+        for i, x_val in enumerate(daily_ds.r_o):
+            daily_ds.r_o[i] -= x_prev
+            x_prev = x_val
 
         print("Daily ds done")
 
@@ -1206,6 +1278,7 @@ class FWF:
         print("Hourly loop done")
         # hourly_ds = self.combine_by_time(hourly_list)
         hourly_ds = xr.combine_nested(hourly_list, "time")
+        hourly_ds = xr.merge([hourly_ds, self.hourly_ds])
 
         ISI = self.solve_isi(hourly_ds)
         hourly_ds["R"] = ISI
@@ -1232,31 +1305,19 @@ class FWF:
         """
 
         length = len(self.daily_ds.time)
-        # r_o_list = []
-        # r_o_list.append(self.zero_full)
-        # r_o_list.append(np.array(self.daily_ds.r_o[0]))
-        # r_o_list.append(np.array(self.daily_ds.r_o[1]))
-        # for j in range(length):
-        #     r_o = r_o_list[j+1] - r_o_list[j]
-        #     self.daily_ds.r_o[j] = r_o
-
-        ## subtracks the folling time index precipitation amounts makeing them totlas of a single index
-        x_prev = 0
-        for i, x_val in enumerate(self.daily_ds["r_o"]):
-            self.daily_ds["r_o"][i] -= x_prev
-            x_prev = x_val
 
         daily_list = []
         print("Start Daily loop length: ", length)
         for i in range(length):
-            DMC = self.solve_dmc(self.daily_ds.isel(time=i))
-            DC = self.solve_dc(self.daily_ds.isel(time=i))
-            DMC["D"] = DC["D"]
-            daily_list.append(DMC)
+            P = self.solve_dmc(self.daily_ds.isel(time=i))
+            D = self.solve_dc(self.daily_ds.isel(time=i))
+            ds = P.to_dataset(name="P")
+            ds["D"] = D
+            daily_list.append(ds)
 
         print("Daily loop done")
-        # daily_ds = self.combine_by_time(daily_list)
         daily_ds = xr.combine_nested(daily_list, "time")
+        daily_ds = xr.merge([daily_ds, self.daily_ds])
         U = self.solve_bui(daily_ds)
         daily_ds["U"] = U
         self.U = U
@@ -1338,44 +1399,27 @@ class FWF:
         hourly_ds.r_o_hourly.attrs["description"] = "HOURLY PRECIPITATION TOTALS"
 
         for var in hourly_ds.data_vars:
-            # if 'coordinates' in self.attrs:
-            #     del hourly_ds[var].attrs['coordinates']
-            # else:
-            #     pass
-            # if 'projection' in self.attrs:
-            #     hourly_ds[var].attrs['projection'] = str(hourly_ds[var].projection)
-            # else:
-            #     pass
             hourly_ds[var] = hourly_ds[var].astype(dtype="float32")
 
         # ### Name file after initial time of wrf
-        file_name = str(np.array(self.hourly_ds.Time[0], dtype="datetime64[h]"))
-        file_name = datetime.strptime(str(file_name), "%Y-%m-%dT%H").strftime(
+        file_date = str(np.array(self.hourly_ds.Time[0], dtype="datetime64[h]"))
+        file_date = datetime.strptime(str(file_date), "%Y-%m-%dT%H").strftime(
             "%Y%m%d%H"
         )
-        print("Hourly zarr initialized at :", file_name)
+        print("Hourly zarr initialized at :", file_date)
 
         # # ## Write and save DataArray (.zarr) file
         make_dir = Path(
-            str(data_dir)
-            + str("/FWF-WAN00CG-01/fwf-hourly-")
-            + file_name
-            + str(f"-{self.domain}.zarr")
+            str(fwf_zarr_dir)
+            + str("/fwf-hourly-")
+            + self.domain
+            + str(f"-{file_date}.zarr")
         )
         make_dir.mkdir(parents=True, exist_ok=True)
         hourly_ds = hourly_ds.compute()
         hourly_ds.to_zarr(make_dir, mode="w")
-        print(f"wrote archive {make_dir}")
+        print(f"wrote working {make_dir}")
 
-        # current_dir_hourly = str(data_dir) + str(f'/test/current/fwf-hourly-current-{self.domain}.zarr')
-        # hourly_ds.to_zarr(current_dir_hourly, "w")
-        # print(f"wrote working {current_dir_hourly}")
-
-        # current_dir_hourly = str(nc_dir) + str(f'/current/fwf-hourly-current-{self.domain}.nc')
-        # hourly_ds.to_netcdf(current_dir_hourly, "w")
-        # print(f"wrote working {current_dir_hourly}")
-
-        # ## return path to hourly_ds file to open
         return str(make_dir)
 
     """#######################################"""
@@ -1408,45 +1452,28 @@ class FWF:
         daily_ds.U.attrs["description"] = "BUILD UP INDEX"
 
         for var in daily_ds.data_vars:
-            #     print(var)
-            # if 'coordinates' in self.attrs:
-            #     del daily_ds[var].attrs['coordinates']
-            # else:
-            #     pass
-            # if 'projection' in self.attrs:
-            #     daily_ds[var].attrs['projection'] = str(daily_ds[var].projection)
-            # else:
-            #     pass
             daily_ds[var] = daily_ds[var].astype(dtype="float32")
 
         daily_ds.r_o.attrs["description"] = "24 HOUR ACCUMULATED PRECIPITATION"
 
         # ### Name file after initial time of wrf
-        file_name = str(np.array(self.hourly_ds.Time[0], dtype="datetime64[h]"))
-        file_name = datetime.strptime(str(file_name), "%Y-%m-%dT%H").strftime(
+        file_date = str(np.array(self.hourly_ds.Time[0], dtype="datetime64[h]"))
+        file_date = datetime.strptime(str(file_date), "%Y-%m-%dT%H").strftime(
             "%Y%m%d%H"
         )
 
-        print("Daily zarr initialized at :", file_name)
+        print("Daily zarr initialized at :", file_date)
 
         # # ## Write and save DataArray (.zarr) file
         make_dir = Path(
-            str(data_dir)
-            + str("/FWF-WAN00CG-01/fwf-daily-")
-            + file_name
-            + str(f"-{self.domain}.zarr")
+            str(fwf_zarr_dir)
+            + str("/fwf-daily-")
+            + self.domain
+            + str(f"-{file_date}.zarr")
         )
         make_dir.mkdir(parents=True, exist_ok=True)
         daily_ds = daily_ds.compute()
         daily_ds.to_zarr(make_dir, mode="w")
-        print(f"wrote archive {make_dir}")
+        print(f"wrote working {make_dir}")
 
-        # current_dir_daily = str(data_dir) + str(f'/test/current/fwf-daily-current-{self.domain}.zarr')
-        # daily_ds.to_zarr(current_dir_daily, "w")
-        # print(f"wrote working {current_dir_daily}")
-
-        # current_dir_daily = str(nc_dir) + str(f'/current/fwf-daily-current-{self.domain}.nc')
-        # daily_ds.to_netcdf(current_dir_daily, "w")
-        # print(f"wrote working {current_dir_daily}")
-        # return path to daily_ds file to open
         return str(make_dir)

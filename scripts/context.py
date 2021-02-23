@@ -1,8 +1,8 @@
 """
-Define the path to important folders without having
+define the path to important folders without having
  to install anything -- just do:
 
-import context
+import contenxt
 
 then the path for the data directory is
 
@@ -21,14 +21,11 @@ data_dir = root_dir / Path("data")
 tzone_dir = root_dir / Path("data/tzone/")
 xr_dir = root_dir / Path("data/xr/")
 nc_dir = root_dir / Path("data/nc/")
+fwf_zarr_dir = Path("/Volumes/cer/fireweather/data/FWF-WAN00CP-04/")
+# fwf_zarr_dir = root_dir / Path("data/FWF-WAN00CG-01/")
 
-html_dir = root_dir / Path("html/")
-ops_dir = Path("/bluesky/archive/fireweather/forecasts/")
-
-
-wrf_dir = Path("/nfs/kitsault/archives/forecasts/WAN00CP-04/")
-wrf_dir_new = Path("/nfs/kitsault/archives/forecasts/WAN00CG-01/")
-
+wrf_dir = Path("/Volumes/cer/fireweather/data/WAN00CP-04/")
+# wrf_dir = Path("/bluesky/working/wrf2arl/WAN00CG-01/")
 
 sys.path.insert(0, str(root_dir))
 sep = "*" * 30
