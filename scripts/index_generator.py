@@ -23,7 +23,7 @@ folderdate = forecast_start_date.strftime("%Y%m%d")
 observations = forecast_start_date - timedelta(days=1)
 observations = observations.strftime("%Y%m%d")
 
-forecast_start_date = forecast_start_date.strftime("%Y-%m-%dT00:00:00Z")
+forecast_start_date = forecast_start_date.strftime("%Y-%m-%dT06:00:00Z")
 forecast_end_date = forecast_end_date.strftime("%Y-%m-%dT12:00:00Z")
 
 files_datetime = folderdate
@@ -37,10 +37,10 @@ with open(fcst_template, "r") as fin:
     fcst = fcst.replace("{%FileDateTime%}", files_datetime)
     fcst = fcst.replace("{%FileDateTimeYesterday%}", observations)
 
-    make_dir = Path(str(ops_dir) + "/" + str(folderdate))
-
+    make_dir = Path(str(ops_dir) + f"/{folderdate}00")
     make_dir.mkdir(parents=True, exist_ok=True)
-    out_dir = str(make_dir) + "00/index.html"
+
+    out_dir = str(make_dir) + "/index.html"
     with open(out_dir, "w") as fout:
         fout.write(fcst)
 print(f"{str(datetime.now())} ---> write index.html")

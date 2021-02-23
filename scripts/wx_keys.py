@@ -40,7 +40,8 @@ with open(str(data_dir) + "/json/colormaps-dev.json") as f:
     cmaps = json.load(f)
 name_list = list(cmaps)
 
-make_dir = Path("/bluesky/fireweather/fwf/web_dev/data/")
+forecast_date = pd.Timestamp("today").strftime("%Y%m%d00")
+make_dir = Path(f"/bluesky/archive/fireweather/forecasts/{forecast_date}/data/")
 make_dir.mkdir(parents=True, exist_ok=True)
 
 

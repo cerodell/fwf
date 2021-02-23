@@ -38,12 +38,14 @@ with open(str(data_dir) + "/json/colormaps-dev.json") as f:
     cmaps = json.load(f)
 name_list = list(cmaps)
 
-make_dir = Path("/bluesky/fireweather/fwf/web_dev/data/")
+
+forecast_date = pd.Timestamp("today").strftime("%Y%m%d00")
+make_dir = Path(f"/bluesky/archive/fireweather/forecasts/{forecast_date}/data/")
 make_dir.mkdir(parents=True, exist_ok=True)
 
 
 date = pd.Timestamp("today")
-# date = pd.Timestamp(2021, 2, 15)
+# date = pd.Timestamp(2021, 2, 22)
 forecast_date = date.strftime("%Y%m%d06")
 obs_date = (date - np.timedelta64(1, "D")).strftime("%Y%m%d")
 obs_date_int = (date - np.timedelta64(14, "D")).strftime("%Y%m%d")
@@ -170,6 +172,8 @@ for ztu in unique:
         wx_hourly__yester_ds = wx_hourly__yester_ds.sel(
             time=slice(index + abs(ztu), 24)
         )
+
+    wx_hourly_ds["r_o"] = wx_hourly__yester_ds.r_o.values[-1] + wx_hourly_ds.r_o
 
     fianl_hourly_ds = xr.combine_nested(
         [wx_hourly__yester_ds, wx_hourly_ds], concat_dim="time"

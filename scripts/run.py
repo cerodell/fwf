@@ -29,14 +29,17 @@ warnings.filterwarnings("ignore", message="invalid value encountered in power")
 warnings.filterwarnings("ignore", message="invalid value encountered in log")
 
 
-# """######### get directory to yesterdays hourly/daily .zarr files.  #############"""
+# """######### create forecast directory for webapge  #############"""
 forecast_date = pd.Timestamp("today").strftime("%Y%m%d00")
+make_dir = Path(f"/bluesky/archive/fireweather/forecasts/{forecast_date}/")
+make_dir.mkdir(parents=True, exist_ok=True)
+
+
 domains = ["d02", "d03"]
 for domain in domains:
     domain_startTime = datetime.now()
     print(f"start of domain {domain}: ", str(domain_startTime))
     # """######### get directory to todays wrf_out .nc files.  #############"""
-
     wrf_file_dir = str(wrf_dir) + f"/{forecast_date}/"
     print(wrf_file_dir)
 

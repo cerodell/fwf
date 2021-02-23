@@ -35,6 +35,15 @@ __author__ = "Christopher Rodell"
 __email__ = "crodell@eoas.ubc.ca"
 
 
+### make folder for json files on webapge
+forecast_date = pd.Timestamp("today").strftime("%Y%m%d")
+make_dir = Path(f"/bluesky/archive/fireweather/forecasts/{forecast_date}00/data/plot")
+make_dir.mkdir(parents=True, exist_ok=True)
+
+## redefine forecast ate to get file with spin up
+forecast_date = forecast_date + "06"
+# forecast_date = pd.Timestamp(2021, 2, 9).strftime("%Y%m%d06")
+
 ### Open color map json
 with open(str(data_dir) + "/json/colormaps-dev.json") as f:
     cmaps = json.load(f)
@@ -43,12 +52,6 @@ with open(str(data_dir) + "/json/colormaps-dev.json") as f:
 with open(str(data_dir) + "/json/nested-index.json") as f:
     nested_index = json.load(f)
 
-# # ### make dir for that days forecast files to be sotred
-make_dir = Path("/bluesky/fireweather/fwf/web_dev/data/plot/")
-make_dir.mkdir(parents=True, exist_ok=True)
-
-forecast_date = pd.Timestamp("today").strftime("%Y%m%d06")
-# forecast_date = pd.Timestamp(2021, 2, 9).strftime("%Y%m%d06")
 
 ## loop both domains
 domains = ["d02", "d03"]

@@ -493,7 +493,7 @@ function makeplotly(e) {
 var fwfmodellocation;
 
 function makeplots(n) {
-    (json_dir = "../json/fwf-zone-merge.json"),
+    (json_dir = "/static/json/fwf-zone-merge.json"),
         fetch(json_dir, { cache: "default"})
             .then(function (n) {
                 return n.json();
@@ -925,6 +925,8 @@ function makeplots(n) {
 });
 }
 
-window.onload = function () {
-    makeplots(json_fwf);
-};
+makeplots(json_fwf);
+
+// window.onload = function () {
+//     makeplots(json_fwf);
+// };
