@@ -67,8 +67,12 @@ ELV, LAT, LON, FUELS = (
 shape = LAT.shape
 zero_full = np.zeros(shape, dtype=float)
 
+
+FMC = zero_full
+LATN = zero_full
 ###################    Foliar Moisture Content:  #######################
 ########################################################################
+FMC = zero_full
 ## Solve Normalized latitude (degrees) with no terrain data (1)
 # LATN = 46 + 23.4 * np.exp(-0.0360 * (150 - terrain_ds.XLONG))
 
@@ -85,26 +89,14 @@ D_o = 142.1 * (LAT / LATN) + 0.0172 * ELV
 D_j = int(date.strftime("%j"))
 
 ## Solve Number of days between the current date and D_o (5)
-
 ND = abs(D_j - D_o)
 
 ## Solve Foliar moisture content(%) where ND < 30 (6)
-
-FMC_low = xr.where(ND < 30.0, 85 + 0.0189 * ND ** 2, zero_full)
-
+FMC = xr.where(ND < 30.0, 85 + 0.0189 * ND ** 2, FMC)
 ## Solve Foliar moisture content(%) where 30 <= ND < 50 (7)
-
-FMC_mid = xr.where(
-    (ND >= 30) & (ND < 50), 32.9 + 3.17 * ND - 0.0288 * ND ** 2, zero_full
-)
-
+FMC = xr.where((ND >= 30) & (ND < 50), 32.9 + 3.17 * ND - 0.0288 * ND ** 2, FMC)
 ## Solve Foliar moisture content(%) where ND >= 50 (8)
-
-FMC_high = xr.where(ND >= 50, 120, zero_full)
-
-## Combine all FMC over the domain
-
-FMC = FMC_low + FMC_mid + FMC_high
+FMC = xr.where(ND >= 50, 120, FMC)
 
 
 ###################    Surface Fuel Consumption  #######################
