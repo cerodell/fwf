@@ -690,7 +690,7 @@ class FWF:
         b_mid = xr.where(
             r_o < r_total,
             zero_full,
-            xr.where((P_o > 33) & (P_o <= 65), zero_full, 14 - (1.3 * np.log(P_o))),
+            xr.where((P_o > 33) & (P_o <= 65), 14 - (1.3 * np.log(P_o)), zero_full),
         )
 
         ########################################################################

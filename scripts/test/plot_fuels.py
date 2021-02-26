@@ -18,38 +18,32 @@ from context import data_dir, xr_dir, wrf_dir, tzone_dir, fwf_zarr_dir
 from datetime import datetime, date, timedelta
 
 
+cd
+## Choose wrf domain
 domain = "d02"
-# date = pd.Timestamp("today")
-date = pd.Timestamp(2018, 7, 20)
-forecast_date = date.strftime("%Y%m%d06")
 
-# file_dir = str(fwf_zarr_dir) + f"/fwf-hourly-{domain}-{forecast_date}.zarr"   # wrfout-{domain}-{forecast_date}.zarr
-file_dir = (
-    str(data_dir) + f"/FWF-WAN00CP-04/fwf-hourly-{domain}-{forecast_date}.zarr"
-)  # wrfout-{domain}-{forecast_date}.zarr
+save_file = f"/images/cffdrs-wrf-{domain}.png"
+save_dir = str(data_dir) + save_file
 
-file_dir = "/Volumes/cer/fireweather/data/FWF-WAN00CG-01/fwf-daily-d03-2021022106.zarr"
-ds = xr.open_zarr(file_dir)
+## Path to Fuel converter spreadsheet
+fuel_converter = str(data_dir) + "/fbp/fuel_converter.csv"
+## Path to any wrf file used in transformation
+fuelsin = str(data_dir) + f"/fbp/fuels-{domain}.zarr"
+## Open all files mentioned above
+fc_df = pd.read_csv(fuel_converter)
+fc_df = fc_df.drop_duplicates(subset=["CFFDRS"])
+ds = xr.open_zarr(fuelsin)
 
+unique, count = np.unique(ds.fuels.values, return_counts=True)
+ds.fuels.values.min()
 
-### Open color map json
-with open(str(data_dir) + "/json/colormaps-dev.json") as f:
-    cmaps = json.load(f)
-
-var, index = "F", 12
-vmin, vmax = cmaps[var]["vmin"], cmaps[var]["vmax"]
-name, colors, sigma = (
-    str(cmaps[var]["name"]),
-    cmaps[var]["colors18"],
-    cmaps[var]["sigma"],
-)
 
 lngs = ds.XLONG.values
 lats = ds.XLAT.values
 
-fillarray = ds[var][index].values
-fillarray = np.round(fillarray, 0)
-fillarray = ndimage.gaussian_filter(fillarray, sigma=sigma)
+fillarray = ds["fuels"].values
+# fillarray = np.round(fillarray, 0)
+# fillarray = ndimage.gaussian_filter(fillarray, sigma=0)
 
 
 ## bring in state/prov boundaries
@@ -90,12 +84,22 @@ ax.tick_params(axis="both", which="major", labelsize=14)
 ax.tick_params(axis="both", which="minor", labelsize=14)
 
 ## add title and adjust subplot buffers
-Plot_Title = f"{ds[var].description}  \n {str(ds.Time.values[index])[:13]}"
+if domain == "d02":
+    res = "12 km"
+elif domain == "d03":
+    res = "4 km"
+else:
+    res = ""
+Plot_Title = f"Canadian Forest FBP Fuel Type Grid for WRF Domain {res}"
 ax.set_title(Plot_Title, fontsize=20, weight="bold")
 
-lenght = len(colors)
-levels = cmaps[var]["levels"]
-Cnorm = matplotlib.colors.Normalize(vmin=vmin, vmax=vmax + 1)
+
+length = len(fc_df.Colors.values[:-3])
+colors = fc_df.Colors.values[:-3]
+# levels = fc_df.National_FBP_Fueltypes_2014.values[:-3]
+levels = np.linspace(100.5, 121.5, length)
+levels[-1] = 122
+Cnorm = matplotlib.colors.Normalize(vmin=levels.min(), vmax=levels.max() + 1)
 contourf = ax.contourf(
     lngs,
     lats,
@@ -103,36 +107,21 @@ contourf = ax.contourf(
     levels=levels,
     norm=Cnorm,
     colors=colors,
-    extend="both",
+    extend="max",
     zorder=4,
     alpha=0.9,
 )
 
 fig.add_axes(ax_cb)
-plt.colorbar(contourf, cax=ax_cb)
+ticks = fc_df.CFFDRS.values[:-3]
+tick_levels = fc_df.National_FBP_Fueltypes_2014.values[:-3].astype(float)
+tick_levels[-1] = levels[-1]
+cbar = plt.colorbar(contourf, cax=ax_cb, ticks=tick_levels)
+cbar.ax.set_yticklabels(ticks)  # set ticks of your format
+cbar.ax.axes.tick_params(length=0)
 
 
 ## set map bounds
 ax.set_xlim([-140, -60])
 ax.set_ylim([36, 70])
-
-## tighten up fig
-# plt.tight_layout()
-
-
-# for var in list(ds):
-#     # print(f"max of {var}: {str(ds.Time.values)}")
-#     print(f"max of {var}: {float(ds[var].max(skipna= True))}")
-#     print(f"min of {var}: {float(ds[var].min(skipna= True))}")
-#     print(f"mean of {var}: {float(ds[var].mean(skipna= True))}")
-
-# var = "F"
-# for i in range(len(ds.time)):
-#     print(str(ds.time.values[i]))
-#     print(float(ds.isel(time=i)[var].max(skipna=True)))
-#     print(float(ds.isel(time=i)[var].min(skipna=True)))
-#     print(float(ds.isel(time=i)[var].mean(skipna=True)))
-
-# air1d = ds[var].isel(wmo=200)
-
-# air1d.plot()
+fig.savefig(save_dir, dpi=240)
