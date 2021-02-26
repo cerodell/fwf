@@ -17,18 +17,19 @@ from scipy.ndimage.filters import gaussian_filter
 from context import data_dir, xr_dir, wrf_dir, tzone_dir, fwf_zarr_dir
 from datetime import datetime, date, timedelta
 
+startTime = datetime.now()
+print("RUN STARTED AT: ", str(startTime))
 
-cd
 ## Choose wrf domain
 domain = "d02"
-
-save_file = f"/images/cffdrs-wrf-{domain}.png"
+wrf_model = "wrf4"
+save_file = f"/images/cffdrs-{wrf_model}-{domain}.png"
 save_dir = str(data_dir) + save_file
 
 ## Path to Fuel converter spreadsheet
 fuel_converter = str(data_dir) + "/fbp/fuel_converter.csv"
 ## Path to any wrf file used in transformation
-fuelsin = str(data_dir) + f"/fbp/fuels-{domain}.zarr"
+fuelsin = str(data_dir) + f"/fbp/fuels-{wrf_model}-{domain}.zarr"
 ## Open all files mentioned above
 fc_df = pd.read_csv(fuel_converter)
 fc_df = fc_df.drop_duplicates(subset=["CFFDRS"])
@@ -122,6 +123,16 @@ cbar.ax.axes.tick_params(length=0)
 
 
 ## set map bounds
-ax.set_xlim([-140, -60])
-ax.set_ylim([36, 70])
+if wrf_model == "wrf3":
+    ax.set_xlim([-140, -60])
+    ax.set_ylim([36, 70])
+elif wrf_model == "wrf4":
+    ax.set_xlim([-174, -30])
+    ax.set_ylim([25, 80])
+else:
+    pass
+
 fig.savefig(save_dir, dpi=240)
+
+### Timer
+print("Total Run Time: ", datetime.now() - startTime)

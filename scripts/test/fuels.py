@@ -30,15 +30,18 @@ from scipy.ndimage.filters import gaussian_filter
 from context import data_dir, xr_dir, wrf_dir, tzone_dir, fwf_zarr_dir
 from datetime import datetime, date, timedelta
 
-from PIL import Image
+startTime = datetime.now()
+print("RUN STARTED AT: ", str(startTime))
 
 ## Choose wrf domain
 domain = "d02"
 
+save_zarr = str(data_dir) + f"/fbp/fuels-wrf4-{domain}.zarr"
 ## Path to Fuel converter spreadsheet
 fuel_converter = str(data_dir) + "/fbp/fuel_converter.csv"
 ## Path to any wrf file used in transformation
-wrf_filein = f"/Users/rodell/Google Drive/Shared drives/WAN00CP-04/18093000/wrfout_{domain}_2018-10-02_11:00:00"
+# wrf_filein = f"/Users/rodell/Google Drive/Shared drives/WAN00CP-04/18093000/wrfout_{domain}_2018-10-02_11:00:00"
+wrf_filein = f"/Users/rodell/Google Drive/Shared drives/WAN00CG-01/21022000/wrfout_{domain}_2021-02-20_11:00:00"
 
 ## Path to 2014 nrcan fuels data tif
 fbp2014_filein = (
@@ -89,7 +92,8 @@ fbp2014[ind] = us_array[ind]
 fbp_unique, fbp_count = getunique(fbp2014)
 
 ## loop all tiffs of AK to gridded adn mask fuels type tag to be the same as CFFDRS
-folders = ["%.2d" % i for i in range(1, 11)]
+folders = ["%.2d" % i for i in range(1, 21)]
+print(folders)
 for folder in folders:
     ak_filein = (
         str(data_dir) + f"/fbp/{folder}_AK_140CFFDRS/AK_140CFFDRS\AK_140CFFDRS.tif"
@@ -120,4 +124,7 @@ T2 = wrf_ds.T2
 fuels_ds = xr.merge([fuels_ds, T2])
 fuels_ds = fuels_ds.drop_vars("T2")
 fuels_final = fuels_ds.isel(Time=0)
-fuels_final.to_zarr(str(data_dir) + f"/fbp/fuels-{domain}.zarr", mode="w")
+fuels_final.to_zarr(save_zarr, mode="w")
+
+### Timer
+print("Total Run Time: ", datetime.now() - startTime)
