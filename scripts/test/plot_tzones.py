@@ -26,19 +26,22 @@ from context import data_dir, root_dir, fwf_zarr_dir, wrf_dir, tzone_dir
 startTime = datetime.now()
 
 
-domain = "d02"
-
-### Open WRF domain
-filein = str(wrf_dir) + f"/wrfout-{domain}-2018040106.zarr"
-wrf_ds = xr.open_zarr(filein)
+domain = "d03"
+wrf_model = "wrf4"
 
 ### Open tzone  domain
-filein = str(tzone_dir) + f"/tzone_wrf_{domain}_old.nc"
-tzone_ds = xr.open_dataset(filein)
+filein = str(tzone_dir) + f"/tzone_{wrf_model}_{domain}.zarr"
+tzone_ds = xr.open_zarr(filein)
+
 
 ## set plot title and save dir/name
-Plot_Title = "Model Domains in Mercator Projection"
-save_file = "/images/wrf4-hysplit-model-domains.png"
+if domain == "d02":
+    res = "12 km"
+else:
+    res = "4 km"
+
+Plot_Title = f"Time Zone Offsets From UTC \n {wrf_model.upper()} {res} Domain"
+save_file = f"/images/{wrf_model}-{domain}-tzone.png"
 save_dir = str(data_dir) + save_file
 
 
@@ -56,19 +59,19 @@ fig = plt.figure(figsize=[16, 8])
 ax = fig.add_subplot(1, 1, 1, projection=ccrs.PlateCarree(central_longitude=0))
 
 ## add map features
-ax.gridlines()
+ax.gridlines(zorder=9)
 ax.add_feature(cfeature.LAND, zorder=1)
 ax.add_feature(cfeature.LAKES, zorder=1)
-ax.add_feature(cfeature.OCEAN, zorder=1)
-ax.add_feature(cfeature.BORDERS, zorder=1)
-ax.add_feature(cfeature.COASTLINE, zorder=1)
+ax.add_feature(cfeature.OCEAN, zorder=9)
+ax.add_feature(cfeature.BORDERS, zorder=10)
+ax.add_feature(cfeature.COASTLINE, zorder=10)
 ax.add_feature(states_provinces, edgecolor="gray", zorder=2)
-ax.set_xlabel("Longitude", fontsize=18)
-ax.set_ylabel("Latitude", fontsize=18)
+ax.set_xlabel("Longitude", fontsize=18, zorder=10)
+ax.set_ylabel("Latitude", fontsize=18, zorder=10)
 
 ## create tick mark labels and style
-ax.set_xticks(list(np.arange(-160, -40, 10)), crs=ccrs.PlateCarree())
-ax.set_yticks(list(np.arange(30, 80, 10)), crs=ccrs.PlateCarree())
+ax.set_xticks(list(np.arange(-170, -20, 10)), crs=ccrs.PlateCarree())
+ax.set_yticks(list(np.arange(20, 90, 10)), crs=ccrs.PlateCarree())
 # ax.yaxis.tick_right()
 # ax.yaxis.set_label_position("right")
 ax.tick_params(axis="both", which="major", labelsize=14)
@@ -77,58 +80,72 @@ ax.tick_params(axis="both", which="minor", labelsize=14)
 ## add title and adjust subplot buffers
 ax.set_title(Plot_Title, fontsize=20, weight="bold")
 fig.subplots_adjust(hspace=0.8)
-
+divider = make_axes_locatable(ax)
+ax_cb = divider.new_horizontal(size="5%", pad=0.1, axes_class=plt.Axes)
 
 ## get d01 lats and lon
-lats, lons = np.array(wrf_ds.XLAT), np.array(wrf_ds.XLONG)
-# lats, lons = lats[0], lons[0]
+lats, lons = tzone_ds.XLAT.values, tzone_ds.XLONG.values
 lons = np.where(
     lons > -179, lons, np.nan
 )  ## mask out past international dateline.....catorpy hates the dateline
 
 ## plot d01
-ax.plot(lons[0], lats[0], color="green", linewidth=2, zorder=8, alpha=1)
-ax.plot(lons[-1].T, lats[-1].T, color="green", linewidth=2, zorder=8, alpha=1)
-ax.plot(lons[:, 0], lats[:, 0], color="green", linewidth=2, zorder=8, alpha=1)
+ax.plot(lons[0], lats[0], color="k", linewidth=2, zorder=10, alpha=1)
+ax.plot(lons[-1].T, lats[-1].T, color="k", linewidth=2, zorder=10, alpha=1)
+ax.plot(lons[:, 0], lats[:, 0], color="k", linewidth=2, zorder=10, alpha=1)
 ax.plot(
     lons[:, -1].T,
     lats[:, -1].T,
-    color="green",
+    color="k",
     linewidth=2,
-    zorder=8,
+    zorder=10,
     alpha=1,
-    label="12 km WRF Domain",
 )
 
 
-levels = np.unique(tzone_ds.Zone)
+levels = np.unique(tzone_ds.Zone.values)
+if wrf_model == "wrf3":
+    levels = [3, 4, 5, 6, 7, 8, 9, 10]
+    levels = [-10, -9, -8, -7, -6, -5, -4, -3]
+elif wrf_model == "wrf4":
+    levels = [3, 4, 5, 6, 7, 8, 9, 10]
+    levels = [-10, -9, -8, -7, -6, -5, -4, -3]
+else:
+    pass
+
 # divider = make_axes_locatable(ax)
 
-Cnorm = matplotlib.colors.Normalize(vmin=levels[0], vmax=levels[-1] + 1)
 
-clb = ax.contourf(
-    lons, lats, tzone_ds.Zone, zorder=8, alpha=0.5, levels=levels, norm=Cnorm
+contourf = ax.contourf(
+    lons,
+    lats,
+    (tzone_ds.Zone + 0.5) * -1,
+    zorder=8,
+    alpha=0.5,
+    levels=levels,
+    cmap="Dark2_r",
 )
-ax.contour(lons, lats, tzone_ds.Zone, zorder=8, alpha=1, levels=levels, norm=Cnorm)
-# cax = divider.append_axes('right', size='5%', pad=0.05)
-fig.colorbar(clb, orientation="vertical")
 
+fig.add_axes(ax_cb)
+ticks = levels[1:]
+tick_levels = list(np.array(levels) - 0.5)
+cbar = plt.colorbar(contourf, cax=ax_cb, ticks=tick_levels)
+cbar.ax.set_yticklabels(ticks)  # set ticks of your format
+cbar.ax.axes.tick_params(length=0)
 
 ## set map bounds
-ax.set_xlim([-150, -50])
-ax.set_ylim([32, 70])
+## set map bounds
+if wrf_model == "wrf3":
+    ax.set_xlim([-150, -54])
+    ax.set_ylim([34, 70])
+elif wrf_model == "wrf4":
+    ax.set_xlim([-179.9, -29])
+    ax.set_ylim([20, 80])
+else:
+    pass
 
-## add legend
-ax.legend(
-    loc="upper center",
-    bbox_to_anchor=(0.5, 1.0),
-    ncol=5,
-    fancybox=True,
-    shadow=True,
-)
 
 ## tighten up fig
 plt.tight_layout()
-
 ## save as png
-# fig.savefig(save_dir, dpi=240)
+fig.savefig(save_dir, dpi=240)

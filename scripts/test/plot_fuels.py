@@ -97,16 +97,17 @@ ax.set_title(Plot_Title, fontsize=20, weight="bold")
 
 length = len(fc_df.Colors.values[:-3])
 colors = fc_df.Colors.values[:-3]
-# levels = fc_df.National_FBP_Fueltypes_2014.values[:-3]
-levels = np.linspace(100.5, 121.5, length)
-levels[-1] = 122
-Cnorm = matplotlib.colors.Normalize(vmin=levels.min(), vmax=levels.max() + 1)
+levels = fc_df.National_FBP_Fueltypes_2014.values[:-3]
+levels = np.linspace(levels[0], levels[-1] + 1, length + 1).astype(int)
+
+# levels[-1] = 122
+# Cnorm = matplotlib.colors.Normalize(vmin=levels.min(), vmax=levels.max() + 1)
 contourf = ax.contourf(
     lngs,
     lats,
-    fillarray,
+    fillarray + 0.5,
     levels=levels,
-    norm=Cnorm,
+    # norm=Cnorm,
     colors=colors,
     extend="max",
     zorder=4,
@@ -115,8 +116,9 @@ contourf = ax.contourf(
 
 fig.add_axes(ax_cb)
 ticks = fc_df.CFFDRS.values[:-3]
-tick_levels = fc_df.National_FBP_Fueltypes_2014.values[:-3].astype(float)
-tick_levels[-1] = levels[-1]
+# tick_levels = fc_df.National_FBP_Fueltypes_2014.values[:-3].astype(float)
+tick_levels = list(np.array(levels) - 0.5)
+# tick_levels[-1] = levels[-1]
 cbar = plt.colorbar(contourf, cax=ax_cb, ticks=tick_levels)
 cbar.ax.set_yticklabels(ticks)  # set ticks of your format
 cbar.ax.axes.tick_params(length=0)
@@ -133,6 +135,6 @@ else:
     pass
 
 fig.savefig(save_dir, dpi=240)
-
+print(f"Saved:  {save_dir}")
 ### Timer
 print("Total Run Time: ", datetime.now() - startTime)

@@ -29,7 +29,9 @@ wrf_model = "wrf3"
 
 ## Path to hourly/daily fwi data
 forecast_date = date.strftime("%Y%m%d06")
-hourly_file_dir = str(fwf_zarr_dir) + f"/fwf-hourly-{domain}-{forecast_date}.zarr"
+hourly_file_dir = (
+    str(data_dir) + f"/FWF-WAN00CP-04/fwf-hourly-{domain}-{forecast_date}.zarr"
+)
 
 ## Path to fuel converter spreadsheet
 fuel_converter = str(data_dir) + "/fbp/fuel_converter.csv"
@@ -59,7 +61,7 @@ terrain_ds = xr.open_dataset(terrain)
 ELV, LAT, LON, FUELS = (
     terrain_ds.HGT.values[0, :, :],
     terrain_ds.XLAT.values[0, :, :],
-    terrain_ds.XLONG.values[0, :, :],
+    terrain_ds.XLONG.values[0, :, :] * -1,
     fuels_ds.fuels.values.astype(int),
 )
 
@@ -202,10 +204,25 @@ SFC = xr.where(
     SFC,
 )
 
-
-# Constrain SFC value
+# Remove negative SFC value
 SFC = xr.where(SFC <= 0, 1e-6, SFC)
+
+
+###################    Surface Fuel Consumption  #######################
+########################################################################
+## Define frequently used variables
+ISI = hourly_ds.R
 
 
 ### Timer
 print("Total Run Time: ", datetime.now() - startTime)
+
+
+gradient = np.gradient(ELV)
+y_grad = gradient[0]
+x_grad = gradient[1]
+mag = np.sqrt(x_grad ** 2 + y_grad ** 2)
+
+
+test_elv = np.array([[2, 0, 0, 0], [1, 2, 3, 4]])
+test_gradient = np.gradient(test_elv)

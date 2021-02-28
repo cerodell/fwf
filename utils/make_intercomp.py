@@ -18,11 +18,18 @@ from context import data_dir, root_dir, tzone_dir, fwf_zarr_dir
 
 def daily_merge_ds(date_to_merge, domain, wrf_model):
 
-    hourly_file_dir = str(fwf_zarr_dir) + str(
-        f"/fwf-hourly-{domain}-{date_to_merge}.zarr"
+    # hourly_file_dir = str(fwf_zarr_dir) + str(
+    #     f"/fwf-hourly-{domain}-{date_to_merge}.zarr"
+    # )
+    # daily_file_dir = str(fwf_zarr_dir) + str(
+    #     f"/fwf-daily-{domain}-{date_to_merge}.zarr"
+    # )
+
+    hourly_file_dir = str(data_dir) + str(
+        f"/FWF-WAN00CP-04/fwf-hourly-{domain}-{date_to_merge}.zarr"
     )
-    daily_file_dir = str(fwf_zarr_dir) + str(
-        f"/fwf-daily-{domain}-{date_to_merge}.zarr"
+    daily_file_dir = str(data_dir) + str(
+        f"/FWF-WAN00CP-04/fwf-daily-{domain}-{date_to_merge}.zarr"
     )
     ### Open datasets
     my_dir = Path(hourly_file_dir)

@@ -943,9 +943,10 @@ class FWF:
         ### (24) Solve for wind function (f_W)
         # a = 0.05039 * W
         # f_W = np.power(e_full, a)
-
+        ## TODO need to rethink this....incluce both ISI and ISI_fbp
         # This modification is Equation 53a in FCFDG (1992) (Lawson 2008)
         W_limit = 40.0
+
         f_W_low = xr.where(W > W_limit, zero_full, np.exp(0.05039 * W))
         f_W_high = xr.where(
             W <= W_limit, zero_full, 12 * (1 - np.exp(-0.0818 * (W - 28)))
