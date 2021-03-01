@@ -30,7 +30,7 @@ print("RUN STARTED AT: ", str(startTime))
 __author__ = "Christopher Rodell"
 __email__ = "crodell@eoas.ubc.ca"
 
-
+wrf_model = "wrf4"
 ## make dir for that intercomp files if it doest not all ready exist
 make_dir = Path(str(data_dir) + "/intercomp/")
 make_dir.mkdir(parents=True, exist_ok=True)
@@ -61,9 +61,9 @@ for domain in ["d02", "d03"]:
     stations_df = stations_df_og
 
     print(day1_obs_date)
-    day1_ds = daily_merge_ds(day1_obs_date, domain)
+    day1_ds = daily_merge_ds(day1_obs_date, domain, wrf_model)
 
-    day2_ds = daily_merge_ds(day2_obs_date, domain)
+    day2_ds = daily_merge_ds(day2_obs_date, domain, wrf_model)
 
     ### Get a wrf file
     wrf_filein = "/wrf/"

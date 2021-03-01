@@ -16,7 +16,7 @@ from datetime import datetime, date, timedelta
 from context import data_dir, root_dir, tzone_dir, fwf_zarr_dir
 
 
-def daily_merge_ds(date_to_merge, domain):
+def daily_merge_ds(date_to_merge, domain, wrf_model):
 
     hourly_file_dir = str(fwf_zarr_dir) + str(
         f"/fwf-hourly-{domain}-{date_to_merge}.zarr"
@@ -31,7 +31,7 @@ def daily_merge_ds(date_to_merge, domain):
 
         daily_ds = xr.open_zarr(daily_file_dir)
         ### Call on variables
-        tzone_ds = xr.open_dataset(str(tzone_dir) + f"/tzone_wrf_{domain}.nc")
+        tzone_ds = xr.open_zarr(str(tzone_dir) + f"/tzone_{wrf_model}_{domain}.zarr")
         tzone = tzone_ds.Zone.values
         shape = tzone.shape
         ## create I, J for quick indexing

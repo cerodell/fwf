@@ -30,6 +30,7 @@ warnings.filterwarnings("ignore", message="invalid value encountered in log")
 
 
 # """######### create forecast directory for webapge  #############"""
+wrf_model = "wrf4"
 forecast_date = pd.Timestamp("today").strftime("%Y%m%d00")
 make_dir = Path(f"/bluesky/archive/fireweather/forecasts/{forecast_date}/")
 make_dir.mkdir(parents=True, exist_ok=True)
@@ -44,7 +45,7 @@ for domain in domains:
     print(wrf_file_dir)
 
     # """######### Open wrf_out.nc and write  new hourly/daily .zarr files #############"""
-    coeff = FWF(wrf_file_dir, domain, initialize=False)
+    coeff = FWF(wrf_file_dir, domain, wrf_model, initialize=False)
 
     coeff.daily()
     coeff.hourly()

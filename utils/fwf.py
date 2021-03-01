@@ -60,7 +60,7 @@ class FWF:
     """ ######################## Initialize FWI model #########################"""
     """########################################################################"""
 
-    def __init__(self, wrf_file_dir, domain, initialize):
+    def __init__(self, wrf_file_dir, domain, wrf_model, initialize):
         """
         Initialize Fire Weather Index Model
 
@@ -88,6 +88,7 @@ class FWF:
         shape = np.shape(wrf_ds.T[0, :, :])
         self.shape = shape
         self.domain = domain
+        self.wrf_model = wrf_model
         print("Domain shape:  ", shape)
 
         # self.e_full    = np.full(shape,e, dtype=float)
@@ -108,7 +109,9 @@ class FWF:
         self.L_f = L_f
 
         ### Open time zones dataset...each grids offset from utc time
-        tzone_ds = xr.open_dataset(str(tzone_dir) + f"/tzone_wrf_{self.domain}.nc")
+        tzone_ds = xr.open_zarr(
+            str(tzone_dir) + f"/tzone_{wrf_model}_{self.domain}.zarr"
+        )
         self.tzone_ds = tzone_ds
 
         # ### Create an hourly datasets for use with their respected codes/indices

@@ -34,7 +34,7 @@ from wrf import getvar, g_uvmet, geo_bounds
 __author__ = "Christopher Rodell"
 __email__ = "crodell@eoas.ubc.ca"
 
-
+wrf_model = "wrf4"
 ### make folder for json files on webapge
 forecast_date = pd.Timestamp("today").strftime("%Y%m%d")
 make_dir = Path(f"/bluesky/archive/fireweather/forecasts/{forecast_date}00/data/plot")
@@ -64,12 +64,11 @@ for domain in domains:
         f"/fwf-daily-{domain}-{forecast_date}.zarr"
     )
 
-    ### Open time zones dataset...each grids offset from utc time
-    tzone_ds = xr.open_dataset(str(tzone_dir) + f"/tzone_wrf_{domain}.nc")
+    tzone_ds = xr.open_zarr(str(tzone_dir) + f"/tzone_{wrf_model}_{domain}.zarr")
 
     ### Open datasets
     hourly_ds = xr.open_zarr(hourly_file_dir)
-    daily_ds = daily_merge_ds(forecast_date, domain)
+    daily_ds = daily_merge_ds(forecast_date, domain, wrf_model)
 
     ## ROund all var is the dataset
     hourly_ds = hourly_ds.round(2)

@@ -33,6 +33,8 @@ print("RUN STARTED AT: ", str(startTime))
 __author__ = "Christopher Rodell"
 __email__ = "crodell@eoas.ubc.ca"
 
+
+wrf_model = "wrf4"
 ## Open color map json
 with open(str(data_dir) + "/json/colormaps-dev.json") as f:
     cmaps = json.load(f)
@@ -76,24 +78,24 @@ obs_ds = obs_ds.sel(time=slice(obs_date_int, obs_date))
 ## Open todays datasets of both domains
 hourly_file_dir = str(fwf_zarr_dir) + str(f"/fwf-hourly-d02-{forecast_date}.zarr")
 hourly_d2_ds = xr.open_zarr(hourly_file_dir)
-daily_d2_ds = daily_merge_ds(forecast_date, "d02")
+daily_d2_ds = daily_merge_ds(forecast_date, "d02", wrf_model)
 
 hourly_file_dir = str(fwf_zarr_dir) + str(f"/fwf-hourly-d03-{forecast_date}.zarr")
 hourly_d3_ds = xr.open_zarr(hourly_file_dir)
-daily_d3_ds = daily_merge_ds(forecast_date, "d03")
+daily_d3_ds = daily_merge_ds(forecast_date, "d03", wrf_model)
 
 ## Open yesterdays datasets of both domains
 hourly_file_dir = str(fwf_zarr_dir) + str(
     f"/fwf-hourly-d02-{yesterday_forecast_date}.zarr"
 )
 hourly_d2_yester_ds = xr.open_zarr(hourly_file_dir)
-daily_d2_yester_ds = daily_merge_ds(yesterday_forecast_date, "d02")
+daily_d2_yester_ds = daily_merge_ds(yesterday_forecast_date, "d02", wrf_model)
 
 hourly_file_dir = str(fwf_zarr_dir) + str(
     f"/fwf-hourly-d03-{yesterday_forecast_date}.zarr"
 )
 hourly_d3_yester_ds = xr.open_zarr(hourly_file_dir)
-daily_d3_yester_ds = daily_merge_ds(yesterday_forecast_date, "d03")
+daily_d3_yester_ds = daily_merge_ds(yesterday_forecast_date, "d03", wrf_model)
 
 
 def wmo_locs(hourly_ds, daily_ds, obs_ds, domain):
