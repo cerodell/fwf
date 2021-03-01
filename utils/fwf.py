@@ -60,7 +60,7 @@ class FWF:
     """ ######################## Initialize FWI model #########################"""
     """########################################################################"""
 
-    def __init__(self, wrf_file_dir, domain, initialize):
+    def __init__(self, wrf_file_dir, domain, wrf_model, initialize):
         """
         Initialize Fire Weather Index Model
 
@@ -74,7 +74,6 @@ class FWF:
             wrf_ds["r_o"] = wrf_ds.r_o - wrf_ds.r_o.isel(time=0)
             wrf_ds["r_o"].attrs = attrs
             wrf_ds.r_o.attrs["description"] = "ACCUMULATED TOTAL PRECIPITATION"
-            print(wrf_ds["r_o"])
             print(float(wrf_ds.r_o.isel(time=0).max()))
             attrs = wrf_ds.SNW.attrs
             wrf_ds["SNW"] = wrf_ds.SNW - wrf_ds.SNW.isel(time=0)
@@ -97,6 +96,7 @@ class FWF:
         shape = np.shape(wrf_ds.T[0, :, :])
         self.shape = shape
         self.domain = domain
+        self.wrf_model = wrf_model
         print("Domain shape:  ", shape)
 
         # self.e_full    = np.full(shape,e, dtype=float)
@@ -117,7 +117,9 @@ class FWF:
         self.L_f = L_f
 
         ### Open time zones dataset...each grids offset from utc time
-        tzone_ds = xr.open_dataset(str(tzone_dir) + f"/tzone_wrf_{self.domain}_old.nc")
+        tzone_ds = xr.open_zarr(
+            str(tzone_dir) + f"/tzone_{wrf_model}_{self.domain}.zarr"
+        )
         self.tzone_ds = tzone_ds
 
         # ### Create an hourly datasets for use with their respected codes/indices
@@ -186,23 +188,9 @@ class FWF:
             print(f"{initialize}: Initialize DMC on date {previous_time}, with 6s")
             P_o = self.P_initial
             P_o_full = np.full(shape, P_o, dtype=float)
-
-            ### Solve for initial log drying rate (K_o)
-            K_o = (
-                1.894
-                * (self.daily_ds.T[0] + 1.1)
-                * (100 - self.daily_ds.H[0])
-                * (L_e * 10 ** -6)
-            )
-
-            ### Solve for initial duff moisture code (P_o)
-            P_o = P_o_full + (100 * K_o)
-
             ### Create dataarrays for P
-            P = xr.DataArray(P_o, name="P", dims=("south_north", "west_east"))
+            P = xr.DataArray(P_o_full, name="P", dims=("south_north", "west_east"))
 
-            ### Add dataarrays to daily dataset
-            # self.daily_ds["P"] = P
             self.P = P
 
             # """ #####################     Drought Code (DC)       ########################### """
@@ -427,160 +415,78 @@ class FWF:
             self.F_ds.F,
         )
 
-        # e_full, zero_full = self.e_full, self.zero_full
-        zero_full = self.zero_full
-
         ########################################################################
-        ### (1b) Solve for the effective rain (r_f)
-        ## Van/Pick define as 0.5
-        r_limit = 0.5
-        r_fi = xr.where(r_o < r_limit, r_o, (r_o - r_limit))
-        r_f = xr.where(r_fi > 1e-7, r_fi, 0.0)
-
+        ### Solve for the effective rainfall routine (r_f)
+        r_f = xr.where(r_o > 0.5, (r_o - 0.5), xr.where(r_o < 1e-7, 1e-5, r_o))
         ########################################################################
-        ### (1c) Solve the Rainfall routine as defined in  Van Wagner 1985 (m_r)
-        m_o_limit = 150
-        # a =  (-100 / (251 - m_o))
-        # b = (-6.93 / r_f)
-        # m_r_low = xr.where(m_o >= m_o_limit, zero_full, m_o + \
-        #                     (42.5 * r_f * np.power(e_full,a) * (1- np.power(e_full,b))))
-
-        m_r_low = xr.where(
-            m_o >= m_o_limit,
-            zero_full,
+        ### (1) Solve the Rainfall routine as defined in  Van Wagner 1985 (m_r)
+        m_o = xr.where(
+            m_o <= 150,
             m_o
             + (42.5 * r_f * np.exp((-100 / (251 - m_o))) * (1 - np.exp((-6.93 / r_f)))),
-        )
-
-        ########################################################################
-        ### (1d) Solve the RainFall routine as defined in  Van Wagner 1985 (m_r)
-        # m_r_high = xr.where(m_o < m_o_limit, zero_full, m_o + \
-        #                     (42.5 * r_f * np.power(e_full, a) * (1 - np.power(e_full, b))) + \
-        #                         (0.0015 * np.power((m_o - 150),2) * np.power(r_f, 0.5)))
-
-        m_r_high = xr.where(
-            m_o < m_o_limit,
-            zero_full,
             m_o
             + (42.5 * r_f * np.exp((-100 / (251 - m_o))) * (1 - np.exp((-6.93 / r_f))))
             + (0.0015 * np.power((m_o - 150), 2) * np.power(r_f, 0.5)),
         )
 
-        ########################################################################
-        ### (1e) Set new m_o with the rainfall routine (m_o)
-        m_o = m_r_low + m_r_high
-        m_o = np.where(m_o < 250, m_o, 250)  # Set upper limit of 250
-        m_o = np.where(m_o > 0, m_o, 1e4)  # Set lower limit of 0
+        m_o = np.where(m_o > 250, 250, np.where(m_o < 0, 1e-5, m_o))
 
         ########################################################################
         ### (2a) Solve Equilibrium Moisture content for drying (E_d)
-        ## define powers
-        a = 0.679
-        # b = ((H-100)/ 10)
-        # c = (-0.115 * H)
-
-        # E_d = (0.942 * np.power(H,a)) + (11 * np.power(e_full,b)) \
-        #             + (0.18 * (21.1 - T) * (1 - np.power(e_full,c)))
 
         E_d = (
-            (0.942 * np.power(H, a))
+            0.942 * np.power(H, 0.679)
             + (11 * np.exp(((H - 100) / 10)))
             + (0.18 * (21.1 - T) * (1 - np.exp((-0.115 * H))))
         )
 
         ########################################################################
         ### (2b) Solve Equilibrium Moisture content for wetting (E_w)
-        ## define powers (will use b and c from 2a)
-        d = 0.753
 
-        # E_w  = xr.where(m_o > E_d, zero_full,(0.618 * (np.power(H, d))) +  \
-        #                     (10 * np.power(e_full, b)) + (0.18 * (21.1 - T)  * \
-        #                     (1 - np.power(e_full, c))))
-
-        E_w = xr.where(
-            m_o > E_d,
-            zero_full,
-            (0.618 * (np.power(H, d)))
+        E_w = (
+            (0.618 * (np.power(H, 0.753)))
             + (10 * np.exp(((H - 100) / 10)))
-            + (0.18 * (21.1 - T) * (1 - np.exp((-0.115 * H)))),
+            + (0.18 * (21.1 - T) * (1 - np.exp((-0.115 * H))))
         )
 
         ########################################################################
         ### (3a) intermediate step to k_d (k_a)
-        # a = ((100 - H) / 100)   ## Van Wagner 1987
-        # a = H/100               ## Van Wagner 1977
-
-        k_a = xr.where(
-            m_o < E_d,
-            zero_full,
-            0.424 * (1 - np.power(H / 100, 1.7))
-            + 0.0694 * (np.power(W, 0.5)) * (1 - np.power(H / 100, 8)),
+        k_a = 0.424 * (1 - np.power(H / 100, 1.7)) + 0.0694 * (np.power(W, 0.5)) * (
+            1 - np.power(H / 100, 8)
         )
 
         ########################################################################
         ### (3b) Log drying rate for hourly computation, log to base 10 (k_d)
-        b = 0.0579
-
-        # k_d = xr.where(m_o < E_d, zero_full, b * k_a * np.power(e_full,(0.0365 * T)))
-        k_d = xr.where(m_o < E_d, zero_full, b * k_a * np.exp(0.0365 * T))
+        k_d = 0.0579 * k_a * np.exp(0.0365 * T)
 
         ########################################################################
         ### (4a) intermediate steps to k_w (k_b)
-        # a = ((100 - H) / 100)
-
-        k_b = xr.where(
-            m_o > E_w,
-            zero_full,
-            0.424 * (1 - np.power(((100 - H) / 100), 1.7))
-            + 0.0694 * np.power(W, 0.5) * (1 - np.power(((100 - H) / 100), 8)),
-        )
+        k_b = 0.424 * (1 - np.power(((100 - H) / 100), 1.7)) + 0.0694 * np.power(
+            W, 0.5
+        ) * (1 - np.power(((100 - H) / 100), 8))
 
         ########################################################################
         ### (4b)  Log wetting rate for hourly computation, log to base 10 (k_w)
-        b = 0.0579
-
-        # k_w = xr.where(m_o > E_w, zero_full, b * k_b * np.power(e_full,(0.0365 * T)))
-        k_w = xr.where(m_o > E_w, zero_full, b * k_b * np.exp(0.0365 * T))
+        k_w = 0.0579 * k_b * np.exp(0.0365 * T)
 
         ########################################################################
         ### (5a) intermediate dry moisture code (m_d)
-
-        # m_d = xr.where(m_o < E_d, zero_full, E_d + ((m_o - E_d) * np.power(e_full, -2.303*(k_d))))  ## Van Wagner 1977
-        # m_d = xr.where(m_o < E_d, zero_full, E_d + ((m_o - E_d) * np.power(10, -(k_d))))            ## Van Wagner 1985
-
-        m_d = xr.where(
-            m_o < E_d, zero_full, E_d + ((m_o - E_d) * np.exp(-2.303 * (k_d)))
-        )  ## Van Wagner 1977
+        m_d = E_d + ((m_o - E_d) * np.exp(-2.303 * (k_d)))
 
         ########################################################################
         ### (5b) intermediate wet moisture code (m_w)
-
-        # m_w = xr.where(m_o > E_w, zero_full, E_w - ((E_w - m_o) * np.power(e_full, -2.303*(k_w))))  ## Van Wagner 1977
-        # m_w = xr.where(m_o > E_w, zero_full, E_w - ((E_w - m_o) * np.power(10, -(k_w))))            ## Van Wagner 1985
-
-        m_w = xr.where(
-            m_o > E_w, zero_full, E_w - ((E_w - m_o) * np.exp(-2.303 * (k_w)))
-        )  ## Van Wagner 1977
+        m_w = E_w - ((E_w - m_o) * np.exp(-2.303 * (k_w)))
 
         ########################################################################
-        ### (5c) intermediate neutral moisture code (m_neutral)
-
-        m_neutral = xr.where(
-            (E_d <= m_o), zero_full, xr.where((m_o <= E_w), zero_full, m_o)
-        )
+        ### (5c) combine dry, wet, neutral moisture codes
+        m = xr.where(m_o > E_d, m_d, m_w)
+        m = xr.where((E_d >= m_o) & (m_o >= E_w), m_o, m)
 
         ########################################################################
-        ### (6) combine dry, wet, neutral moisture codes
-
-        m = m_d + m_w + m_neutral
-        m = xr.where(m <= 250, m, 250)
-
-        ### Solve for FFMC
-        # F = (82.9 * (250 - m)) / (205.2 + m)    ## Van 1977
+        ### (6) Solve for FFMC
         F = (59.5 * (250 - m)) / (147.27723 + m)  ## Van 1985
 
         ### Recast initial moisture code for next time stamp
-        # m_o = (205.2 * (101 - F)) / (82.9 + F)  ## Van 1977
         m_o = (147.27723 * (101 - F)) / (59.5 + F)  ## Van 1985
 
         F = F.to_dataset(name="F")
@@ -654,132 +560,50 @@ class FWF:
             daily_ds.SNOWC,
         )
 
-        # e_full, zero_full, ones_full = self.e_full, self.zero_full, self.ones_full
-        zero_full, ones_full = self.zero_full, self.ones_full
-
-        #### HOPEFULLY SOLVES RUNTIME WARNING
-        P_o = xr.where(P_o > 0, P_o, 0.1)
+        ## Set min low temp
+        T = xr.where(T < (-1.1), -1.1, T)
 
         ########################################################################
         ### (11) Solve for the effective rain (r_e)
-        r_total = 1.5
-        r_ei = xr.where(r_o < r_total, r_o, (0.92 * r_o) - 1.27)
-        r_e = xr.where(r_ei > 1e-7, r_ei, 0.0)
+        r_e = (0.92 * r_o) - 1.27
 
         ########################################################################
-        ### (12) Recast moisture content after rain (M_o)
-        ##define power
-        # a = (5.6348 - (P_o / 43.43))
-        # M_o = xr.where(r_o < r_total, zero_full, 20 + np.power(e_full,a))
-        # M_o = xr.where(r_o < r_total, zero_full, 20 + np.exp(a))
-
-        ## Alteration to Eq. 12 to calculate more accurately (Lawson 2008)
+        ### (12) Alteration more accurate calculation (Lawson 2008)
         M_o = 20 + 280 / np.exp(0.023 * P_o)
 
         ########################################################################
-        ### (13a) Solve for coefficients b where P_o <= 33 (b_low)
-        b_low = xr.where(
-            r_o < r_total,
-            zero_full,
-            xr.where(P_o >= 33, zero_full, 100 / (0.5 + (0.3 * P_o))),
+        ### (13) Solve for coefficients b
+        b = xr.where(
+            P_o <= 33,
+            100 / (0.5 + 0.3 * P_o),
+            xr.where(P_o <= 65, 14 - 1.3 * np.log(P_o), 6.2 * np.log(P_o) - 17.2),
         )
 
         ########################################################################
-        ### (13b) Solve for coefficients b where 33 < P_o <= 65 (b_mid)
-
-        b_mid = xr.where(
-            r_o < r_total,
-            zero_full,
-            xr.where((P_o > 33) & (P_o <= 65), 14 - (1.3 * np.log(P_o)), zero_full),
-        )
+        ### (14) Solve for moisture content
+        M_r = M_o + 1000 * r_e / (48.77 + b * r_e)
 
         ########################################################################
-        ### (13c) Solve for coefficients b where  P_o > 65 (b_high)
-
-        b_high = xr.where(
-            r_o < r_total,
-            zero_full,
-            xr.where(P_o < 65, zero_full, (6.2 * np.log(P_o)) - 17.2),
-        )
-
-        ########################################################################
-        ### (14a) Solve for moisture content after rain where P_o <= 33 (M_r_low)
-
-        M_r_low = xr.where(
-            r_o < r_total,
-            zero_full,
-            xr.where(P_o >= 33, zero_full, M_o + (1000 * r_e) / (48.77 + b_low * r_e)),
-        )
-
-        ########################################################################
-        ### (14b) Solve for moisture content after rain where 33 < P_o <= 65 (M_r_mid)
-
-        M_r_mid = xr.where(
-            r_o < r_total,
-            zero_full,
-            xr.where(
-                P_o < 33,
-                zero_full,
-                xr.where(
-                    P_o >= 65, zero_full, M_o + (1000 * r_e) / (48.77 + b_mid * r_e)
-                ),
-            ),
-        )
-
-        ########################################################################
-        ### (14c)  Solve for moisture content after rain where P_o > 65 (M_r_high)
-
-        M_r_high = xr.where(
-            r_o < r_total,
-            zero_full,
-            xr.where(P_o < 65, zero_full, M_o + (1000 * r_e) / (48.77 + b_high * r_e)),
-        )
-
-        ########################################################################
-        ### (14d) Combine all moisture content after rain (M_r)
-
-        M_r = M_r_low + M_r_mid + M_r_high
-        M_r = xr.where(r_o < r_total, zero_full, xr.where(M_r > 20, M_r, 20.0001))
-
-        ########################################################################
-        ### (15) Duff moisture code after rain but prior to drying (P_r_pre_K)
-
-        # P_r_pre_K = xr.where(r_o < r_total, zero_full, 244.72 - (43.43 * np.log(M_r - 20)))
-
-        ## Alteration to Eq. 15 to calculate more accurately  (Lawson 2008)
-        P_r_pre_K = xr.where(
-            r_o < r_total, zero_full, 43.43 * (5.6348 - np.log(M_r - 20))
-        )
-
-        P_r_pre_K = xr.where(P_r_pre_K > 0, P_r_pre_K, 1e-6)
+        ### (15) Duff moisture code (P_r) Alteration more accurate calculation (Lawson 2008)
+        P_r = 43.43 * (5.6348 - np.log(M_r - 20))
+        ## Apply rain condition if precip is less than 2.8 then use yesterday's DC
+        P_r = xr.where(r_o <= 1.5, P_o, P_r)
+        P_r = xr.where(P_r < 0, 0, P_r)
 
         ########################################################################
         ### (16) Log drying rate (K)
-        T = np.where(T > -1.1, T, -1.1)
-
-        K = 1.894 * (T + 1.1) * (100 - H) * (L_e * 10 ** -6)
-
-        ########################################################################
-        ### (17a) Duff moisture code dry (P_d)
-        P_d = xr.where(r_o > r_total, zero_full, P_o + 100 * K)
+        K = (
+            1.894 * (T + 1.1) * (100 - H) * (L_e * 1e-4)
+        )  ## NOTE they use 1e-04 in the R code not sure why ?
 
         ########################################################################
-        ### (17b) Duff moisture code dry (P_r)
-        P_r = xr.where(r_o < r_total, zero_full, P_r_pre_K + 100 * K)
-
-        ########################################################################
-        ##(18) Combine Duff Moisture Codes accross domain (P)
-
-        P_i = P_d + P_r
-
-        ########################################################################
-        ## keep grid to P initial (start up value) if grid
-        ## is covered by more than 50% snow
-        P = xr.where(SNOWC < self.snowfract, P_i, self.P_initial)
-        P = xr.where(P > 0.0, P, 0.1)
+        ### (17) Duff moisture
+        P = P_r + K
+        # Hold P to P_initial if snow cover is more than 50%
+        P = xr.where(SNOWC > self.snowfract, self.P_initial, P)
+        P = xr.where(P < 0, 0, P)
 
         self.P = P
-
         return P
 
     """########################################################################"""
@@ -843,77 +667,45 @@ class FWF:
             daily_ds.SNOWC,
         )
 
-        # e_full, zero_full, ones_full = self.e_full, self.zero_full, self.ones_full
-        zero_full, ones_full = self.zero_full, self.ones_full
+        ## Hold T to min value
+        T = xr.where(T < (-2.8), -2.8, T)
 
         ########################################################################
         ### (18) Solve for the effective rain (r_d)
-        r_limit = 2.8
-        r_di = xr.where(r_o < r_limit, r_o, (0.83 * r_o) - 1.27)
-        r_d = xr.where(r_di > 1e-7, r_di, 0.0)
+        r_d = 0.83 * r_o - 1.27
 
         ########################################################################
         ### (19) Solve for initial moisture equivalent (Q_o)
-        # a = (-D_o/400)
-        # Q_o = xr.where(r_o < r_limit, zero_full, 800 * np.power(e_full,a))
-        Q_o = xr.where(r_o < r_limit, zero_full, 800 * np.exp((-D_o / 400)))
-
-        ########################################################################
-        ### (20) Solve for moisture equivalent (Q_r)
-
-        # Q_r = xr.where(r_o < r_limit, zero_full, Q_o + (3.937 * r_d))
-
-        #### HOPEFULLY SOLVES RUNTIME WARNING
-        # Q_r = xr.where(Q_r > 0, Q_r, 1e-6)
+        Q_o = 800 * np.exp(-1 * D_o / 400)
 
         ########################################################################
         ### (21) Solve for DC after rain (D_r)
-        # a = (800/Q_r)
-        # D_r = xr.where(r_o < r_limit, zero_full, 400 * np.log(a))
-
-        ## Alteration to Eq. 21 (Lawson 2008)\
-        # a = 1 + 3.937 * r_d/Q_o
-        D_r = xr.where(
-            r_o < r_limit, zero_full, D_o - 400 * np.log(1 + 3.937 * r_d / Q_o)
-        )
-        D_r = xr.where(D_r > 0, D_r, 0.1)
+        ## Alteration to Eq. 21 (Lawson 2008)
+        D_r = D_o - 400 * np.log(1 + 3.937 * r_d / Q_o)
+        D_r = xr.where(D_r < 0, 0.1, D_r)
+        D_r = xr.where(r_o <= 2.8, D_o, D_r)
 
         ########################################################################
         ### (22) Solve for potential evapotranspiration (V)
-        T = np.where(T > -2.8, T, -2.8)
-
         V = (0.36 * (T + 2.8)) + L_f
-
-        ### V can not go negative, if V does go negative raise to zero
-        V = xr.where(V > 0, V, 0.1)
+        # V = (0.36 * (T + 2.8)) + L_f / 2  ## NOTE not sure why but they dived by to in the R code
+        V = xr.where(V < 0, 0.1, V)
 
         ########################################################################
-        ### (23) Combine dry and moist D and Solve for Drought Code (D)
-        D_d = xr.where(r_o > r_limit, zero_full, D_o)
-        D_combine = D_d + D_r
-        # D_i = D_combine + (0.5 * V)
-
         ## Alteration to Eq. 23 (Lawson 2008)
-        D_i = D_combine + V
-
-        ########################################################################
-        ## keep grid to D initial (start up value) if grid
-        ## is covered by more than 50% snow
-        D = xr.where(SNOWC < self.snowfract, D_i, self.D_initial)
-
-        ### D can not go negative, if D does go negative raise to zero
-        D = xr.where(D > 0.0, D, 0.1)
+        D = D_r + V
+        # Hold D to D_initial if snow cover is more than 50%
+        D = xr.where(SNOWC > self.snowfract, self.D_initial, D)
+        D = xr.where(D < 0, 0.1, D)
 
         self.D = D
-
         return D
 
     """########################################################################"""
     """ #################### Initial Spread Index #############################"""
     """########################################################################"""
 
-    def solve_isi(self, hourly_ds):
-
+    def solve_isi(self, hourly_ds, fbp=False):
         """
         Calculates the hourly initial spread index
 
@@ -936,40 +728,22 @@ class FWF:
         ### Call on initial conditions
         W, F, m_o = hourly_ds.W, hourly_ds.F, hourly_ds.m_o
 
-        # e_full, zero_full = self.e_full, self.zero_full
-        zero_full = self.zero_full
-
         ########################################################################
-        ### (24) Solve for wind function (f_W)
-        # a = 0.05039 * W
-        # f_W = np.power(e_full, a)
-        ## TODO need to rethink this....incluce both ISI and ISI_fbp
-        # This modification is Equation 53a in FCFDG (1992) (Lawson 2008)
-        W_limit = 40.0
-
-        f_W_low = xr.where(W > W_limit, zero_full, np.exp(0.05039 * W))
-        f_W_high = xr.where(
-            W <= W_limit, zero_full, 12 * (1 - np.exp(-0.0818 * (W - 28)))
+        ### (24) Solve for wind function (f_W) with condition for fbp
+        f_W = xr.where(
+            (W >= 40) & (fbp == True),
+            12 * (1 - np.exp(-0.0818 * (W - 28))),
+            np.exp(0.05039 * W),
         )
-        f_W = f_W_low + f_W_low
 
         ########################################################################
         ### (25) Solve for fine fuel moisture function (f_F)
-        # a = -0.1386 * m_o
-        # # b = np.power(e_full, a)
-        # b = np.exp(a)
-        # c = (1 + np.power(m_o, 5.31) / (4.93e7))
-        # f_F = 91.9 * b * c
+        f_F = 91.9 * np.exp(-0.1386 * m_o) * (1 + np.power(m_o, 5.31) / 4.93e7)
 
-        f_F = 91.9 * np.exp(-0.1386 * m_o) * (1 + np.power(m_o, 5.31) / (4.93e7))
         ########################################################################
         ### (26) Solve for initial spread index (R)
-
         R = 0.208 * f_W * f_F
-
         R = xr.DataArray(R, name="R", dims=("time", "south_north", "west_east"))
-
-        # self.hourly_ds['R']   = R
 
         return R
 
@@ -1003,35 +777,18 @@ class FWF:
         U: DataArray
             - An DataArray of BUI
         """
-        zero_full = self.zero_full
 
         ### Call on initial conditions
         P, D = daily_ds.P, daily_ds.D
 
         ########################################################################
-        ### (27a) Solve for build up index where P =< 0.4D (U_a)
-        P_limit = 0.4 * D
-        # U_a = (0.8 * P * D) / (P + (0.4 * D))
-        U_a = xr.where(P >= P_limit, zero_full, 0.8 * P * D / (P + (0.4 * D)))
-
-        ########################################################################
-        ### (27b) Solve for build up index where P > 0.4D (U_b)
-
-        # a   = 0.92 + np.power((0.0114 * P), 1.7)
-        # U_b = P - ((1 - (0.8 * D)) / (P + (0.4 * D))) * a
-        U_b = xr.where(
-            P < P_limit,
-            zero_full,
+        ### (27a and 27b) Solve for build up index where P =< 0.4D (U_a)
+        U = xr.where(
+            P <= 0.4 * D,
+            0.8 * P * D / (P + (0.4 * D)),
             P - (1 - 0.8 * D / (P + (0.4 * D))) * (0.92 + np.power((0.0114 * P), 1.7)),
         )
-
-        ########################################################################
-        ### (27c) Combine build up index (U)
-
-        U = U_a + U_b
-
-        U = np.where(U > 0, U, 0.1)  # Set lower limit of 0
-
+        U = np.where(U < 0, 1e-4, U)
         U = xr.DataArray(U, name="U", dims=("time", "south_north", "west_east"))
 
         return U
@@ -1071,26 +828,15 @@ class FWF:
         zero_full = self.zero_full
 
         ########################################################################
-        ### (28a) Solve for duff moisture function where U =< 80(f_D_a)
+        ### (28 & 29) Solve for duff moisture function where U =< 80(f_D_a)
         U_limit = 80
-        # f_D_a = (0.626 * np.power(U, 0.809)) + 2
-        f_D_a = xr.where(U >= U_limit, zero_full, (0.626 * np.power(U, 0.809)) + 2)
-
-        ########################################################################
-        ### (28b) Solve for duff moisture function where U > 80 (f_D_b)
-        # a = np.power(e_full, (-0.023 * U))
-        # a = np.exp(-0.023 * U)
-        # f_D_b = 1000 / (25 + 108.64 * a)
-        f_D_b = xr.where(
-            U < U_limit, zero_full, 1000 / (25 + 108.64 * np.exp(-0.023 * U))
+        f_D = xr.where(
+            U > 80,
+            1000 / (25 + 108.64 * np.exp(-0.023 * U)),
+            (0.626 * np.power(U, 0.809)) + 2,
         )
 
         ########################################################################
-        ### (28c) Combine duff moisture functions (f_D)
-        f_D = f_D_a + f_D_b
-
-        ########################################################################
-
         index = [i for i in range(1, len(R) + 1) if i % 24 == 0]
         if len(index) == 1:
             ### (29a) Solve FWI intermediate form  for day 1(B_a)
@@ -1111,28 +857,13 @@ class FWF:
         B = xr.where(B > 0, B, 1e-6)
 
         ########################################################################
-        ### (30a) Solve FWI where B > 1 (S_a)
-        B_limit = 1
-        # a = np.power((0.434 * np.log(B)), 0.647)
-        # S_a = np.power(e_full,2.72 * a)
-        # S_a = np.exp(2.72 * a)
-        S_a = xr.where(
-            B < B_limit, zero_full, np.exp(2.72 * np.power((0.434 * np.log(B)), 0.647))
-        )
+        ### (30) Solve FWI
+        S = xr.where(B <= 1, B, np.exp(2.72 * np.power((0.434 * np.log(B)), 0.647)))
 
-        ########################################################################
-        ### (30b) Solve FWI where B =< 1 (S_b)
-
-        S_b = xr.where(B >= B_limit, zero_full, B)
-        ########################################################################
-        ### (30) Combine for FWI (S)
-
-        S = S_a + S_b
         S = xr.DataArray(S, name="S", dims=("time", "south_north", "west_east"))
 
         ########################################################################
         ### (31) Solve for daily severity rating (DSR)
-
         DSR = 0.0272 * np.power(S, 1.77)
         DSR = xr.DataArray(DSR, name="DSR", dims=("time", "south_north", "west_east"))
 
@@ -1267,21 +998,18 @@ class FWF:
         Returns
         -------
         daily_ds: DataSet
-            A xarray DataSet with all the houlry FWI codes/indices solved
+            A xarray DataSet with all the hourly FWI codes/indices solved
         """
 
         length = len(self.hourly_ds.time)
-        hourly_list = []
-        print("Start Hourly loop lenght: ", length)
-        for i in range(length):
-            FFMC = self.solve_ffmc(self.hourly_ds.isel(time=i))
-            hourly_list.append(FFMC)
-        print("Hourly loop done")
-        # hourly_ds = self.combine_by_time(hourly_list)
-        hourly_ds = xr.combine_nested(hourly_list, "time")
+        loopTime = datetime.now()
+        print("Start Hourly loop length: ", length)
+        FFMC = [self.solve_ffmc(self.hourly_ds.isel(time=i)) for i in range(length)]
+        print(f"Hourly loop done, Time: {datetime.now() - loopTime}")
+        hourly_ds = xr.combine_nested(FFMC, "time")
         hourly_ds = xr.merge([hourly_ds, self.hourly_ds])
 
-        ISI = self.solve_isi(hourly_ds)
+        ISI = self.solve_isi(hourly_ds, fbp=False)
         hourly_ds["R"] = ISI
         self.R = ISI
         FWI, DSR = self.solve_fwi()
@@ -1315,7 +1043,6 @@ class FWF:
             ds = P.to_dataset(name="P")
             ds["D"] = D
             daily_list.append(ds)
-
         print("Daily loop done")
         daily_ds = xr.combine_nested(daily_list, "time")
         daily_ds = xr.merge([daily_ds, self.daily_ds])
@@ -1323,41 +1050,6 @@ class FWF:
         daily_ds["U"] = U
         self.U = U
         return daily_ds
-
-    """#######################################"""
-    """ ######### Combine Datasets ###########"""
-    """#######################################"""
-
-    def combine_by_time(self, dict_list):
-        """
-        Combine datsets by time coordinate
-
-        Parameters
-        ----------
-        dict_list: list
-            List of xarray datasets
-
-        Returns
-        -------
-        combined_ds: DataSet
-            Single xarray DataSet with a dimension time
-        """
-
-        files_ds = []
-        for index in dict_list:
-            ds = xr.Dataset(index)
-            files_ds.append(ds)
-        combined_ds = xr.combine_nested(files_ds, "time")
-        return combined_ds
-
-    # def merge_by_coords(self,dict_list):
-    #     xarray_files = []
-    #     for index in dict_list:
-    #         ds  = xr.Dataset(index)
-    #         xarray_files.append(ds)
-    #     # ds_final = xr.merge(xarray_files,compat='override')
-    #     # ds_final = xr.concat(xarray_files)
-    #     return(ds_final)
 
     """#######################################"""
     """ ######## Write Hourly Dataset ########"""

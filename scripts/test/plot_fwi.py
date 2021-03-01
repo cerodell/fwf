@@ -20,15 +20,15 @@ from datetime import datetime, date, timedelta
 
 domain = "d02"
 # date = pd.Timestamp("today")
-date = pd.Timestamp(2018, 7, 20)
+date = pd.Timestamp(2018, 4, 1)
 forecast_date = date.strftime("%Y%m%d06")
 
 # file_dir = str(fwf_zarr_dir) + f"/fwf-hourly-{domain}-{forecast_date}.zarr"   # wrfout-{domain}-{forecast_date}.zarr
 file_dir = (
-    str(data_dir) + f"/FWF-WAN00CP-04/fwf-hourly-{domain}-{forecast_date}.zarr"
+    str(fwf_zarr_dir) + f"/fwf-daily-{domain}-{forecast_date}.zarr"
 )  # wrfout-{domain}-{forecast_date}.zarr
 
-file_dir = "/Volumes/cer/fireweather/data/FWF-WAN00CG-01/fwf-daily-d03-2021022106.zarr"
+
 ds = xr.open_zarr(file_dir)
 
 
@@ -36,7 +36,7 @@ ds = xr.open_zarr(file_dir)
 with open(str(data_dir) + "/json/colormaps-dev.json") as f:
     cmaps = json.load(f)
 
-var, index = "F", 12
+var, index = "P", 0
 vmin, vmax = cmaps[var]["vmin"], cmaps[var]["vmax"]
 name, colors, sigma = (
     str(cmaps[var]["name"]),

@@ -31,14 +31,14 @@ __author__ = "Christopher Rodell"
 __email__ = "crodell@eoas.ubc.ca"
 
 
+## choose wrf model and date range of interest
 wrf_model = "wrf3"
+date_range = pd.date_range("2018-04-01", "2018-06-30")
+domains = ["d02", "d03"]
+
 ## make dir for that intercomp files if it doest not all ready exist
 make_dir = Path(str(data_dir) + "/intercomp/")
 make_dir.mkdir(parents=True, exist_ok=True)
-
-### Open nested grid json
-with open(str(data_dir) + "/json/nested-index.json") as f:
-    nested_index = json.load(f)
 
 ### Open color map json
 with open(str(data_dir) + "/json/colormaps-dev.json") as f:
@@ -56,14 +56,13 @@ filein_obs = str(data_dir) + f"/fwi-obs/cwfis_fwi2010sopEC.csv"
 obs_df = pd.read_csv(filein_obs, sep=",", skiprows=0)
 
 
-date_range = pd.date_range("2021-02-08", "2021-02-14")
-domains = ["d02", "d03"]
-
 for date in date_range:
+    dateLoop = datetime.now()
     stations_df = stations_df_og
     day1_obs_date = date.strftime("%Y%m%d06")
     day2_obs_date = (date - np.timedelta64(1, "D")).strftime("%Y%m%d06")
     for domain in domains:
+        domainLoop = datetime.now()
         stations_df = stations_df_og
 
         print(day1_obs_date)
@@ -247,7 +246,8 @@ for date in date_range:
                 + f"intercomp-{domain}-{intercomp_today_dir}.zarr",
                 mode="w",
             )
-
+        print("Domain Loop Time: ", datetime.now() - domainLoop)
+    print("Date Loop Time: ", datetime.now() - dateLoop)
 
 ### Timer
 print("Total Run Time: ", datetime.now() - startTime)

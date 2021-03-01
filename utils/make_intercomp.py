@@ -18,19 +18,19 @@ from context import data_dir, root_dir, tzone_dir, fwf_zarr_dir
 
 def daily_merge_ds(date_to_merge, domain, wrf_model):
 
-    # hourly_file_dir = str(fwf_zarr_dir) + str(
-    #     f"/fwf-hourly-{domain}-{date_to_merge}.zarr"
-    # )
-    # daily_file_dir = str(fwf_zarr_dir) + str(
-    #     f"/fwf-daily-{domain}-{date_to_merge}.zarr"
-    # )
+    hourly_file_dir = str(fwf_zarr_dir) + str(
+        f"/fwf-hourly-{domain}-{date_to_merge}.zarr"
+    )
+    daily_file_dir = str(fwf_zarr_dir) + str(
+        f"/fwf-daily-{domain}-{date_to_merge}.zarr"
+    )
 
-    hourly_file_dir = str(data_dir) + str(
-        f"/FWF-WAN00CP-04/fwf-hourly-{domain}-{date_to_merge}.zarr"
-    )
-    daily_file_dir = str(data_dir) + str(
-        f"/FWF-WAN00CP-04/fwf-daily-{domain}-{date_to_merge}.zarr"
-    )
+    # hourly_file_dir = str(data_dir) + str(
+    #     f"/FWF-WAN00CP-04/fwf-hourly-{domain}-{date_to_merge}.zarr"
+    # )
+    # daily_file_dir = str(data_dir) + str(
+    #     f"/FWF-WAN00CP-04/fwf-daily-{domain}-{date_to_merge}.zarr"
+    # )
     ### Open datasets
     my_dir = Path(hourly_file_dir)
     if my_dir.is_dir():
@@ -38,7 +38,7 @@ def daily_merge_ds(date_to_merge, domain, wrf_model):
 
         daily_ds = xr.open_zarr(daily_file_dir)
         ### Call on variables
-        tzone_ds = xr.open_dataset(str(tzone_dir) + f"/tzone_{wrf_model}_{domain}.nc")
+        tzone_ds = xr.open_zarr(str(tzone_dir) + f"/tzone_{wrf_model}_{domain}.zarr")
         tzone = tzone_ds.Zone.values
         shape = tzone.shape
         ## create I, J for quick indexing

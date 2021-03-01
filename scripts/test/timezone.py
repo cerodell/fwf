@@ -39,7 +39,7 @@ __email__ = "crodell@eoas.ubc.ca"
 # date = pd.Timestamp("today")
 date = pd.Timestamp(2018, 7, 20)
 domain = "d03"
-wrf_model = "wrf4"
+wrf_model = "wrf3"
 
 ## Path to hourly/daily fwi data
 forecast_date = date.strftime("%Y%m%d06")
@@ -49,11 +49,7 @@ if wrf_model == "wrf3":
 else:
     wrf_filein = f"/Users/rodell/Google Drive/Shared drives/WAN00CG-01/21022000/wrfout_{domain}_2021-02-20_11:00:00"
 
-tzone_shp = (
-    str(tzone_dir)
-    + "/timezones-with-oceans.shapefile/combined-shapefile-with-oceans.shp"
-)
-# tzone_shp = str(tzone_dir) + '/world_timezones/world_timezones.shp'
+tzone_shp = str(tzone_dir) + "/timezones-with-oceans/combined-shapefile-with-oceans.shp"
 
 ## Open hourly/daily fwi data
 # hourly_ds = xr.open_zarr(hourly_file_dir)
@@ -75,8 +71,7 @@ var_array = wrf_ds.T2.isel(Time=0)
 lats = var_array.XLAT.values
 lons = var_array.XLONG.values
 
-zero_full = np.zeros(lats.shape, dtype=float)
-
+zero_full = np.zeros(lats.shape)
 tzid = list(df["tzid"])
 for tz in tzid:
     print(tz)
@@ -102,6 +97,7 @@ for tz in tzid:
 ds_zones = xr.DataArray(
     zero_full.astype(int), name="Zone", dims=("south_north", "west_east")
 )
+
 T2 = wrf_ds.T2
 attrs = T2.attrs
 ds_zones.attrs = attrs

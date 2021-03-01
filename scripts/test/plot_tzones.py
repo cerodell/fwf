@@ -26,8 +26,8 @@ from context import data_dir, root_dir, fwf_zarr_dir, wrf_dir, tzone_dir
 startTime = datetime.now()
 
 
-domain = "d03"
-wrf_model = "wrf4"
+domain = "d02"
+wrf_model = "wrf3"
 
 ### Open tzone  domain
 filein = str(tzone_dir) + f"/tzone_{wrf_model}_{domain}.zarr"
@@ -59,7 +59,7 @@ fig = plt.figure(figsize=[16, 8])
 ax = fig.add_subplot(1, 1, 1, projection=ccrs.PlateCarree(central_longitude=0))
 
 ## add map features
-ax.gridlines(zorder=9)
+ax.gridlines(zorder=10)
 ax.add_feature(cfeature.LAND, zorder=1)
 ax.add_feature(cfeature.LAKES, zorder=1)
 ax.add_feature(cfeature.OCEAN, zorder=9)
