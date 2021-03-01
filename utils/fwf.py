@@ -90,7 +90,7 @@ class FWF:
         self.F_initial = 85.0
         self.P_initial = 6.0
         self.D_initial = 15.0
-        self.snowfract = 0.6
+        self.snowfract = 0.5
 
         ### Shape of Domain make useful fill arrays
         shape = np.shape(wrf_ds.T[0, :, :])
@@ -572,12 +572,29 @@ class FWF:
         M_o = 20 + 280 / np.exp(0.023 * P_o)
 
         ########################################################################
-        ### (13) Solve for coefficients b
-        b = xr.where(
-            P_o <= 33,
-            100 / (0.5 + 0.3 * P_o),
-            xr.where(P_o <= 65, 14 - 1.3 * np.log(P_o), 6.2 * np.log(P_o) - 17.2),
-        )
+        # ### (13) Solve for coefficients b
+        # ## TODO fix this! I think its the reason why dmc is off
+        # b = xr.where(
+        #     P_o <= 33,
+        #     100 / (0.5 + 0.3 * P_o),
+        #     xr.where(P_o <= 65, 14 - 1.3 * np.log(P_o), 6.2 * np.log(P_o) - 17.2),
+        # )
+        ########################################################################
+        ### (13a) Solve for coefficients b where P_o <= 33 (b_low)
+        b_low = xr.where(P_o <= 33, 100 / (0.5 + (0.3 * P_o)), zero_full)
+
+        ########################################################################
+        ### (13b) Solve for coefficients b where 33 < P_o <= 65 (b_mid)
+
+        b_mid = xr.where((P_o > 33) & (P_o <= 65), 14 - (1.3 * np.log(P_o)), zero_full)
+
+        ########################################################################
+        ### (13c) Solve for coefficients b where  P_o > 65 (b_high)
+
+        b_high = xr.where(P_o > 65, (6.2 * np.log(P_o)) - 17.2, zero_full)
+        ########################################################################
+        ### Combine (13a 13b 13c) for coefficients b
+        b = b_low + b_mid + b_high
 
         ########################################################################
         ### (14) Solve for moisture content
@@ -594,14 +611,14 @@ class FWF:
         ### (16) Log drying rate (K)
         K = (
             1.894 * (T + 1.1) * (100 - H) * (L_e * 1e-4)
-        )  ## NOTE they use 1e-04 in the R code not sure why ?
+        )  ## NOTE they use 1e-04 in the R but in the paper is 1e-06 code not sure what to use.
 
         ########################################################################
         ### (17) Duff moisture
         P = P_r + K
         # Hold P to P_initial if snow cover is more than 50%
         P = xr.where(SNOWC > self.snowfract, self.P_initial, P)
-        P = xr.where(P < 0, 0, P)
+        P = xr.where(P < 0, 0.0, P)
 
         self.P = P
         return P
@@ -682,21 +699,23 @@ class FWF:
         ### (21) Solve for DC after rain (D_r)
         ## Alteration to Eq. 21 (Lawson 2008)
         D_r = D_o - 400 * np.log(1 + 3.937 * r_d / Q_o)
-        D_r = xr.where(D_r < 0, 0.1, D_r)
+        D_r = xr.where(D_r < 0, 0.0, D_r)
         D_r = xr.where(r_o <= 2.8, D_o, D_r)
 
         ########################################################################
         ### (22) Solve for potential evapotranspiration (V)
-        V = (0.36 * (T + 2.8)) + L_f
-        # V = (0.36 * (T + 2.8)) + L_f / 2  ## NOTE not sure why but they dived by to in the R code
-        V = xr.where(V < 0, 0.1, V)
+        # V = (0.36 * (T + 2.8)) + L_f
+        V = (
+            0.36 * (T + 2.8)
+        ) + L_f / 2  ## NOTE not sure why but they dived by to in the R code
+        V = xr.where(V < 0, 0.0, V)
 
         ########################################################################
         ## Alteration to Eq. 23 (Lawson 2008)
         D = D_r + V
         # Hold D to D_initial if snow cover is more than 50%
         D = xr.where(SNOWC > self.snowfract, self.D_initial, D)
-        D = xr.where(D < 0, 0.1, D)
+        D = xr.where(D < 0, 0.0, D)
 
         self.D = D
         return D
@@ -780,15 +799,20 @@ class FWF:
 
         ### Call on initial conditions
         P, D = daily_ds.P, daily_ds.D
+        zero_full = self.zero_full
 
         ########################################################################
         ### (27a and 27b) Solve for build up index where P =< 0.4D (U_a)
-        U = xr.where(
-            P <= 0.4 * D,
-            0.8 * P * D / (P + (0.4 * D)),
+        U_low = xr.where(P <= 0.4 * D, 0.8 * P * D / (P + (0.4 * D)), zero_full)
+
+        U_high = xr.where(
+            P > 0.4 * D,
             P - (1 - 0.8 * D / (P + (0.4 * D))) * (0.92 + np.power((0.0114 * P), 1.7)),
+            zero_full,
         )
-        U = np.where(U < 0, 1e-4, U)
+
+        U = U_low + U_high
+        U = xr.where(U < 0, 0.0, U)
         U = xr.DataArray(U, name="U", dims=("time", "south_north", "west_east"))
 
         return U

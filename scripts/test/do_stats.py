@@ -18,7 +18,7 @@ from context import data_dir, xr_dir, wrf_dir, tzone_dir, fwf_zarr_dir
 from datetime import datetime, date, timedelta
 
 
-domain = "d02"
+domain = "d03"
 # date = pd.Timestamp("today")
 date = pd.Timestamp(2018, 6, 28)
 intercomp_today_dir = date.strftime("%Y%m%d")
