@@ -17,7 +17,7 @@ zarr_dir = f"/Users/rodell/Google Drive/My Drive/{wrf_model}/"
 save_dir = f"/Volumes/cer/fireweather/data/{wrf_model}/"
 
 
-date_range = pd.date_range("2018-08-29", "2018-08-31")
+date_range = pd.date_range("2018-09-07", "2018-09-07")
 
 
 for domain in ["d03"]:

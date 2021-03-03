@@ -560,6 +560,7 @@ class FWF:
             daily_ds.SNOWC,
         )
 
+        zero_full = self.zero_full
         ## Set min low temp
         T = xr.where(T < (-1.1), -1.1, T)
 
@@ -684,6 +685,7 @@ class FWF:
             daily_ds.SNOWC,
         )
 
+        zero_full = self.zero_full
         ## Hold T to min value
         T = xr.where(T < (-2.8), -2.8, T)
 

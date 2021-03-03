@@ -37,12 +37,13 @@ __email__ = "crodell@eoas.ubc.ca"
 
 ## Define model/domain and datetime of interest
 # date = pd.Timestamp("today")
-date = pd.Timestamp(2018, 7, 20)
+# date = pd.Timestamp(2018, 7, 20)
 domain = "d03"
-wrf_model = "wrf3"
+wrf_model = "wrf4"
+season = "ST"
 
 ## Path to hourly/daily fwi data
-forecast_date = date.strftime("%Y%m%d06")
+# forecast_date = date.strftime("%Y%m%d06")
 # hourly_file_dir = str(data_dir) + f"/FWF-WAN00CP-04/fwf-hourly-{domain}-{forecast_date}.zarr"
 if wrf_model == "wrf3":
     wrf_filein = f"/Users/rodell/Google Drive/Shared drives/WAN00CP-04/18072000/wrfout_{domain}_2018-07-20_11:00:00"
@@ -73,26 +74,62 @@ lons = var_array.XLONG.values
 
 zero_full = np.zeros(lats.shape)
 tzid = list(df["tzid"])
-for tz in tzid:
-    print(tz)
-    name = df.loc[df["tzid"] == tz]
-    timezone = pytz.timezone(tz)
-    dt = datetime.utcnow()
-    offset = timezone.utcoffset(dt)
-    seconds = offset.total_seconds()
-    if (
-        tz == "America/Whitehorse"
-        or tz == "America/Dawson"
-        or tz == "America/Regina"
-        or tz == "America/Swift_Current"
-    ):
+if season == "DT":
+    for tz in tzid:
+        print(tz)
+        name = df.loc[df["tzid"] == tz]
+        timezone = pytz.timezone(tz)
+        dt = datetime.utcnow()
+        offset = timezone.utcoffset(dt)
+        seconds = offset.total_seconds()
+        if (
+            tz == "America/Whitehorse"
+            or tz == "America/Dawson"
+            or tz == "America/Regina"
+            or tz == "America/Swift_Current"
+            or tz == "America/Phoenix"
+            or tz == "America/Indiana/Indianapolis"
+            # or tz ==  "America/Indiana/Knox"
+            or tz == "America/Indiana/Marengo"
+            or tz == "America/Indiana/Petersburg"
+            # or tz ==  "America/Indiana/Tell_City"
+            or tz == "America/Indiana/Vevay"
+            or tz == "America/Indiana/Vincennes"
+            or tz == "America/Indiana/Winamac"
+        ):
+            hours = abs(int(seconds // 3600))
+        else:
+            hours = abs(int(seconds // 3600)) - 1
+        dsr = var_array.salem.roi(shape=name)
+        index = np.where(dsr == dsr)
+        zero_full[index[0], index[1]] = hours
+elif season == "ST":
+    for tz in tzid:
+        print(tz)
+        name = df.loc[df["tzid"] == tz]
+        timezone = pytz.timezone(tz)
+        dt = datetime.utcnow()
+        offset = timezone.utcoffset(dt)
+        seconds = offset.total_seconds()
+        # if (
+        #     tz    == "America/Phoenix"
+        #     or tz ==  "America/Indiana/Indianapolis"
+        #     # or tz ==  "America/Indiana/Knox"
+        #     or tz ==  "America/Indiana/Marengo"
+        #     or tz ==  "America/Indiana/Petersburg"
+        #     # or tz ==  "America/Indiana/Tell_City"
+        #     or tz ==  "America/Indiana/Vevay"
+        #     or tz ==  "America/Indiana/Vincennes"
+        #     or tz ==  "America/Indiana/Winamac"
+        # ):
+        #     hours = abs(int(seconds // 3600)) + 1
+        # else:
         hours = abs(int(seconds // 3600))
-    else:
-        hours = abs(int(seconds // 3600)) - 1
-    dsr = var_array.salem.roi(shape=name)
-    index = np.where(dsr == dsr)
-    zero_full[index[0], index[1]] = hours
-
+        dsr = var_array.salem.roi(shape=name)
+        index = np.where(dsr == dsr)
+        zero_full[index[0], index[1]] = hours
+else:
+    raise ValueError("ERROR: This is not a valid time of year")
 
 ds_zones = xr.DataArray(
     zero_full.astype(int), name="Zone", dims=("south_north", "west_east")
@@ -107,8 +144,10 @@ ds_zones = xr.merge([ds_zones, T2])
 ds_zones = ds_zones.drop_vars("T2")
 ds_zones = ds_zones.isel(Time=0)
 ds_zones = ds_zones.compute()
-ds_zones.to_zarr(str(tzone_dir) + str(f"/tzone_{wrf_model}_{domain}.zarr"), mode="w")
-test = xr.open_zarr(str(tzone_dir) + str(f"/tzone_{wrf_model}_{domain}.zarr"))
+ds_zones.to_zarr(
+    str(tzone_dir) + str(f"/tzone_{wrf_model}_{domain}-{season}.zarr"), mode="w"
+)
+test = xr.open_zarr(str(tzone_dir) + str(f"/tzone_{wrf_model}_{domain}-{season}.zarr"))
 print(test.Zone.values)
 
 ## set plot title and save dir/name
@@ -116,9 +155,15 @@ if domain == "d02":
     res = "12 km"
 else:
     res = "4 km"
+if season == "DT":
+    toy = "Summer"
+else:
+    toy = "Winter"
 
-Plot_Title = f"Time Zone Offsets From UTC \n {wrf_model.upper()} {res} Domain"
-save_file = f"/images/{wrf_model}-{domain}-tzone.png"
+Plot_Title = (
+    f"Time Zone Offsets From UTC during {toy} \n {wrf_model.upper()} {res} Domain"
+)
+save_file = f"/images/{wrf_model}-{domain}-tzone-{season}.png"
 save_dir = str(data_dir) + save_file
 
 

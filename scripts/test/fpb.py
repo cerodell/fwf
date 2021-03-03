@@ -15,6 +15,7 @@ from mpl_toolkits.axes_grid1 import make_axes_locatable
 import scipy.ndimage as ndimage
 from scipy.ndimage.filters import gaussian_filter
 
+
 from context import data_dir, xr_dir, wrf_dir, tzone_dir, fwf_zarr_dir
 from datetime import datetime, date, timedelta
 
@@ -68,6 +69,7 @@ ELV, LAT, LON, FUELS = (
 ## create zeros array for conditional statements
 shape = LAT.shape
 zero_full = np.zeros(shape, dtype=float)
+zero_full3D = np.zeros(hourly_ds.F.shape, dtype=float)
 
 
 FMC = zero_full
@@ -99,6 +101,8 @@ FMC = xr.where(ND < 30.0, 85 + 0.0189 * ND ** 2, FMC)
 FMC = xr.where((ND >= 30) & (ND < 50), 32.9 + 3.17 * ND - 0.0288 * ND ** 2, FMC)
 ## Solve Foliar moisture content(%) where ND >= 50 (8)
 FMC = xr.where(ND >= 50, 120, FMC)
+FMC = xr.DataArray(FMC, name="FMC", dims=("south_north", "west_east"))
+hourly_ds["FMC"] = FMC
 
 
 ###################    Surface Fuel Consumption  #######################
@@ -206,23 +210,109 @@ SFC = xr.where(
 
 # Remove negative SFC value
 SFC = xr.where(SFC <= 0, 1e-6, SFC)
+SFC = xr.DataArray(SFC, name="SFC", dims=("time", "south_north", "west_east"))
+daily_ds["SFC"] = SFC
 
 
-###################    Surface Fuel Consumption  #######################
-########################################################################
+###################   Effect of Slope on Rate of Spread  #######################
+################################################################################
+
+
+def solve_isi(hourly_ds, fbp=False, zero_ws=False):
+    ### Call on initial conditions
+    if zero_ws == True:
+        W, F, m_o = 0.0, hourly_ds.F, hourly_ds.m_o
+    elif zero_ws == False:
+        W, F, m_o = hourly_ds.W, hourly_ds.F, hourly_ds.m_o
+    else:
+        raise ValueError("ERROR: Can Not Solve ISI")
+    ########################################################################
+    ### (24) Solve for wind function (f_W) with condition for fbp
+    f_W = xr.where(
+        (W >= 40) & (fbp == True),
+        12 * (1 - np.exp(-0.0818 * (W - 28))),
+        np.exp(0.05039 * W),
+    )
+
+    ########################################################################
+    ### (25) Solve for fine fuel moisture function (f_F)
+    f_F = 91.9 * np.exp(-0.1386 * m_o) * (1 + np.power(m_o, 5.31) / 4.93e7)
+
+    ########################################################################
+    ### (26) Solve for initial spread index (R)
+    R = 0.208 * f_W * f_F
+    R = xr.DataArray(R, name="R", dims=("time", "south_north", "west_east"))
+
+    return R
+
+
 ## Define frequently used variables
+
 ISI = hourly_ds.R
+dx, dy = float(hourly_ds.attrs["DX"]), float(hourly_ds.attrs["DY"])
 
-
-### Timer
-print("Total Run Time: ", datetime.now() - startTime)
-
-
+########################################################################
+## Solve Percent Ground Slope (37)
+## Take gradient of x and y
 gradient = np.gradient(ELV)
 y_grad = gradient[0]
 x_grad = gradient[1]
-mag = np.sqrt(x_grad ** 2 + y_grad ** 2)
+## Now solve GS
+GS = 100 * np.sqrt((x_grad / dx) ** 2 + (y_grad / dy) ** 2)
+
+########################################################################
+## Solve Factor, Upslope (39)
+## NOTE they use have another condition in the R code: if GS >= 70 SF = 10
+## Also they don't have the GS<60 condition in the code..not sure why
+SF = xr.where(
+    GS < 60, 3.533 * ((GS / 100) ** 1.2), zero_full
+)  ##NOTE they use have another condition in the R code: if GS >= 70 SF = 10
 
 
-test_elv = np.array([[2, 0, 0, 0], [1, 2, 3, 4]])
-test_gradient = np.gradient(test_elv)
+ISZ = solve_isi(hourly_ds, fbp=True, zero_ws=True)
+hourly_ds["ISZ"] = ISZ
+
+SAZ = np.arctan(np.sqrt((x_grad / dx) / (y_grad / dy)))
+ind = np.where(np.isnan(SAZ))
+
+
+# test_elv = np.array([[2, 0, 0, 0], [1, 2, 3, 4]])
+# test_gradient = np.gradient(test_elv)
+
+
+###################   Rate of Spread Equations  #######################
+################################################################################
+## General Rate of Spread Equation for C-1 to C-5, and C-7 (26)
+def solve_rsi(RSI, fueltype, ISI):
+    RSI = xr.where(
+        FUELS == fc_dict[fueltype]["Code"],
+        fc_dict[fueltype]["a"]
+        * (1 - np.exp(-fc_dict[fueltype]["b"] * ISI) ** fc_dict[fueltype]["c"]),
+        RSI,
+    )
+    return RSI
+
+
+RSI = zero_full3D
+for i in [1, 2, 3, 4, 5, 7]:
+    RSI = solve_rsi(RSI, f"C{i}", ISZ)
+
+# test = RSI.values
+# index = np.where(FUELS == fc_dict['C6']["Code"])
+# test = test[:,index[0], index[1]]
+# print(np.unique(test))
+# print(np.where(test == 0.0))
+
+unique, count = np.unique(FUELS, return_counts=True)
+
+################################################################################
+## Fuel Type Specific Rate of Spread Equations
+##  (M-1 leaftess) (27)
+RSI_M1 = (PC / 100 * solve_rsi(zero_full3D, "C2", ISZ)) + (
+    PC / 100 * solve_rsi(zero_full3D, "D1", ISZ)
+)
+
+##  (M-2 green)   (28)
+RSI_M2 = (PC / 100 * solve_rsi(zero_full3D, "C2", ISZ)) + (
+    0.2 * (PC / 100 * solve_rsi(zero_full3D, "D1", ISZ))
+)
