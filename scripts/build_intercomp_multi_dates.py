@@ -76,12 +76,15 @@ for date in date_range:
             wrf_filein = f"/Users/rodell/Google Drive/Shared drives/WAN00CG-01/21022000/wrfout_{domain}_2021-02-20_11:00:00"
         wrf_file = Dataset(wrf_filein, "r")
 
-        ## remove boundary conditions
-        xy = 6
-        ### Drop stations out sie of model domain
+        ## get i and j index of the gridded doamin based on lats and longs from station
         xy_np = ll_to_xy(wrf_file, stations_df["lat"], stations_df["lon"])
+        ## add index to dataframe
         stations_df["x"] = xy_np[0]
         stations_df["y"] = xy_np[1]
+
+        ## set to remove boundary conditions
+        xy = 6
+        ### Drop stations out sie of model domain
         shape = np.shape(day1_ds.XLAT)
         stations_df = stations_df.drop(
             stations_df.index[np.where(stations_df["x"] > (shape[1] - xy - 1))]
@@ -90,7 +93,7 @@ for date in date_range:
             stations_df.index[np.where(stations_df["y"] > (shape[0] - xy - 1))]
         )
         stations_df = stations_df.drop(
-            stations_df.index[np.where(stations_df["x"] < xy - 4)]
+            stations_df.index[np.where(stations_df["x"] < xy - 1)]
         )
         stations_df = stations_df.drop(
             stations_df.index[np.where(stations_df["y"] < xy - 1)]
@@ -100,11 +103,16 @@ for date in date_range:
         obs_df_on_date = obs_df[
             obs_df["rep_date"] == date.strftime("%Y-%m-%d 12:00:00")
         ]
+        ## merge with stations data information
         final_df = stations_df.merge(obs_df_on_date, on="wmo", how="left")
+        ## remove nulled data
         final_df = final_df.replace("NULL", np.nan)
         final_df = final_df.replace(" NULL", np.nan)
         final_df = final_df.replace("  NULL", np.nan)
+        ## drop duplicates
         final_df = final_df.drop_duplicates(subset=["wmo"], keep="last")
+
+        ## convert to float 32 for smaller storage
         final_df = final_df.astype(
             {
                 "temp": "float32",
@@ -123,17 +131,27 @@ for date in date_range:
             }
         )
 
+        ## get i and j index of array
         south_north, west_east = final_df["y"].values, final_df["x"].values
+
+        ## get list of variables to loop
         var_list = list(day1_ds)
+        ## remove none observed variabels
         remove = ["r_o_tomorrow", "SNOWC"]
         var_list = list(set(var_list) - set(remove))
+        ## loop and append variabel to list
         final_var_list = []
         for var in var_list:
+            ## get variable by name
             name = cmaps[var]["name"]
+            ## get day 1 model values based on i and j index
             var_columns = day1_ds[var].values[:, south_north, west_east]
+            ## convert to array and set as float32
             var_columns = np.array(var_columns, dtype="float32")
+            ## add day 1 model values to dataframe
             final_df[name + "_day1"] = var_columns[0, :]
 
+            ## if no day 2 forecasts set to None
             if day2_ds is None:
                 # print('day2_ds is none')
                 a = np.empty(len(south_north))
@@ -141,7 +159,7 @@ for date in date_range:
                 a = np.array(a, dtype="float32")
                 final_df[name + "_day2"] = a
             else:
-                # print('day2_ds is a ds')
+                ## get day 2 model values based on i and j index and add to add frame
                 var_columns = day2_ds[var].values[:, south_north, west_east]
                 var_columns = np.array(var_columns, dtype="float32")
                 try:

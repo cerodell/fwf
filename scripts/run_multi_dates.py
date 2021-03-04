@@ -29,7 +29,7 @@ warnings.filterwarnings("ignore", message="invalid value encountered in power")
 warnings.filterwarnings("ignore", message="invalid value encountered in log")
 warnings.filterwarnings("ignore", message="divide by zero encountered in log")
 wrf_model = "wrf3"
-date_range = pd.date_range("2018-09-08", "2018-10-01")
+date_range = pd.date_range("2018-10-01", "2018-10-01")
 
 # """######### get directory to yesterdays hourly/daily .zarr files.  #############"""
 for date in date_range:

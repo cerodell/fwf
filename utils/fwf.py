@@ -429,24 +429,24 @@ class FWF:
             + (0.0015 * np.power((m_o - 150), 2) * np.power(r_f, 0.5)),
         )
 
-        m_o = np.where(m_o > 250, 250, np.where(m_o < 0, 1e-5, m_o))
+        m_o = np.where(m_o > 250, 250, np.where(m_o < 0, 0.0, m_o))
 
         ########################################################################
         ### (2a) Solve Equilibrium Moisture content for drying (E_d)
 
         E_d = (
             0.942 * np.power(H, 0.679)
-            + (11 * np.exp(((H - 100) / 10)))
-            + (0.18 * (21.1 - T) * (1 - np.exp((-0.115 * H))))
+            + 11 * np.exp((H - 100) / 10)
+            + 0.18 * (21.1 - T) * (1 - np.exp((-0.115 * H)))
         )
 
         ########################################################################
         ### (2b) Solve Equilibrium Moisture content for wetting (E_w)
 
         E_w = (
-            (0.618 * (np.power(H, 0.753)))
-            + (10 * np.exp(((H - 100) / 10)))
-            + (0.18 * (21.1 - T) * (1 - np.exp((-0.115 * H))))
+            0.618 * (np.power(H, 0.753))
+            + 10 * np.exp((H - 100) / 10)
+            + 0.18 * (21.1 - T) * (1 - np.exp((-0.115 * H)))
         )
 
         ########################################################################
@@ -487,7 +487,7 @@ class FWF:
         F = (59.5 * (250 - m)) / (147.27723 + m)  ## Van 1985
 
         ### Recast initial moisture code for next time stamp
-        m_o = (147.27723 * (101 - F)) / (59.5 + F)  ## Van 1985
+        m_o = 147.27723 * (101 - F) / (59.5 + F)  ## Van 1985
 
         F = F.to_dataset(name="F")
         F["m_o"] = m_o
@@ -562,7 +562,7 @@ class FWF:
 
         zero_full = self.zero_full
         ## Set min low temp
-        T = xr.where(T < (-1.1), -1.1, T)
+        T = xr.where(T < -1.1, -1.1, T)
 
         ########################################################################
         ### (11) Solve for the effective rain (r_e)
@@ -572,14 +572,6 @@ class FWF:
         ### (12) Alteration more accurate calculation (Lawson 2008)
         M_o = 20 + 280 / np.exp(0.023 * P_o)
 
-        ########################################################################
-        # ### (13) Solve for coefficients b
-        # ## TODO fix this! I think its the reason why dmc is off
-        # b = xr.where(
-        #     P_o <= 33,
-        #     100 / (0.5 + 0.3 * P_o),
-        #     xr.where(P_o <= 65, 14 - 1.3 * np.log(P_o), 6.2 * np.log(P_o) - 17.2),
-        # )
         ########################################################################
         ### (13a) Solve for coefficients b where P_o <= 33 (b_low)
         b_low = xr.where(P_o <= 33, 100 / (0.5 + (0.3 * P_o)), zero_full)
