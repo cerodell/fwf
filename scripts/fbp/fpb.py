@@ -65,7 +65,8 @@ ELV, LAT, LON, FUELS = (
     terrain_ds.XLONG.values[0, :, :] * -1,
     fuels_ds.fuels.values.astype(int),
 )
-
+unique, count = np.unique(FUELS, return_counts=True)
+count[unique == fc_dict["M3"]["Code"]]
 ## create zeros array for conditional statements
 shape = LAT.shape
 zero_full = np.zeros(shape, dtype=float)
@@ -214,10 +215,8 @@ SFC = xr.DataArray(SFC, name="SFC", dims=("time", "south_north", "west_east"))
 daily_ds["SFC"] = SFC
 
 
-###################   Effect of Slope on Rate of Spread  #######################
-################################################################################
-
-
+###################   Rate of Spread Equations  #######################
+#######################################################################
 def solve_isi(hourly_ds, fbp=False, zero_ws=False):
     ### Call on initial conditions
     if zero_ws == True:
@@ -226,7 +225,6 @@ def solve_isi(hourly_ds, fbp=False, zero_ws=False):
         W, F, m_o = hourly_ds.W, hourly_ds.F, hourly_ds.m_o
     else:
         raise ValueError("ERROR: Can Not Solve ISI")
-    ########################################################################
     ### (24) Solve for wind function (f_W) with condition for fbp
     f_W = xr.where(
         (W >= 40) & (fbp == True),
@@ -234,11 +232,9 @@ def solve_isi(hourly_ds, fbp=False, zero_ws=False):
         np.exp(0.05039 * W),
     )
 
-    ########################################################################
     ### (25) Solve for fine fuel moisture function (f_F)
     f_F = 91.9 * np.exp(-0.1386 * m_o) * (1 + np.power(m_o, 5.31) / 4.93e7)
 
-    ########################################################################
     ### (26) Solve for initial spread index (R)
     R = 0.208 * f_W * f_F
     R = xr.DataArray(R, name="R", dims=("time", "south_north", "west_east"))
@@ -247,41 +243,13 @@ def solve_isi(hourly_ds, fbp=False, zero_ws=False):
 
 
 ## Define frequently used variables
-
+PDF = 35  # percent dead balsam fir default
+C = 80  # degree of curing(%)
 ISI = hourly_ds.R
-dx, dy = float(hourly_ds.attrs["DX"]), float(hourly_ds.attrs["DY"])
-
-########################################################################
-## Solve Percent Ground Slope (37)
-## Take gradient of x and y
-gradient = np.gradient(ELV)
-y_grad = gradient[0]
-x_grad = gradient[1]
-## Now solve GS
-GS = 100 * np.sqrt((x_grad / dx) ** 2 + (y_grad / dy) ** 2)
-
-########################################################################
-## Solve Factor, Upslope (39)
-## NOTE they use have another condition in the R code: if GS >= 70 SF = 10
-## Also they don't have the GS<60 condition in the code..not sure why
-SF = xr.where(
-    GS < 60, 3.533 * ((GS / 100) ** 1.2), zero_full
-)  ##NOTE they use have another condition in the R code: if GS >= 70 SF = 10
-
-
 ISZ = solve_isi(hourly_ds, fbp=True, zero_ws=True)
 hourly_ds["ISZ"] = ISZ
 
-SAZ = np.arctan(np.sqrt((x_grad / dx) / (y_grad / dy)))
-ind = np.where(np.isnan(SAZ))
 
-
-# test_elv = np.array([[2, 0, 0, 0], [1, 2, 3, 4]])
-# test_gradient = np.gradient(test_elv)
-
-
-###################   Rate of Spread Equations  #######################
-################################################################################
 ## General Rate of Spread Equation for C-1 to C-5, and C-7 (26)
 def solve_rsi(RSI, fueltype, ISI):
     RSI = xr.where(
@@ -297,15 +265,7 @@ RSI = zero_full3D
 for i in [1, 2, 3, 4, 5, 7]:
     RSI = solve_rsi(RSI, f"C{i}", ISZ)
 
-# test = RSI.values
-# index = np.where(FUELS == fc_dict['C6']["Code"])
-# test = test[:,index[0], index[1]]
-# print(np.unique(test))
-# print(np.where(test == 0.0))
 
-unique, count = np.unique(FUELS, return_counts=True)
-
-################################################################################
 ## Fuel Type Specific Rate of Spread Equations
 ##  (M-1 leaftess) (27)
 RSI_M1 = (PC / 100 * solve_rsi(zero_full3D, "C2", ISZ)) + (
@@ -316,3 +276,96 @@ RSI_M1 = (PC / 100 * solve_rsi(zero_full3D, "C2", ISZ)) + (
 RSI_M2 = (PC / 100 * solve_rsi(zero_full3D, "C2", ISZ)) + (
     0.2 * (PC / 100 * solve_rsi(zero_full3D, "D1", ISZ))
 )
+
+##  (M-3)
+fc_dict["M3"]["a"] = 170 * np.exp(-35.0 / PDF)  # (29)
+fc_dict["M3"]["b"] = 0.082 * np.exp(-36 / PDF)  # (30)
+fc_dict["M3"]["c"] = 1.698 - 0.00303 * PDF  # (31)
+
+RSI_M3 = solve_rsi(zero_full3D, "M3", ISZ)
+
+##  (M-4)
+fc_dict["M4"]["a"] = 140 * np.exp(-35.5 / PDF)  # (22)
+fc_dict["M4"]["b"] = 0.0404  # (33)
+fc_dict["M4"]["c"] = 3.02 * np.exp(-0.00714 * PDF)  # (34)
+
+RSI_M4 = solve_rsi(zero_full3D, "M4", ISZ)
+
+
+## (O-1A grass) grass curing coefficient (Wotton et. al. 2009)
+CF = xr.where(C < 58.8, 0.005 * (np.exp(0.061 * C) - 1), 0.176 + 0.02 * (C - 58.8))
+
+RSI_O1a = xr.where(
+    (FUELS == fc_dict["O1a"]["Code"]),
+    fc_dict["O1a"]["a"]
+    * ((1 - np.exp(-fc_dict["O1a"]["b"] * ISZ)) ** fc_dict["O1a"]["c"])
+    * CF,
+    zero_full3D,
+)
+
+## (O-1B grass) grass curing coefficient (Wotton et. al. 2009)
+RSI_O1b = xr.where(
+    (FUELS == fc_dict["O1b"]["Code"]),
+    fc_dict["O1b"]["a"]
+    * ((1 - np.exp(-fc_dict["O1b"]["b"] * ISZ)) ** fc_dict["O1b"]["c"])
+    * CF,
+    zero_full3D,
+)
+
+##  (C-6) Conifer plantation spread rate
+T = 1500 - 2.75 * FMC  # (59)
+h = 460 + 25.9 * FMC  # (60)
+FME = (((1.5 - 0.00275 * FMC) ** 4.0) / (460 + (25.9 * FMC))) * 1000  # (61)
+RSI_C6 = 30 * (1 - np.exp(-0.08 * ISZ)) ** 3.0  # (62)
+
+
+## Surface spread rate with zero wind on level terrain
+RSZ = RSI + RSI_M1 + RSI_M2 + RSI_M3 + RSI_M4 + RSI_O1a + RSI_O1b + RSI_C6
+
+
+###################   Effect of Slope on Rate of Spread  #######################
+################################################################################
+## Define frequently used variables
+dx, dy = float(hourly_ds.attrs["DX"]), float(hourly_ds.attrs["DY"])
+
+
+## Solve Percent Ground Slope (37)
+## Take gradient of x and y
+gradient = np.gradient(ELV)
+y_grad = gradient[0]
+x_grad = gradient[1]
+## Now solve GS
+GS = 100 * np.sqrt((x_grad / dx) ** 2 + (y_grad / dy) ** 2)
+
+
+## Solve Factor, Upslope (39)
+## NOTE they use have another condition in the R code: if GS >= 70 SF = 10
+## Also they don't have the GS<60 condition in the code..not sure why
+SF = xr.where(GS < 60, 3.533 * ((GS / 100) ** 1.2), zero_full)
+
+## Surface spread rate with zero wind, upslope (40)
+RSF = RSZ * SF
+
+
+## Solve ISF (ie ISI, with zero wind upslope) (41)
+def solve_isf(ISF, fueltype, RSF):
+    ISF = xr.where(
+        FUELS == fc_dict[fueltype]["Code"],
+        np.log(1 - (RSF / fc_dict[fueltype]["a"]) ** (1 / fc_dict[fueltype]["c"]))
+        / -fc_dict[fueltype]["b"],
+        ISF,
+    )
+    return ISF
+
+
+ISF = zero_full3D
+for fueltype in ["C1", "C2", "C3", "C4", "C5", "C6", "C7", "D1", "S1", "S2", "S3"]:
+    ISF = solve_isf(ISF, fueltype, RSF)
+
+
+SAZ = np.arctan(np.sqrt((x_grad / dx) / (y_grad / dy)))
+ind = np.where(np.isnan(SAZ))
+
+
+# test_elv = np.array([[2, 0, 0, 0], [1, 2, 3, 4]])
+# test_gradient = np.gradient(test_elv)
