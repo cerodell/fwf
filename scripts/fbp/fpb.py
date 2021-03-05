@@ -347,12 +347,18 @@ SF = xr.where(GS < 60, 3.533 * ((GS / 100) ** 1.2), zero_full)
 RSF = RSZ * SF
 
 
-## Solve ISF (ie ISI, with zero wind upslope) (41)
+## Solve ISF (ie ISI, with zero wind upslope) for the majority of fuels (41)
+## NOTE adjusted base don 41a, 41b (Wotton 2009)
 def solve_isf(ISF, fueltype, RSF):
     ISF = xr.where(
         FUELS == fc_dict[fueltype]["Code"],
-        np.log(1 - (RSF / fc_dict[fueltype]["a"]) ** (1 / fc_dict[fueltype]["c"]))
-        / -fc_dict[fueltype]["b"],
+        xr.where(
+            (1 - (RSF / fc_dict[fueltype]["a"]) ** (1 / fc_dict[fueltype]["c"]))
+            >= 0.01,
+            np.log(1 - (RSF / fc_dict[fueltype]["a"]) ** (1 / fc_dict[fueltype]["c"]))
+            / -fc_dict[fueltype]["b"],
+            np.log(0.01) / -fc_dict[fueltype]["b"],
+        ),
         ISF,
     )
     return ISF
@@ -363,8 +369,48 @@ for fueltype in ["C1", "C2", "C3", "C4", "C5", "C6", "C7", "D1", "S1", "S2", "S3
     ISF = solve_isf(ISF, fueltype, RSF)
 
 
-SAZ = np.arctan(np.sqrt((x_grad / dx) / (y_grad / dy)))
-ind = np.where(np.isnan(SAZ))
+unique, count = np.unique(np.isnan(RSF), return_counts=True)
+
+## Solve ISF (ie ISI, with zero wind upslope) for M1 and M2 (42)
+ISF_M1M2 = xr.where(
+    (FUELS == fc_dict["M1"]["Code"]) | (FUELS == fc_dict["M2"]["Code"]),
+    np.log(1 - ((100 - RSF) / (PC * fc_dict["C2"]["a"])) ** (1 / fc_dict["C2"]["c"]))
+    / -fc_dict["C2"]["b"],
+    zero_full3D,
+)
+
+## Solve ISF (ie ISI, with zero wind upslope) for O1a and O1b (grass)(43)
+ISF_O1a = xr.where(
+    (FUELS == fc_dict["O1a"]["Code"]),
+    np.log(1 - (RSF / (CF * fc_dict["O1a"]["a"])) ** (1 / fc_dict["O1a"]["c"]))
+    / -fc_dict["O1a"]["b"],
+    zero_full3D,
+)
+
+ISF_O1b = xr.where(
+    (FUELS == fc_dict["O1b"]["Code"]),
+    np.log(1 - (RSF / (CF * fc_dict["O1b"]["a"])) ** (1 / fc_dict["O1b"]["c"]))
+    / -fc_dict["O1b"]["b"],
+    zero_full3D,
+)
+
+## Combine all ISFs
+ISF = ISF + ISF_M1M2 + ISF_O1a + ISF_O1b
+
+### (25) Solve for fine fuel moisture function (f_F)
+m_o = hourly_ds.m_o
+f_F = 91.9 * np.exp(-0.1386 * m_o) * (1 + ((m_o ** 5.31) / 4.93e7))
+
+
+## Compute the slope equivalent wind speed (WSE) (44)
+WSE = np.log(ISF / (0.208 * f_F)) / 0.05039
+
+
+# Wind speed equivalent (WSE) calculation
+
+
+# SAZ = np.arctan(np.sqrt((x_grad / dx) / (y_grad / dy)))
+# ind = np.where(np.isnan(SAZ))
 
 
 # test_elv = np.array([[2, 0, 0, 0], [1, 2, 3, 4]])
