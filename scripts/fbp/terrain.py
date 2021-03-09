@@ -280,3 +280,48 @@ fig.savefig(save_dir2, dpi=240)
 print(f"Saved:  {save_dir2}")
 ### Timer
 print("Total Run Time: ", datetime.now() - startTime)
+
+
+# grid = np.zeros((9,9))
+# for i in range(9):
+#   grid[i:,i:] = i
+
+# lats = np.zeros((9,9))
+# for i in range(9):
+#   lats[-i-1,:] = (i+1) *10
+
+# lngs = np.zeros((9,9))
+# for i in range(9):
+#   lngs[:,i] = (i+1) *20
+
+
+# gradient = np.gradient(grid[:,::-1])
+# y_grad = gradient[0]
+# x_grad = gradient[1]
+
+# dx, dy = 4,4
+# GS = 100 * np.sqrt((x_grad / dx) ** 2 + (y_grad / dy) ** 2)
+
+# ASPECT = np.arctan2((y_grad / dy), -(x_grad / dx)) * (180/np.pi)
+# ASPECT = np.where(ASPECT < 0,
+#             90.0 - ASPECT,
+#             np.where(ASPECT > 90.0,
+#             360.0 - ASPECT + 90.0,
+#             90.0 - ASPECT))
+
+# levels = np.arange(0,360+22.5,22.5)
+# cmap = cm.get_cmap("gist_rainbow", len(levels)-2)  # PiYG
+# colors = []
+# for i in range(cmap.N):
+#     rgba = cmap(i)
+#     colors.append(matplotlib.colors.rgb2hex(rgba))
+
+# colors =  ['#ff0029', '#ff3900', '#ff9c00', '#fffe00', '#9eff00', '#3bff00', '#00ff27', '#00ff89', '#00ffeb', '#00b0ff', '#004dff', '#1600ff', '#7900ff', '#dc00ff', '#ff00bf','#ff0029']
+
+# contourf = plt.contourf(lngs, lats, ASPECT,
+#     levels =levels,
+#     colors= colors,
+#     zorder=10,
+#     alpha=0.9,
+# )
+# cbar = plt.colorbar(contourf)
