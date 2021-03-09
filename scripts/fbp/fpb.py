@@ -24,15 +24,16 @@ print("RUN STARTED AT: ", str(startTime))
 
 ## Define model/domain and datetime of interest
 # date = pd.Timestamp("today")
-date = pd.Timestamp(2018, 7, 20)
+date = pd.Timestamp(2018, 7, 18)
 domain = "d02"
 wrf_model = "wrf3"
 
 ## Path to hourly/daily fwi data
 forecast_date = date.strftime("%Y%m%d06")
-hourly_file_dir = (
-    str(data_dir) + f"/FWF-WAN00CP-04/fwf-hourly-{domain}-{forecast_date}.zarr"
-)
+# hourly_file_dir = (
+#     str(data_dir) + f"/FWF-WAN00CP-04/fwf-hourly-{domain}-{forecast_date}.zarr"
+# )
+hourly_file_dir = str(fwf_zarr_dir) + str(f"/fwf-hourly-{domain}-{forecast_date}.zarr")
 
 ## Path to fuel converter spreadsheet
 fuel_converter = str(data_dir) + "/fbp/fuel_converter.csv"
@@ -59,18 +60,53 @@ terrain_ds = xr.open_dataset(terrain)
 
 
 ## Define Static Variables
-ELV, LAT, LON, FUELS = (
+ELV, LAT, LON, FUELS, WD, dx, dy = (
     terrain_ds.HGT.values[0, :, :],
     terrain_ds.XLAT.values[0, :, :],
     terrain_ds.XLONG.values[0, :, :] * -1,
     fuels_ds.fuels.values.astype(int),
+    hourly_ds.WD,
+    float(hourly_ds.attrs["DX"]),
+    float(hourly_ds.attrs["DY"]),
 )
-unique, count = np.unique(FUELS, return_counts=True)
-count[unique == fc_dict["M3"]["Code"]]
-## create zeros array for conditional statements
+
+# unique, count = np.unique(FUELS, return_counts=True)
+# count[unique == fc_dict["M3"]["Code"]]
+
+## create zeros array for easy conditional statements
 shape = LAT.shape
 zero_full = np.zeros(shape, dtype=float)
 zero_full3D = np.zeros(hourly_ds.F.shape, dtype=float)
+zero_full3D_daily = np.zeros(daily_ds.U.shape, dtype=float)
+
+
+## Convert Wind Direction from degrees to radians
+WD = WD * np.pi / 180
+
+## Reorient to Wind Azimuth (WAZ)
+WAZ = WD + np.pi
+WAZ = xr.where(WAZ > 2 * np.pi, WAZ - 2 * np.pi, WAZ)
+
+## Take gradient dz/dx and dz/dy of elevation
+gradient = np.gradient(ELV)
+y_grad = gradient[0]
+x_grad = gradient[1]
+
+## Solve Percent Ground Slope (37)
+GS = 100 * np.sqrt((x_grad / dx) ** 2 + (y_grad / dy) ** 2)
+
+# Solve for slope Aspect
+ASPECT = np.arctan2((y_grad / dy), -(x_grad / dx)) * (180 / np.pi)
+
+
+# Solve for Uphill slope Azimuth Angle (SAZ)
+SAZ = np.where(
+    ASPECT < 0,
+    90.0 - ASPECT,
+    np.where(ASPECT > 90.0, 360.0 - ASPECT + 90.0, 90.0 - ASPECT),
+)
+
+# SAZ = np.where(SAZ == 360, 0, SAZ)
 
 
 FMC = zero_full
@@ -109,7 +145,13 @@ hourly_ds["FMC"] = FMC
 ###################    Surface Fuel Consumption  #######################
 ########################################################################
 ## Define frequently used variables
-FFMC, BUI, GFL, PC, PH = daily_ds.F, daily_ds.U, 0.3, 50, 50
+FFMC, BUI, GFL, PC, PH = hourly_ds.F, daily_ds.U, 0.3, 50, 50
+index = [i for i in range(1, len(FFMC) + 1) if i % 24 == 0]
+BUI_i = BUI.values
+BUI_day1 = np.stack([BUI_i[0]] * index[0])
+BUI_day2 = np.stack([BUI_i[1]] * (len(FFMC) - index[0]))
+BUI = np.vstack([BUI_day1, BUI_day2])
+
 SFC = zero_full
 
 
@@ -212,19 +254,14 @@ SFC = xr.where(
 # Remove negative SFC value
 SFC = xr.where(SFC <= 0, 1e-6, SFC)
 SFC = xr.DataArray(SFC, name="SFC", dims=("time", "south_north", "west_east"))
-daily_ds["SFC"] = SFC
+hourly_ds["SFC"] = SFC
 
 
 ###################   Rate of Spread Equations  #######################
 #######################################################################
-def solve_isi(hourly_ds, fbp=False, zero_ws=False):
-    ### Call on initial conditions
-    if zero_ws == True:
-        W, F, m_o = 0.0, hourly_ds.F, hourly_ds.m_o
-    elif zero_ws == False:
-        W, F, m_o = hourly_ds.W, hourly_ds.F, hourly_ds.m_o
-    else:
-        raise ValueError("ERROR: Can Not Solve ISI")
+def solve_isi(hourly_ds, W, fbp=False):
+    W, F, m_o = W, hourly_ds.F, hourly_ds.m_o
+
     ### (24) Solve for wind function (f_W) with condition for fbp
     f_W = xr.where(
         (W >= 40) & (fbp == True),
@@ -246,97 +283,125 @@ def solve_isi(hourly_ds, fbp=False, zero_ws=False):
 PDF = 35  # percent dead balsam fir default
 C = 80  # degree of curing(%)
 ISI = hourly_ds.R
-ISZ = solve_isi(hourly_ds, fbp=True, zero_ws=True)
+ISZ = solve_isi(hourly_ds, W=0, fbp=True)
 hourly_ds["ISZ"] = ISZ
-
-
-## General Rate of Spread Equation for C-1 to C-5, and C-7 (26)
-def solve_rsi(RSI, fueltype, ISI):
-    RSI = xr.where(
-        FUELS == fc_dict[fueltype]["Code"],
-        fc_dict[fueltype]["a"]
-        * (1 - np.exp(-fc_dict[fueltype]["b"] * ISI) ** fc_dict[fueltype]["c"]),
-        RSI,
-    )
-    return RSI
-
-
-RSI = zero_full3D
-for i in [1, 2, 3, 4, 5, 7]:
-    RSI = solve_rsi(RSI, f"C{i}", ISZ)
-
-
-## Fuel Type Specific Rate of Spread Equations
-##  (M-1 leaftess) (27)
-RSI_M1 = (PC / 100 * solve_rsi(zero_full3D, "C2", ISZ)) + (
-    PC / 100 * solve_rsi(zero_full3D, "D1", ISZ)
-)
-
-##  (M-2 green)   (28)
-RSI_M2 = (PC / 100 * solve_rsi(zero_full3D, "C2", ISZ)) + (
-    0.2 * (PC / 100 * solve_rsi(zero_full3D, "D1", ISZ))
-)
-
-##  (M-3)
-fc_dict["M3"]["a"] = 170 * np.exp(-35.0 / PDF)  # (29)
-fc_dict["M3"]["b"] = 0.082 * np.exp(-36 / PDF)  # (30)
-fc_dict["M3"]["c"] = 1.698 - 0.00303 * PDF  # (31)
-
-RSI_M3 = solve_rsi(zero_full3D, "M3", ISZ)
-
-##  (M-4)
-fc_dict["M4"]["a"] = 140 * np.exp(-35.5 / PDF)  # (22)
-fc_dict["M4"]["b"] = 0.0404  # (33)
-fc_dict["M4"]["c"] = 3.02 * np.exp(-0.00714 * PDF)  # (34)
-
-RSI_M4 = solve_rsi(zero_full3D, "M4", ISZ)
-
-
 ## (O-1A grass) grass curing coefficient (Wotton et. al. 2009)
 CF = xr.where(C < 58.8, 0.005 * (np.exp(0.061 * C) - 1), 0.176 + 0.02 * (C - 58.8))
 
-RSI_O1a = xr.where(
-    (FUELS == fc_dict["O1a"]["Code"]),
-    fc_dict["O1a"]["a"]
-    * ((1 - np.exp(-fc_dict["O1a"]["b"] * ISZ)) ** fc_dict["O1a"]["c"])
-    * CF,
-    zero_full3D,
-)
+## General Rate of Spread Equation for C-1 to C-5, and C-7 (26)
+def solve_gen_ros(ROS, fueltype, ISI):
+    ROS = xr.where(
+        FUELS == fc_dict[fueltype]["Code"],
+        fc_dict[fueltype]["a"]
+        * (1 - np.exp(-fc_dict[fueltype]["b"] * ISI) ** fc_dict[fueltype]["c"]),
+        ROS,
+    )
+    return ROS
 
-## (O-1B grass) grass curing coefficient (Wotton et. al. 2009)
-RSI_O1b = xr.where(
-    (FUELS == fc_dict["O1b"]["Code"]),
-    fc_dict["O1b"]["a"]
-    * ((1 - np.exp(-fc_dict["O1b"]["b"] * ISZ)) ** fc_dict["O1b"]["c"])
-    * CF,
-    zero_full3D,
-)
 
-##  (C-6) Conifer plantation spread rate
-T = 1500 - 2.75 * FMC  # (59)
-h = 460 + 25.9 * FMC  # (60)
-FME = (((1.5 - 0.00275 * FMC) ** 4.0) / (460 + (25.9 * FMC))) * 1000  # (61)
-RSI_C6 = 30 * (1 - np.exp(-0.08 * ISZ)) ** 3.0  # (62)
+def solve_ros(ISI, FMC, PDF, fc_dict, *args):
+    ROS = zero_full3D
+    for i in [1, 2, 3, 4, 5, 7]:
+        ROS = solve_gen_ros(ROS, f"C{i}", ISI)
+
+    ## Fuel Type Specific Rate of Spread Equations
+    ##  (M-1 leaftess) (27)
+    ROS_M1 = (PC / 100 * solve_gen_ros(zero_full3D, "C2", ISI)) + (
+        PC / 100 * solve_gen_ros(zero_full3D, "D1", ISI)
+    )
+
+    ##  (M-2 green)   (28)
+    ROS_M2 = (PC / 100 * solve_gen_ros(zero_full3D, "C2", ISI)) + (
+        0.2 * (PC / 100 * solve_gen_ros(zero_full3D, "D1", ISI))
+    )
+
+    ##  (M-3)
+    fc_dict["M3"]["a"] = 170 * np.exp(-35.0 / PDF)  # (29)
+    fc_dict["M3"]["b"] = 0.082 * np.exp(-36 / PDF)  # (30)
+    fc_dict["M3"]["c"] = 1.698 - 0.00303 * PDF  # (31)
+
+    ROS_M3 = solve_gen_ros(zero_full3D, "M3", ISI)
+
+    ##  (M-4)
+    fc_dict["M4"]["a"] = 140 * np.exp(-35.5 / PDF)  # (22)
+    fc_dict["M4"]["b"] = 0.0404  # (33)
+    fc_dict["M4"]["c"] = 3.02 * np.exp(-0.00714 * PDF)  # (34)
+
+    ROS_M4 = solve_gen_ros(zero_full3D, "M4", ISI)
+
+    ROS_O1a = xr.where(
+        (FUELS == fc_dict["O1a"]["Code"]),
+        fc_dict["O1a"]["a"]
+        * ((1 - np.exp(-fc_dict["O1a"]["b"] * ISI)) ** fc_dict["O1a"]["c"])
+        * CF,
+        zero_full3D,
+    )
+
+    ## (O-1B grass) grass curing coefficient (Wotton et. al. 2009)
+    ROS_O1b = xr.where(
+        (FUELS == fc_dict["O1b"]["Code"]),
+        fc_dict["O1b"]["a"]
+        * ((1 - np.exp(-fc_dict["O1b"]["b"] * ISI)) ** fc_dict["O1b"]["c"])
+        * CF,
+        zero_full3D,
+    )
+
+    if args:
+        ## Surface spread rate
+        ROS = ROS + ROS_M1 + ROS_M2 + ROS_M3 + ROS_M4 + ROS_O1a + ROS_O1b
+        ROS = ROS * BE
+    else:
+        ROS = ROS + ROS_M1 + ROS_M2 + ROS_M3 + ROS_M4 + ROS_O1a + ROS_O1b
+
+    return ROS
+
+
+def solve_c6(ISI, FMC, fc_dict, *args):
+    ##  (C-6) Conifer plantation spread rate
+    T = 1500 - 2.75 * FMC  # (59)
+    h = 460 + 25.9 * FMC  # (60)
+    FME = (((1.5 - 0.00275 * FMC) ** 4.0) / (460 + (25.9 * FMC))) * 1000  # (61)
+
+    ROS_C6 = xr.where(
+        (FUELS == fc_dict["C6"]["Code"]),
+        30 * (1 - np.exp(-0.08 * ISI)) ** 3.0,
+        zero_full3D,
+    )
+
+    if args:
+        ## (63)
+        RSS = ROS_C6 * BE
+        ## (64)
+        RSC = xr.where(
+            (FUELS == fc_dict["C6"]["Code"]),
+            60 * (1 - np.exp(-0.0497 * ISI)) ** 1.0 * (FME / 0.778),
+            zero_full3D,
+        )
+        ## (56)
+        CSI = 0.001 * (fc_dict["C6"]["Code"] ** 1.5) * (460 + 25.9 * FMC) ** 1.5
+        ## (57)
+        RSO = CSI / (300 * SFC)
+        ## (58)
+        CFB = 1 - np.exp(-0.23 * (ROS_C6 - RSO))
+        ## (65)
+        ROS = xr.where(
+            (FUELS == fc_dict["C6"]["Code"]), RSS + CFB * (RSC - RSS), zero_full3D
+        )
+    else:
+        ROS = ROS_C6
+
+    return ROS
 
 
 ## Surface spread rate with zero wind on level terrain
-RSZ = RSI + RSI_M1 + RSI_M2 + RSI_M3 + RSI_M4 + RSI_O1a + RSI_O1b + RSI_C6
+RSZ = solve_ros(ISZ, FMC, PDF, fc_dict)
+RSZ_C6 = solve_c6(ISZ, FMC, fc_dict)
+RSZ = RSZ + RSZ_C6
 
 
 ###################   Effect of Slope on Rate of Spread  #######################
 ################################################################################
-## Define frequently used variables
-dx, dy = float(hourly_ds.attrs["DX"]), float(hourly_ds.attrs["DY"])
-
-
-## Solve Percent Ground Slope (37)
-## Take gradient of x and y
-gradient = np.gradient(ELV)
-y_grad = gradient[0]
-x_grad = gradient[1]
-## Now solve GS
-GS = 100 * np.sqrt((x_grad / dx) ** 2 + (y_grad / dy) ** 2)
-
+WS = hourly_ds.W
 
 ## Solve Factor, Upslope (39)
 ## NOTE they use have another condition in the R code: if GS >= 70 SF = 10
@@ -345,7 +410,6 @@ SF = xr.where(GS < 60, 3.533 * ((GS / 100) ** 1.2), zero_full)
 
 ## Surface spread rate with zero wind, upslope (40)
 RSF = RSZ * SF
-
 
 ## Solve ISF (ie ISI, with zero wind upslope) for the majority of fuels (41)
 ## NOTE adjusted base don 41a, 41b (Wotton 2009)
@@ -394,24 +458,140 @@ ISF_O1b = xr.where(
     zero_full3D,
 )
 
-## Combine all ISFs
+## Combine all ISFs (ie ISI, with zero wind upslope)
 ISF = ISF + ISF_M1M2 + ISF_O1a + ISF_O1b
 
 ### (25) Solve for fine fuel moisture function (f_F)
 m_o = hourly_ds.m_o
 f_F = 91.9 * np.exp(-0.1386 * m_o) * (1 + ((m_o ** 5.31) / 4.93e7))
-
-
+# f_F = xr.where(f_F < 0.001, 0.1, f_F)
 ## Compute the slope equivalent wind speed (WSE) (44)
-WSE = np.log(ISF / (0.208 * f_F)) / 0.05039
+WSE = xr.where(ISF > 0.1, np.log(ISF / (0.208 * f_F)) / 0.05039, zero_full3D)
+
+## Net vectored wind speed in the x-direction (47)
+WSX = (WS * np.sin(WAZ)) + (WSE * np.sin(SAZ * (np.pi / 180)))
+
+## Net vectored wind speed in they-direction (48)
+WSY = (WS * np.cos(WAZ)) + (WSE * np.cos(SAZ * (np.pi / 180)))
+
+## Net vectored wind speed (49_
+WSV = np.sqrt(WSX ** 2 + WSY ** 2)
+GS_stacked = np.stack([GS, GS])
+WSV = np.where((GS > 0) & (FFMC > 0), WSV, WS)
+
+## Spread direction azimuth and convert from radians to degrees (50)
+RAZ = np.arccos(WSY / WSV) * 180 / np.pi
+## Convert RAZ values at locations of negative WSX to account for the full compas direction of movement. (51)
+RAZ = xr.where(WSX < 0, 360 - RAZ, RAZ)
+
+## Solve ISI equation (from the FWI System) (52, 53, 53a)
+ISI = solve_isi(hourly_ds, WSV, fbp=True)
+hourly_ds["ISI"] = ISI
 
 
-# Wind speed equivalent (WSE) calculation
+###########   BUI Effect on Surface Fire Rate of Spread  #############
+#######################################################################
+## Buildup effect on spread rate (54)
+def solve_be(BE, fueltype, BUI):
+    BE = xr.where(
+        FUELS == fc_dict[fueltype]["Code"],
+        xr.where(
+            (BUI > 0) & (fc_dict[fueltype]["BUI_o"] > 0),
+            np.exp(
+                50
+                * np.log(fc_dict[fueltype]["q"])
+                * (1 / BUI - 1 / fc_dict[fueltype]["BUI_o"])
+            ),
+            1,
+        ),
+        BE,
+    )
+    return BE
 
 
-# SAZ = np.arctan(np.sqrt((x_grad / dx) / (y_grad / dy)))
-# ind = np.where(np.isnan(SAZ))
+BE = zero_full3D
+for fueltype in fc_df.index.values[:-8]:
+    BE = solve_be(BE, fueltype, BUI)
+
+ROS = solve_ros(ISI, FMC, PDF, fc_dict, BE)
+ROS_C6 = solve_c6(ISI, FMC, fc_dict, BE)
+ROS = ROS + ROS_C6
+ROS = xr.where(ROS < 0, 0.0, ROS)
+hourly_ds["ROS"] = ROS
+hourly_ds["ROS"].attrs = {
+    "FieldType": 104,
+    "MemoryOrder": "XY ",
+    "description": "Rate of Spread",
+    "projection": "PolarStereographic(stand_lon=-110.0, moad_cen_lat=53.99999237060547, truelat1=57.0, truelat2=90.0, pole_lat=90.0, pole_lon=0.0)",
+    "stagger": "",
+    "units": "m min^-1",
+}
+################   Critical Surface Fire Intensity  ###################
+#######################################################################
 
 
-# test_elv = np.array([[2, 0, 0, 0], [1, 2, 3, 4]])
-# test_gradient = np.gradient(test_elv)
+def solve_cfb(CFB, ROS, fueltype, FMC):
+    ## Solve Critical surface intensity for crowning (56)
+    CSI = 0.001 * (fc_dict[fueltype]["Code"] ** 1.5) * (460 + 25.9 * FMC) ** 1.5
+    ## Solve Critical spread rate for crowning (57)
+    RSO = CSI / (300 * SFC)
+    ## Solve Crown fraction burned (58)
+    CFB_i = xr.where(ROS > RSO, 1 - np.exp(-0.23 * (ROS - RSO)), CFB)
+    CFB = xr.where(FUELS == fc_dict[fueltype]["Code"], CFB_i, CFB)
+    return CFB
+
+
+CFB = 0
+for fueltype in fc_df.index.values[:-8]:
+    CFB = solve_cfb(CFB, ROS, fueltype, FMC)
+hourly_ds["CFB"] = CFB
+hourly_ds["CFB"].attrs = {
+    "FieldType": 104,
+    "MemoryOrder": "XY ",
+    "description": "Crown Fraction Burned",
+    "projection": "PolarStereographic(stand_lon=-110.0, moad_cen_lat=53.99999237060547, truelat1=57.0, truelat2=90.0, pole_lat=90.0, pole_lon=0.0)",
+    "stagger": "",
+    "units": "%",
+}
+#####################   Total Fuel Consumption  #######################
+#######################################################################
+
+
+def solve_tfc(TFC, fueltype, CFB):
+    CFC = fc_dict[fueltype]["CFL"] * CFB
+    TFC = xr.where(FUELS == fc_dict[fueltype]["Code"], SFC + CFC, TFC)
+    return TFC
+
+
+TFC = 0
+for fueltype in fc_df.index.values[:-8]:
+    TFC = solve_tfc(TFC, fueltype, CFB)
+hourly_ds["TFC"] = TFC
+hourly_ds["TFC"].attrs = {
+    "FieldType": 104,
+    "MemoryOrder": "XY ",
+    "description": "Total Fuel Consumption",
+    "projection": "PolarStereographic(stand_lon=-110.0, moad_cen_lat=53.99999237060547, truelat1=57.0, truelat2=90.0, pole_lat=90.0, pole_lon=0.0)",
+    "stagger": "",
+    "units": "kg m^-2",
+}
+
+#########################   Fire Intensity  ###########################
+#######################################################################
+
+HFI = 300 * TFC * ROS
+hourly_ds["HFI"] = HFI
+hourly_ds["HFI"].attrs = {
+    "FieldType": 104,
+    "MemoryOrder": "XY ",
+    "description": "Head Fire Intensity",
+    "projection": "PolarStereographic(stand_lon=-110.0, moad_cen_lat=53.99999237060547, truelat1=57.0, truelat2=90.0, pole_lat=90.0, pole_lon=0.0)",
+    "stagger": "",
+    "units": "kW m^-1",
+}
+
+
+save_test = str(data_dir) + f"/test/fpb-{domain}-{forecast_date}.zarr"
+hourly_ds.to_zarr(save_test, mode="w")
+
+print("Total Run Time: ", datetime.now() - startTime)

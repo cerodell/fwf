@@ -56,13 +56,21 @@ us_filein = str(data_dir) + "/fbp/LF2020_FBFM13_200_CONUS/Tif/LC20_F13_200.tif"
 fc_df = pd.read_csv(fuel_converter)
 wrf_ds = salem.open_xr_dataset(wrf_filein)
 fbp2014_tiff = salem.open_xr_dataset(fbp2014_filein)
-us_tiff = salem.open_xr_dataset(us_filein)
+# us_tiff = salem.open_xr_dataset(us_filein)
 
 
 ## Using nearest neighbor transformation tif to wrf domain
 fbp2014_ds = wrf_ds.salem.transform(fbp2014_tiff.data)
 us_ds = wrf_ds.salem.transform(us_tiff.data)
 
+# tiff_unique, tiff_count = getunique(fbp2014_tiff.data.values)
+# unique, count = getunique(fbp2014_ds.values)
+
+# norm2 = np.linalg.norm(tiff_count)
+# normal_array2 = tiff_count/norm2
+
+# norm = np.linalg.norm(count)
+# normal_array = count/norm
 
 ## take US Anderson 13 fuel valsue and convert to CFFDRS fuel types
 us_array = us_ds.values
@@ -99,7 +107,7 @@ for folder in folders:
         str(data_dir) + f"/fbp/{folder}_AK_140CFFDRS/AK_140CFFDRS\AK_140CFFDRS.tif"
     )
     ak_tiff = salem.open_xr_dataset(ak_filein)
-    ak_ds = wrf_ds.salem.transform(ak_tiff.data)
+    ak_ds = wrf_ds.salem.transform(ak_tiff.data, ks=1)
     ak_array = ak_ds.values
     for i in range(len(fc_df.AK_Fuels.values)):
         if fc_df.AK_Fuels[i] == -99:
