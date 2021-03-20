@@ -33,8 +33,8 @@ __email__ = "crodell@eoas.ubc.ca"
 
 ## choose wrf model and date range of interest
 wrf_model = "wrf3"
-date_range = pd.date_range("2018-09-07", "2018-10-01")
-domains = ["d03"]
+date_range = pd.date_range("2018-09-07", "2018-09-07")
+domains = ["d02"]
 
 ## make dir for that intercomp files if it doest not all ready exist
 make_dir = Path(str(data_dir) + "/intercomp/")

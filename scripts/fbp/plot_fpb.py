@@ -22,32 +22,29 @@ from datetime import datetime, date, timedelta
 
 
 date = pd.Timestamp(2018, 7, 18)
-domain = "d03"
+domain = "d02"
 wrf_model = "wrf3"
-save_file = f"/images/fbb-hfi-{wrf_model}-{domain}.png"
-save_dir = str(data_dir) + save_file
 
 
 ## Path to hourly/daily fwi data
 forecast_date = date.strftime("%Y%m%d06")
 filein = str(data_dir) + f"/test/fpb-{domain}-{forecast_date}.zarr"
+# filein = f'/Volumes/cer/fireweather/data/fwf-hourly-{domain}-2018040106-2018100106.zarr'
+filein = f"/Users/rodell/Google Drive/Shared drives/Research/FireSmoke/ZARR_Data/fwf-hourly-{domain}-2018040106-2018100106.zarr"
+
 ds = xr.open_zarr(filein)
+ds.coords["time"] = ds.Time
 
 
-def reject_outliers(x, m=3):
-    return x[abs(x - np.mean(x)) < m * np.std(x)]
+var = "HFI"
+levels = np.arange(0, 150000, 1000)
 
-
-HFI = reject_outliers(ds.HFI.values.flatten())
-HFI_i = HFI[HFI > 400]
-plt.hist(HFI_i, 50, facecolor="blue", alpha=0.5)
-ds.HFI.plot()
-ds = ds.isel(time=12)
+save_file = f"/images/{var}-{wrf_model}-{domain}.png"
+save_dir = str(data_dir) + save_file
+ds = ds.loc[dict(time="2018-08-18T20")]
 
 
 day_hour = np.datetime_as_string(ds.Time, unit="h")
-
-
 ## bring in state/prov boundaries
 states_provinces = cfeature.NaturalEarthFeature(
     category="cultural",
@@ -94,11 +91,10 @@ Plot_Title = f"{ds.HFI.attrs['description']} at {day_hour} \n {wrf_model} {res}"
 ax.set_title(Plot_Title, fontsize=20, weight="bold")
 
 
-levels = np.arange(0, 40000, 1000)
 contourf = ax.contourf(
     ds.XLONG,
     ds.XLAT,
-    ds.HFI,
+    ds[var],
     levels=levels,
     extend="both",
     cmap="RdYlBu_r",
@@ -106,20 +102,13 @@ contourf = ax.contourf(
     alpha=1,
 )
 
+
+Cnorm = matplotlib.colors.Normalize(
+    vmin=int(np.min(levels)), vmax=int(np.max(levels)) + 1
+)
+# contourf = ax.pcolormesh(ds.XLONG, ds.XLAT, ds[var], zorder=10, norm=Cnorm, cmap="RdYlBu_r", shading='flat')
 fig.add_axes(ax_cb)
-# ticks = fc_df.CFFDRS.values[:-4]
-# ticks = fc_df.CFFDRS.values[:-1]
-
-# tick_levels = fc_df.National_FBP_Fueltypes_2014.values[:-3].astype(float)
-# tick_levels = list(np.array(levels) - 0.5)
-
-# tick_levels = [-0.5, 0.5, 1.5, 2.5, 3.5, 4.5, 5.5, 6.5, 7.5, 8.5, 9.5, 10.5, 11.5, 12.5, 13.5, 14.5, 15.5, 16.5, 17.5, 18.5, 19.5, 20.5, 21.5, 22.5, 23.5, 24.5]
-
-# tick_levels[-1] = levels[-1]
 cbar = plt.colorbar(contourf, cax=ax_cb)
-# cbar.ax.set_yticklabels(ticks)  # set ticks of your format
-# cbar.ax.axes.tick_params(length=0)
-
 
 ## set map bounds
 if wrf_model == "wrf3":

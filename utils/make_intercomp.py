@@ -38,8 +38,10 @@ def daily_merge_ds(date_to_merge, domain, wrf_model):
 
         daily_ds = xr.open_zarr(daily_file_dir)
         ### Call on variables
-        tzone_ds = xr.open_zarr(str(tzone_dir) + f"/tzone_{wrf_model}_{domain}.zarr")
-        tzone = tzone_ds.Zone.values
+        tzone_ds = xr.open_zarr(
+            str(data_dir) + f"/static/static-vars-{wrf_model}-{domain}.zarr"
+        )
+        tzone = tzone_ds.ZoneDT.values
         shape = tzone.shape
         ## create I, J for quick indexing
         I, J = np.ogrid[: shape[0], : shape[1]]

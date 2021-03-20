@@ -19,14 +19,18 @@ from datetime import datetime, date, timedelta
 
 
 domain = "d02"
+wrf_model = "wrf3"
+
 # date = pd.Timestamp("today")
-date = pd.Timestamp(2018, 4, 1)
+date = pd.Timestamp(2018, 7, 18)
 forecast_date = date.strftime("%Y%m%d06")
 
-# file_dir = str(fwf_zarr_dir) + f"/fwf-hourly-{domain}-{forecast_date}.zarr"   # wrfout-{domain}-{forecast_date}.zarr
 file_dir = (
-    str(fwf_zarr_dir) + f"/fwf-daily-{domain}-{forecast_date}.zarr"
+    str(fwf_zarr_dir) + f"/fwf-hourly-{domain}-{forecast_date}.zarr"
 )  # wrfout-{domain}-{forecast_date}.zarr
+# file_dir = (
+#     str(fwf_zarr_dir) + f"/fwf-daily-{domain}-{forecast_date}.zarr"
+# )  # wrfout-{domain}-{forecast_date}.zarr
 
 
 ds = xr.open_zarr(file_dir)
@@ -36,13 +40,16 @@ ds = xr.open_zarr(file_dir)
 with open(str(data_dir) + "/json/colormaps-dev.json") as f:
     cmaps = json.load(f)
 
-var, index = "P", 0
+var, index = "R", 18
 vmin, vmax = cmaps[var]["vmin"], cmaps[var]["vmax"]
 name, colors, sigma = (
     str(cmaps[var]["name"]),
     cmaps[var]["colors18"],
     cmaps[var]["sigma"],
 )
+
+save_file = f"/images/{var}-{wrf_model}-{domain}.png"
+save_dir = str(data_dir) + save_file
 
 lngs = ds.XLONG.values
 lats = ds.XLAT.values
@@ -119,6 +126,7 @@ ax.set_ylim([36, 70])
 ## tighten up fig
 # plt.tight_layout()
 
+fig.savefig(save_dir, dpi=240)
 
 # for var in list(ds):
 #     # print(f"max of {var}: {str(ds.Time.values)}")
