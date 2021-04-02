@@ -24,11 +24,11 @@ wrf_model = "wrf3"
 domain = "d02"
 fuel_type = "C2"
 
-date_range = pd.date_range("2018-04-01", "2018-09-30")
+date_range = pd.date_range("2019-04-01", "2018-09-30")
 
 
 ## Open intercomp of met/fwi to observed dataset
-obs_ds = xr.open_zarr(str(data_dir) + "/intercomp/" + f"intercomp-d02-20181001.zarr")
+obs_ds = xr.open_zarr(str(data_dir) + "/intercomp/" + f"intercomp-d02-20191001.zarr")
 
 
 ## Get All Stations CSV
