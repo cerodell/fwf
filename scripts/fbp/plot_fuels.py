@@ -22,14 +22,14 @@ print("RUN STARTED AT: ", str(startTime))
 
 ## Choose wrf domain
 domain = "d03"
-wrf_model = "wrf4"
-save_file = f"/images/cffdrs-{wrf_model}-{domain}.png"
+wrf_model = "wrf3"
+save_file = f"/images/cffdrs-{wrf_model}-{domain}-test.png"
 save_dir = str(data_dir) + save_file
 
 ## Path to Fuel converter spreadsheet
 fuel_converter = str(data_dir) + "/fbp/fuel_converter.csv"
 ## Path to any wrf file used in transformation
-fuelsin = str(data_dir) + f"/fbp/fuels-{wrf_model}-{domain}.zarr"
+fuelsin = str(data_dir) + f"/fbp/fuels-{wrf_model}-{domain}-test.zarr"
 ## Open all files mentioned above
 fc_df = pd.read_csv(fuel_converter)
 fc_df = fc_df.drop_duplicates(subset=["CFFDRS"])
@@ -55,15 +55,6 @@ levels = []
 for i in range(0, len(fc_df.National_FBP_Fueltypes_2014.values)):
     fillarray[fillarray == fc_df.National_FBP_Fueltypes_2014.values[i]] = i
     levels.append(i)
-
-
-## bring in state/prov boundaries
-states_provinces = cfeature.NaturalEarthFeature(
-    category="cultural",
-    name="admin_1_states_provinces_lines",
-    scale="50m",
-    facecolor="none",
-)
 
 
 ## make fig for make with projection

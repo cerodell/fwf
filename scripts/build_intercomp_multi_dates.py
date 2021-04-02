@@ -33,7 +33,7 @@ __email__ = "crodell@eoas.ubc.ca"
 
 ## choose wrf model and date range of interest
 wrf_model = "wrf3"
-date_range = pd.date_range("2018-09-07", "2018-09-07")
+date_range = pd.date_range("2019-04-01", "2019-10-01")
 domains = ["d02"]
 
 ## make dir for that intercomp files if it doest not all ready exist
@@ -67,7 +67,26 @@ for date in date_range:
 
         print(day1_obs_date)
         day1_ds = daily_merge_ds(day1_obs_date, domain, wrf_model)
+        day1_ds.H.attrs = {
+            "FieldType": 104,
+            "MemoryOrder": "XY ",
+            "description": "2m RELATIVE HUMIDITY",
+            "projection": "PolarStereographic(stand_lon=-110.0, moad_cen_lat=53.99999237060547, truelat1=57.0, truelat2=90.0, pole_lat=90.0, pole_lon=0.0)",
+            "stagger": "",
+            "units": "(%)",
+        }
         day2_ds = daily_merge_ds(day2_obs_date, domain, wrf_model)
+        try:
+            day2_ds.H.attrs = {
+                "FieldType": 104,
+                "MemoryOrder": "XY ",
+                "description": "2m RELATIVE HUMIDITY",
+                "projection": "PolarStereographic(stand_lon=-110.0, moad_cen_lat=53.99999237060547, truelat1=57.0, truelat2=90.0, pole_lat=90.0, pole_lon=0.0)",
+                "stagger": "",
+                "units": "(%)",
+            }
+        except:
+            pass
 
         ### Get a wrf file
         if wrf_model == "wrf3":
@@ -137,7 +156,7 @@ for date in date_range:
         ## get list of variables to loop
         var_list = list(day1_ds)
         ## remove none observed variabels
-        remove = ["r_o_tomorrow", "SNOWC"]
+        remove = ["r_o_tomorrow", "SNOWC", "RH"]
         var_list = list(set(var_list) - set(remove))
         ## loop and append variabel to list
         final_var_list = []

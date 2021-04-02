@@ -38,12 +38,12 @@ static_ds = xr.open_zarr(
     str(data_dir) + f"/static/static-vars-{wrf_model}-{domain}.zarr"
 )
 
-## Open FBP dataset
-forecast_date = date.strftime("%Y%m%d06")
-filein = f"/Volumes/cer/fireweather/data/fwf-hourly-{domain}-2018040106-2018100106.zarr"
-fbp_ds = xr.open_zarr(filein)
-# fbp_ds = fbp_ds.drop_vars("FMC")
-fbp_ds["W"].attrs["units"] = "km hr^-1"
+# ## Open FBP dataset
+# forecast_date = date.strftime("%Y%m%d06")
+# filein = f"/Volumes/cer/fireweather/data/fwf-hourly-{domain}-2018040106-2018100106.zarr"
+# fbp_ds = xr.open_zarr(filein)
+# # fbp_ds = fbp_ds.drop_vars("FMC")
+# fbp_ds["W"].attrs["units"] = "km hr^-1"
 
 ### Get a wrf file
 if wrf_model == "wrf3":
@@ -51,6 +51,27 @@ if wrf_model == "wrf3":
 else:
     wrf_filein = f"/Users/rodell/Google Drive/Shared drives/WAN00CG-01/21022000/wrfout_{domain}_2021-02-20_11:00:00"
 wrf_file = Dataset(wrf_filein, "r")
+
+
+wrf_ds = xr.open_dataset(wrf_filein)
+
+LANDMASK = wrf_ds.LANDMASK.values[0, :, :]
+
+FUELS = static_ds.FUELS.values
+FUELS_water = np.where((FUELS == 118) | (FUELS == 119) | (FUELS == 120), 0, FUELS)
+FUELS_water = np.where(FUELS_water != 0, 1, FUELS_water)
+
+plt.imshow(FUELS_water[::-1])
+plt.imshow(LANDMASK[::-1])
+
+test = FUELS_water == LANDMASK
+
+unique, count = np.unique(test, return_counts=True)
+
+
+test = np.where(LANDMASK == 0)
+test2 = np.where(FUELS == 118)
+test3 = np.where(FUELS == 120)
 
 
 ## make lats and long of wrf domain to array

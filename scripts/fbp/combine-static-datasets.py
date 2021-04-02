@@ -54,7 +54,7 @@ tzone_dt_ds["ZoneDT"] = tzone_dt_ds["Zone"]
 tzone_dt_ds = tzone_dt_ds.drop_vars("Zone")
 
 ### Open fuels  dataset
-fuels_fielin = str(data_dir) + f"/fbp/fuels-{wrf_model}-{domain}.zarr"
+fuels_fielin = str(data_dir) + f"/fbp/fuels-{wrf_model}-{domain}-test.zarr"
 fuels_ds = xr.open_zarr(fuels_fielin)
 fuels_ds["FUELS"] = fuels_ds["fuels"]
 fuels_ds = fuels_ds.drop_vars("fuels")
@@ -149,6 +149,8 @@ static_ds.FUELS.attrs = {
 
 ## Write to static dataset to zarr file
 static_ds = static_ds.compute()
+
 static_ds.to_zarr(
     str(data_dir) + f"/static/static-vars-{wrf_model}-{domain}.zarr", mode="w"
 )
+print(f"Wrote: {str(data_dir)}/static/static-vars-{wrf_model}-{domain}.zarr")

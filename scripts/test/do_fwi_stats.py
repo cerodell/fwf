@@ -19,12 +19,13 @@ from context import data_dir, xr_dir, wrf_dir, tzone_dir, fwf_zarr_dir
 from datetime import datetime, date, timedelta
 from sklearn.metrics import mean_squared_error
 from sklearn.metrics import r2_score
+from scipy import stats
 from matplotlib.offsetbox import AnchoredText
 
 
 wrf_model = "wrf3"
 
-domain = "d03"
+domain = "d02"
 # date = pd.Timestamp("today")
 date = pd.Timestamp(2018, 10, 1)
 intercomp_today_dir = date.strftime("%Y%m%d")
@@ -38,16 +39,16 @@ for var in list(ds):
     ds[var].encoding = {}
 
 
-RH = (
-    (6.11 * 10 ** (7.5 * (ds.td_day1 / (237.7 + ds.td_day1))))
-    / (6.11 * 10 ** (7.5 * (ds.temp_day1 / (237.7 + ds.temp_day1))))
-    * 100
-)
-RH = xr.where(RH > 100, 100, RH)
+# RH = (
+#     (6.11 * 10 ** (7.5 * (ds.td_day1 / (237.7 + ds.td_day1))))
+#     / (6.11 * 10 ** (7.5 * (ds.temp_day1 / (237.7 + ds.temp_day1))))
+#     * 100
+# )
+# RH = xr.where(RH > 100, 100, RH)
 
-# WS = np.sqrt(ds.)
+# # WS = np.sqrt(ds.)
 
-ds["rh_day1"] = RH
+# ds["rh_day1"] = RH
 if domain == "d02":
     res = "12 km"
 else:
@@ -75,10 +76,11 @@ for i in range(length):
     # plt.subplot(i+1, 1, 1)
     ax = fig.add_subplot(length + 1, 1, i + 1)
     var = fwi_list[i]
-    r2value = r2_score(
-        df[var].values, df[var + "_day1"].values, multioutput="variance_weighted"
-    )
-    r2value = round(r2value, 2)
+    # r2value = r2_score(
+    #     df[var].values, df[var + "_day1"].values, multioutput="variance_weighted"
+    # )
+    # r2value = round(r2value, 2)
+    r2value = round(stats.pearsonr(df[var].values, df[var + "_day1"].values)[0], 2)
     rmse = str(
         round(
             mean_squared_error(df[var].values, df[var + "_day1"].values, squared=False),
@@ -86,7 +88,7 @@ for i in range(length):
         )
     )
     anchored_text = AnchoredText(
-        r"$R^{2}$ " + f"{r2value} \n rmse: {rmse}",
+        r"$r$ " + f"{r2value} \n rmse: {rmse}",
         loc="upper right",
         prop={"size": 8, "zorder": 10},
     )
@@ -128,7 +130,9 @@ for i in range(length):
 
 ax.set_xlabel("Time")
 
-fig.savefig(str(data_dir) + f"/images/stats/fwi-vars-{domain}-mean.png")
+fig.savefig(
+    str(data_dir) + f"/images/stats/fwi-vars-{domain}-{intercomp_today_dir}-mean.png"
+)
 plt.close()
 
 ##########################################################################
@@ -142,10 +146,11 @@ for i in range(length):
     # plt.subplot(i+1, 1, 1)
     ax = fig.add_subplot(length + 1, 1, i + 1)
     var = met_list[i]
-    r2value = r2_score(
-        df[var].values, df[var + "_day1"].values, multioutput="variance_weighted"
-    )
-    r2value = round(r2value, 2)
+    # r2value = r2_score(
+    #     df[var].values, df[var + "_day1"].values, multioutput="variance_weighted"
+    # )
+    # r2value = round(r2value, 2)
+    r2value = round(stats.pearsonr(df[var].values, df[var + "_day1"].values)[0], 2)
     rmse = str(
         round(
             mean_squared_error(df[var].values, df[var + "_day1"].values, squared=False),
@@ -153,7 +158,7 @@ for i in range(length):
         )
     )
     anchored_text = AnchoredText(
-        r"$R^{2}$ " + f"{r2value} \n rmse: {rmse}",
+        r"$r$ " + f"{r2value} \n rmse: {rmse}",
         loc="upper right",
         prop={"size": 8, "zorder": 10},
     )
@@ -191,7 +196,9 @@ for i in range(length):
         pass
 
 ax.set_xlabel("Time")
-fig.savefig(str(data_dir) + f"/images/stats/met-vars-{domain}-mean.png")
+fig.savefig(
+    str(data_dir) + f"/images/stats/met-vars-{domain}-{intercomp_today_dir}-mean.png"
+)
 plt.close()
 
 
@@ -231,103 +238,105 @@ plt.close()
 ##########################################################################
 ##########################################################################
 
-# cmap = cm.get_cmap("tab10", len(list(ds)[::3]) + 1)  # PiYG
-# colors = []
-# for i in range(cmap.N):
-#     rgba = cmap(i)
-#     colors.append(matplotlib.colors.rgb2hex(rgba))
+cmap = cm.get_cmap("tab10", len(list(ds)[::3]) + 1)  # PiYG
+colors = []
+for i in range(cmap.N):
+    rgba = cmap(i)
+    colors.append(matplotlib.colors.rgb2hex(rgba))
 
-# var_dict = {
-#     "bui": {"ext": 20},
-#     "dc": {"ext": 80},
-#     "dmc": {"ext": 21},
-#     "ffmc": {"ext": 74},
-#     "fwi": {"ext": 5},
-#     "isi": {"ext": 2},
-# }
-
-
-# def reject_outliers(x, y, m=3):
-#     return (
-#         x[abs(x - np.mean(x)) < m * np.std(x)],
-#         y[abs(x - np.mean(x)) < m * np.std(x)],
-#     )
+var_dict = {
+    "bui": {"ext": 20},
+    "dc": {"ext": 80},
+    "dmc": {"ext": 21},
+    "ffmc": {"ext": 74},
+    "fwi": {"ext": 5},
+    "isi": {"ext": 2},
+}
 
 
-# def checkstats(var, color):
-#     time = np.array(ds.time.dt.strftime("%Y-%m-%d"), dtype="<U10")
-#     start_time = datetime.strptime(str(time[0]), "%Y-%m-%d").strftime("%Y%m%d")
-#     end_time = datetime.strptime(str(time[-1]), "%Y-%m-%d").strftime("%Y%m%d")
-#     # var_obs = ds[var].values.flatten()
-#     # var_modeld = ds[var + "_day1"].values.flatten()
-#     var_obs = df[var].values
-#     var_modeld = df[var + "_day1"].values
-#     ind = ~np.isnan(var_obs)
-#     var_obs_ = var_obs[ind]
-#     var_modeld_ = var_modeld[ind]
-#     try:
-#         index = np.where(var_obs_ > var_dict[var]["ext"])[0]
-#         var_obs_ = var_obs_[index]
-#         var_modeld_ = var_modeld_[index]
-#         index = np.where(var_modeld_ > var_dict[var]["ext"])[0]
-#         var_obs_ = var_obs_[index]
-#         var_modeld_ = var_modeld_[index]
-#     except:
-#         pass
-#     var_obs_, var_modeld_ = reject_outliers(var_obs_, var_modeld_)
-#     var_modeld_, var_obs_ = reject_outliers(var_modeld_, var_obs_)
-#     result = scipy.stats.linregress(var_modeld_, var_obs_)
-#     rmse = str(round(mean_squared_error(var_obs_, var_modeld_, squared=False), 3))
-#     print(len(var_modeld_) == len(var_obs_))
-#     print(var.upper())
-#     print("slope ", result.slope)
-#     print("intercept ", result.intercept)
-#     print("r2value ", result.r2value)
-#     print("pvalue ", result.pvalue)
-#     print("stderr ", result.stderr)
-#     print("rmse ", rmse)
-#     print("-------------------------")
-#     plt.close()
-#     fig = plt.figure()  # figsize=[8, 8]
-#     ax = fig.add_subplot(1, 1, 1)
-#     ax.set_title(
-#         f"WRF3 Domain {res} for {var.upper()} \n slope: {round(result.slope,3)}  intercept: {round(result.intercept,3)}  r2value: {round(result.r2value,3)}  rmse: {rmse}  \n {start_time}-{end_time}"
-#     )
-#     # ax.set_title(
-#     #     f"WRF3 Domain {res} for {var.upper()} \n  r2value: {round(r2value,3)}  rmse: {rmse}  \n {start_time}-{end_time}"
-#     # )
-#     ax.scatter(var_modeld_, var_obs_, s=0.5, color=color, label="data")
-#     xpoints = ypoints = ax.get_xlim()
-#     ax.plot(
-#         xpoints,
-#         ypoints,
-#         linestyle="--",
-#         color="k",
-#         lw=0.6,
-#         scalex=False,
-#         scaley=False,
-#         label="y = x",
-#     )
-#     ax.plot(
-#         var_modeld_,
-#         result.intercept + result.slope * var_modeld_,
-#         "r",
-#         label="fitted line",
-#     )
-#     ax.legend()
-#     ax.set_xlabel("Modeled")
-#     ax.set_ylabel("Observed")
-#     fig.savefig(
-#         str(data_dir) + f"/images/stats/{var}-{domain}-{start_time}-{end_time}.png"
-#     )
-#     plt.close()
-
-#     return
+def reject_outliers(x, y, m=3):
+    return (
+        x[abs(x - np.mean(x)) < m * np.std(x)],
+        y[abs(x - np.mean(x)) < m * np.std(x)],
+    )
 
 
-# var_list = list(ds)[::3]
-# for i in range(len(var_list)):
-#     checkstats(var_list[i], colors[i])
+def checkstats(var, color):
+    time = np.array(ds.time.dt.strftime("%Y-%m-%d"), dtype="<U10")
+    start_time = datetime.strptime(str(time[0]), "%Y-%m-%d").strftime("%Y%m%d")
+    end_time = datetime.strptime(str(time[-1]), "%Y-%m-%d").strftime("%Y%m%d")
+    # var_obs = ds[var].values.flatten()
+    # var_modeld = ds[var + "_day1"].values.flatten()
+    var_obs = df[var].values
+    var_modeld = df[var + "_day1"].values
+    ind = ~np.isnan(var_obs)
+    var_obs_ = var_obs[ind]
+    var_modeld_ = var_modeld[ind]
+    try:
+        index = np.where(var_obs_ > var_dict[var]["ext"])[0]
+        var_obs_ = var_obs_[index]
+        var_modeld_ = var_modeld_[index]
+        index = np.where(var_modeld_ > var_dict[var]["ext"])[0]
+        var_obs_ = var_obs_[index]
+        var_modeld_ = var_modeld_[index]
+    except:
+        pass
+    var_obs_, var_modeld_ = reject_outliers(var_obs_, var_modeld_)
+    var_modeld_, var_obs_ = reject_outliers(var_modeld_, var_obs_)
+    result = scipy.stats.linregress(var_modeld_, var_obs_)
+    r2value = round(stats.pearsonr(var_obs_, var_modeld_)[0], 2)
+
+    rmse = str(round(mean_squared_error(var_obs_, var_modeld_, squared=False), 3))
+    print(len(var_modeld_) == len(var_obs_))
+    print(var.upper())
+    print("slope ", result.slope)
+    print("intercept ", result.intercept)
+    print("r2value ", r2value)
+    print("pvalue ", result.pvalue)
+    print("stderr ", result.stderr)
+    print("rmse ", rmse)
+    print("-------------------------")
+    plt.close()
+    fig = plt.figure()  # figsize=[8, 8]
+    ax = fig.add_subplot(1, 1, 1)
+    ax.set_title(
+        f"WRF3 Domain {res} for {var.upper()} \n slope: {round(result.slope,3)}  intercept: {round(result.intercept,3)}  r2value: {round(r2value,3)}  rmse: {rmse}  \n {start_time}-{end_time}"
+    )
+    # ax.set_title(
+    #     f"WRF3 Domain {res} for {var.upper()} \n  r2value: {round(r2value,3)}  rmse: {rmse}  \n {start_time}-{end_time}"
+    # )
+    ax.scatter(var_modeld_, var_obs_, s=0.5, color=color, label="data")
+    xpoints = ypoints = ax.get_xlim()
+    ax.plot(
+        xpoints,
+        ypoints,
+        linestyle="--",
+        color="k",
+        lw=0.6,
+        scalex=False,
+        scaley=False,
+        label="y = x",
+    )
+    ax.plot(
+        var_modeld_,
+        result.intercept + result.slope * var_modeld_,
+        "r",
+        label="fitted line",
+    )
+    ax.legend()
+    ax.set_xlabel("Modeled")
+    ax.set_ylabel("Observed")
+    fig.savefig(
+        str(data_dir) + f"/images/stats/{var}-{domain}-{start_time}-{end_time}.png"
+    )
+    plt.close()
+
+    return
+
+
+var_list = list(ds)[::3]
+for i in range(len(var_list)):
+    checkstats(var_list[i], colors[i])
 
 
 # df_list = []

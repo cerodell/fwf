@@ -27,50 +27,42 @@ from mpl_toolkits.axes_grid1 import make_axes_locatable
 import scipy.ndimage as ndimage
 from scipy.ndimage.filters import gaussian_filter
 
-from context import data_dir, xr_dir, wrf_dir, tzone_dir, fwf_zarr_dir
+from context import data_dir, wrf_dir, fwf_zarr_dir, vol_dir
 from datetime import datetime, date, timedelta
 
 startTime = datetime.now()
 print("RUN STARTED AT: ", str(startTime))
 
 ## Choose wrf domain
-domain = "d02"
+domain = "d03"
+wrf_model = "wrf3"
 
-save_zarr = str(data_dir) + f"/fbp/fuels-wrf4-{domain}.zarr"
+save_zarr = str(data_dir) + f"/fbp/fuels-{wrf_model}-{domain}-test.zarr"
 ## Path to Fuel converter spreadsheet
 fuel_converter = str(data_dir) + "/fbp/fuel_converter.csv"
 ## Path to any wrf file used in transformation
-# wrf_filein = f"/Users/rodell/Google Drive/Shared drives/WAN00CP-04/18093000/wrfout_{domain}_2018-10-02_11:00:00"
-wrf_filein = f"/Users/rodell/Google Drive/Shared drives/WAN00CG-01/21022000/wrfout_{domain}_2021-02-20_11:00:00"
+if wrf_model == "wrf3":
+    wrf_filein = f"/Users/rodell/Google Drive/Shared drives/WAN00CP-04/18093000/wrfout_{domain}_2018-10-02_11:00:00"
+else:
+    wrf_filein = f"/Users/rodell/Google Drive/Shared drives/WAN00CG-01/21022000/wrfout_{domain}_2021-02-20_11:00:00"
 
 ## Path to 2014 nrcan fuels data tif
-fbp2014_filein = (
-    str(data_dir) + "/fbp/National_FBP_Fueltypes_version2014b/nat_fbpfuels_2014b.tif"
-)
-
+fbp2014_filein = str(vol_dir) + f"/fuels/resampled/{domain}/nrcan.tif"
 
 ## Path to 2016 land fire US fuels data tif
-us_filein = str(data_dir) + "/fbp/LF2020_FBFM13_200_CONUS/Tif/LC20_F13_200.tif"
+us_filein = str(vol_dir) + f"/fuels/resampled/{domain}/landfire.tif"
+
 
 ## Open all files mentioned above
 fc_df = pd.read_csv(fuel_converter)
 wrf_ds = salem.open_xr_dataset(wrf_filein)
 fbp2014_tiff = salem.open_xr_dataset(fbp2014_filein)
-# us_tiff = salem.open_xr_dataset(us_filein)
+us_tiff = salem.open_xr_dataset(us_filein)
 
 
 ## Using nearest neighbor transformation tif to wrf domain
-fbp2014_ds = wrf_ds.salem.transform(fbp2014_tiff.data)
+fbp2014_ds = wrf_ds.salem.transform(fbp2014_tiff)
 us_ds = wrf_ds.salem.transform(us_tiff.data)
-
-# tiff_unique, tiff_count = getunique(fbp2014_tiff.data.values)
-# unique, count = getunique(fbp2014_ds.values)
-
-# norm2 = np.linalg.norm(tiff_count)
-# normal_array2 = tiff_count/norm2
-
-# norm = np.linalg.norm(count)
-# normal_array = count/norm
 
 ## take US Anderson 13 fuel valsue and convert to CFFDRS fuel types
 us_array = us_ds.values
@@ -103,9 +95,7 @@ fbp_unique, fbp_count = getunique(fbp2014)
 folders = ["%.2d" % i for i in range(1, 21)]
 print(folders)
 for folder in folders:
-    ak_filein = (
-        str(data_dir) + f"/fbp/{folder}_AK_140CFFDRS/AK_140CFFDRS\AK_140CFFDRS.tif"
-    )
+    ak_filein = str(vol_dir) + f"/fuels/resampled/{domain}/ak_{folder}.tif"
     ak_tiff = salem.open_xr_dataset(ak_filein)
     ak_ds = wrf_ds.salem.transform(ak_tiff.data, ks=1)
     ak_array = ak_ds.values

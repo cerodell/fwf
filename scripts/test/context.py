@@ -22,9 +22,10 @@ tzone_dir = root_dir / Path("data/tzone/")
 xr_dir = root_dir / Path("data/xr/")
 nc_dir = root_dir / Path("data/nc/")
 fwf_zarr_dir = Path("/Volumes/cer/fireweather/data/FWF-WAN00CP-04/")
-# fwf_zarr_dir = root_dir / Path("data/FWF-WAN00CG-01/")
 
 wrf_dir = Path("/Volumes/cer/fireweather/data/WAN00CP-04/")
+vol_dir = Path("/Volumes/cer/fireweather/data/")
+
 # wrf_dir = Path("/bluesky/working/wrf2arl/WAN00CG-01/")
 
 sys.path.insert(0, str(root_dir))

@@ -26,6 +26,8 @@ fwf_zarr_dir = Path("/Volumes/cer/fireweather/data/FWF-WAN00CP-04/")
 
 wrf_dir = Path("/Volumes/cer/fireweather/data/WAN00CP-04/")
 # wrf_dir = Path("/bluesky/working/wrf2arl/WAN00CG-01/")
+gog_dir = Path("/Users/rodell/Google Drive/My Drive/WAN00CP-04/")
+
 
 sys.path.insert(0, str(root_dir))
 sep = "*" * 30

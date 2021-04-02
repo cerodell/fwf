@@ -26,13 +26,35 @@ domain = "d02"
 wrf_model = "wrf3"
 
 
-## Path to hourly/daily fwi data
-forecast_date = date.strftime("%Y%m%d06")
-filein = str(data_dir) + f"/test/fpb-{domain}-{forecast_date}.zarr"
-# filein = f'/Volumes/cer/fireweather/data/fwf-hourly-{domain}-2018040106-2018100106.zarr'
-filein = f"/Users/rodell/Google Drive/Shared drives/Research/FireSmoke/ZARR_Data/fwf-hourly-{domain}-2018040106-2018100106.zarr"
+## Path to fuel converter spreadsheet
+fuel_converter = str(data_dir) + "/fbp/fuel_converter.csv"
+fc_df = pd.read_csv(fuel_converter)
+fc_df = fc_df.drop_duplicates(subset=["CFFDRS"])
+fc_df["Code"] = fc_df["National_FBP_Fueltypes_2014"]
+## set index
+fc_df = fc_df.set_index("CFFDRS")
+fc_dict = fc_df.transpose().to_dict()
 
+
+filein = f"/Volumes/cer/fireweather/data/fwf-hourly-{domain}-2018040106-2018100106.zarr"
 ds = xr.open_zarr(filein)
+
+
+## Path to fuels data terrain data
+static_filein = str(data_dir) + f"/static/static-vars-{wrf_model}-{domain}.zarr"
+static_ds = xr.open_zarr(static_filein)
+FUELS = static_ds.FUELS
+
+HFI = ds.HFI.values
+ROS = ds.ROS.values
+
+HFI_t = HFI[:, FUELS == fc_dict["C2"]["Code"]]
+ROS_t = ROS[:, FUELS == fc_dict["C2"]["Code"]]
+
+plt.plot(HFI_t[:, 1000])
+plt.plot(ROS_t[:, 1000])
+
+
 ds.coords["time"] = ds.Time
 
 

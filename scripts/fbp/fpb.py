@@ -31,7 +31,42 @@ print("RUN STARTED AT: ", str(startTime))
 domain = "d02"
 wrf_model = "wrf3"
 
-date_range = pd.date_range("2018-10-01", "2018-10-01")
+date_range = pd.date_range("2019-04-01", "2019-04-01")
+
+
+## Path to fuel converter spreadsheet
+fuel_converter = str(data_dir) + "/fbp/fuel_converter.csv"
+
+## Open fuels converter
+fc_df = pd.read_csv(fuel_converter)
+fc_df = fc_df.drop_duplicates(subset=["CFFDRS"])
+fc_df["Code"] = fc_df["National_FBP_Fueltypes_2014"]
+## set index
+fc_df = fc_df.set_index("CFFDRS")
+fc_dict = fc_df.transpose().to_dict()
+
+
+## Path to fuels data terrain data
+static_filein = str(data_dir) + f"/static/static-vars-{wrf_model}-{domain}.zarr"
+
+## Open gridded static
+static_ds = xr.open_zarr(static_filein)
+
+## Define Static Variables
+ELV, LAT, LON, FUELS, GS, SAZ = (
+    static_ds.HGT.values,
+    static_ds.XLAT.values,
+    static_ds.XLONG.values * -1,  ## Longitude cant be negative for the FMC equations
+    static_ds.FUELS.values.astype(int),
+    static_ds.GS.values,
+    static_ds.SAZ.values,
+)
+
+
+## create zeros array for easy conditional statements
+shape = LAT.shape
+zero_full = np.zeros(shape, dtype=float)
+
 
 # """######### get directory to yesterdays hourly/daily .zarr files.  #############"""
 for date in date_range:
@@ -46,48 +81,23 @@ for date in date_range:
         f"/fwf-daily-{domain}-{forecast_date}.zarr"
     )
 
-    ## Path to fuel converter spreadsheet
-    fuel_converter = str(data_dir) + "/fbp/fuel_converter.csv"
-
-    ## Path to fuels data terrain data
-    static_filein = str(data_dir) + f"/static/static-vars-{wrf_model}-{domain}.zarr"
+    saveout = hourly_file_dir
 
     ## Open hourly/daily fwi data
     hourly_ds = xr.open_zarr(hourly_file_dir)
     daily_ds = xr.open_zarr(daily_file_dir)
 
     hourly_ds["W"].attrs["units"] = "km hr^-1"
-
-    ## Open fuels converter
-    fc_df = pd.read_csv(fuel_converter)
-    fc_df = fc_df.drop_duplicates(subset=["CFFDRS"])
-    fc_df["Code"] = fc_df["National_FBP_Fueltypes_2014"]
-    ## set index
-    fc_df = fc_df.set_index("CFFDRS")
-    fc_dict = fc_df.transpose().to_dict()
-
-    ## Open gridded static
-    static_ds = xr.open_zarr(static_filein)
+    # hourly_ds['H'].attrs = hourly_ds['RH'].attrs
 
     ## Define Static Variables
-    ELV, LAT, LON, FUELS, GS, SAZ, WD, dx, dy = (
-        static_ds.HGT.values,
-        static_ds.XLAT.values,
-        static_ds.XLONG.values
-        * -1,  ## Longitude cant be negative for the FMC equations
-        static_ds.FUELS.values.astype(int),
-        static_ds.GS.values,
-        static_ds.SAZ.values,
+    WD, dx, dy = (
         hourly_ds.WD,
         float(hourly_ds.attrs["DX"]),
         float(hourly_ds.attrs["DY"]),
     )
 
-    ## create zeros array for easy conditional statements
-    shape = LAT.shape
-    zero_full = np.zeros(shape, dtype=float)
     zero_full3D = np.zeros(hourly_ds.F.shape, dtype=float)
-
     ## Convert Wind Direction from degrees to radians
     WD = WD * np.pi / 180
 
@@ -136,6 +146,14 @@ for date in date_range:
     BUI_day1 = np.stack([BUI_i[0]] * index[0])
     BUI_day2 = np.stack([BUI_i[1]] * (len(FFMC) - index[0]))
     BUI = np.vstack([BUI_day1, BUI_day2])
+    BUI = xr.DataArray(BUI, name="BUI", dims=("time", "south_north", "west_east"))
+    hourly_ds["BUI"] = BUI
+    hourly_ds["BUI"].attrs = {
+        "FieldType": 104,
+        "MemoryOrder": "XY ",
+        "description": "Build Up Index Hourly",
+        "projection": "PolarStereographic(stand_lon=-110.0, moad_cen_lat=53.99999237060547, truelat1=57.0, truelat2=90.0, pole_lat=90.0, pole_lon=0.0)",
+    }
 
     ## Solve Surface Fuel Consumption for C1 Fuels adjusted from (Wotton et. al. 2009) (9)
     SFC = zero_full3D
@@ -220,7 +238,7 @@ for date in date_range:
     )
 
     # Remove negative SFC value
-    SFC = xr.where(SFC <= 0, 1e-6, SFC)
+    SFC = xr.where(SFC <= 0, 0.01, SFC)
     SFC = xr.DataArray(SFC, name="SFC", dims=("time", "south_north", "west_east"))
     hourly_ds["SFC"] = SFC.astype(dtype="float32")
     hourly_ds["SFC"].attrs = {
@@ -255,7 +273,7 @@ for date in date_range:
     ## Define frequently used variables
     PDF = 35  # percent dead balsam fir default
     C = 80  # degree of curing(%)
-    ISI = hourly_ds.R
+    # ISI = hourly_ds.R
     ISZ = solve_isi(hourly_ds, W=0, fbp=True)
     hourly_ds["ISZ"] = ISZ.astype(dtype="float32")
     hourly_ds["ISZ"].attrs = {
@@ -274,18 +292,28 @@ for date in date_range:
         ROS = xr.where(
             FUELS == fc_dict[fueltype]["Code"],
             fc_dict[fueltype]["a"]
-            * (1 - np.exp(-fc_dict[fueltype]["b"] * ISI) ** fc_dict[fueltype]["c"]),
+            * ((1 - np.exp(-fc_dict[fueltype]["b"] * ISI)) ** fc_dict[fueltype]["c"]),
             ROS,
         )
         return ROS
 
     def solve_M_ros(fueltype, ISI):
         ROS = fc_dict[fueltype]["a"] * (
-            1 - np.exp(-fc_dict[fueltype]["b"] * ISI) ** fc_dict[fueltype]["c"]
+            (1 - np.exp(-fc_dict[fueltype]["b"] * ISI)) ** fc_dict[fueltype]["c"]
         )
         return ROS
 
     def solve_ros(ISI, FMC, PDF, fc_dict, *args):
+        ##  (M-3)
+        fc_dict["M3"]["a"] = 170 * np.exp(-35.0 / PDF)  # (29)
+        fc_dict["M3"]["b"] = 0.082 * np.exp(-36 / PDF)  # (30)
+        fc_dict["M3"]["c"] = 1.698 - 0.00303 * PDF  # (31)
+
+        ##  (M-4)
+        fc_dict["M4"]["a"] = 140 * np.exp(-35.5 / PDF)  # (22)
+        fc_dict["M4"]["b"] = 0.0404  # (33)
+        fc_dict["M4"]["c"] = 3.02 * np.exp(-0.00714 * PDF)  # (34)
+
         ROS = zero_full3D
         for fueltype in [
             "C1",
@@ -293,12 +321,13 @@ for date in date_range:
             "C3",
             "C4",
             "C5",
-            "C6",
             "C7",
             "D1",
             "S1",
             "S2",
             "S3",
+            "M3",
+            "M4",
         ]:
             ROS = solve_gen_ros(ROS, fueltype, ISI)
 
@@ -319,20 +348,6 @@ for date in date_range:
             zero_full3D,
         )
 
-        ##  (M-3)
-        fc_dict["M3"]["a"] = 170 * np.exp(-35.0 / PDF)  # (29)
-        fc_dict["M3"]["b"] = 0.082 * np.exp(-36 / PDF)  # (30)
-        fc_dict["M3"]["c"] = 1.698 - 0.00303 * PDF  # (31)
-
-        ROS_M3 = solve_gen_ros(zero_full3D, "M3", ISI)
-
-        ##  (M-4)
-        fc_dict["M4"]["a"] = 140 * np.exp(-35.5 / PDF)  # (22)
-        fc_dict["M4"]["b"] = 0.0404  # (33)
-        fc_dict["M4"]["c"] = 3.02 * np.exp(-0.00714 * PDF)  # (34)
-
-        ROS_M4 = solve_gen_ros(zero_full3D, "M4", ISI)
-
         ROS_O1a = xr.where(
             (FUELS == fc_dict["O1a"]["Code"]),
             fc_dict["O1a"]["a"]
@@ -349,13 +364,12 @@ for date in date_range:
             * CF,
             zero_full3D,
         )
-
         if args:
             ## Surface spread rate
-            ROS = ROS + ROS_M1 + ROS_M2 + ROS_M3 + ROS_M4 + ROS_O1a + ROS_O1b
+            ROS = ROS + ROS_M1 + ROS_M2 + ROS_O1a + ROS_O1b
             ROS = ROS * BE
         else:
-            ROS = ROS + ROS_M1 + ROS_M2 + ROS_M3 + ROS_M4 + ROS_O1a + ROS_O1b
+            ROS = ROS + ROS_M1 + ROS_M2 + ROS_O1a + ROS_O1b
 
         return ROS
 
@@ -385,10 +399,12 @@ for date in date_range:
             ## (57)
             RSO = CSI / (300 * SFC)
             ## (58)
-            CFB = 1 - np.exp(-0.23 * (ROS_C6 - RSO))
+            CFB = xr.where(RSS > RSO, 1 - np.exp(-0.23 * (RSS - RSO)), 0)
+            CFB = xr.where(CFB < 0, 0.0, CFB)
+            # CFB = 1 - np.exp(-0.23 * (ROS_C6 - RSO))
             ## (65)
-            ROS = xr.where(
-                (FUELS == fc_dict["C6"]["Code"]), RSS + CFB * (RSC - RSS), zero_full3D
+            ROS = np.where(
+                FUELS == fc_dict["C6"]["Code"], RSS + CFB * (RSC - RSS), zero_full3D
             )
         else:
             ROS = ROS_C6
@@ -450,8 +466,6 @@ for date in date_range:
     for fueltype in ["C1", "C2", "C3", "C4", "C5", "C6", "C7", "D1", "S1", "S2", "S3"]:
         ISF = solve_isf(ISF, fueltype, RSF)
 
-    unique, count = np.unique(np.isnan(RSF), return_counts=True)
-
     ## Solve ISF (ie ISI, with zero wind upslope) for M1 and M2 (42)
     ISF_M1M2 = xr.where(
         (FUELS == fc_dict["M1"]["Code"]) | (FUELS == fc_dict["M2"]["Code"]),
@@ -490,10 +504,28 @@ for date in date_range:
 
     ### (25) Solve for fine fuel moisture function (f_F)
     m_o = hourly_ds.m_o
+    # F = 10
+    # m_o = 147.27723 * (101 - F) / (59.5 + F)  ## Van 1985
     f_F = 91.9 * np.exp(-0.1386 * m_o) * (1 + ((m_o ** 5.31) / 4.93e7))
     f_F = xr.where(f_F < 0.0, 0.1, f_F)
+    # print('f_F', np.max(f_F.values))
+    # print('f_F', np.mean(f_F.values))
+    # print('ISF', np.mean(ISF.values))
+
     ## Compute the slope equivalent wind speed (WSE) (44)
     WSE = xr.where(ISF > 0.1, np.log(ISF / (0.208 * f_F)) / 0.05039, zero_full3D)
+    # print('WSE ',np.mean(WSE.values))
+
+    # NOTE Adjusted Slope equivalent wind speed (44b 44e) (Wotton 2009)
+    WSE = xr.where(
+        (WSE > 40) & (ISF < (0.999 * 2.496 * f_F)),
+        28 - (1 / 0.0818 * np.log(1 - ISF / (2.496 * f_F))),
+        WSE,
+    )
+
+    # NOTE Adjusted Slope equivalent wind speed (44c) (Wotton 2009)
+    WSE = xr.where((WSE > 40) & (ISF >= (0.999 * 2.496 * f_F)), 112.45, WSE)
+    # print('WSE ',np.mean(WSE.values))
 
     ## Net vectored wind speed in the x-direction (47)
     WSX = (WS * np.sin(WAZ)) + (WSE * np.sin(SAZ * (np.pi / 180)))
@@ -512,6 +544,7 @@ for date in date_range:
 
     ## Solve ISI equation (from the FWI System) (52, 53, 53a)
     ISI = solve_isi(hourly_ds, WSV, fbp=True)
+
     hourly_ds["ISI"] = ISI.astype(dtype="float32")
     hourly_ds["ISI"].attrs = {
         "FieldType": 104,
@@ -585,6 +618,7 @@ for date in date_range:
         "projection": "PolarStereographic(stand_lon=-110.0, moad_cen_lat=53.99999237060547, truelat1=57.0, truelat2=90.0, pole_lat=90.0, pole_lon=0.0)",
         "units": "%",
     }
+
     #####################   Total Fuel Consumption  #######################
     #######################################################################
 
@@ -600,7 +634,7 @@ for date in date_range:
     for fueltype in fc_df.index.values[:-8]:
         TFC = solve_tfc(TFC, fueltype, CFB)
 
-    hourly_ds["TFC"] = TFC
+    hourly_ds["TFC"] = TFC.astype(dtype="float32")
     hourly_ds["TFC"].attrs = {
         "FieldType": 104,
         "MemoryOrder": "XY ",
@@ -613,6 +647,7 @@ for date in date_range:
     #######################################################################
 
     HFI = 300 * TFC * ROS
+    # print('HFI', np.max(HFI.values))
     hourly_ds["HFI"] = HFI.astype(dtype="float32")
     hourly_ds["HFI"].attrs = {
         "FieldType": 104,
@@ -622,8 +657,15 @@ for date in date_range:
         "units": "kW m^-1",
     }
 
+    # def rechunk(ds):
+    #     ds = ds.chunk(chunks = 'auto')
+    #     ds = ds.unify_chunks()
+    #     # for var in list(ds):
+    #     #     ds[var].encoding = {}
+    #     return ds
+
     hourly_ds = hourly_ds.compute()
-    hourly_ds.to_zarr(hourly_file_dir, mode="w")
+    hourly_ds.to_zarr(saveout, mode="w")
     print("Wrote: ", hourly_file_dir)
     print("Loop Run Time: ", datetime.now() - loopStartTime)
 

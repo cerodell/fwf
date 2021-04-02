@@ -70,6 +70,7 @@ class FWF:
         if wrf_file_dir.endswith(".zarr"):
             print("Re-run using zarr file")
             wrf_ds = xr.open_zarr(wrf_file_dir)
+            wrf_ds = wrf_ds.compute()
             attrs = wrf_ds.r_o.attrs
             wrf_ds["r_o"] = wrf_ds.r_o - wrf_ds.r_o.isel(time=0)
             wrf_ds["r_o"].attrs = attrs
@@ -78,6 +79,20 @@ class FWF:
             attrs = wrf_ds.SNW.attrs
             wrf_ds["SNW"] = wrf_ds.SNW - wrf_ds.SNW.isel(time=0)
             wrf_ds["SNW"].attrs = attrs
+            RH = (
+                (6.11 * 10 ** (7.5 * (wrf_ds.TD / (237.7 + wrf_ds.TD))))
+                / (6.11 * 10 ** (7.5 * (wrf_ds.T / (237.7 + wrf_ds.T))))
+                * 100
+            )
+            RH = xr.where(RH > 100, 100, RH)
+            wrf_ds["RH"] = wrf_ds["H"]
+            wrf_ds["H"] = RH
+            print(wrf_ds["H"].values.max())
+            wrf_ds["W"].attrs["units"] = "km hr^-1"
+            wrf_ds["H"].attrs = wrf_ds["RH"].attrs
+            wrf_ds = wrf_ds.drop_vars("RH")
+            print(list(wrf_ds))
+
         else:
             print("New-run, use readwrf to get vars from nc files")
             wrf_ds = readwrf(wrf_file_dir, domain, wright=False)
@@ -569,22 +584,22 @@ class FWF:
         r_e = (0.92 * r_o) - 1.27
 
         ########################################################################
-        ### (12) Alteration more accurate calculation (Lawson 2008)
+        ### (12) NOTE Alteratered for more accurate calculation (Lawson 2008)
         M_o = 20 + 280 / np.exp(0.023 * P_o)
 
         ########################################################################
         ### (13a) Solve for coefficients b where P_o <= 33 (b_low)
-        b_low = xr.where(P_o <= 33, 100 / (0.5 + (0.3 * P_o)), zero_full)
+        b_low = xr.where(P_o <= 33, 100 / (0.5 + 0.3 * P_o), zero_full)
 
         ########################################################################
         ### (13b) Solve for coefficients b where 33 < P_o <= 65 (b_mid)
 
-        b_mid = xr.where((P_o > 33) & (P_o <= 65), 14 - (1.3 * np.log(P_o)), zero_full)
+        b_mid = xr.where((P_o > 33) & (P_o <= 65), 14 - 1.3 * np.log(P_o), zero_full)
 
         ########################################################################
         ### (13c) Solve for coefficients b where  P_o > 65 (b_high)
 
-        b_high = xr.where(P_o > 65, (6.2 * np.log(P_o)) - 17.2, zero_full)
+        b_high = xr.where(P_o > 65, 6.2 * np.log(P_o) - 17.2, zero_full)
         ########################################################################
         ### Combine (13a 13b 13c) for coefficients b
         b = b_low + b_mid + b_high
@@ -1069,6 +1084,13 @@ class FWF:
         self.U = U
         return daily_ds
 
+    def rechunk(self, ds):
+        ds = ds.chunk(chunks="auto")
+        ds = ds.unify_chunks()
+        for var in list(ds):
+            ds[var].encoding = {}
+        return ds
+
     """#######################################"""
     """ ######## Write Hourly Dataset ########"""
     """#######################################"""
@@ -1127,7 +1149,7 @@ class FWF:
             + str(f"-{file_date}.zarr")
         )
         make_dir.mkdir(parents=True, exist_ok=True)
-        hourly_ds = hourly_ds.compute()
+        hourly_ds = self.rechunk(hourly_ds)
         hourly_ds.to_zarr(make_dir, mode="w")
         print(f"wrote working {make_dir}")
 
@@ -1183,7 +1205,7 @@ class FWF:
             + str(f"-{file_date}.zarr")
         )
         make_dir.mkdir(parents=True, exist_ok=True)
-        daily_ds = daily_ds.compute()
+        daily_ds = self.rechunk(daily_ds)
         daily_ds.to_zarr(make_dir, mode="w")
         print(f"wrote working {make_dir}")
 
