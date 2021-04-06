@@ -22,25 +22,30 @@ domain = "d02"
 wrf_model = "wrf3"
 
 # date = pd.Timestamp("today")
-date = pd.Timestamp(2018, 7, 18)
-forecast_date = date.strftime("%Y%m%d06")
+# date = pd.Timestamp(2018, 7, 18)
+# forecast_date = date.strftime("%Y%m%d06")
 
-file_dir = (
-    str(fwf_zarr_dir) + f"/fwf-hourly-{domain}-{forecast_date}.zarr"
-)  # wrfout-{domain}-{forecast_date}.zarr
 # file_dir = (
-#     str(fwf_zarr_dir) + f"/fwf-daily-{domain}-{forecast_date}.zarr"
-# )  # wrfout-{domain}-{forecast_date}.zarr
+#     str(fwf_zarr_dir) + f"/fwf-hourly-{domain}-{forecast_date}.zarr"
+# )
+# # wrfout-{domain}-{forecast_date}.zarr
+# # file_dir = (
+# #     str(fwf_zarr_dir) + f"/fwf-daily-{domain}-{forecast_date}.zarr"
+# # )  # wrfout-{domain}-{forecast_date}.zarr
 
 
-ds = xr.open_zarr(file_dir)
+# ds = xr.open_zarr(file_dir)
 
+
+ds = xr.open_zarr(str(vol_dir) + "/fwf-daily-d02-2019040100-2019100100.zarr")
+ds["time"] = ds.Time.values
+ds = ds.sel(time="2019-05-31")
 
 ### Open color map json
 with open(str(data_dir) + "/json/colormaps-dev.json") as f:
     cmaps = json.load(f)
 
-var, index = "R", 18
+var, index = "F", 18
 vmin, vmax = cmaps[var]["vmin"], cmaps[var]["vmax"]
 name, colors, sigma = (
     str(cmaps[var]["name"]),
@@ -54,7 +59,7 @@ save_dir = str(data_dir) + save_file
 lngs = ds.XLONG.values
 lats = ds.XLAT.values
 
-fillarray = ds[var][index].values
+fillarray = ds[var].values
 fillarray = np.round(fillarray, 0)
 fillarray = ndimage.gaussian_filter(fillarray, sigma=sigma)
 
@@ -97,7 +102,7 @@ ax.tick_params(axis="both", which="major", labelsize=14)
 ax.tick_params(axis="both", which="minor", labelsize=14)
 
 ## add title and adjust subplot buffers
-Plot_Title = f"{ds[var].description}  \n {str(ds.Time.values[index])[:13]}"
+Plot_Title = f"{var}  \n {str(ds.Time.values)[:13]}"
 ax.set_title(Plot_Title, fontsize=20, weight="bold")
 
 lenght = len(colors)

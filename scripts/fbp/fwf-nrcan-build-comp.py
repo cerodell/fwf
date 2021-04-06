@@ -24,7 +24,7 @@ wrf_model = "wrf3"
 domain = "d02"
 fuel_type = "C2"
 
-date_range = pd.date_range("2019-04-01", "2018-09-30")
+date_range = pd.date_range("2019-04-01", "2019-09-30")
 
 
 ## Open intercomp of met/fwi to observed dataset
@@ -48,7 +48,7 @@ fc_dict = fc_df.transpose().to_dict()
 
 
 ## path to fwf zarr file
-fbp_filein = str(vol_dir) + f"/fwf-daily-{domain}-2018040100-2018100100.zarr"
+fbp_filein = str(vol_dir) + f"/fwf-daily-{domain}-2019040100-2019100100.zarr"
 
 ## Path to fuels data terrain data
 static_filein = str(data_dir) + f"/static/static-vars-{wrf_model}-{domain}.zarr"

@@ -14,11 +14,12 @@ print("RUN STARTED AT: ", str(startTime))
 
 wrf_model = "wrf3"
 domain = "d02"
-filein = f"/Volumes/cer/fireweather/data/fwf-hourly-d02-2018040106-2018100106.zarr"
-saveout = "/Users/rodell/Google Drive/Shared drives/Research/FireSmoke/ZARR_Data/fwf-hourly-d02-2018040106-2018100106.nc"
+filein = f"/Volumes/cer/fireweather/data/fwf-hourly-d02-2019040100-2019100100.zarr"
+saveout = "/Users/rodell/Google Drive/Shared drives/Research/FireSmoke/ZARR_Data/fwf-hourly-d02-2019040106-2019100106.nc"
 
-ds = xr.open_zarr(filein)
-ds.to_netcdf(saveout)
+# ds = xr.open_dataset(saveout)
+# ds = xr.open_zarr(filein)
+# ds.to_netcdf(saveout)
 
 
 # static_in = str(data_dir) + f"/static/static-vars-{wrf_model}-{domain}.zarr"

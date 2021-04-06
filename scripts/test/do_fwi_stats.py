@@ -25,10 +25,14 @@ from matplotlib.offsetbox import AnchoredText
 
 wrf_model = "wrf3"
 
-domain = "d02"
+domain = "d03"
 # date = pd.Timestamp("today")
 date = pd.Timestamp(2018, 10, 1)
 intercomp_today_dir = date.strftime("%Y%m%d")
+date_range = pd.date_range("2018-04-01", "2018-10-01")
+
+with open(str(data_dir) + f"/json/fwf-attrs.json", "r") as fp:
+    var_dict = json.load(fp)
 
 ds = xr.open_zarr(
     str(data_dir) + "/intercomp/" + f"intercomp-{domain}-{intercomp_today_dir}.zarr",
@@ -38,17 +42,6 @@ ds = ds.unify_chunks()
 for var in list(ds):
     ds[var].encoding = {}
 
-
-# RH = (
-#     (6.11 * 10 ** (7.5 * (ds.td_day1 / (237.7 + ds.td_day1))))
-#     / (6.11 * 10 ** (7.5 * (ds.temp_day1 / (237.7 + ds.temp_day1))))
-#     * 100
-# )
-# RH = xr.where(RH > 100, 100, RH)
-
-# # WS = np.sqrt(ds.)
-
-# ds["rh_day1"] = RH
 if domain == "d02":
     res = "12 km"
 else:
@@ -57,6 +50,10 @@ else:
 df = ds.to_dataframe().dropna()
 df = df.reset_index()
 df = df[~np.isnan(df.bui)]
+unique, counts = np.unique(df.wmo.values, return_counts=True)
+# wmo_of_int = unique[counts > 170]
+# df = df[df.wmo.isin(wmo_of_int)]
+# unique, counts = np.unique(df.wmo.values, return_counts=True)
 
 
 var_list = list(ds)[::3]
@@ -72,18 +69,30 @@ fwi_list = ["ffmc", "dmc", "dc", "bui", "isi", "fwi"]
 length = len(fwi_list)
 
 fig = plt.figure(figsize=[10, 10])  # figsize=[8, 8]
+fig.suptitle(
+    f'Comparison of FWF {res} vs NRCAN at {len(unique)} Weather Stations \n {date_range[0].strftime("%Y%m%d")} - {date_range[-1].strftime("%Y%m%d")}',
+    fontsize=14,
+)
 for i in range(length):
     # plt.subplot(i+1, 1, 1)
     ax = fig.add_subplot(length + 1, 1, i + 1)
     var = fwi_list[i]
-    # r2value = r2_score(
-    #     df[var].values, df[var + "_day1"].values, multioutput="variance_weighted"
-    # )
-    # r2value = round(r2value, 2)
-    r2value = round(stats.pearsonr(df[var].values, df[var + "_day1"].values)[0], 2)
+    df_final = df[np.abs(df[var] - df[var].mean()) <= (3 * df[var].std())]
+    df_final = df_final[~np.isnan(df_final[var])]
+
+    df_final = df_final[
+        np.abs(df_final[var + "_day1"] - df_final[var + "_day1"].mean())
+        <= (3 * df_final[var + "_day1"].std())
+    ]
+
+    r2value = round(
+        stats.pearsonr(df_final[var].values, df_final[var + "_day1"].values)[0], 2
+    )
     rmse = str(
         round(
-            mean_squared_error(df[var].values, df[var + "_day1"].values, squared=False),
+            mean_squared_error(
+                df_final[var].values, df_final[var + "_day1"].values, squared=False
+            ),
             2,
         )
     )
@@ -93,15 +102,19 @@ for i in range(length):
         prop={"size": 8, "zorder": 10},
     )
 
-    df_final = df[np.abs(df[var] - df[var].mean()) <= (2 * df[var].std())]
-    df_final = df_final[
-        np.abs(df_final[var + "_day1"] - df_final[var + "_day1"].mean())
-        <= (2 * df_final[var + "_day1"].std())
-    ]
+    # df_final = df[np.abs(df[var] - df[var].mean()) <= (2 * df[var].std())]
+    # df_final = df_final[
+    #     np.abs(df_final[var + "_day1"] - df_final[var + "_day1"].mean())
+    #     <= (2 * df_final[var + "_day1"].std())
+    # ]
     df_final = df_final.groupby("time").mean()
     var_obs = df_final[var].values
     var_model = df_final[var + "_day1"].values
-    ax.set_ylabel(f"{var.upper()}")
+    try:
+        ax.set_ylabel(fr"$({var_dict[var]['units']})$", fontsize=8)
+    except:
+        pass
+    ax.set_title(var_dict[var]["description"], fontsize=10)
     ax.plot(df_final.index, var_obs, label="Observation", zorder=9, color=colors[0])
     ax.plot(df_final.index, var_model, label="Forecast", zorder=9, color=colors[3])
     ax.yaxis.grid(linewidth=0.4, linestyle="--", zorder=1)
@@ -120,7 +133,7 @@ for i in range(length):
         # ax.legend()
         ax.legend(
             loc="upper center",
-            bbox_to_anchor=(0.5, 1.4),
+            bbox_to_anchor=(0.1, 1.4),
             ncol=2,
             fancybox=True,
             shadow=True,
@@ -142,18 +155,28 @@ met_unit = ["C", "%", "km h^-1", "mm"]
 length = len(met_list)
 
 fig = plt.figure(figsize=[10, 10])  # figsize=[8, 8]
+fig.suptitle(
+    f'Comparison of FWF {res} vs NRCAN at {len(unique)} Weather Stations \n {date_range[0].strftime("%Y%m%d")} - {date_range[-1].strftime("%Y%m%d")}',
+    fontsize=14,
+)
 for i in range(length):
     # plt.subplot(i+1, 1, 1)
     ax = fig.add_subplot(length + 1, 1, i + 1)
     var = met_list[i]
-    # r2value = r2_score(
-    #     df[var].values, df[var + "_day1"].values, multioutput="variance_weighted"
-    # )
-    # r2value = round(r2value, 2)
-    r2value = round(stats.pearsonr(df[var].values, df[var + "_day1"].values)[0], 2)
+    df_final = df[np.abs(df[var] - df[var].mean()) <= (3 * df[var].std())]
+    df_final = df_final[~np.isnan(df_final[var])]
+    df_final = df_final[
+        np.abs(df_final[var + "_day1"] - df_final[var + "_day1"].mean())
+        <= (3 * df_final[var + "_day1"].std())
+    ]
+    r2value = round(
+        stats.pearsonr(df_final[var].values, df_final[var + "_day1"].values)[0], 2
+    )
     rmse = str(
         round(
-            mean_squared_error(df[var].values, df[var + "_day1"].values, squared=False),
+            mean_squared_error(
+                df_final[var].values, df_final[var + "_day1"].values, squared=False
+            ),
             2,
         )
     )
@@ -163,18 +186,21 @@ for i in range(length):
         prop={"size": 8, "zorder": 10},
     )
 
-    df_final = df[np.abs(df[var] - df[var].mean()) <= (2 * df[var].std())]
-    df_final = df_final[
-        np.abs(df_final[var + "_day1"] - df_final[var + "_day1"].mean())
-        <= (2 * df_final[var + "_day1"].std())
-    ]
+    # df_final = df[np.abs(df[var] - df[var].mean()) <= (2 * df[var].std())]
+    # df_final = df_final[
+    #     np.abs(df_final[var + "_day1"] - df_final[var + "_day1"].mean())
+    #     <= (2 * df_final[var + "_day1"].std())
+    # ]
     df_final = df_final.groupby("time").mean()
     var_obs = df_final[var].values
     var_model = df_final[var + "_day1"].values
-    ax.set_ylabel(f"{var.upper()} \n ({met_unit[i]})")
-
-    ax.plot(df_final.index, var_obs, label="Observation", zorder=9, color=colors[0])
-    ax.plot(df_final.index, var_model, label="Forecast", zorder=9, color=colors[3])
+    try:
+        ax.set_ylabel(fr"$({var_dict[var]['units']})$", fontsize=8)
+    except:
+        pass
+    ax.set_title(var_dict[var]["description"], fontsize=10)
+    ax.plot(df_final.index, var_obs, label="Observation", zorder=6, color=colors[0])
+    ax.plot(df_final.index, var_model, label="Forecast", zorder=6, color=colors[3])
     ax.yaxis.grid(linewidth=0.4, linestyle="--")
     ax.xaxis.grid(linewidth=0.4, linestyle="--")
     ax.add_artist(anchored_text)
@@ -187,7 +213,7 @@ for i in range(length):
         ax.legend()
         ax.legend(
             loc="upper center",
-            bbox_to_anchor=(0.5, 1.3),
+            bbox_to_anchor=(0.1, 1.3),
             ncol=2,
             fancybox=True,
             shadow=True,
@@ -238,105 +264,105 @@ plt.close()
 ##########################################################################
 ##########################################################################
 
-cmap = cm.get_cmap("tab10", len(list(ds)[::3]) + 1)  # PiYG
-colors = []
-for i in range(cmap.N):
-    rgba = cmap(i)
-    colors.append(matplotlib.colors.rgb2hex(rgba))
+# cmap = cm.get_cmap("tab10", len(list(ds)[::3]) + 1)  # PiYG
+# colors = []
+# for i in range(cmap.N):
+#     rgba = cmap(i)
+#     colors.append(matplotlib.colors.rgb2hex(rgba))
 
-var_dict = {
-    "bui": {"ext": 20},
-    "dc": {"ext": 80},
-    "dmc": {"ext": 21},
-    "ffmc": {"ext": 74},
-    "fwi": {"ext": 5},
-    "isi": {"ext": 2},
-}
-
-
-def reject_outliers(x, y, m=3):
-    return (
-        x[abs(x - np.mean(x)) < m * np.std(x)],
-        y[abs(x - np.mean(x)) < m * np.std(x)],
-    )
+# var_dict = {
+#     "bui": {"ext": 20},
+#     "dc": {"ext": 80},
+#     "dmc": {"ext": 21},
+#     "ffmc": {"ext": 74},
+#     "fwi": {"ext": 5},
+#     "isi": {"ext": 2},
+# }
 
 
-def checkstats(var, color):
-    time = np.array(ds.time.dt.strftime("%Y-%m-%d"), dtype="<U10")
-    start_time = datetime.strptime(str(time[0]), "%Y-%m-%d").strftime("%Y%m%d")
-    end_time = datetime.strptime(str(time[-1]), "%Y-%m-%d").strftime("%Y%m%d")
-    # var_obs = ds[var].values.flatten()
-    # var_modeld = ds[var + "_day1"].values.flatten()
-    var_obs = df[var].values
-    var_modeld = df[var + "_day1"].values
-    ind = ~np.isnan(var_obs)
-    var_obs_ = var_obs[ind]
-    var_modeld_ = var_modeld[ind]
-    try:
-        index = np.where(var_obs_ > var_dict[var]["ext"])[0]
-        var_obs_ = var_obs_[index]
-        var_modeld_ = var_modeld_[index]
-        index = np.where(var_modeld_ > var_dict[var]["ext"])[0]
-        var_obs_ = var_obs_[index]
-        var_modeld_ = var_modeld_[index]
-    except:
-        pass
-    var_obs_, var_modeld_ = reject_outliers(var_obs_, var_modeld_)
-    var_modeld_, var_obs_ = reject_outliers(var_modeld_, var_obs_)
-    result = scipy.stats.linregress(var_modeld_, var_obs_)
-    r2value = round(stats.pearsonr(var_obs_, var_modeld_)[0], 2)
-
-    rmse = str(round(mean_squared_error(var_obs_, var_modeld_, squared=False), 3))
-    print(len(var_modeld_) == len(var_obs_))
-    print(var.upper())
-    print("slope ", result.slope)
-    print("intercept ", result.intercept)
-    print("r2value ", r2value)
-    print("pvalue ", result.pvalue)
-    print("stderr ", result.stderr)
-    print("rmse ", rmse)
-    print("-------------------------")
-    plt.close()
-    fig = plt.figure()  # figsize=[8, 8]
-    ax = fig.add_subplot(1, 1, 1)
-    ax.set_title(
-        f"WRF3 Domain {res} for {var.upper()} \n slope: {round(result.slope,3)}  intercept: {round(result.intercept,3)}  r2value: {round(r2value,3)}  rmse: {rmse}  \n {start_time}-{end_time}"
-    )
-    # ax.set_title(
-    #     f"WRF3 Domain {res} for {var.upper()} \n  r2value: {round(r2value,3)}  rmse: {rmse}  \n {start_time}-{end_time}"
-    # )
-    ax.scatter(var_modeld_, var_obs_, s=0.5, color=color, label="data")
-    xpoints = ypoints = ax.get_xlim()
-    ax.plot(
-        xpoints,
-        ypoints,
-        linestyle="--",
-        color="k",
-        lw=0.6,
-        scalex=False,
-        scaley=False,
-        label="y = x",
-    )
-    ax.plot(
-        var_modeld_,
-        result.intercept + result.slope * var_modeld_,
-        "r",
-        label="fitted line",
-    )
-    ax.legend()
-    ax.set_xlabel("Modeled")
-    ax.set_ylabel("Observed")
-    fig.savefig(
-        str(data_dir) + f"/images/stats/{var}-{domain}-{start_time}-{end_time}.png"
-    )
-    plt.close()
-
-    return
+# def reject_outliers(x, y, m=3):
+#     return (
+#         x[abs(x - np.mean(x)) < m * np.std(x)],
+#         y[abs(x - np.mean(x)) < m * np.std(x)],
+#     )
 
 
-var_list = list(ds)[::3]
-for i in range(len(var_list)):
-    checkstats(var_list[i], colors[i])
+# def checkstats(var, color):
+#     time = np.array(ds.time.dt.strftime("%Y-%m-%d"), dtype="<U10")
+#     start_time = datetime.strptime(str(time[0]), "%Y-%m-%d").strftime("%Y%m%d")
+#     end_time = datetime.strptime(str(time[-1]), "%Y-%m-%d").strftime("%Y%m%d")
+#     # var_obs = ds[var].values.flatten()
+#     # var_modeld = ds[var + "_day1"].values.flatten()
+#     var_obs = df[var].values
+#     var_modeld = df[var + "_day1"].values
+#     ind = ~np.isnan(var_obs)
+#     var_obs_ = var_obs[ind]
+#     var_modeld_ = var_modeld[ind]
+#     try:
+#         index = np.where(var_obs_ > var_dict[var]["ext"])[0]
+#         var_obs_ = var_obs_[index]
+#         var_modeld_ = var_modeld_[index]
+#         index = np.where(var_modeld_ > var_dict[var]["ext"])[0]
+#         var_obs_ = var_obs_[index]
+#         var_modeld_ = var_modeld_[index]
+#     except:
+#         pass
+#     var_obs_, var_modeld_ = reject_outliers(var_obs_, var_modeld_)
+#     var_modeld_, var_obs_ = reject_outliers(var_modeld_, var_obs_)
+#     result = scipy.stats.linregress(var_modeld_, var_obs_)
+#     r2value = round(stats.pearsonr(var_obs_, var_modeld_)[0], 2)
+
+#     rmse = str(round(mean_squared_error(var_obs_, var_modeld_, squared=False), 3))
+#     print(len(var_modeld_) == len(var_obs_))
+#     print(var.upper())
+#     print("slope ", result.slope)
+#     print("intercept ", result.intercept)
+#     print("r2value ", r2value)
+#     print("pvalue ", result.pvalue)
+#     print("stderr ", result.stderr)
+#     print("rmse ", rmse)
+#     print("-------------------------")
+#     plt.close()
+#     fig = plt.figure()  # figsize=[8, 8]
+#     ax = fig.add_subplot(1, 1, 1)
+#     ax.set_title(
+#         f"WRF3 Domain {res} for {var.upper()} \n slope: {round(result.slope,3)}  intercept: {round(result.intercept,3)}  r2value: {round(r2value,3)}  rmse: {rmse}  \n {start_time}-{end_time}"
+#     )
+#     # ax.set_title(
+#     #     f"WRF3 Domain {res} for {var.upper()} \n  r2value: {round(r2value,3)}  rmse: {rmse}  \n {start_time}-{end_time}"
+#     # )
+#     ax.scatter(var_modeld_, var_obs_, s=0.5, color=color, label="data")
+#     xpoints = ypoints = ax.get_xlim()
+#     ax.plot(
+#         xpoints,
+#         ypoints,
+#         linestyle="--",
+#         color="k",
+#         lw=0.6,
+#         scalex=False,
+#         scaley=False,
+#         label="y = x",
+#     )
+#     ax.plot(
+#         var_modeld_,
+#         result.intercept + result.slope * var_modeld_,
+#         "r",
+#         label="fitted line",
+#     )
+#     ax.legend()
+#     ax.set_xlabel("Modeled")
+#     ax.set_ylabel("Observed")
+#     fig.savefig(
+#         str(data_dir) + f"/images/stats/{var}-{domain}-{start_time}-{end_time}.png"
+#     )
+#     plt.close()
+
+#     return
+
+
+# var_list = list(ds)[::3]
+# for i in range(len(var_list)):
+#     checkstats(var_list[i], colors[i])
 
 
 # df_list = []

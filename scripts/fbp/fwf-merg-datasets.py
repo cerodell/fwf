@@ -52,12 +52,12 @@ for var in list(ds):
 
 # var_list = ['CFB', 'FMC', 'HFI', 'ROS', 'SFC', 'TFC', 'ISI', 'R', 'F']
 # ds_short = ds.drop_vars([i for i in list(ds) if i not in var_list])
-ds_short = make_daily_noon(ds, domain, wrf_model)
+# ds_short = make_daily_noon(ds, domain, wrf_model)
 
 
 save_file = (
-    f"/Volumes/cer/fireweather/data/fwf-daily-{domain}-{startdate}-{enddate}.zarr"
+    f"/Volumes/cer/fireweather/data/fwf-hourly-{domain}-{startdate}-{enddate}.zarr"
 )
-ds_short.to_zarr(save_file, mode="w")
+ds.to_zarr(save_file, mode="w")
 
 print("Total Run Time: ", datetime.now() - startTime)

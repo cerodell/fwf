@@ -36,34 +36,39 @@ fc_df = fc_df.set_index("CFFDRS")
 fc_dict = fc_df.transpose().to_dict()
 
 
-filein = f"/Volumes/cer/fireweather/data/fwf-hourly-{domain}-2018040106-2018100106.zarr"
-ds = xr.open_zarr(filein)
+# filein = f"/Volumes/cer/fireweather/data/fwf-hourly-{domain}-2018040106-2018100106.zarr"
+# ds = xr.open_zarr(filein)
+
+ds = xr.open_zarr(str(vol_dir) + "/fwf-daily-d02-2019040100-2019100100.zarr")
+ds["time"] = ds.Time.values
+ds = ds.sel(time="2019-05-11")
 
 
-## Path to fuels data terrain data
-static_filein = str(data_dir) + f"/static/static-vars-{wrf_model}-{domain}.zarr"
-static_ds = xr.open_zarr(static_filein)
-FUELS = static_ds.FUELS
+# ## Path to fuels data terrain data
+# static_filein = str(data_dir) + f"/static/static-vars-{wrf_model}-{domain}.zarr"
+# static_ds = xr.open_zarr(static_filein)
+# FUELS = static_ds.FUELS
 
-HFI = ds.HFI.values
-ROS = ds.ROS.values
+# HFI = ds.HFI.values
+# ROS = ds.ROS.values
 
-HFI_t = HFI[:, FUELS == fc_dict["C2"]["Code"]]
-ROS_t = ROS[:, FUELS == fc_dict["C2"]["Code"]]
+# HFI_t = HFI[:, FUELS == fc_dict["C2"]["Code"]]
+# ROS_t = ROS[:, FUELS == fc_dict["C2"]["Code"]]
 
-plt.plot(HFI_t[:, 1000])
-plt.plot(ROS_t[:, 1000])
+# plt.plot(HFI_t[:, 1000])
+# plt.plot(ROS_t[:, 1000])
 
 
-ds.coords["time"] = ds.Time
+# ds.coords["time"] = ds.Time
 
 
 var = "HFI"
-levels = np.arange(0, 150000, 1000)
-
+# levels = np.arange(0, 20000, 100)
+levels = [0, 10, 500, 2000, 4000, 10000, 30000, 40000]
+colors = ["#0000ff", "#00c0c0", "#008001", "#01e001", "#ffff00", "#dfa000", "#ff0000"]
 save_file = f"/images/{var}-{wrf_model}-{domain}.png"
 save_dir = str(data_dir) + save_file
-ds = ds.loc[dict(time="2018-08-18T20")]
+# ds = ds.loc[dict(time="2018-08-18T20")]
 
 
 day_hour = np.datetime_as_string(ds.Time, unit="h")
@@ -109,25 +114,24 @@ elif domain == "d03":
     res = "4 km"
 else:
     res = ""
-Plot_Title = f"{ds.HFI.attrs['description']} at {day_hour} \n {wrf_model} {res}"
+Plot_Title = f"{'HFI'} at {day_hour} \n {wrf_model} {res}"
 ax.set_title(Plot_Title, fontsize=20, weight="bold")
 
-
+Cnorm = matplotlib.colors.Normalize(vmin=int(np.min(levels)), vmax=int(np.max(levels)))
 contourf = ax.contourf(
     ds.XLONG,
     ds.XLAT,
     ds[var],
     levels=levels,
     extend="both",
-    cmap="RdYlBu_r",
+    colors=colors,
+    norm=Cnorm,
     zorder=10,
     alpha=1,
 )
 
+plt.scatter(-113.540, 56, zorder=10, color="hotpink", s=500)
 
-Cnorm = matplotlib.colors.Normalize(
-    vmin=int(np.min(levels)), vmax=int(np.max(levels)) + 1
-)
 # contourf = ax.pcolormesh(ds.XLONG, ds.XLAT, ds[var], zorder=10, norm=Cnorm, cmap="RdYlBu_r", shading='flat')
 fig.add_axes(ax_cb)
 cbar = plt.colorbar(contourf, cax=ax_cb)
