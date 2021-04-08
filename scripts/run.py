@@ -24,9 +24,8 @@ import warnings
 __author__ = "Christopher Rodell"
 __email__ = "crodell@eoas.ubc.ca"
 
-# ignore warnings by message
-warnings.filterwarnings("ignore", message="invalid value encountered in power")
-warnings.filterwarnings("ignore", message="invalid value encountered in log")
+# ignore RuntimeWarning
+warnings.filterwarnings("ignore", category=RuntimeWarning)
 
 
 # """######### create forecast directory for webapge  #############"""
@@ -45,7 +44,7 @@ for domain in domains:
     print(wrf_file_dir)
 
     # """######### Open wrf_out.nc and write  new hourly/daily .zarr files #############"""
-    coeff = FWF(wrf_file_dir, domain, wrf_model, initialize=False)
+    coeff = FWF(wrf_file_dir, domain, wrf_model, fbp_mode=True, initialize=False)
 
     coeff.daily()
     coeff.hourly()

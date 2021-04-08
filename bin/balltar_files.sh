@@ -26,3 +26,9 @@ tar -czvf fwf-hourly-d03-$(date '+%Y%m%d06').tgz fwf-hourly-d03-$(date '+%Y%m%d0
 mv fwf-hourly-d03-$(date '+%Y%m%d06').tgz /bluesky/archive/fireweather/data/
 rm -r fwf-hourly-d03-$(date  -d "3 days ago" '+%Y%m%d06').zarr
 echo "fwf-hourly-d03 tgz made and mv at: --> $(date '+%Y%m%dT%H')"
+
+
+cd /bluesky/fireweather/fwf/data/geojson/
+echo "deleting yesterdays geojson files at: --> $(date '+%Y-%m-%dT%H')"
+rm -r $(date  -d "1 days ago" '+%Y%m%d06/')
+echo "deleted yesterdays geojson files at: --> $(date '+%Y-%m-%dT%H')"

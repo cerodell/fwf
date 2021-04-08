@@ -10,13 +10,20 @@ from context import data_dir, xr_dir, wrf_dir, tzone_dir, fwf_zarr_dir
 from datetime import datetime, date, timedelta
 
 
-domain = "d02"
+domain = "d03"
 date = pd.Timestamp("today")
 # date = pd.Timestamp(2021, 2, 20)
 forecast_date = date.strftime("%Y%m%d06")
 
 file_dir = str(fwf_zarr_dir) + f"/fwf-hourly-{domain}-{forecast_date}.zarr"
 ds = xr.open_zarr(file_dir)
+
+
+ds.SNOWH.attrs
+
+HFI = ds.isel(time=14)
+HFI.HFI.plot()
+
 
 # print(ds.P)
 # ds = ds.isel(time=0)

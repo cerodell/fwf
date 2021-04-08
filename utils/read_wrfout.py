@@ -130,54 +130,53 @@ def readwrf(filein, domain, wright):
 
     ### Combine xarray and rename to match van wangers defs
     wrf_ds = xr.combine_nested(ds_list, "time")
-
     wrf_file = Dataset(str(pathlist[0]), "r")
 
-    Ti = getvar(wrf_file, "T2")
-    attrs = Ti.attrs
-    attrs["projection"] = str(attrs["projection"])
-    wrf_ds.T.attrs = attrs
-    wrf_ds.T.attrs["description"] = "2m TEMP"
-    wrf_ds.T.attrs["units"] = "C"
+    # Ti = getvar(wrf_file, "T2")
+    # attrs = Ti.attrs
+    # attrs["projection"] = str(attrs["projection"])
+    # wrf_ds.T.attrs = attrs
+    # wrf_ds.T.attrs["description"] = "2m TEMP"
+    # wrf_ds.T.attrs["units"] = "C"
 
-    wrf_ds.TD.attrs = attrs
-    wrf_ds.TD.attrs["description"] = "2m DEW POINT TEMP"
-    wrf_ds.TD.attrs["units"] = "C"
+    # wrf_ds.TD.attrs = attrs
+    # wrf_ds.TD.attrs["description"] = "2m DEW POINT TEMP"
+    # wrf_ds.TD.attrs["units"] = "C"
 
-    wrf_ds.W.attrs = attrs
-    wrf_ds.WD.attrs["units"] = "km hr^-1"
-    wrf_ds.W.attrs["description"] = "10m WIND SPEED"
-    wrf_ds.WD.attrs = attrs
-    wrf_ds.WD.attrs["description"] = "10m WIND DIRECTION"
-    wrf_ds.WD.attrs["units"] = "degrees"
+    # wrf_ds.W.attrs = attrs
+    # wrf_ds.WD.attrs["units"] = "km hr^-1"
+    # wrf_ds.W.attrs["description"] = "10m WIND SPEED"
+    # wrf_ds.WD.attrs = attrs
+    # wrf_ds.WD.attrs["description"] = "10m WIND DIRECTION"
+    # wrf_ds.WD.attrs["units"] = "degrees"
 
-    wrf_ds.H.attrs = attrs
-    wrf_ds.H.attrs["units"] = "(%)"
-    wrf_ds.H.attrs["description"] = "2m RELATIVE HUMIDITY"
+    # wrf_ds.H.attrs = attrs
+    # wrf_ds.H.attrs["units"] = "(%)"
+    # wrf_ds.H.attrs["description"] = "2m RELATIVE HUMIDITY"
 
-    wrf_ds.U10.attrs = attrs
-    wrf_ds.U10.attrs["units"] = "m s-1"
-    wrf_ds.U10.attrs["description"] = "U at 10 M"
+    # wrf_ds.U10.attrs = attrs
+    # wrf_ds.U10.attrs["units"] = "m s-1"
+    # wrf_ds.U10.attrs["description"] = "U at 10 M"
 
-    wrf_ds.V10.attrs = attrs
-    wrf_ds.V10.attrs["units"] = "m s-1"
-    wrf_ds.V10.attrs["description"] = "V at 10 M"
+    # wrf_ds.V10.attrs = attrs
+    # wrf_ds.V10.attrs["units"] = "m s-1"
+    # wrf_ds.V10.attrs["description"] = "V at 10 M"
 
-    wrf_ds["r_o"] = wrf_ds.r_o - wrf_ds.r_o.isel(time=0)
-    wrf_ds.r_o.attrs["units"] = "mm"
-    wrf_ds.r_o.attrs["description"] = "ACCUMULATED TOTAL PRECIPITATION"
+    # wrf_ds["r_o"] = wrf_ds.r_o - wrf_ds.r_o.isel(time=0)
+    # wrf_ds.r_o.attrs["units"] = "mm"
+    # wrf_ds.r_o.attrs["description"] = "ACCUMULATED TOTAL PRECIPITATION"
 
-    wrf_ds["SNW"] = wrf_ds.SNW - wrf_ds.SNW.isel(time=0)
-    wrf_ds.SNW.attrs["units"] = "cm"
-    wrf_ds.SNW.attrs["description"] = "ACCUMULATED TOTAL GRID SCALE SNOW AND ICE"
+    # wrf_ds["SNW"] = wrf_ds.SNW - wrf_ds.SNW.isel(time=0)
+    # wrf_ds.SNW.attrs["units"] = "cm"
+    # wrf_ds.SNW.attrs["description"] = "ACCUMULATED TOTAL GRID SCALE SNOW AND ICE"
 
-    wrf_ds.SNOWC.attrs["units"] = ""
-    wrf_ds.SNOWC.attrs[
-        "description"
-    ] = "FLAG INDICATING SNOW COVERAGE (1 FOR SNOW COVER)"
+    # wrf_ds.SNOWC.attrs["units"] = ""
+    # wrf_ds.SNOWC.attrs[
+    #     "description"
+    # ] = "FLAG INDICATING SNOW COVERAGE (1 FOR SNOW COVER)"
 
-    wrf_ds.SNOWH.attrs["units"] = "m"
-    wrf_ds.SNOWH.attrs["description"] = "PHYSICAL SNOW DEPTH"
+    # wrf_ds.SNOWH.attrs["units"] = "m"
+    # wrf_ds.SNOWH.attrs["description"] = "PHYSICAL SNOW DEPTH"
 
     nc_attrs = wrf_file.ncattrs()
     for nc_attr in nc_attrs:

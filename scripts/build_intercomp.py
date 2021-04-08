@@ -57,10 +57,18 @@ day1_obs_date = day1_obs_date.strftime("%Y%m%d06")
 day2_obs_date = date - np.timedelta64(2, "D")
 day2_obs_date = day2_obs_date.strftime("%Y%m%d06")
 
+
+def rechunk(ds):
+    ds = ds.chunk(chunks="auto")
+    ds = ds.unify_chunks()
+    for var in list(ds):
+        ds[var].encoding = {}
+    return ds
+
+
 for domain in ["d02", "d03"]:
     stations_df = stations_df_og
 
-    print(day1_obs_date)
     day1_ds = daily_merge_ds(day1_obs_date, domain, wrf_model)
 
     day2_ds = daily_merge_ds(day2_obs_date, domain, wrf_model)
@@ -240,19 +248,34 @@ for domain in ["d02", "d03"]:
         final_ds = xr.combine_nested(
             [intercomp_yesterday_ds, intercomp_today_ds], "time"
         )
+
+        final_ds = rechunk(final_ds)
         final_ds.to_zarr(
             str(data_dir)
             + "/intercomp/"
             + f"intercomp-{domain}-{intercomp_today_dir}.zarr",
             mode="w",
         )
+        print(
+            "Wrote:   "
+            + str(data_dir)
+            + "/intercomp/"
+            + f"intercomp-{domain}-{intercomp_today_dir}.zarr"
+        )
     else:
         final_ds = intercomp_today_ds
+        final_ds = rechunk(final_ds)
         final_ds.to_zarr(
             str(data_dir)
             + "/intercomp/"
             + f"intercomp-{domain}-{intercomp_today_dir}.zarr",
             mode="w",
+        )
+        print(
+            "Wrote:   "
+            + str(data_dir)
+            + "/intercomp/"
+            + f"intercomp-{domain}-{intercomp_today_dir}.zarr"
         )
 
 

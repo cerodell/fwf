@@ -98,6 +98,48 @@ hourly_d3_yester_ds = xr.open_zarr(hourly_file_dir)
 daily_d3_yester_ds = daily_merge_ds(yesterday_forecast_date, "d03", wrf_model)
 
 
+def reindex_ds(ds_d2, ds_d3, info):
+    ds_d2["time"], ds_d3["time"] = (
+        ds_d2.Time.astype("datetime64[h]"),
+        ds_d3.Time.astype("datetime64[h]"),
+    )
+    if len(ds_d3.time) != len(ds_d2.time):
+        print(f"Unequal lenght datasets for {info}")
+        if len(ds_d3.time) > len(ds_d2.time):
+            print("d03 in longer")
+            time_array = ds_d2.Time.values.astype("datetime64[h]")
+            ds_d3 = ds_d3.sel(time=slice(str(time_array[0]), str(time_array[-1])))
+            print(
+                f"reindex d03 from {str(time_array[0])} - {str(time_array[-1])} for {info}"
+            )
+        elif len(ds_d3.time) < len(ds_d2.time):
+            print("d02 in longer")
+            time_array = ds_d3.Time.values.astype("datetime64[h]")
+            ds_d2 = ds_d2.sel(time=slice(str(time_array[0]), str(time_array[-1])))
+            print(
+                f"reindex d02 from {str(time_array[0])} - {str(time_array[-1])} for {info}"
+            )
+        else:
+            print("Faild")
+    else:
+        ds_d2, ds_d3 = ds_d2, ds_d3
+
+    return ds_d2, ds_d3
+
+
+## reindex in datasets have unequal leght time series
+hourly_d2_ds, hourly_d3_ds = reindex_ds(hourly_d2_ds, hourly_d3_ds, "hourly_ds")
+daily_d2_ds, daily_d3_ds = reindex_ds(daily_d2_ds, daily_d3_ds, "daily_ds")
+
+## reindex in datasets have unequal leght time series
+hourly_d2_yester_ds, hourly_d3_yester_ds = reindex_ds(
+    hourly_d2_yester_ds, hourly_d3_yester_ds, "hourly_yesterday_ds"
+)
+daily_d2_yester_ds, daily_d3_yester_ds = reindex_ds(
+    daily_d2_yester_ds, daily_d3_yester_ds, "daily_yesterday_ds"
+)
+
+
 def wmo_locs(hourly_ds, daily_ds, obs_ds, domain):
     ## Get a wrf file
     wrf_filein = "/wrf/"
@@ -151,7 +193,7 @@ int_time = int(pd.Timestamp(str(hourly_ds.Time.values[0])).hour)
 length = len(hourly_ds.Time.values) + 1
 num_days = [i - 12 for i in range(1, length) if i % 24 == 0]
 index = [i - int_time if 12 - int_time >= 0 else i + 24 - int_time for i in num_days]
-print(f"index of times {index} with initial time {int_time}Z")
+print(f"index of times {index} with time {int_time}Z")
 
 
 tzone_array = obs_ds.tz_correct.values
@@ -167,11 +209,11 @@ for ztu in unique:
     wx_obs_ds = obs_ds.isel(wmo=ind)
 
     try:
-        wx_hourly__yester_ds = wx_hourly__yester_ds.sel(
+        wx_hourly__yester_ds = wx_hourly__yester_ds.isel(
             time=slice(index[0] + abs(ztu), 24)
         )
     except:
-        wx_hourly__yester_ds = wx_hourly__yester_ds.sel(
+        wx_hourly__yester_ds = wx_hourly__yester_ds.isel(
             time=slice(index + abs(ztu), 24)
         )
 
