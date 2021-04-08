@@ -10,7 +10,7 @@ from context import data_dir, xr_dir, wrf_dir, tzone_dir, fwf_zarr_dir
 from datetime import datetime, date, timedelta
 
 
-domain = "d03"
+domain = "d02"
 date = pd.Timestamp("today")
 # date = pd.Timestamp(2021, 2, 20)
 forecast_date = date.strftime("%Y%m%d06")

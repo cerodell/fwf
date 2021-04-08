@@ -64,7 +64,9 @@ for domain in domains:
         f"/fwf-daily-{domain}-{forecast_date}.zarr"
     )
 
-    tzone_ds = xr.open_zarr(str(tzone_dir) + f"/tzone_{wrf_model}_{domain}.zarr")
+    static_ds = xr.open_zarr(
+        str(data_dir) + f"/static/static-vars-{wrf_model}-{domain}.zarr"
+    )
 
     ### Open datasets
     hourly_ds = xr.open_zarr(hourly_file_dir)
@@ -108,7 +110,21 @@ for domain in domains:
 
     ## remove some unwanted variables from dataset
     hourly_var_list = list(hourly_ds)
-    remove = ["SNOWC", "SNOWH", "U10", "V10", "m_o", "r_o_hourly"]
+    remove = [
+        "SNOWC",
+        "SNOWH",
+        "U10",
+        "V10",
+        "m_o",
+        "r_o_hourly",
+        "CFB",
+        "FMC",
+        "HFI",
+        "SFC",
+        "TFC",
+        "ROS",
+        "ISI",
+    ]
     hourly_var_list = list(set(hourly_var_list) - set(remove))
 
     ## remove some unwanted variables from dataset
@@ -130,7 +146,7 @@ for domain in domains:
     ## get array of lats and longs remove bad boundary conditions and flatten
     xlat = daily_ds.XLAT.values[y1:-y2, x1:-x2]
     xlon = daily_ds.XLONG.values[y1:-y2, x1:-x2]
-    tzon = tzone_ds.Zone.values[y1:-y2, x1:-x2]
+    tzon = static_ds.ZoneDT.values[y1:-y2, x1:-x2]
 
     xlat = np.round(xlat.flatten(), 5)
     xlon = np.round(xlon.flatten(), 5)

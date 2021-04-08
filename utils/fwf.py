@@ -7,6 +7,7 @@ Class to solve the Fire Weather Indices using output from a numerical weather mo
 import context
 import math
 import json
+import zarr
 import numpy as np
 import pandas as pd
 import xarray as xr
@@ -731,7 +732,7 @@ class FWF:
     """ #################### Initial Spread Index #############################"""
     """########################################################################"""
 
-    def solve_isi(self, hourly_ds, fbp=False):
+    def solve_isi(self, hourly_ds, W, fbp=False):
         """
         Calculates the hourly initial spread index
 
@@ -974,7 +975,7 @@ class FWF:
         BUI_day2 = np.stack([BUI_i[1]] * (len(FFMC) - index[0]))
         BUI = np.vstack([BUI_day1, BUI_day2])
         BUI = xr.DataArray(BUI, name="BUI", dims=("time", "south_north", "west_east"))
-        hourly_ds["BUI"] = BUI
+        # hourly_ds["BUI"] = BUI
 
         ## Solve Surface Fuel Consumption for C1 Fuels adjusted from (Wotton et. al. 2009) (9)
         SFC = zero_full3D
@@ -1065,33 +1066,12 @@ class FWF:
         SFC = xr.DataArray(SFC, name="SFC", dims=("time", "south_north", "west_east"))
         hourly_ds["SFC"] = SFC.astype(dtype="float32")
 
-        ###################   Rate of Spread Equations  #######################
-        #######################################################################
-        def solve_isi(hourly_ds, W, fbp=False):
-            W, F, m_o = W, hourly_ds.F, hourly_ds.m_o
-
-            ### (24) Solve for wind function (f_W) with condition for fbp
-            f_W = xr.where(
-                (W >= 40) & (fbp == True),
-                12 * (1 - np.exp(-0.0818 * (W - 28))),
-                np.exp(0.05039 * W),
-            )
-
-            ### (25) Solve for fine fuel moisture function (f_F)
-            f_F = 91.9 * np.exp(-0.1386 * m_o) * (1 + np.power(m_o, 5.31) / 4.93e7)
-
-            ### (26) Solve for initial spread index (R)
-            R = 0.208 * f_W * f_F
-            R = xr.DataArray(R, name="R", dims=("time", "south_north", "west_east"))
-
-            return R
-
         ## Define frequently used variables
         PDF = 35  # percent dead balsam fir default
         C = 80  # degree of curing(%)
         # ISI = hourly_ds.R
-        ISZ = solve_isi(hourly_ds, W=0, fbp=True)
-        hourly_ds["ISZ"] = ISZ.astype(dtype="float32")
+        ISZ = self.solve_isi(hourly_ds, W=0, fbp=True)
+        # hourly_ds["ISZ"] = ISZ.astype(dtype="float32")
 
         ## (O-1A grass) grass curing coefficient (Wotton et. al. 2009)
         CF = xr.where(
@@ -1229,7 +1209,7 @@ class FWF:
         RSZ = solve_ros(ISZ, FMC, PDF, fc_dict)
         RSZ_C6 = solve_c6(ISZ, FMC, fc_dict)
         RSZ = RSZ + RSZ_C6
-        hourly_ds["RSZ"] = RSZ
+        # hourly_ds["RSZ"] = RSZ
 
         ###################   Effect of Slope on Rate of Spread  #######################
         ################################################################################
@@ -1242,7 +1222,7 @@ class FWF:
 
         ## Surface spread rate with zero wind, upslope (40)
         RSF = RSZ * SF
-        hourly_ds["RSF"] = RSF.astype(dtype="float32")
+        # hourly_ds["RSF"] = RSF.astype(dtype="float32")
 
         ## Solve ISF (ie ISI, with zero wind upslope) for the majority of fuels (41)
         ## NOTE adjusted base don 41a, 41b (Wotton 2009)
@@ -1307,7 +1287,7 @@ class FWF:
 
         ## Combine all ISFs (ie ISI, with zero wind upslope)
         ISF = ISF + ISF_M1M2 + ISF_O1a + ISF_O1b
-        hourly_ds["ISF"] = ISF.astype(dtype="float32")
+        # hourly_ds["ISF"] = ISF.astype(dtype="float32")
 
         ### (25) Solve for fine fuel moisture function (f_F)
         m_o = hourly_ds.m_o
@@ -1345,7 +1325,7 @@ class FWF:
         RAZ = xr.where(WSX < 0, 360 - RAZ, RAZ)
 
         ## Solve ISI equation (from the FWI System) (52, 53, 53a)
-        ISI = solve_isi(hourly_ds, WSV, fbp=True)
+        ISI = self.solve_isi(hourly_ds, WSV, fbp=True)
 
         hourly_ds["ISI"] = ISI.astype(dtype="float32")
 
@@ -1428,7 +1408,7 @@ class FWF:
         HFI = 300 * TFC * ROS
         # print('HFI', np.max(HFI.values))
         hourly_ds["HFI"] = HFI.astype(dtype="float32")
-        print(f"End of FBP with run time of {FBPloopTime}")
+        print(f"End of FBP with run time of {datetime.now() - FBPloopTime}")
 
         return hourly_ds
 
@@ -1573,7 +1553,7 @@ class FWF:
         print(f"Hourly loop done, Time: {datetime.now() - loopTime}")
         hourly_ds = xr.merge([FFMC, self.hourly_ds])
 
-        ISI = self.solve_isi(hourly_ds, fbp=False)
+        ISI = self.solve_isi(hourly_ds, hourly_ds.W, fbp=False)
         hourly_ds["R"] = ISI
         self.R = ISI
         FWI, DSR = self.solve_fwi()
@@ -1664,7 +1644,7 @@ class FWF:
         )
         make_dir.mkdir(parents=True, exist_ok=True)
         hourly_ds = self.rechunk(hourly_ds)
-        hourly_ds.to_zarr(make_dir, mode="w")
+        hourly_ds.to_zarr(make_dir, mode="w", consolidated=True)
         print(f"wrote working {make_dir}")
 
         return str(make_dir)
@@ -1709,7 +1689,7 @@ class FWF:
         make_dir.mkdir(parents=True, exist_ok=True)
         daily_ds = self.rechunk(daily_ds)
         self.daily_ds = daily_ds
-        daily_ds.to_zarr(make_dir, mode="w")
+        daily_ds.to_zarr(make_dir, mode="w", consolidated=True)
         print(f"wrote working {make_dir}")
 
         return str(make_dir)
