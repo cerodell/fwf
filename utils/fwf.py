@@ -85,7 +85,7 @@ class FWF:
         self.F_initial = 85.0
         self.P_initial = 6.0
         self.D_initial = 15.0
-        self.snowfract = 0.5
+        self.snowfract = 0.8
         self.dx = (float(wrf_ds.attrs["DX"]),)
         self.dy = (float(wrf_ds.attrs["DY"]),)
         self.date = str(np.datetime_as_string(wrf_ds.Time.values[0], unit="D"))

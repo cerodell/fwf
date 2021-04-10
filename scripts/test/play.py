@@ -19,7 +19,7 @@ file_dir = str(fwf_zarr_dir) + f"/fwf-hourly-{domain}-{forecast_date}.zarr"
 ds = xr.open_zarr(file_dir)
 
 
-ds.SNOWH.attrs
+ds.SNOWC.attrs
 
 HFI = ds.isel(time=14)
 HFI.HFI.plot()

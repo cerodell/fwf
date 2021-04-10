@@ -7,6 +7,7 @@ images
 fwf-docs
 fwf-docs/
 web_dev/data
+*.nc
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

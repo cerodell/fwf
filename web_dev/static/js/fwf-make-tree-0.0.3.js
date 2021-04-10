@@ -49,12 +49,14 @@ const control = new searchboxControl({
             { type: "link", name: "Weather Research Forecast Team", href: "https://weather.eos.ubc.ca/cgi-bin/index.cgi", icon: "icon-cloudy" },
             { type: "link", name: "Contact Inforamtion", href: "https://firesmoke.ca/contact/", icon: "icon-phone" },
             { type: "link", name: "Documentation", href: "https://cerodell.github.io/fwf-docs/index.html", icon: "icon-git" },
-            // { type: "text", id: "myTextField" },
-            // { type: "button", name: "myTextButton", id: "myTextButton", value: "Select a date" },
+            { type: "link", name: "fwf-d02.nc", href: "test.nc", download:"test", icon: "icon-data"},
+            { type: "link", name: "fwf-d03.nc", href: "test.nc", download:"test", icon: "icon-data"},
+            { type: "text", name: "<br> The Fire Weather Forecasts are experimental in that they are produced by a system that is part of an ongoing research project. They are subject to uncertainties in both the weather forecasts and in the empirical formulas used to derive fuel moisture content."},
 
         ]
     }
 });
+
 
 
 
