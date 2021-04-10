@@ -69,9 +69,9 @@ class FWF:
 
         """
         ### Read then open WRF dataset
-        if wrf_file_dir.endswith(".zarr"):
-            print("Re-run using zarr file")
-            wrf_ds = xr.open_zarr(wrf_file_dir)
+        if wrf_file_dir.endswith(".nc"):
+            print("Re-run using netcdf file")
+            wrf_ds = xr.open_dataset(wrf_file_dir)
         else:
             print("New-run, use readwrf to get vars from nc files")
             wrf_ds = readwrf(wrf_file_dir, domain, wright=False)
@@ -115,11 +115,11 @@ class FWF:
         self.L_f = L_f
 
         ## Open Data Attributes for writing
-        with open(str(data_dir) + f"/json/fwf-attrs.json", "r") as fp:
+        with open(str(data_dir) + f"/json/fwf-var-attrs.json", "r") as fp:
             self.var_dict = json.load(fp)
 
         ## Open gridded static
-        static_ds = xr.open_zarr(
+        static_ds = xr.open_dataset(
             str(data_dir) + f"/static/static-vars-{wrf_model}-{domain}.zarr"
         )
 
@@ -145,12 +145,6 @@ class FWF:
 
         ### Create an hourly and daily datasets for use with their respected codes/indices
         self.daily_ds = self.create_daily_ds(wrf_ds)
-        for var in self.hourly_ds.data_vars:
-            if var in {"SNW", "SNOWH", "U10", "V10"}:
-                pass
-            else:
-                self.daily_ds[var].attrs = self.hourly_ds[var].attrs
-        self.daily_ds["r_o_tomorrow"].attrs = self.daily_ds["r_o"].attrs
 
         ### Solve for hourly rain totals in mm....will be used in ffmc calculation
         r_oi = np.array(self.hourly_ds.r_o)
@@ -230,8 +224,8 @@ class FWF:
                     str(fwf_zarr_dir) + f"/fwf-daily-{domain}-{retrive_time}.zarr"
                 )
 
-                previous_hourly_ds = xr.open_zarr(hourly_file_dir)
-                previous_daily_ds = xr.open_zarr(daily_file_dir)
+                previous_hourly_ds = xr.open_dataset(hourly_file_dir)
+                previous_daily_ds = xr.open_dataset(daily_file_dir)
                 print(
                     f"{Path(hourly_file_dir).exists()}: Found previous FFMC on date {retrive_time}, will merge with hourly_ds"
                 )
@@ -254,8 +248,8 @@ class FWF:
                         str(fwf_zarr_dir) + f"/fwf-daily-{domain}-{retrive_time}.zarr"
                     )
 
-                    previous_hourly_ds = xr.open_zarr(hourly_file_dir)
-                    previous_daily_ds = xr.open_zarr(daily_file_dir)
+                    previous_hourly_ds = xr.open_dataset(hourly_file_dir)
+                    previous_daily_ds = xr.open_dataset(daily_file_dir)
                     print(
                         f"{Path(hourly_file_dir).exists()}: Found previous FFMC on date {retrive_time}, will merge with hourly_ds"
                     )
@@ -272,7 +266,7 @@ class FWF:
 
             # """ ################## Fine Fuel Moisture Code (FFMC) ##################### """
             ### Open previous days hourly_ds
-            previous_hourly_ds = xr.open_zarr(hourly_file_dir)
+            previous_hourly_ds = xr.open_dataset(hourly_file_dir)
             previous_time = np.array(previous_hourly_ds.Time.dt.strftime("%Y-%m-%dT%H"))
             previous_time = datetime.strptime(
                 str(previous_time[0]), "%Y-%m-%dT%H"
@@ -305,7 +299,7 @@ class FWF:
 
             # """ ####################   Daily Dataset    ##################### """
             ### Open previous days daily_ds
-            previous_daily_ds = xr.open_zarr(daily_file_dir)
+            previous_daily_ds = xr.open_dataset(daily_file_dir)
             previous_time = np.array(previous_daily_ds.Time.dt.strftime("%Y-%m-%dT%H"))
             try:
                 previous_time = datetime.strptime(
@@ -1481,7 +1475,7 @@ class FWF:
                         dims=("south_north", "west_east"),
                         coords=wrf_ds.isel(time=i).coords,
                     )
-                    var_da["Time"] = day
+                    var_da["Day"] = day
                     mean_da.append(var_da)
                 else:
                     var_array = wrf_ds[var].values
@@ -1496,13 +1490,13 @@ class FWF:
                         dims=("south_north", "west_east"),
                         coords=wrf_ds.isel(time=i).coords,
                     )
-                    var_da["Time"] = day
+                    var_da["Day"] = day
                     mean_da.append(var_da)
 
             mean_ds = xr.merge(mean_da)
             files_ds.append(mean_ds)
 
-        daily_ds = xr.combine_nested(files_ds, "time")
+        daily_ds = xr.combine_nested(files_ds, "Day")
 
         ## create datarray for carry over rain, this will be added to the next days rain totals
         ## NOTE: this is rain that fell from noon local until 24 hours past the model initial time ie 00Z, 06Z..
@@ -1610,7 +1604,7 @@ class FWF:
     """ ######## Write Hourly Dataset ########"""
     """#######################################"""
 
-    def hourly(self):
+    def build_nc(self):
         """
         Writes hourly_ds (.zarr) and adds the appropriate attributes to each variable
 
@@ -1620,7 +1614,10 @@ class FWF:
             - File directory to (zarr) file of todays hourly FWI codes
             - Needed for carry over to intilaze tomorrow's model run
         """
+
+        daily_ds = self.daily_loop()
         hourly_ds = self.hourly_loop()
+
         hourly_ds.attrs = self.attrs
 
         ## change all to float32 and give attributes to variabels
@@ -1643,8 +1640,10 @@ class FWF:
             + str(f"-{file_date}.zarr")
         )
         make_dir.mkdir(parents=True, exist_ok=True)
-        hourly_ds = self.rechunk(hourly_ds)
-        hourly_ds.to_zarr(make_dir, mode="w", consolidated=True)
+
+        comp = dict(zlib=True, complevel=9)
+        encoding = {var: comp for var in ds.data_vars}
+        hourly_ds.to_netcdf(make_dir, mode="w", encoding=encoding)
         print(f"wrote working {make_dir}")
 
         return str(make_dir)
@@ -1689,7 +1688,7 @@ class FWF:
         make_dir.mkdir(parents=True, exist_ok=True)
         daily_ds = self.rechunk(daily_ds)
         self.daily_ds = daily_ds
-        daily_ds.to_zarr(make_dir, mode="w", consolidated=True)
+        daily_ds.to_netcdf(make_dir, mode="w", consolidated=True)
         print(f"wrote working {make_dir}")
 
         return str(make_dir)
