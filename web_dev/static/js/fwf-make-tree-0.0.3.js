@@ -39,6 +39,7 @@ let fwfclicklocation;
 fwfclicklocation = new L.marker();
 
 
+var filedate =  tinital.slice(0,4) +  tinital.slice(5,7) +  tinital.slice(8,10) +  tinital.slice(11,13)
 
 var searchboxControl=createSearchboxControl();
 const control = new searchboxControl({
@@ -49,8 +50,10 @@ const control = new searchboxControl({
             { type: "link", name: "Weather Research Forecast Team", href: "https://weather.eos.ubc.ca/cgi-bin/index.cgi", icon: "icon-cloudy" },
             { type: "link", name: "Contact Inforamtion", href: "https://firesmoke.ca/contact/", icon: "icon-phone" },
             { type: "link", name: "Documentation", href: "https://cerodell.github.io/fwf-docs/index.html", icon: "icon-git" },
-            { type: "link", name: "fwf-d02.nc", href: "test.nc", download:"test", icon: "icon-data"},
-            { type: "link", name: "fwf-d03.nc", href: "test.nc", download:"test", icon: "icon-data"},
+            { type: "link", name: "fwf-daily-" + filedate +"-d02.nc", href: "test.nc", download:"test", icon: "icon-data"},
+            { type: "link", name: "fwf-hourly-" + filedate +"-d02.nc", href: "test.nc", download:"test", icon: "icon-data"},
+            { type: "link", name: "fwf-daily-" + filedate +"-d03.nc", href: "test.nc", download:"test", icon: "icon-data"},
+            { type: "link", name: "fwf-hourly-" + filedate +"-d03.nc", href: "test.nc", download:"test", icon: "icon-data"},
             { type: "text", name: "<br> The Fire Weather Forecasts are experimental in that they are produced by a system that is part of an ongoing research project. They are subject to uncertainties in both the weather forecasts and in the empirical formulas used to derive fuel moisture content."},
 
         ]

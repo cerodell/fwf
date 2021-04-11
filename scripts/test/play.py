@@ -12,12 +12,18 @@ from datetime import datetime, date, timedelta
 
 domain = "d02"
 date = pd.Timestamp("today")
-# date = pd.Timestamp(2021, 2, 20)
+date = pd.Timestamp(2021, 4, 10)
 forecast_date = date.strftime("%Y%m%d06")
 
 file_dir = str(fwf_zarr_dir) + f"/fwf-hourly-{domain}-{forecast_date}.zarr"
-ds = xr.open_zarr(file_dir)
+hourly_ds = xr.open_zarr(file_dir)
+file_dir = str(fwf_zarr_dir) + f"/fwf-daily-{domain}-{forecast_date}.zarr"
+daily_ds = xr.open_zarr(file_dir)
+daily_ds = daily_ds.rename_dims({"time": "Day"})
+daily_ds = daily_ds.rename_vars({"Time": "Day"})
 
+
+test = xr.merge([daily_ds, hourly_ds], compat="override")
 
 ds.SNOWC.attrs
 

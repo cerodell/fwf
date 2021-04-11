@@ -31,6 +31,7 @@ warnings.filterwarnings("ignore", category=RuntimeWarning)
 # """######### create forecast directory for webapge  #############"""
 wrf_model = "wrf4"
 forecast_date = pd.Timestamp("today").strftime("%Y%m%d00")
+
 make_dir = Path(f"/bluesky/archive/fireweather/forecasts/{forecast_date}/")
 make_dir.mkdir(parents=True, exist_ok=True)
 
