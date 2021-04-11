@@ -1635,7 +1635,7 @@ class FWF:
         # # ## Write and save DataArray (.zarr) file
         make_dir = Path(
             str(fwf_zarr_dir)
-            + str("/fwf-hourly-")
+            + str(f"/{file_date[:-2]}00/fwf-hourly-")
             + self.domain
             + str(f"-{file_date}.zarr")
         )
@@ -1681,10 +1681,11 @@ class FWF:
         # # ## Write and save DataArray (.zarr) file
         make_dir = Path(
             str(fwf_zarr_dir)
-            + str("/fwf-daily-")
+            + str(f"/{file_date[:-2]}00/fwf-daily-")
             + self.domain
-            + str(f"-{file_date}.zarr")
+            + str(f"-{file_date}.nc")
         )
+
         make_dir.mkdir(parents=True, exist_ok=True)
         daily_ds = self.rechunk(daily_ds)
         self.daily_ds = daily_ds

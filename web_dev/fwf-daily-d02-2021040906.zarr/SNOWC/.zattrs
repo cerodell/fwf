@@ -1,0 +1,10 @@
+{
+    "_ARRAY_DIMENSIONS": [
+        "time",
+        "south_north",
+        "west_east"
+    ],
+    "coordinates": "Time XTIME XLONG XLAT",
+    "description": "FLAG INDICATING SNOW COVERAGE (1 FOR SNOW COVER)",
+    "units": ""
+}
