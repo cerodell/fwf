@@ -17,7 +17,6 @@ from datetime import datetime, date, timedelta
 
 startTime = datetime.now()
 
-
 domain = "d03"
 avg_wrf = 61
 min_wrf = 31
