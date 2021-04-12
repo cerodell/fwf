@@ -26,7 +26,7 @@ __email__ = "crodell@eoas.ubc.ca"
 
 class FWF:
     """
-    Class to solve the Fire Weather Index System and the Fire Behavior Predicton System using output from a numerical weather model
+    Class to solve the Fire Weather Index System and the Fire Behavior Predictions System using output from a numerical weather model
 
     Parameters
     ----------
@@ -908,6 +908,37 @@ class FWF:
         return S, DSR
 
     def solve_fbp(self, hourly_ds):
+        """
+        Solves the Fire Behavior Predictions System at hourly intervals
+
+        Parameters
+        ----------
+        hourly_ds: DataSet
+            - Dataset of hourly forecast variables
+                - W: DataArray
+                    - Wind speed, km/hr
+                - F: DataArray
+                    - Fine fuel moisture code
+                - R: DataArray
+                    - Initial spread index
+
+        Returns
+        -------
+        hourly_ds: DataSet
+            - Datarray of
+                - FMC: DataArray
+                    - Foliar Moisture Content, %
+                - SFC: DataArray
+                    - Surface Fuel Consumption, kg m^{-2}
+                - TFC: DataArray
+                    - Total Fuel Consumption, kg m^{-2}
+                - CFB: DataArray
+                    - Crown Fraction Burned, %
+                - ROS: DataArray
+                    - Rate of Spread, m min^{-1}
+                - HFI: DataArray
+                    - Head Fire Intensity, kW m^{-1}
+        """
         FBPloopTime = datetime.now()
         print("Start of FBP")
         ## Open fuels converter
@@ -1432,18 +1463,6 @@ class FWF:
         ----------
             wrf_ds: DataSet
                 WRF dataset at 4-km spatial resolution and one hour tempolar resolution
-                    - tzdict:  dictionary
-                        - Dictionary of all times zones in North America and their respective offsets to UTC
-                    - zone_id: in
-                        - ID of model domain with hours off set from UTC
-                    - noon: int
-                        - 1200 local index based on ID
-                    - plus: int
-                        - 1300 local index based on ID
-                    - minus: int
-                        - 1100 local index based on ID
-                    - tzone_ds: dataset
-                        - Gridded 2D array of zone_id
 
         Returns
         -------
@@ -1545,7 +1564,7 @@ class FWF:
 
         Returns
         -------
-        daily_ds: DataSet
+        hourly_ds: DataSet
             A xarray DataSet with all the hourly FWI codes/indices solved
         """
 
