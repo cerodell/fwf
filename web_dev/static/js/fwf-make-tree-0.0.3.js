@@ -54,7 +54,7 @@ const control = new searchboxControl({
             { type: "link", name: "fwf-hourly-d02", href: "data/fwf-hourly-d02-"+ filedate+".tgz", download:"test", icon: "icon-data"},
             { type: "link", name: "fwf-daily-d03", href: "data/fwf-daily-d03-"+ filedate+".tgz", download:"test", icon: "icon-data"},
             { type: "link", name: "fwf-hourly-d03", href: "data/fwf-hourly-d03-"+ filedate+".tgz", download:"test", icon: "icon-data"},
-            { type: "link", name: "ReadMe", href: "https://cerodell.github.io/fwf-docs/index.html", icon: "icon-info" },
+            { type: "link", name: "ReadMe", href: "https://cerodell.github.io/fwf-docs/build/html/view.html#general", icon: "icon-info" },
             { type: "text", name: "<br> The Fire Weather Forecasts are experimental in that they are produced by a system that is part of an ongoing research project. They are subject to uncertainties in both the weather forecasts and in the empirical formulas used to derive fuel moisture content."},
 
         ]
