@@ -47,7 +47,8 @@ ds_hysplit = xr.open_dataset(filein)
 
 ## set plot title and save dir/name
 Plot_Title = "Model Domains in Geographic Projection"
-save_file = "/images/wrf4-hysplit-model-domains.png"
+# save_file = "/images/wrf4-hysplit-model-domains.png"
+save_file = "/images/fwf-model-domains.png"
 save_dir = str(data_dir) + save_file
 
 
@@ -101,27 +102,27 @@ ax.tick_params(axis="both", which="minor", labelsize=14)
 fig.suptitle(Plot_Title, fontsize=20, weight="bold", y=0.9)
 
 
-## get d01 lats and lon
-lats, lons = np.array(wrf_d01.XLAT), np.array(wrf_d01.XLONG)
-lats, lons = lats[0], lons[0]
-## mask out past international dateline.....catorpy hates the dateline
-lons = np.where(lons > -180, lons, np.nan)
-lons = np.where(lons > 0, lons - 360, lons)
-lons += 180
+# ## get d01 lats and lon
+# lats, lons = np.array(wrf_d01.XLAT), np.array(wrf_d01.XLONG)
+# lats, lons = lats[0], lons[0]
+# ## mask out past international dateline.....catorpy hates the dateline
+# lons = np.where(lons > -180, lons, np.nan)
+# lons = np.where(lons > 0, lons - 360, lons)
+# lons += 180
 
-## plot d01
-ax.plot(lons[0], lats[0], color="green", linewidth=2, zorder=8, alpha=1)
-ax.plot(lons[-1].T, lats[-1].T, color="green", linewidth=2, zorder=8, alpha=1)
-ax.plot(lons[:, 0], lats[:, 0], color="green", linewidth=2, zorder=8, alpha=1)
-ax.plot(
-    lons[:, -1].T,
-    lats[:, -1].T,
-    color="green",
-    linewidth=2,
-    zorder=8,
-    alpha=1,
-    label="36 km WRF",
-)
+# ## plot d01
+# ax.plot(lons[0], lats[0], color="green", linewidth=2, zorder=8, alpha=1)
+# ax.plot(lons[-1].T, lats[-1].T, color="green", linewidth=2, zorder=8, alpha=1)
+# ax.plot(lons[:, 0], lats[:, 0], color="green", linewidth=2, zorder=8, alpha=1)
+# ax.plot(
+#     lons[:, -1].T,
+#     lats[:, -1].T,
+#     color="green",
+#     linewidth=2,
+#     zorder=8,
+#     alpha=1,
+#     label="36 km WRF",
+# )
 
 
 ## get d02 lats and lon
@@ -140,7 +141,7 @@ ax.plot(
     linewidth=2,
     zorder=8,
     alpha=1,
-    label="12 km WRF",
+    label="12 km FWF",
 )
 
 
@@ -160,51 +161,51 @@ ax.plot(
     linewidth=2,
     zorder=8,
     alpha=1,
-    label="4 km WRF",
+    label="4 km FWF",
 )
 
 
-## make hysplit 12 km domain
-lats = np.arange(32, 70.2 + 0.1, 0.1)
-lons = np.arange(-160, -52.4 + 0.1, 0.1)
-## mesh for ploting...could do without
-lons, lats = np.meshgrid(lons, lats)
-lons += 180
+# ## make hysplit 12 km domain
+# lats = np.arange(32, 70.2 + 0.1, 0.1)
+# lons = np.arange(-160, -52.4 + 0.1, 0.1)
+# ## mesh for ploting...could do without
+# lons, lats = np.meshgrid(lons, lats)
+# lons += 180
 
-ax.plot(lons[0], lats[0], color="k", linewidth=2, zorder=8, alpha=1)
-ax.plot(lons[-1].T, lats[-1].T, color="k", linewidth=2, zorder=8, alpha=1)
-ax.plot(lons[:, 0], lats[:, 0], color="k", linewidth=2, zorder=8, alpha=1)
-ax.plot(
-    lons[:, -1].T,
-    lats[:, -1].T,
-    color="k",
-    linewidth=2,
-    zorder=8,
-    alpha=1,
-    label="12 km Hysplit",
-)
+# ax.plot(lons[0], lats[0], color="k", linewidth=2, zorder=8, alpha=1)
+# ax.plot(lons[-1].T, lats[-1].T, color="k", linewidth=2, zorder=8, alpha=1)
+# ax.plot(lons[:, 0], lats[:, 0], color="k", linewidth=2, zorder=8, alpha=1)
+# ax.plot(
+#     lons[:, -1].T,
+#     lats[:, -1].T,
+#     color="k",
+#     linewidth=2,
+#     zorder=8,
+#     alpha=1,
+#     label="12 km Hysplit",
+# )
 
 
-## make hysplit 4 km domain
-lats = np.arange(40, 70 + 0.1, 0.1)
-lons = np.arange(-143, -101 + 0.1, 0.1)
-## mesh for ploting...could do without
-lons, lats = np.meshgrid(lons, lats)
-lons += 180
+# ## make hysplit 4 km domain
+# lats = np.arange(40, 70 + 0.1, 0.1)
+# lons = np.arange(-143, -101 + 0.1, 0.1)
+# ## mesh for ploting...could do without
+# lons, lats = np.meshgrid(lons, lats)
+# lons += 180
 
-color = "tab:orange"
-ax.plot(lons[0], lats[0], color=color, linewidth=2, zorder=8, alpha=1)
-ax.plot(lons[-1].T, lats[-1].T, color=color, linewidth=2, zorder=8, alpha=1)
-ax.plot(lons[:, 0], lats[:, 0], color=color, linewidth=2, zorder=8, alpha=1)
-ax.plot(
-    lons[:, -1].T,
-    lats[:, -1].T,
-    color=color,
-    linewidth=2,
-    zorder=8,
-    alpha=1,
-    label="4 km Hysplit",
-)
+# color = "tab:orange"
+# ax.plot(lons[0], lats[0], color=color, linewidth=2, zorder=8, alpha=1)
+# ax.plot(lons[-1].T, lats[-1].T, color=color, linewidth=2, zorder=8, alpha=1)
+# ax.plot(lons[:, 0], lats[:, 0], color=color, linewidth=2, zorder=8, alpha=1)
+# ax.plot(
+#     lons[:, -1].T,
+#     lats[:, -1].T,
+#     color=color,
+#     linewidth=2,
+#     zorder=8,
+#     alpha=1,
+#     label="4 km Hysplit",
+# )
 
 
 ## add legend

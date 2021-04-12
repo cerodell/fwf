@@ -32,28 +32,33 @@ class FWF:
 
     wrf_file_dir: str
         - File directory to (zarr) file of WRF met variables to calculate FWI
-    hourly_file_dir: str
-        - File directory to (zarr) file of yestersdays hourly FWI codes
-        - Needed for carry over to intilaze the model
-    daily_file_dir: str
-        - File directory to (zarr) file of yestersdays daily FWI codes
-        - Needed for carry over to intilaze the model
+    domain: str
+        - the wrf domain tag, examples d03 or d02
+    wrf_model: str
+        - the wrf version, this will be removed i n future version assuming WRFv4 is being used
+
+    fbp_mode: boolean
+        - True, FBP will be resolved with FWI and both returned
+        - False, Only FWI will be resolved and returned
+
+    initialize: boolean
+        - True, initializing FWI iterations with default start-up values
+        - False, will search and use yesterdays forecast to initialize the FWI iterations
 
 
     Returns
     -------
 
     daily_ds: DataSet
-        Writes a DataSet (zarr) of daily FWI indices/codes
-        - Duff Moisture Code
-        - Drought Code
-        - Build Up Index
+        Writes a DataSet (zarr) of daily
+        - FWI indices/codes
+        - Associated Meterology
 
     hourly_ds: DataSet
-        Writes a DataSet (zarr) of daily FWI indices/codes
-        - Fine Fuel Moisture Code
-        - Initial Spread index
-        - Fire Weather Index
+        Writes a DataSet (zarr) of hourly
+        - FWI indices/codes
+        - Associated Meterology
+        - FBP products (if fbp_mode is True)
 
     """
 
@@ -919,6 +924,28 @@ class FWF:
         return S, DSR
 
     def solve_fbp(self, hourly_ds):
+        """
+        Calculates the hourly fire weather index and daily severity rating
+
+        ----------
+            W: datarray
+                - Wind speed, km/hr
+            F: datarray
+                - Fine fuel moisture code
+            R: datarray
+                - Initial spread index
+            S: datarray
+                - Fire weather index
+            DSR: datarray
+                - Daily severity rating
+
+        Returns
+        -------
+        S: datarray
+            - An datarray of FWI
+        DSR datarray
+            - An datarray of DSR
+        """
 
         ## Open fuels converter
         fc_df = pd.read_csv(str(data_dir) + "/fbp/fuel_converter.csv")
