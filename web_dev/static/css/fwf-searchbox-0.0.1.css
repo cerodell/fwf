@@ -121,7 +121,7 @@ ul {
 .panel {
   width: 300px;
   float: left;
-  height: 650px;
+  height: 680px;
   background: #fff;
   position: relative;
   display: none;
@@ -183,7 +183,6 @@ ul {
   margin-left: 25px;
   margin-right: 15px;
 
-
 }
 .para-text {
   /* width: 22px;
@@ -232,6 +231,10 @@ button:hover {
 }
 .icon-git {
   background: url(../img/fwf-GitHub-Mark-64px.png);
+  background-size: 100%;
+}
+.icon-info {
+  background: url(../img/fwf-info2.png);
   background-size: 100%;
 }
 .icon-data {

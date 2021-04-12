@@ -8,6 +8,7 @@ import xarray as xr
 from pathlib import Path
 
 from datetime import datetime, date, timedelta
+
 startTime = datetime.now()
 print("RUN STARTED AT: ", str(startTime))
 
@@ -18,7 +19,7 @@ from context import data_dir, xr_dir, wrf_dir, tzone_dir, root_dir, wrf_dir_new,
 import warnings
 
 from netCDF4 import Dataset
-from wrf import (getvar, omp_set_num_threads, omp_get_max_threads, ALL_TIMES)
+from wrf import getvar, omp_set_num_threads, omp_get_max_threads, ALL_TIMES
 
 
 wrf_dir = "/Volumes/cer/fireweather/data/FWF-WAN00CG-01/fwf-daily-2021020106-d03.zarr/"
@@ -38,26 +39,25 @@ ds = xr.open_zarr(wrf_dir)
 # test = np.power(e_full, ar)
 # print("power: ", datetime.now() - startTime)
 
-wrf_model = 'WAN00CP-04' 
+wrf_model = "WAN00CP-04"
 
 zarr_dir = f"/Users/rodell/Google Drive/My Drive/{wrf_model}/"
 save_dir = f"/Volumes/cer/fireweather/data/{wrf_model}/"
 
 
-date_range = pd.date_range('2018-05-20', '2018-05-31')
+date_range = pd.date_range("2018-05-20", "2018-05-31")
 
 
-for domain in ['d02', 'd03']:
-  for date in date_range:
-    startTime = datetime.now()
-    zarr_date     = date.strftime('%Y%m%d06')
-    zarr_file     = f'wrfout-{domain}-{zarr_date}.zarr'
-    print(zarr_file)
-    zarr_file_dir = str(zarr_dir) + zarr_file
-    ds = xr.open_zarr(zarr_file_dir)
-    ds.to_zarr(save_dir + zarr_file)
-    print("File Run Time: ", datetime.now() - startTime)
-
+for domain in ["d02", "d03"]:
+    for date in date_range:
+        startTime = datetime.now()
+        zarr_date = date.strftime("%Y%m%d06")
+        zarr_file = f"wrfout-{domain}-{zarr_date}.zarr"
+        print(zarr_file)
+        zarr_file_dir = str(zarr_dir) + zarr_file
+        ds = xr.open_zarr(zarr_file_dir)
+        ds.to_zarr(save_dir + zarr_file)
+        print("File Run Time: ", datetime.now() - startTime)
 
 
 # for path in pathlist:
@@ -70,28 +70,28 @@ for domain in ['d02', 'd03']:
 #         ## Open time zones dataset...each grids offset from utc time
 
 # # yesterdays_date, domain = '2021011606', 'd02'
-# # # hourly_file_dir = str(data_dir) + str(f"/FWF-WAN00CG-01/fwf-hourly-{yesterdays_date}-{domain}.zarr") 
+# # # hourly_file_dir = str(data_dir) + str(f"/FWF-WAN00CG-01/fwf-hourly-{yesterdays_date}-{domain}.zarr")
 
-# # hourly_file_dir =  str(f"/Users/rodell/Desktop/WAN00CG-01/wrfout-{domain}-{yesterdays_date}.zarr") 
+# # hourly_file_dir =  str(f"/Users/rodell/Desktop/WAN00CG-01/wrfout-{domain}-{yesterdays_date}.zarr")
 
 # # wrf_ds = xr.open_zarr(hourly_file_dir)
 # # tzone_ds = xr.open_dataset(str(tzone_dir) + f"/tzone_wrf_{domain}.nc")
 
 # # yesterdays_date, domain = '2021011906', 'd02'
-# # hourly_file_dir = str(data_dir) + str(f"/FWF-WAN00CG-01/fwf-daily-{yesterdays_date}-{domain}.zarr") 
+# # hourly_file_dir = str(data_dir) + str(f"/FWF-WAN00CG-01/fwf-daily-{yesterdays_date}-{domain}.zarr")
 # # previous_daily_ds = xr.open_zarr(hourly_file_dir)
 
 
 # # print("Create Daily ds")
 
-# ### Call on variables 
+# ### Call on variables
 # tzone = tzone_ds.Zone.values
 # shape = np.shape(wrf_ds.T[0,:,:])
 
-# ## create I, J for quick indexing 
+# ## create I, J for quick indexing
 # I,J = np.ogrid[:shape[0],:shape[1]]
 
-# ## determine index for looping based on length of time array and initial time 
+# ## determine index for looping based on length of time array and initial time
 # time_array = wrf_ds.Time.values
 # int_time = int(pd.Timestamp(time_array[0]).hour)
 # length = len(time_array)
@@ -102,14 +102,14 @@ for domain in ['d02', 'd03']:
 # files_ds = []
 # for i in index:
 #     # print(i)
-#     ## loop each variable 
+#     ## loop each variable
 #     mean_da = []
 #     for var in wrf_ds.data_vars:
 #         if var == 'SNOWC':
 #             var_array = wrf_ds[var].values
 #             noon = var_array[(i + tzone), I, J]
 #             day = np.array(wrf_ds.Time[i+1], dtype ='datetime64[D]')
-#             var_da = xr.DataArray(noon, name=var, 
+#             var_da = xr.DataArray(noon, name=var,
 #             dims=('south_north', 'west_east'), coords= wrf_ds.isel(time = i).coords)
 #             var_da["Time"] = day
 #             mean_da.append(var_da)
@@ -120,17 +120,15 @@ for domain in ['d02', 'd03']:
 #             noon_pluse = var_array[(i + tzone + 1), I, J]
 #             noon_mean = (noon_minus + noon + noon_pluse) / 3
 #             day = np.array(wrf_ds.Time[i+1], dtype ='datetime64[D]')
-#             var_da = xr.DataArray(noon_mean, name=var, 
+#             var_da = xr.DataArray(noon_mean, name=var,
 #                     dims=('south_north', 'west_east'), coords= wrf_ds.isel(time = i).coords)
 #             var_da["Time"] = day
 #             mean_da.append(var_da)
-    
+
 #     mean_ds = xr.merge(mean_da)
 #     files_ds.append(mean_ds)
 
 # daily_ds = xr.combine_nested(files_ds, 'time')
-
-
 
 
 # x_prev = 0
@@ -156,7 +154,7 @@ for domain in ['d02', 'd03']:
 # r_o_tomorrow_i = wrf_ds.r_o.values[index[0]+24] - daily_ds.r_o.values[0]
 # r_o_tomorrow = [r_o_tomorrow_i for i in range(len(num_days))]
 # r_o_tomorrow = np.stack(r_o_tomorrow)
-# r_o_tomorrow_da = xr.DataArray(r_o_tomorrow, name="r_o_tomorrow", 
+# r_o_tomorrow_da = xr.DataArray(r_o_tomorrow, name="r_o_tomorrow",
 #                 dims=('time','south_north', 'west_east'), coords= daily_ds.coords)
 
 # daily_ds["r_o_tomorrow"] = r_o_tomorrow_da
@@ -174,7 +172,6 @@ for domain in ['d02', 'd03']:
 #     previous_time = datetime.strptime(str(previous_time), '%Y-%m-%dT%H').strftime('%Y%m%d%H')
 
 
-
 # # daily_ds.T[0]
 # previous_times = np.datetime_as_string(previous_daily_ds.Time, unit='D')
 # index, = np.where(previous_times == current_time)
@@ -183,8 +180,7 @@ for domain in ['d02', 'd03']:
 # previous_daily_ds['r_o']
 
 
-
-# daily_ds['r_o'][0] = daily_ds['r_o'][0] 
+# daily_ds['r_o'][0] = daily_ds['r_o'][0]
 
 # # wrf_file_dir = str(data_dir) + "/test_wrf/wrfout-d02-2021011306.zarr"
 # # wrf_file_dir = '/Users/rodell/Google Drive/Shared drives/WAN00CP-04/18043000/wrfout_d03_2018-04-30_06:00:00'
@@ -197,11 +193,6 @@ for domain in ['d02', 'd03']:
 # # current_time = np.datetime_as_string(ds.Time[-1], unit='h')
 
 # # i = int(current_time[-2:])
-
-
-
-
-
 
 
 # previous_time ="2222"
@@ -246,7 +237,6 @@ for domain in ['d02', 'd03']:
 
 
 # slp = getvar(ds_object, "slp", timeidx  = ALL_TIMES)
-
 
 
 # timefile = ds.Times.values[0].decode('UTF-8')
@@ -313,20 +303,9 @@ for domain in ['d02', 'd03']:
 #     print("readwrf run time: ", datetime.now() - startTime)
 
 
-
-
-
-
-
-
-
-
-
-
-
 # def readwrf(filein, domain, save_dir, *args):
 #     """
-#     This function reads wrfout files and grabs required met variables for fire weather index calculations.  Writes/outputs as a xarray    
+#     This function reads wrfout files and grabs required met variables for fire weather index calculations.  Writes/outputs as a xarray
 
 #         - wind speed (km h-1)
 #         - temp (degC)
@@ -362,14 +341,14 @@ for domain in ['d02', 'd03']:
 #     nc_attrs            = wrf_file.ncattrs()
 
 
-#     ## van wangers nameing convention and description 
+#     ## van wangers nameing convention and description
 #     wrf_vars = {'T2':{'name': 'T','description': "2m TEMP", 'units': 'C' },
 #                 'SNOWNC':{'name': 'SNW','description': "ACCUMULATED TOTAL GRID SCALE SNOW AND ICE", 'units': 'cm' },
 #                 'SNOWC':{'name': 'SNOWC','description': "FLAG INDICATING SNOW COVERAGE (1 FOR SNOW COVER)", 'units': '' },
 #                 'SNOWH':{'name': 'SNOWH','description': "PHYSICAL SNOW DEPTH", 'units': 'm' },
 #                 'U10':{'name': 'U10','description': "U at 10 M", 'units': 'm s-1' },
 #                 'V10':{'name': 'V10','description': "V at 10 M", 'units': 'm s-1' }}
-    
+
 #     div_vars  = {'rh2':{'name': 'H','description': "2m RELATIVE HUMIDITY", 'units': '(%)'},
 #                     'wsp':{'name': 'W','description': "10m WIND SPEED", 'units': 'km h-1'},
 #                     'wdir':{'name': 'WD','description': "10m WIND DIRECTION", 'units': 'degrees'},
@@ -391,19 +370,19 @@ for domain in ['d02', 'd03']:
 #     ds_dict['XLONG'] = {'dims': ('south_north','west_east'), 'data': lngs}
 
 #     for key in wrf_vars:
-#         ds_dict[wrf_vars[key]['name']] = {'dims': ('time','south_north','west_east'), 
+#         ds_dict[wrf_vars[key]['name']] = {'dims': ('time','south_north','west_east'),
 #                                             'data': np.zeros((tdim,ydim,xdim)),
-#                                             'description': wrf_vars[key]['description'], 
+#                                             'description': wrf_vars[key]['description'],
 #                                             'units': wrf_vars[key]['units']}
 #     for key in div_vars:
 #         ds_dict[div_vars[key]['name']] = {'dims': ('time','south_north','west_east'),
 #                                                 'data': np.zeros((tdim,ydim,xdim)),
-#                                                 'description': div_vars[key]['description'], 
+#                                                 'description': div_vars[key]['description'],
 #                                                 'units': div_vars[key]['units']}
 
 #     for i in range(len(pathlist)):
 #         path_in_str = str(pathlist[i])
-#         ds = xr.open_dataset(path_in_str) 
+#         ds = xr.open_dataset(path_in_str)
 
 #         for key in wrf_vars:
 #             ds_dict[wrf_vars[key]['name']]['data'][i,:,:] = ds[key]
@@ -418,7 +397,7 @@ for domain in ['d02', 'd03']:
 #         ds_dict[div_vars['precip']['name']]['data'][i,:,:] = ds["RAINC"] + ds["RAINSH"] + ds["RAINNC"]
 
 
-#     ### dictionary to xarrays with van wangers nameing convention   
+#     ### dictionary to xarrays with van wangers nameing convention
 #     wrf_ds = xr.Dataset.from_dict(ds_dict)
 
 #     nc_attrs = wrf_file.ncattrs()
@@ -441,7 +420,6 @@ for domain in ['d02', 'd03']:
 #     print("readwrf run time: ", datetime.now() - startTime)
 
 #     return wrf_ds, xy_np
-
 
 
 # for domain in ['d02', 'd03']:

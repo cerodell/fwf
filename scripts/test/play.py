@@ -1,4 +1,5 @@
 import context
+import json
 import numpy as np
 import pandas as pd
 import xarray as xr
@@ -10,25 +11,44 @@ from context import data_dir, xr_dir, wrf_dir, tzone_dir, fwf_zarr_dir
 from datetime import datetime, date, timedelta
 
 
-domain = "d02"
-date = pd.Timestamp("today")
-date = pd.Timestamp(2021, 4, 10)
-forecast_date = date.strftime("%Y%m%d06")
+domain = "d03"
+# date = pd.Timestamp("today")
+forecast_date = pd.Timestamp(2021, 4, 10).strftime("%Y%m%d06")
+# forecast_date = pd.Timestamp("today").strftime("%Y%m%d00")
+filein = str(wrf_dir) + f"/{forecast_date}/"
 
-file_dir = str(fwf_zarr_dir) + f"/fwf-hourly-{domain}-{forecast_date}.zarr"
-hourly_ds = xr.open_zarr(file_dir)
-file_dir = str(fwf_zarr_dir) + f"/fwf-daily-{domain}-{forecast_date}.zarr"
-daily_ds = xr.open_zarr(file_dir)
-daily_ds = daily_ds.rename_dims({"time": "Day"})
-daily_ds = daily_ds.rename_vars({"Time": "Day"})
+hourly_ds = xr.open_zarr(
+    str(fwf_zarr_dir) + str("/fwf-hourly-") + domain + str(f"-{forecast_date}.zarr")
+)
+
+file_date = str(np.array(hourly_ds.Time[0], dtype="datetime64[h]"))
+file_date = datetime.strptime(str(file_date), "%Y-%m-%dT%H").strftime("%Y%m%d%H")
+
+# # ## Write and save DataArray (.zarr) file
+make_dir = Path(
+    str(fwf_zarr_dir)
+    # + str(f"/{file_date[:-2]}00/fwf-hourly-")
+    + str("/fwf-hourly-")
+    + domain
+    + str(f"-{file_date}-test.nc")
+)
+# make_dir.mkdir(parents=True, exist_ok=True)
+def rechunk(ds):
+    ds = ds.chunk(chunks="auto")
+    ds = ds.unify_chunks()
+    for var in list(ds):
+        ds[var].encoding = {}
+    return ds
 
 
-test = xr.merge([daily_ds, hourly_ds], compat="override")
-
-ds.SNOWC.attrs
-
-HFI = ds.isel(time=14)
-HFI.HFI.plot()
+# comp = dict(zlib=True, complevel=9)
+# encoding = {var: comp for var in hourly_ds.data_vars}
+hourly_ds = rechunk(hourly_ds)
+startTime = datetime.now()
+hourly_ds = hourly_ds.load()
+hourly_ds.to_netcdf(make_dir, mode="w")
+print("Write Time: ", datetime.now() - startTime)
+print(f"wrote working {make_dir}")
 
 
 # print(ds.P)
