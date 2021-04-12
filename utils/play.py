@@ -14,17 +14,48 @@ print("RUN STARTED AT: ", str(startTime))
 
 from utils.fwf import FWF
 from utils.read_wrfout import readwrf
+import matplotlib.pyplot as plt
 
-from context import data_dir, xr_dir, wrf_dir, tzone_dir, root_dir, wrf_dir_new, nc_dir
+from context import data_dir, xr_dir, wrf_dir, tzone_dir, root_dir, nc_dir
 import warnings
 
 from netCDF4 import Dataset
 from wrf import getvar, omp_set_num_threads, omp_get_max_threads, ALL_TIMES
 
 
-wrf_dir = "/Volumes/cer/fireweather/data/FWF-WAN00CG-01/fwf-daily-2021020106-d03.zarr/"
+df = pd.read_csv("/Users/rodell/Downloads/SFCTC.csv", header=None)
+tem = df[9].values
+tem_1 = tem[:96]
+tem_2 = tem[96:]
 
-ds = xr.open_zarr(wrf_dir)
+
+day = df[1].values
+time = df[2].values
+date_time = day + time
+df["time"] = pd.to_datetime(date_time)
+
+fig = plt.figure(figsize=[8, 4])
+plt.plot(df["time"], tem)
+
+df = pd.read_csv("/Users/rodell/Downloads/PCPTOT.csv", header=None)
+tem = df[9].cumsum()
+tem_1 = tem[:96]
+tem_2 = tem[96:]
+day = df[1].values
+time = df[2].values
+date_time = day + time
+df["time"] = pd.to_datetime(date_time)
+
+fig = plt.figure(figsize=[8, 4])
+plt.plot(df["time"], tem)
+
+
+new_list = [elm + str(index) for index, elm in enumerate(my_list)]
+
+
+# wrf_dir = "/Volumes/cer/fireweather/data/FWF-WAN00CG-01/fwf-daily-2021020106-d03.zarr/"
+
+# ds = xr.open_zarr(wrf_dir)
 
 
 # ar = np.random.rand(1200,20000)

@@ -44,7 +44,7 @@ for domain in domains:
     print(wrf_file_dir)
 
     # """######### Open wrf_out.nc and write  new hourly/daily .zarr files #############"""
-    coeff = FWF(wrf_file_dir, domain, wrf_model, initialize=True)
+    coeff = FWF(wrf_file_dir, domain, wrf_model, fbp_mode=True, initialize=True)
 
     coeff.daily()
     coeff.hourly()

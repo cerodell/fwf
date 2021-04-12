@@ -24,12 +24,11 @@ import warnings
 __author__ = "Christopher Rodell"
 __email__ = "crodell@eoas.ubc.ca"
 
-# ignore warnings by message
-warnings.filterwarnings("ignore", message="invalid value encountered in power")
-warnings.filterwarnings("ignore", message="invalid value encountered in log")
-warnings.filterwarnings("ignore", message="divide by zero encountered in log")
+# ignore RuntimeWarning
+warnings.filterwarnings("ignore", category=RuntimeWarning)
+
 wrf_model = "wrf3"
-date_range = pd.date_range("2019-04-01", "2019-04-01")
+date_range = pd.date_range("2018-04-02", "2018-04-02")
 
 # """######### get directory to yesterdays hourly/daily .zarr files.  #############"""
 for date in date_range:
@@ -41,12 +40,12 @@ for date in date_range:
         # """######### get directory to todays wrf_out .nc files.  #############"""
 
         # wrf_file_dir = str(wrf_dir) + f"/{forecast_date}/"
-        # wrf_file_dir = str(wrf_dir) + f"/wrfout-{domain}-{forecast_date[:-2]}06.zarr"
-        wrf_file_dir = str(gog_dir) + f"/wrfout-{domain}-{forecast_date[:-2]}06.zarr"
+        wrf_file_dir = str(wrf_dir) + f"/wrfout-{domain}-{forecast_date[:-2]}06.zarr"
+        # wrf_file_dir = str(gog_dir) + f"/wrfout-{domain}-{forecast_date[:-2]}06.zarr"
         print(wrf_file_dir)
 
         # """######### Open wrf_out.nc and write  new hourly/daily .zarr files #############"""
-        coeff = FWF(wrf_file_dir, domain, wrf_model, initialize=True)
+        coeff = FWF(wrf_file_dir, domain, wrf_model, fbp_mode=False, initialize=False)
 
         coeff.daily()
         coeff.hourly()

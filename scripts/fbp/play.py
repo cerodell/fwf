@@ -15,10 +15,31 @@ from datetime import datetime, date, timedelta
 
 domain = "d02"
 wrf_model = "wrf3"
-date = pd.Timestamp(2019, 10, 1)
+date = pd.Timestamp(2018, 4, 1)
 forecast_date = date.strftime("%Y%m%d06")
+date = pd.Timestamp(2019, 10, 1)
 intercomp_today_dir = date.strftime("%Y%m%d")
 
+
+# hourly_ds = xr.open_zarr(
+#     str(fwf_zarr_dir) + f"/fwf-hourly-{domain}-{forecast_date}.zarr"
+# )
+# daily_ds = xr.open_zarr(
+#     str(fwf_zarr_dir) + f"/fwf-daily-{domain}-{forecast_date}.zarr"
+# )
+
+
+# P_h = hourly_ds.P.values
+# maxindex = P_h.argmax()
+# ind_h = np.unravel_index(P_h.argmax(), P_h.shape)
+# P_d = daily_ds.P.values
+# maxindex = P_d.argmax()
+ind_d = np.unravel_index(P_d.argmax(), P_d.shape)
+
+
+static_ds = xr.open_zarr(
+    str(data_dir) + f"/static/static-vars-{wrf_model}-{domain}.zarr"
+)
 
 ds = xr.open_zarr(
     str(data_dir) + "/intercomp/" + f"intercomp-{domain}-{intercomp_today_dir}.zarr",
@@ -43,20 +64,12 @@ ax = fig.add_subplot(1, 1, 1)
 ax.plot(date_range, ds.rh.values)
 ax.plot(date_range, ds.rh_day1.values)
 
-## Path to fuels data terrain data
-static_filein = str(data_dir) + f"/static/static-vars-{wrf_model}-{domain}.zarr"
-## Open datsets: gridded static and FWF
-static_ds = xr.open_zarr(static_filein)
+# ## Path to fuels data terrain data
+# static_filein = str(data_dir) + f"/static/static-vars-{wrf_model}-{domain}.zarr"
+# ## Open datsets: gridded static and FWF
+# static_ds = xr.open_zarr(static_filein)
 
-ds = xr.open_zarr(str(vol_dir) + "/fwf-hourly-d02-2019040100-2019100100.zarr")
-
-
-# hourly_ds = xr.open_zarr(
-#     str(fwf_zarr_dir) + f"/fwf-hourly-{domain}-{forecast_date}.zarr"
-# )
-# ds_daily = xr.open_zarr(
-#     str(fwf_zarr_dir) + f"/fwf-daily-{domain}-{forecast_date}.zarr"
-# )
+# ds = xr.open_zarr(str(vol_dir) + "/fwf-hourly-d02-2019040100-2019100100.zarr")
 
 
 # hourly_ds['time'] = hourly_ds.Time.values

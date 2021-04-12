@@ -107,7 +107,7 @@ else:
 ########################
 ### FBP
 ########################
-fig = plt.figure(figsize=[10, 10])
+fig = plt.figure(figsize=[10, 12])
 if len(date_range) > 1:
     fig.suptitle(
         f'Comp of FWF vs NRCAN at {len(wmo_of_int)} Weather Stations \n {date_range[0].strftime("%Y%m%d")} - {date_range[-1].strftime("%Y%m%d")}',
@@ -124,7 +124,7 @@ length = len(var_list)
 for i in range(length):
     var = var_list[i]
     ax = fig.add_subplot(length + 1, 1, i + 1)
-    # df_stats_i = df_stats[~np.isnan(df_stats[var])]
+    df_stats_i = df_stats[~np.isnan(df_stats[var])]
     fwf_array = df_stats_i[f"{var}_day1"].values
     ncr_array = df_stats_i[f"{var}"].values
 
@@ -175,14 +175,14 @@ for i in range(length):
 ax.set_xlabel("Time")
 # plt.gcf().autofmt_xdate()
 
-fig.tight_layout()
+fig.tight_layout(h_pad=0.1)
 fig.savefig(str(data_dir) + f"/images/fbp/fbp-{domain}-{year}-mean.png")
 # plt.close()
 
 ########################
 ### FWI
 ########################
-fig = plt.figure(figsize=[10, 10])
+fig = plt.figure(figsize=[10, 12])
 if len(date_range) > 1:
     fig.suptitle(
         f'Comp of FWF vs NRCAN at {len(wmo_of_int)} Weather Stations \n {date_range[0].strftime("%Y%m%d")} - {date_range[-1].strftime("%Y%m%d")}',
@@ -245,17 +245,24 @@ for i in range(length):
     else:
         pass
 
+    if var == "dc":
+        ax.set_ylim([0, 850])
+    elif var == "ffmc":
+        ax.set_ylim([0, 120])
+    else:
+        pass
+
 ax.set_xlabel("Time")
 # plt.gcf().autofmt_xdate()
 
-fig.tight_layout()
+fig.tight_layout(h_pad=0.1)
 fig.savefig(str(data_dir) + f"/images/fbp/fwi-{domain}-{year}-mean.png")
 # plt.close()
 
 ########################
 ### Met
 ########################
-fig = plt.figure(figsize=[10, 10])
+fig = plt.figure(figsize=[10, 12])
 if len(date_range) > 1:
     fig.suptitle(
         f'Comp of FWF vs NRCAN at {len(wmo_of_int)} Weather Stations \n {date_range[0].strftime("%Y%m%d")} - {date_range[-1].strftime("%Y%m%d")}',
@@ -317,11 +324,17 @@ for i in range(length):
         )
     else:
         pass
+    if var == "rh":
+        ax.set_ylim([20, 110])
+    elif var == "wdir":
+        ax.set_ylim([0, 400])
+    else:
+        pass
 
 ax.set_xlabel("Time")
 # plt.gcf().autofmt_xdate()
 
-fig.tight_layout()
+fig.tight_layout(h_pad=0.1)
 fig.savefig(str(data_dir) + f"/images/fbp/met-{domain}-{year}-mean.png")
 # plt.close()
 
@@ -369,7 +382,7 @@ fig.savefig(str(data_dir) + f"/images/fbp/met-{domain}-{year}-mean.png")
 #     # ax.legend()
 # plt.gcf().autofmt_xdate()
 
-# fig.tight_layout()
+# fig.tight_layout(h_pad = 0.1)
 
 # fig.savefig(str(data_dir) + f"/images/fbp/fwb-{domain}-mean.png")
 # plt.close()
@@ -402,7 +415,7 @@ fig.savefig(str(data_dir) + f"/images/fbp/met-{domain}-{year}-mean.png")
 #     ax.set_title(var + f' p_r: {r}  rmse: {rmse}', fontsize=12)
 #     ax.set_xlabel('FWF', fontsize=8)
 #     ax.set_ylabel('NRCAN', fontsize=8)
-# fig.tight_layout()
+# fig.tight_layout(h_pad = 0.1)
 # plt.show()
 
 
