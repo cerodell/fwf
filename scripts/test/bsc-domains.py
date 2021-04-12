@@ -46,7 +46,7 @@ filein = str(data_dir) + "/domain/dispersion.nc"
 ds_hysplit = xr.open_dataset(filein)
 
 ## set plot title and save dir/name
-Plot_Title = "Model Domains in Mercator Projection"
+Plot_Title = "Model Domains in Geographic Projection"
 save_file = "/images/wrf4-hysplit-model-domains.png"
 save_dir = str(data_dir) + save_file
 
@@ -59,10 +59,10 @@ states_provinces = cfeature.NaturalEarthFeature(
     facecolor="none",
 )
 
-
-# box = sgeom.box(minx=120, maxx=260, miny=15, maxy=80)
-# x0, y0, x1, y1 = box.bounds
-
+## chose where to center longitude..
+##..by shiftting 180 you can plot over international dateline
+## NOTE once you do this you also have to shift you longitdues in your data
+## i did this by adding 180 to the lons...see line 107-110 as example
 proj = ccrs.PlateCarree(central_longitude=180)
 # box_proj = ccrs.PlateCarree(central_longitude=0)
 
@@ -81,7 +81,6 @@ gl = ax.gridlines(
 )
 gl.xlabels_top = False
 gl.xlocator = mticker.FixedLocator(list(np.arange(-180, 180, 10)))
-
 ax.add_feature(cfeature.LAND, zorder=1)
 ax.add_feature(cfeature.LAKES, zorder=1)
 ax.add_feature(cfeature.OCEAN, zorder=1)
@@ -92,8 +91,6 @@ ax.set_xlabel("Longitude", fontsize=18)
 ax.set_ylabel("Latitude", fontsize=18)
 
 ## create tick mark labels and style
-# ax.set_xticks(list(np.arange(-180,0, 10)), crs=ccrs.PlateCarree())
-# ax.set_yticks(list(np.arange(0, 90, 10)), crs=ccrs.PlateCarree())
 ax.yaxis.tick_right()
 ax.yaxis.set_label_position("right")
 ax.tick_params(axis="both", which="major", labelsize=14)
@@ -107,10 +104,11 @@ fig.suptitle(Plot_Title, fontsize=20, weight="bold", y=0.9)
 ## get d01 lats and lon
 lats, lons = np.array(wrf_d01.XLAT), np.array(wrf_d01.XLONG)
 lats, lons = lats[0], lons[0]
+## mask out past international dateline.....catorpy hates the dateline
 lons = np.where(lons > -180, lons, np.nan)
 lons = np.where(lons > 0, lons - 360, lons)
-## mask out past international dateline.....catorpy hates the dateline
 lons += 180
+
 ## plot d01
 ax.plot(lons[0], lats[0], color="green", linewidth=2, zorder=8, alpha=1)
 ax.plot(lons[-1].T, lats[-1].T, color="green", linewidth=2, zorder=8, alpha=1)
@@ -208,12 +206,6 @@ ax.plot(
     label="4 km Hysplit",
 )
 
-
-# ax.set_extent([x0, x1, y0, y1], box_proj)
-
-## set map bounds
-# ax.set_xlim([-179, -1])
-# ax.set_ylim([10, 90])
 
 ## add legend
 ax.legend(
