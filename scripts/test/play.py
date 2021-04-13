@@ -10,10 +10,12 @@ from utils.read_wrfout import readwrf
 from context import data_dir, xr_dir, wrf_dir, tzone_dir, fwf_zarr_dir
 from datetime import datetime, date, timedelta
 
+startTime = datetime.now()
+
 
 domain = "d03"
 # date = pd.Timestamp("today")
-forecast_date = pd.Timestamp(2021, 4, 10).strftime("%Y%m%d06")
+forecast_date = pd.Timestamp(2021, 4, 12).strftime("%Y%m%d06")
 # forecast_date = pd.Timestamp("today").strftime("%Y%m%d00")
 filein = str(wrf_dir) + f"/{forecast_date}/"
 
@@ -21,8 +23,8 @@ hourly_ds = xr.open_zarr(
     str(fwf_zarr_dir) + str("/fwf-hourly-") + domain + str(f"-{forecast_date}.zarr")
 )
 
-file_date = str(np.array(hourly_ds.Time[0], dtype="datetime64[h]"))
-file_date = datetime.strptime(str(file_date), "%Y-%m-%dT%H").strftime("%Y%m%d%H")
+# file_date = str(np.array(hourly_ds.Time[0], dtype="datetime64[h]"))
+# file_date = datetime.strptime(str(file_date), "%Y-%m-%dT%H").strftime("%Y%m%d%H")
 
 # # ## Write and save DataArray (.zarr) file
 make_dir = Path(
@@ -30,12 +32,15 @@ make_dir = Path(
     # + str(f"/{file_date[:-2]}00/fwf-hourly-")
     + str("/fwf-hourly-")
     + domain
-    + str(f"-{file_date}-test.nc")
+    + str(f"-{forecast_date}-test.nc")
 )
+
+ds = xr.open_dataset(make_dir)
+HFI = ds.HFI.values
 # make_dir.mkdir(parents=True, exist_ok=True)
 def rechunk(ds):
-    ds = ds.chunk(chunks="auto")
-    ds = ds.unify_chunks()
+    # ds = ds.chunk(chunks="auto")
+    # ds = ds.unify_chunks()
     for var in list(ds):
         ds[var].encoding = {}
     return ds
@@ -44,11 +49,19 @@ def rechunk(ds):
 # comp = dict(zlib=True, complevel=9)
 # encoding = {var: comp for var in hourly_ds.data_vars}
 hourly_ds = rechunk(hourly_ds)
-startTime = datetime.now()
+# comp = dict(zlib=True, complevel=9)
+# encoding = {var: comp for var in hourly_ds.data_vars}
+loadTime = datetime.now()
+print("Start Load ", datetime.now())
 hourly_ds = hourly_ds.load()
+print("Load Time: ", datetime.now() - loadTime)
+
+writeTime = datetime.now()
+print("Start Write ", datetime.now())
 hourly_ds.to_netcdf(make_dir, mode="w")
-print("Write Time: ", datetime.now() - startTime)
-print(f"wrote working {make_dir}")
+print("Write Time: ", datetime.now() - writeTime)
+
+print("Total Time: ", datetime.now() - startTime)
 
 
 # print(ds.P)
