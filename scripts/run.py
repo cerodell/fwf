@@ -2,7 +2,7 @@
 
 """
 Runs the FWF model for each model domain.
-Saves dataset as zarr file contains all fwi and associated met products
+Saves dataset as nc file containing all fwi/fbp and associated met products
 
 """
 import context

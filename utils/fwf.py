@@ -1624,6 +1624,7 @@ class FWF:
         return daily_ds
 
     def rechunk(self, ds):
+        ds = ds.load()
         ds = ds.chunk(chunks="auto")
         ds = ds.unify_chunks()
         return ds
