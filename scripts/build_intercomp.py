@@ -22,7 +22,7 @@ from wrf import ll_to_xy, xy_to_ll
 from datetime import datetime, date, timedelta
 from utils.make_intercomp import daily_merge_ds
 
-from context import data_dir, fwf_zarr_dir, tzone_dir
+from context import data_dir, fwf_dir, tzone_dir
 
 startTime = datetime.now()
 print("RUN STARTED AT: ", str(startTime))

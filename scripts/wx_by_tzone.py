@@ -25,7 +25,7 @@ from wrf import ll_to_xy, xy_to_ll
 from datetime import datetime, date, timedelta
 from utils.make_intercomp import daily_merge_ds
 
-from context import data_dir, root_dir, tzone_dir, fwf_zarr_dir
+from context import data_dir, root_dir, tzone_dir, fwf_dir
 
 startTime = datetime.now()
 print("RUN STARTED AT: ", str(startTime))
@@ -76,29 +76,34 @@ obs_ds = xr.concat([obs_d2_ds, obs_d3_ds], dim="wmo")
 obs_ds = obs_ds.sel(time=slice(obs_date_int, obs_date))
 
 ## Open todays datasets of both domains
-hourly_file_dir = str(fwf_zarr_dir) + str(f"/fwf-hourly-d02-{forecast_date}.zarr")
-hourly_d2_ds = xr.open_zarr(hourly_file_dir)
+hourly_file_dir = str(fwf_dir) + str(f"/fwf-hourly-d02-{forecast_date}.nc")
+hourly_d2_ds = xr.open_dataset(hourly_file_dir)
 daily_d2_ds = daily_merge_ds(forecast_date, "d02", wrf_model)
 
-hourly_file_dir = str(fwf_zarr_dir) + str(f"/fwf-hourly-d03-{forecast_date}.zarr")
-hourly_d3_ds = xr.open_zarr(hourly_file_dir)
+hourly_file_dir = str(fwf_dir) + str(f"/fwf-hourly-d03-{forecast_date}.nc")
+hourly_d3_ds = xr.open_dataset(hourly_file_dir)
 daily_d3_ds = daily_merge_ds(forecast_date, "d03", wrf_model)
 
 ## Open yesterdays datasets of both domains
-hourly_file_dir = str(fwf_zarr_dir) + str(
-    f"/fwf-hourly-d02-{yesterday_forecast_date}.zarr"
-)
-hourly_d2_yester_ds = xr.open_zarr(hourly_file_dir)
+hourly_file_dir = str(fwf_dir) + str(f"/fwf-hourly-d02-{yesterday_forecast_date}.nc")
+hourly_d2_yester_ds = xr.open_dataset(hourly_file_dir)
 daily_d2_yester_ds = daily_merge_ds(yesterday_forecast_date, "d02", wrf_model)
 
-hourly_file_dir = str(fwf_zarr_dir) + str(
-    f"/fwf-hourly-d03-{yesterday_forecast_date}.zarr"
-)
-hourly_d3_yester_ds = xr.open_zarr(hourly_file_dir)
+hourly_file_dir = str(fwf_dir) + str(f"/fwf-hourly-d03-{yesterday_forecast_date}.nc")
+hourly_d3_yester_ds = xr.open_dataset(hourly_file_dir)
 daily_d3_yester_ds = daily_merge_ds(yesterday_forecast_date, "d03", wrf_model)
 
 
+def rechunk(ds):
+    ds = ds.chunk(chunks="auto")
+    ds = ds.unify_chunks()
+    # for var in list(ds):
+    #     ds[var].encoding = {}
+    return ds
+
+
 def reindex_ds(ds_d2, ds_d3, info):
+    ds_d2, ds_d3 = rechunk(ds_d2), rechunk(ds_d3)
     ds_d2["time"], ds_d3["time"] = (
         ds_d2.Time.astype("datetime64[h]"),
         ds_d3.Time.astype("datetime64[h]"),

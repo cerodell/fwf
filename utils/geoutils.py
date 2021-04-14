@@ -115,9 +115,9 @@ def mycontourf_to_geojson(
         geojson_filepath=f"/bluesky/fireweather/fwf/data/geojson/{folderdate}/{geojson_filepath}.geojson",
     )
 
-    print(
-        f"wrote geojson to: /bluesky/fireweather/fwf/data/geojson/{folderdate}/{geojson_filepath}.geojson"
-    )
+    # print(
+    #     f"wrote geojson to: /bluesky/fireweather/fwf/data/geojson/{folderdate}/{geojson_filepath}.geojson"
+    # )
 
     return
 

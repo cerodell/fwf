@@ -13,26 +13,24 @@ import matplotlib.pyplot as plt
 from wrf import ll_to_xy, xy_to_ll
 from datetime import datetime, date, timedelta
 
-from context import data_dir, root_dir, tzone_dir, fwf_zarr_dir
+from context import data_dir, root_dir, fwf_dir
 
 
 def daily_merge_ds(date_to_merge, domain, wrf_model):
 
-    hourly_file_dir = str(fwf_zarr_dir) + str(
-        f"/fwf-hourly-{domain}-{date_to_merge}.zarr"
-    )
-    daily_file_dir = str(fwf_zarr_dir) + str(
-        f"/fwf-daily-{domain}-{date_to_merge}.zarr"
-    )
+    hourly_file_dir = str(fwf_dir) + str(f"/fwf-hourly-{domain}-{date_to_merge}.nc")
+    daily_file_dir = str(fwf_dir) + str(f"/fwf-daily-{domain}-{date_to_merge}.nc")
     ### Open datasets
     my_dir = Path(hourly_file_dir)
-    if my_dir.is_dir():
-        hourly_ds = xr.open_zarr(hourly_file_dir)
+    if my_dir.is_file():
+        hourly_ds = xr.open_dataset(hourly_file_dir)
 
-        daily_ds = xr.open_zarr(daily_file_dir)
+        daily_ds = xr.open_dataset(daily_file_dir)
         ### Call on variables
-        tzone_ds = xr.open_zarr(str(tzone_dir) + f"/tzone_{wrf_model}_{domain}.zarr")
-        tzone = tzone_ds.Zone.values
+        static_ds = xr.open_dataset(
+            str(data_dir) + f"/static/static-vars-{wrf_model}-{domain}.nc"
+        )
+        tzone = static_ds.ZoneDT.values
         shape = tzone.shape
         ## create I, J for quick indexing
         I, J = np.ogrid[: shape[0], : shape[1]]

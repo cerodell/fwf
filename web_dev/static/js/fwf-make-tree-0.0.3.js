@@ -46,7 +46,7 @@ const control = new searchboxControl({
     sidebarMenuItems: {
         Items: [
             { type: "link", name: "Smoke Forecasts", href: "https://firesmoke.ca/", icon: "icon-fire" },
-            { type: "link", name: "Weather Research Forecast Team", href: "https://weather.eos.ubc.ca/cgi-bin/index.cgi", icon: "icon-cloudy" },
+            { type: "link", name: "Weather Forecast Research Team", href: "https://weather.eos.ubc.ca/cgi-bin/index.cgi", icon: "icon-cloudy" },
             { type: "link", name: "Contact Inforamtion", href: "https://firesmoke.ca/contact/", icon: "icon-phone" },
             { type: "link", name: "Documentation", href: "https://cerodell.github.io/fwf-docs/index.html", icon: "icon-git" },
             { type: "link", name: "fwf-d02.nc", href: "test.nc", download:"test", icon: "icon-data"},

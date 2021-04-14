@@ -23,7 +23,7 @@ from wrf import ll_to_xy, xy_to_ll
 from datetime import datetime, date, timedelta
 from utils.make_intercomp import daily_merge_ds
 
-from context import data_dir, root_dir, tzone_dir, fwf_zarr_dir
+from context import data_dir, root_dir, tzone_dir, fwf_dir
 
 
 # Slicing with an out-of-order index is generating 124 times more chunks

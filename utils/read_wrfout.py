@@ -122,13 +122,17 @@ def readwrf(filein, domain, wright):
     for nc_attr in nc_attrs:
         wrf_ds.attrs[nc_attr] = repr(wrf_file.getncattr(nc_attr))
 
+    wrf_ds = wrf_ds.load()
+    for var in list(wrf_ds):
+        wrf_ds[var].encoding = {}
+
     if wright == True:
         print(wrf_ds)
         time = np.array(wrf_ds.Time.dt.strftime("%Y-%m-%dT%H"))
         timestamp = datetime.strptime(str(time[0]), "%Y-%m-%dT%H").strftime("%Y%m%d%H")
 
-        wrf_ds_dir = str(save_dir) + str(f"wrfout-{domain}-{timestamp}.zarr")
-        wrf_ds.to_zarr(wrf_ds_dir, mode="w")
+        wrf_ds_dir = str(save_dir) + str(f"wrfout-{domain}-{timestamp}.nc")
+        wrf_ds.to_netcdf(wrf_ds_dir, mode="w")
         print(f"wrote {wrf_ds_dir}")
     else:
         pass

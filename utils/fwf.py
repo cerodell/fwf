@@ -7,7 +7,6 @@ Class to solve the Fire Weather Indices using output from a numerical weather mo
 import context
 import math
 import json
-import zarr
 import numpy as np
 import pandas as pd
 import xarray as xr
@@ -18,7 +17,7 @@ from pathlib import Path
 # from netCDF4 import Dataset
 from datetime import datetime
 from utils.read_wrfout import readwrf
-from context import data_dir, fwf_zarr_dir
+from context import data_dir, fwf_dir
 
 __author__ = "Christopher Rodell"
 __email__ = "crodell@eoas.ubc.ca"
@@ -26,35 +25,40 @@ __email__ = "crodell@eoas.ubc.ca"
 
 class FWF:
     """
-    Class to solve the Fire Weather Indices using output from a numerical weather model
+    Class to solve the Fire Weather Index System and the Fire Behavior Predictions System using output from a numerical weather model
 
     Parameters
     ----------
 
     wrf_file_dir: str
-        - File directory to (zarr) file of WRF met variables to calculate FWI
-    hourly_file_dir: str
-        - File directory to (zarr) file of yestersdays hourly FWI codes
-        - Needed for carry over to intilaze the model
-    daily_file_dir: str
-        - File directory to (zarr) file of yestersdays daily FWI codes
-        - Needed for carry over to intilaze the model
+        - File directory to (nc) file of WRF met variables to calculate FWI
+    domain: str
+        - the wrf domain tag, examples d03 or d02
+    wrf_model: str
+        - the wrf version, this will be removed in future versions assuming WRFv4 is being used
+
+    fbp_mode: boolean
+        - True, FBP will be resolved with FWI and both returned
+        - False, Only FWI will be resolved and returned
+
+    initialize: boolean
+        - True, initializing FWI iterations with default start-up values
+        - False, will search and use yesterdays forecast to initialize the FWI iterations
 
 
     Returns
     -------
 
     daily_ds: DataSet
-        Writes a DataSet (zarr) of daily FWI indices/codes
-        - Duff Moisture Code
-        - Drought Code
-        - Build Up Index
+        Writes a DataSet (nc) of daily
+        - FWI indices/codes
+        - Associated Meterology
 
     hourly_ds: DataSet
-        Writes a DataSet (zarr) of daily FWI indices/codes
-        - Fine Fuel Moisture Code
-        - Initial Spread index
-        - Fire Weather Index
+        Writes a DataSet (nc) of hourly
+        - FWI indices/codes
+        - Associated Meterology
+        - FBP products (if fbp_mode is True)
 
     """
 
@@ -70,12 +74,13 @@ class FWF:
         """
         ### Read then open WRF dataset
         if wrf_file_dir.endswith(".nc"):
-            print("Re-run using netcdf file")
+            print("Re-run using nc file")
             wrf_ds = xr.open_dataset(wrf_file_dir)
         else:
             print("New-run, use readwrf to get vars from nc files")
             wrf_ds = readwrf(wrf_file_dir, domain, wright=False)
 
+        wrf_ds = wrf_ds.load()
         ## Get dataset attributes
         self.attrs = wrf_ds.attrs
 
@@ -115,12 +120,12 @@ class FWF:
         self.L_f = L_f
 
         ## Open Data Attributes for writing
-        with open(str(data_dir) + f"/json/fwf-var-attrs.json", "r") as fp:
+        with open(str(data_dir) + f"/json/fwf-attrs.json", "r") as fp:
             self.var_dict = json.load(fp)
 
         ## Open gridded static
         static_ds = xr.open_dataset(
-            str(data_dir) + f"/static/static-vars-{wrf_model}-{domain}.zarr"
+            str(data_dir) + f"/static/static-vars-{wrf_model}-{domain}.nc"
         )
 
         ## Define Static Variables for FPB
@@ -145,6 +150,12 @@ class FWF:
 
         ### Create an hourly and daily datasets for use with their respected codes/indices
         self.daily_ds = self.create_daily_ds(wrf_ds)
+        for var in self.hourly_ds.data_vars:
+            if var in {"SNW", "SNOWH", "U10", "V10"}:
+                pass
+            else:
+                self.daily_ds[var].attrs = self.hourly_ds[var].attrs
+        self.daily_ds["r_o_tomorrow"].attrs = self.daily_ds["r_o"].attrs
 
         ### Solve for hourly rain totals in mm....will be used in ffmc calculation
         r_oi = np.array(self.hourly_ds.r_o)
@@ -218,11 +229,9 @@ class FWF:
                 retrive_time = pd.to_datetime(str(int_time[0] - np.timedelta64(1, "D")))
                 retrive_time = retrive_time.strftime("%Y%m%d%H")
                 hourly_file_dir = (
-                    str(fwf_zarr_dir) + f"/fwf-hourly-{domain}-{retrive_time}.zarr"
+                    str(fwf_dir) + f"/fwf-hourly-{domain}-{retrive_time}.nc"
                 )
-                daily_file_dir = (
-                    str(fwf_zarr_dir) + f"/fwf-daily-{domain}-{retrive_time}.zarr"
-                )
+                daily_file_dir = str(fwf_dir) + f"/fwf-daily-{domain}-{retrive_time}.nc"
 
                 previous_hourly_ds = xr.open_dataset(hourly_file_dir)
                 previous_daily_ds = xr.open_dataset(daily_file_dir)
@@ -242,10 +251,10 @@ class FWF:
                     )
                     retrive_time = retrive_time.strftime("%Y%m%d%H")
                     hourly_file_dir = (
-                        str(fwf_zarr_dir) + f"/fwf-hourly-{domain}-{retrive_time}.zarr"
+                        str(fwf_dir) + f"/fwf-hourly-{domain}-{retrive_time}.nc"
                     )
                     daily_file_dir = (
-                        str(fwf_zarr_dir) + f"/fwf-daily-{domain}-{retrive_time}.zarr"
+                        str(fwf_dir) + f"/fwf-daily-{domain}-{retrive_time}.nc"
                     )
 
                     previous_hourly_ds = xr.open_dataset(hourly_file_dir)
@@ -896,9 +905,41 @@ class FWF:
         return S, DSR
 
     def solve_fbp(self, hourly_ds):
+        """
+        Solves the Fire Behavior Predictions System at hourly intervals
+
+        Parameters
+        ----------
+        hourly_ds: DataSet
+            - Dataset of hourly forecast variables
+                - W: DataArray
+                    - Wind speed, km/hr
+                - F: DataArray
+                    - Fine fuel moisture code
+                - R: DataArray
+                    - Initial spread index
+
+        Returns
+        -------
+        hourly_ds: DataSet
+            - Datarray of
+                - FMC: DataArray
+                    - Foliar Moisture Content, %
+                - SFC: DataArray
+                    - Surface Fuel Consumption, kg m^{-2}
+                - TFC: DataArray
+                    - Total Fuel Consumption, kg m^{-2}
+                - CFB: DataArray
+                    - Crown Fraction Burned, %
+                - ROS: DataArray
+                    - Rate of Spread, m min^{-1}
+                - HFI: DataArray
+                    - Head Fire Intensity, kW m^{-1}
+        """
         FBPloopTime = datetime.now()
         print("Start of FBP")
         ## Open fuels converter
+        hourly_ds = self.rechunk(hourly_ds)
         fc_df = pd.read_csv(str(data_dir) + "/fbp/fuel_converter.csv")
         fc_df = fc_df.drop_duplicates(subset=["CFFDRS"])
         fc_df["Code"] = fc_df["National_FBP_Fueltypes_2014"]
@@ -906,6 +947,7 @@ class FWF:
         fc_dict = fc_df.transpose().to_dict()
 
         daily_ds = self.daily_ds
+        daily_ds = self.rechunk(daily_ds)
         ELV, LAT, LON, FUELS, GS, SAZ = (
             self.ELV,
             self.LAT,
@@ -1420,18 +1462,6 @@ class FWF:
         ----------
             wrf_ds: DataSet
                 WRF dataset at 4-km spatial resolution and one hour tempolar resolution
-                    - tzdict:  dictionary
-                        - Dictionary of all times zones in North America and their respective offsets to UTC
-                    - zone_id: in
-                        - ID of model domain with hours off set from UTC
-                    - noon: int
-                        - 1200 local index based on ID
-                    - plus: int
-                        - 1300 local index based on ID
-                    - minus: int
-                        - 1100 local index based on ID
-                    - tzone_ds: dataset
-                        - Gridded 2D array of zone_id
 
         Returns
         -------
@@ -1475,7 +1505,7 @@ class FWF:
                         dims=("south_north", "west_east"),
                         coords=wrf_ds.isel(time=i).coords,
                     )
-                    var_da["Day"] = day
+                    var_da["Time"] = day
                     mean_da.append(var_da)
                 else:
                     var_array = wrf_ds[var].values
@@ -1490,13 +1520,13 @@ class FWF:
                         dims=("south_north", "west_east"),
                         coords=wrf_ds.isel(time=i).coords,
                     )
-                    var_da["Day"] = day
+                    var_da["Time"] = day
                     mean_da.append(var_da)
 
             mean_ds = xr.merge(mean_da)
             files_ds.append(mean_ds)
 
-        daily_ds = xr.combine_nested(files_ds, "Day")
+        daily_ds = xr.combine_nested(files_ds, "time")
 
         ## create datarray for carry over rain, this will be added to the next days rain totals
         ## NOTE: this is rain that fell from noon local until 24 hours past the model initial time ie 00Z, 06Z..
@@ -1533,7 +1563,7 @@ class FWF:
 
         Returns
         -------
-        daily_ds: DataSet
+        hourly_ds: DataSet
             A xarray DataSet with all the hourly FWI codes/indices solved
         """
 
@@ -1596,28 +1626,33 @@ class FWF:
     def rechunk(self, ds):
         ds = ds.chunk(chunks="auto")
         ds = ds.unify_chunks()
+        return ds
+
+    def prepare_ds(self, ds):
+        loadTime = datetime.now()
+        print("Start Loading ", datetime.now())
+        ds = ds.load()
         for var in list(ds):
             ds[var].encoding = {}
+        print("Load Time: ", datetime.now() - loadTime)
+
         return ds
 
     """#######################################"""
     """ ######## Write Hourly Dataset ########"""
     """#######################################"""
 
-    def build_nc(self):
+    def hourly(self):
         """
-        Writes hourly_ds (.zarr) and adds the appropriate attributes to each variable
+        Writes hourly_ds (.nc) and adds the appropriate attributes to each variable
 
         Returns
         -------
         make_dir: str
-            - File directory to (zarr) file of todays hourly FWI codes
+            - File directory to (nc) file of todays hourly FWI codes
             - Needed for carry over to intilaze tomorrow's model run
         """
-
-        daily_ds = self.daily_loop()
         hourly_ds = self.hourly_loop()
-
         hourly_ds.attrs = self.attrs
 
         ## change all to float32 and give attributes to variabels
@@ -1630,20 +1665,18 @@ class FWF:
         file_date = datetime.strptime(str(file_date), "%Y-%m-%dT%H").strftime(
             "%Y%m%d%H"
         )
-        print("Hourly zarr initialized at :", file_date)
+        print("Hourly nc initialized at :", file_date)
 
-        # # ## Write and save DataArray (.zarr) file
+        # # ## Write and save DataArray (.nc) file
         make_dir = Path(
-            str(fwf_zarr_dir)
-            + str(f"/{file_date[:-2]}00/fwf-hourly-")
-            + self.domain
-            + str(f"-{file_date}.zarr")
+            str(fwf_dir) + str("/fwf-hourly-") + self.domain + str(f"-{file_date}.nc")
         )
-        make_dir.mkdir(parents=True, exist_ok=True)
-
-        comp = dict(zlib=True, complevel=9)
-        encoding = {var: comp for var in ds.data_vars}
-        hourly_ds.to_netcdf(make_dir, mode="w", encoding=encoding)
+        # make_dir.mkdir(parents=True, exist_ok=True)
+        hourly_ds = self.prepare_ds(hourly_ds)
+        writeTime = datetime.now()
+        print("Start Write ", datetime.now())
+        hourly_ds.to_netcdf(make_dir, mode="w")
+        print("Write Time: ", datetime.now() - writeTime)
         print(f"wrote working {make_dir}")
 
         return str(make_dir)
@@ -1654,12 +1687,12 @@ class FWF:
 
     def daily(self):
         """
-        Writes daily_ds (.zarr) and adds the appropriate attributes to each variable
+        Writes daily_ds (.nc) and adds the appropriate attributes to each variable
 
         Returns
         -------
         make_dir: str
-            - File directory to (zarr) file of todays daily FWI codes
+            - File directory to (nc) file of todays daily FWI codes
             - Needed for carry over to intilaze tomorrow's model run
         """
         daily_ds = self.daily_loop()
@@ -1676,20 +1709,19 @@ class FWF:
             "%Y%m%d%H"
         )
 
-        print("Daily zarr initialized at :", file_date)
+        print("Daily nc initialized at :", file_date)
 
-        # # ## Write and save DataArray (.zarr) file
+        # # ## Write and save DataArray (.nc) file
         make_dir = Path(
-            str(fwf_zarr_dir)
-            + str(f"/{file_date[:-2]}00/fwf-daily-")
-            + self.domain
-            + str(f"-{file_date}.nc")
+            str(fwf_dir) + str("/fwf-daily-") + self.domain + str(f"-{file_date}.nc")
         )
-
-        make_dir.mkdir(parents=True, exist_ok=True)
-        daily_ds = self.rechunk(daily_ds)
+        # make_dir.mkdir(parents=True, exist_ok=True)
+        daily_ds = self.prepare_ds(daily_ds)
         self.daily_ds = daily_ds
-        daily_ds.to_netcdf(make_dir, mode="w", consolidated=True)
+        writeTime = datetime.now()
+        print("Start Write ", datetime.now())
+        daily_ds.to_netcdf(make_dir, mode="w")
+        print("Write Time: ", datetime.now() - writeTime)
         print(f"wrote working {make_dir}")
 
         return str(make_dir)
