@@ -26,7 +26,7 @@ wait_max = wait_max * 60  ## convert hours to mins
 forecast_date = pd.Timestamp("today").strftime("%Y%m%d00")
 filein = str(wrf_dir) + f"/{forecast_date}/"
 lenght = len(sorted(Path(filein).glob(f"wrfout_{domain}_*00")))
-command = f"{root_dir}/bin/test.sh"
+command = f"{root_dir}/bin/all_fwf_run.sh"
 
 
 if lenght >= avg_wrf:
@@ -36,10 +36,10 @@ if lenght >= avg_wrf:
 else:
     elapsed = 0
     while lenght < avg_wrf:
+        print(f"slepping....WRf Folder lenght: {lenght}")
         time.sleep(60)
         elapsed += 1
         lenght = len(sorted(Path(filein).glob(f"wrfout_{domain}_*00")))
-        print(f"slepping....WRf Folder lenght: {lenght}")
         if lenght >= avg_wrf:
             print(f"WRf Folder lenght of {lenght} mathces excepted lenght of {avg_wrf}")
             print(f"Running: {command}")
