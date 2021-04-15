@@ -8,8 +8,8 @@ fwf-docs
 fwf-docs/
 web_dev/data
 *.nc
+zarr/
 *.tgz
-
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

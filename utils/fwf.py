@@ -7,7 +7,6 @@ Class to solve the Fire Weather Indices using output from a numerical weather mo
 import context
 import math
 import json
-import zarr
 import numpy as np
 import pandas as pd
 import xarray as xr
@@ -18,8 +17,7 @@ from pathlib import Path
 # from netCDF4 import Dataset
 from datetime import datetime
 from utils.read_wrfout import readwrf
-
-from context import data_dir, fwf_zarr_dir
+from context import data_dir, fwf_dir
 
 __author__ = "Christopher Rodell"
 __email__ = "crodell@eoas.ubc.ca"
@@ -33,11 +31,11 @@ class FWF:
     ----------
 
     wrf_file_dir: str
-        - File directory to (zarr) file of WRF met variables to calculate FWI
+        - File directory to (nc) file of WRF met variables to calculate FWI
     domain: str
         - the wrf domain tag, examples d03 or d02
     wrf_model: str
-        - the wrf version, this will be removed i n future version assuming WRFv4 is being used
+        - the wrf version, this will be removed in future versions assuming WRFv4 is being used
 
     fbp_mode: boolean
         - True, FBP will be resolved with FWI and both returned
@@ -52,12 +50,12 @@ class FWF:
     -------
 
     daily_ds: DataSet
-        Writes a DataSet (zarr) of daily
+        Writes a DataSet (nc) of daily
         - FWI indices/codes
         - Associated Meterology
 
     hourly_ds: DataSet
-        Writes a DataSet (zarr) of hourly
+        Writes a DataSet (nc) of hourly
         - FWI indices/codes
         - Associated Meterology
         - FBP products (if fbp_mode is True)
@@ -75,9 +73,9 @@ class FWF:
 
         """
         ### Read then open WRF dataset
-        if wrf_file_dir.endswith(".zarr"):
-            print("Re-run using zarr file")
-            wrf_ds = xr.open_zarr(wrf_file_dir)
+        if wrf_file_dir.endswith(".nc"):
+            print("Re-run using nc file")
+            wrf_ds = xr.open_dataset(wrf_file_dir)
         else:
             print("New-run, use readwrf to get vars from nc files")
             wrf_ds = readwrf(wrf_file_dir, domain, wright=False)
@@ -126,8 +124,8 @@ class FWF:
             self.var_dict = json.load(fp)
 
         ## Open gridded static
-        static_ds = xr.open_zarr(
-            str(data_dir) + f"/static/static-vars-{wrf_model}-{domain}.zarr"
+        static_ds = xr.open_dataset(
+            str(data_dir) + f"/static/static-vars-{wrf_model}-{domain}.nc"
         )
 
         ## Define Static Variables for FPB
@@ -231,14 +229,12 @@ class FWF:
                 retrive_time = pd.to_datetime(str(int_time[0] - np.timedelta64(1, "D")))
                 retrive_time = retrive_time.strftime("%Y%m%d%H")
                 hourly_file_dir = (
-                    str(fwf_zarr_dir) + f"/fwf-hourly-{domain}-{retrive_time}.zarr"
+                    str(fwf_dir) + f"/fwf-hourly-{domain}-{retrive_time}.nc"
                 )
-                daily_file_dir = (
-                    str(fwf_zarr_dir) + f"/fwf-daily-{domain}-{retrive_time}.zarr"
-                )
+                daily_file_dir = str(fwf_dir) + f"/fwf-daily-{domain}-{retrive_time}.nc"
 
-                previous_hourly_ds = xr.open_zarr(hourly_file_dir)
-                previous_daily_ds = xr.open_zarr(daily_file_dir)
+                previous_hourly_ds = xr.open_dataset(hourly_file_dir)
+                previous_daily_ds = xr.open_dataset(daily_file_dir)
                 print(
                     f"{Path(hourly_file_dir).exists()}: Found previous FFMC on date {retrive_time}, will merge with hourly_ds"
                 )
@@ -255,14 +251,14 @@ class FWF:
                     )
                     retrive_time = retrive_time.strftime("%Y%m%d%H")
                     hourly_file_dir = (
-                        str(fwf_zarr_dir) + f"/fwf-hourly-{domain}-{retrive_time}.zarr"
+                        str(fwf_dir) + f"/fwf-hourly-{domain}-{retrive_time}.nc"
                     )
                     daily_file_dir = (
-                        str(fwf_zarr_dir) + f"/fwf-daily-{domain}-{retrive_time}.zarr"
+                        str(fwf_dir) + f"/fwf-daily-{domain}-{retrive_time}.nc"
                     )
 
-                    previous_hourly_ds = xr.open_zarr(hourly_file_dir)
-                    previous_daily_ds = xr.open_zarr(daily_file_dir)
+                    previous_hourly_ds = xr.open_dataset(hourly_file_dir)
+                    previous_daily_ds = xr.open_dataset(daily_file_dir)
                     print(
                         f"{Path(hourly_file_dir).exists()}: Found previous FFMC on date {retrive_time}, will merge with hourly_ds"
                     )
@@ -279,7 +275,7 @@ class FWF:
 
             # """ ################## Fine Fuel Moisture Code (FFMC) ##################### """
             ### Open previous days hourly_ds
-            previous_hourly_ds = xr.open_zarr(hourly_file_dir)
+            previous_hourly_ds = xr.open_dataset(hourly_file_dir)
             previous_time = np.array(previous_hourly_ds.Time.dt.strftime("%Y-%m-%dT%H"))
             previous_time = datetime.strptime(
                 str(previous_time[0]), "%Y-%m-%dT%H"
@@ -312,7 +308,7 @@ class FWF:
 
             # """ ####################   Daily Dataset    ##################### """
             ### Open previous days daily_ds
-            previous_daily_ds = xr.open_zarr(daily_file_dir)
+            previous_daily_ds = xr.open_dataset(daily_file_dir)
             previous_time = np.array(previous_daily_ds.Time.dt.strftime("%Y-%m-%dT%H"))
             try:
                 previous_time = datetime.strptime(
@@ -943,6 +939,7 @@ class FWF:
         FBPloopTime = datetime.now()
         print("Start of FBP")
         ## Open fuels converter
+        hourly_ds = self.rechunk(hourly_ds)
         fc_df = pd.read_csv(str(data_dir) + "/fbp/fuel_converter.csv")
         fc_df = fc_df.drop_duplicates(subset=["CFFDRS"])
         fc_df["Code"] = fc_df["National_FBP_Fueltypes_2014"]
@@ -950,6 +947,7 @@ class FWF:
         fc_dict = fc_df.transpose().to_dict()
 
         daily_ds = self.daily_ds
+        daily_ds = self.rechunk(daily_ds)
         ELV, LAT, LON, FUELS, GS, SAZ = (
             self.ELV,
             self.LAT,
@@ -1629,8 +1627,16 @@ class FWF:
         ds = ds.load()
         ds = ds.chunk(chunks="auto")
         ds = ds.unify_chunks()
+        return ds
+
+    def prepare_ds(self, ds):
+        loadTime = datetime.now()
+        print("Start Loading ", datetime.now())
+        ds = ds.load()
         for var in list(ds):
             ds[var].encoding = {}
+        print("Load Time: ", datetime.now() - loadTime)
+
         return ds
 
     """#######################################"""
@@ -1639,12 +1645,12 @@ class FWF:
 
     def hourly(self):
         """
-        Writes hourly_ds (.zarr) and adds the appropriate attributes to each variable
+        Writes hourly_ds (.nc) and adds the appropriate attributes to each variable
 
         Returns
         -------
         make_dir: str
-            - File directory to (zarr) file of todays hourly FWI codes
+            - File directory to (nc) file of todays hourly FWI codes
             - Needed for carry over to intilaze tomorrow's model run
         """
         hourly_ds = self.hourly_loop()
@@ -1660,18 +1666,18 @@ class FWF:
         file_date = datetime.strptime(str(file_date), "%Y-%m-%dT%H").strftime(
             "%Y%m%d%H"
         )
-        print("Hourly zarr initialized at :", file_date)
+        print("Hourly nc initialized at :", file_date)
 
-        # # ## Write and save DataArray (.zarr) file
+        # # ## Write and save DataArray (.nc) file
         make_dir = Path(
-            str(fwf_zarr_dir)
-            + str("/fwf-hourly-")
-            + self.domain
-            + str(f"-{file_date}.zarr")
+            str(fwf_dir) + str("/fwf-hourly-") + self.domain + str(f"-{file_date}.nc")
         )
-        make_dir.mkdir(parents=True, exist_ok=True)
-        hourly_ds = self.rechunk(hourly_ds)
-        hourly_ds.to_zarr(make_dir, mode="w", consolidated=True)
+        # make_dir.mkdir(parents=True, exist_ok=True)
+        hourly_ds = self.prepare_ds(hourly_ds)
+        writeTime = datetime.now()
+        print("Start Write ", datetime.now())
+        hourly_ds.to_netcdf(make_dir, mode="w")
+        print("Write Time: ", datetime.now() - writeTime)
         print(f"wrote working {make_dir}")
 
         return str(make_dir)
@@ -1682,12 +1688,12 @@ class FWF:
 
     def daily(self):
         """
-        Writes daily_ds (.zarr) and adds the appropriate attributes to each variable
+        Writes daily_ds (.nc) and adds the appropriate attributes to each variable
 
         Returns
         -------
         make_dir: str
-            - File directory to (zarr) file of todays daily FWI codes
+            - File directory to (nc) file of todays daily FWI codes
             - Needed for carry over to intilaze tomorrow's model run
         """
         daily_ds = self.daily_loop()
@@ -1704,19 +1710,19 @@ class FWF:
             "%Y%m%d%H"
         )
 
-        print("Daily zarr initialized at :", file_date)
+        print("Daily nc initialized at :", file_date)
 
-        # # ## Write and save DataArray (.zarr) file
+        # # ## Write and save DataArray (.nc) file
         make_dir = Path(
-            str(fwf_zarr_dir)
-            + str("/fwf-daily-")
-            + self.domain
-            + str(f"-{file_date}.zarr")
+            str(fwf_dir) + str("/fwf-daily-") + self.domain + str(f"-{file_date}.nc")
         )
-        make_dir.mkdir(parents=True, exist_ok=True)
-        daily_ds = self.rechunk(daily_ds)
+        # make_dir.mkdir(parents=True, exist_ok=True)
+        daily_ds = self.prepare_ds(daily_ds)
         self.daily_ds = daily_ds
-        daily_ds.to_zarr(make_dir, mode="w", consolidated=True)
+        writeTime = datetime.now()
+        print("Start Write ", datetime.now())
+        daily_ds.to_netcdf(make_dir, mode="w")
+        print("Write Time: ", datetime.now() - writeTime)
         print(f"wrote working {make_dir}")
 
         return str(make_dir)

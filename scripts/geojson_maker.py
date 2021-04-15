@@ -22,7 +22,7 @@ from datetime import datetime, date, timedelta
 
 startTime = datetime.now()
 
-from context import data_dir, xr_dir, wrf_dir, root_dir, fwf_zarr_dir
+from context import data_dir, xr_dir, wrf_dir, root_dir, fwf_dir
 
 __author__ = "Christopher Rodell"
 __email__ = "crodell@eoas.ubc.ca"
@@ -52,15 +52,11 @@ with open(str(data_dir) + "/json/nested-index.json") as f:
 
 
 for domain in ["d02", "d03"]:
-    hourly_file_dir = str(fwf_zarr_dir) + str(
-        f"/fwf-hourly-{domain}-{forecast_date}.zarr"
-    )
-    daily_file_dir = str(fwf_zarr_dir) + str(
-        f"/fwf-daily-{domain}-{forecast_date}.zarr"
-    )
+    hourly_file_dir = str(fwf_dir) + str(f"/fwf-hourly-{domain}-{forecast_date}.nc")
+    daily_file_dir = str(fwf_dir) + str(f"/fwf-daily-{domain}-{forecast_date}.nc")
 
-    hourly_ds = xr.open_zarr(hourly_file_dir)
-    daily_ds = xr.open_zarr(daily_file_dir)
+    hourly_ds = xr.open_dataset(hourly_file_dir)
+    daily_ds = xr.open_dataset(daily_file_dir)
 
     r_hourly_list = []
     for i in range(len(hourly_ds.Time)):

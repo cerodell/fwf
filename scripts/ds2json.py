@@ -18,7 +18,7 @@ from datetime import datetime
 from utils.make_intercomp import daily_merge_ds
 import string
 
-from context import data_dir, xr_dir, wrf_dir, fwf_zarr_dir, tzone_dir
+from context import data_dir, xr_dir, wrf_dir, fwf_dir, tzone_dir
 from datetime import datetime, date, timedelta
 
 startTime = datetime.now()
@@ -53,28 +53,36 @@ with open(str(data_dir) + "/json/nested-index.json") as f:
     nested_index = json.load(f)
 
 
+def rechunk(ds):
+    ds = ds.chunk(chunks="auto")
+    ds = ds.unify_chunks()
+    # for var in list(ds):
+    #     ds[var].encoding = {}
+    return ds
+
+
 ## loop both domains
 domains = ["d02", "d03"]
 for domain in domains:
     ## Get Path to most recent FWI forecast and open
-    hourly_file_dir = str(fwf_zarr_dir) + str(
-        f"/fwf-hourly-{domain}-{forecast_date}.zarr"
-    )
-    daily_file_dir = str(fwf_zarr_dir) + str(
-        f"/fwf-daily-{domain}-{forecast_date}.zarr"
-    )
+    print(f"Starting to make jsons for {domain}")
+    loopTime = datetime.now()
+    hourly_file_dir = str(fwf_dir) + str(f"/fwf-hourly-{domain}-{forecast_date}.nc")
+    daily_file_dir = str(fwf_dir) + str(f"/fwf-daily-{domain}-{forecast_date}.nc")
 
-    static_ds = xr.open_zarr(
-        str(data_dir) + f"/static/static-vars-{wrf_model}-{domain}.zarr"
+    static_ds = xr.open_dataset(
+        str(data_dir) + f"/static/static-vars-{wrf_model}-{domain}.nc"
     )
 
     ### Open datasets
-    hourly_ds = xr.open_zarr(hourly_file_dir)
+    hourly_ds = xr.open_dataset(hourly_file_dir)
     daily_ds = daily_merge_ds(forecast_date, domain, wrf_model)
 
-    ## ROund all var is the dataset
+    ## Round all var is the dataset
     hourly_ds = hourly_ds.round(2)
     daily_ds = daily_ds.round(2)
+    # hourly_ds = rechunk(hourly_ds)
+    # daily_ds = rechunk(daily_ds)
 
     ## get array of time and day
     time = np.array(hourly_ds.Time.dt.strftime("%Y-%m-%dT%H"), dtype="<U13")
@@ -217,11 +225,13 @@ for domain in domains:
                 separators=(",", ":"),
                 indent=None,
             )
-        print(
-            f"{str(datetime.now())} ---> wrote json to:  "
-            + str(make_dir)
-            + f"/fwf-{filename}-{timestamp}-{domain}.json"
-        )
+        # print(
+        #     f"{str(datetime.now())} ---> wrote json to:  "
+        #     + str(make_dir)
+        #     + f"/fwf-{filename}-{timestamp}-{domain}.json"
+        # )
+    print(f"Took {datetime.now() - loopTime} to make jsons for {domain}")
+
 
 # ### Timer
 print("Run Time: ", datetime.now() - startTime)

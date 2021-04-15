@@ -1,3 +1,5 @@
+#!/bluesky/fireweather/miniconda3/envs/fwf/bin/python
+
 import context
 import json
 import numpy as np

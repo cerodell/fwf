@@ -23,13 +23,23 @@ from wrf import ll_to_xy, xy_to_ll
 from datetime import datetime, date, timedelta
 from utils.make_intercomp import daily_merge_ds
 
-from context import data_dir, root_dir, tzone_dir, fwf_zarr_dir
+from context import data_dir, root_dir, tzone_dir, fwf_dir
 
 startTime = datetime.now()
 print("RUN STARTED AT: ", str(startTime))
 
 __author__ = "Christopher Rodell"
 __email__ = "crodell@eoas.ubc.ca"
+
+
+def rechunk(ds):
+    ds = ds.load()
+    ds = ds.chunk(chunks="auto")
+    ds = ds.unify_chunks()
+    for var in list(ds):
+        ds[var].encoding = {}
+    return ds
+
 
 ## Open color map json
 with open(str(data_dir) + "/json/colormaps-dev.json") as f:
@@ -39,7 +49,7 @@ name_list = list(cmaps)
 make_dir = Path("/bluesky/fireweather/fwf/web_dev/data/")
 make_dir.mkdir(parents=True, exist_ok=True)
 
-
+wrf_model = "wrf4"
 date = pd.Timestamp("today")
 # date = pd.Timestamp(2021, 2, 13)
 forecast_date = date.strftime("%Y%m%d06")
@@ -47,11 +57,11 @@ obs_date = (date - np.timedelta64(1, "D")).strftime("%Y%m%d")
 yesterday_forecast_date = obs_date + "06"
 
 
-obs_d2_ds = xr.open_zarr(
-    str(data_dir) + "/intercomp/" + f"intercomp-d02-{obs_date}.zarr"
+obs_d2_ds = xr.open_dataset(
+    str(data_dir) + "/intercomp/" + f"intercomp-d02-{obs_date}.nc"
 )
-obs_d3_ds = xr.open_zarr(
-    str(data_dir) + "/intercomp/" + f"intercomp-d03-{obs_date}.zarr"
+obs_d3_ds = xr.open_dataset(
+    str(data_dir) + "/intercomp/" + f"intercomp-d03-{obs_date}.nc"
 )
 
 ## make array of the wmo in each obs file
@@ -65,41 +75,43 @@ obs_d2_ds = obs_d2_ds.isel(wmo=indices)
 ## combine the obs to  final obs xarray
 obs_final = xr.concat([obs_d2_ds, obs_d3_ds], dim="wmo")
 
-
 coords_list = list(obs_final.coords)
 dict_var = {}
 for coords in coords_list:
     if coords != "time":
-        coord_array = obs_final[coords].values
-        coord_array = coord_array.tolist()
         if coords == "name":
+            coord_array = obs_final[coords].values.astype(str)
+            coord_array = coord_array.tolist()
             coord_array = [item.replace(",", "") for item in coord_array]
             dict_var.update({coords.lower(): str(coord_array)})
         else:
+            coord_array = obs_final[coords].values
+            coord_array = coord_array.tolist()
             dict_var.update({coords.lower(): str(coord_array)})
     else:
         pass
 
 
 ## Open datasets of both domains
-hourly_file_dir = str(fwf_zarr_dir) + str(f"/fwf-hourly-d02-{forecast_date}.zarr")
-hourly_d2_ds = xr.open_zarr(hourly_file_dir)
-daily_d2_ds = daily_merge_ds(forecast_date, "d02")
-
-hourly_file_dir = str(fwf_zarr_dir) + str(f"/fwf-hourly-d03-{forecast_date}.zarr")
-hourly_d3_ds = xr.open_zarr(hourly_file_dir)
-daily_d3_ds = daily_merge_ds(forecast_date, "d03")
+hourly_file_dir = str(fwf_dir) + str(f"/fwf-hourly-d02-{forecast_date}.nc")
+hourly_d2_ds = xr.open_dataset(hourly_file_dir)
+daily_d2_ds = daily_merge_ds(forecast_date, "d02", wrf_model)
+hourly_d2_ds, daily_d2_ds = rechunk(hourly_d2_ds), rechunk(daily_d2_ds)
+hourly_file_dir = str(fwf_dir) + str(f"/fwf-hourly-d03-{forecast_date}.nc")
+hourly_d3_ds = xr.open_dataset(hourly_file_dir)
+daily_d3_ds = daily_merge_ds(forecast_date, "d03", wrf_model)
+hourly_d3_ds, daily_d3_ds = rechunk(hourly_d3_ds), rechunk(daily_d3_ds)
 
 
 # domain = "d02"
 
-# hourly_file_dir = str(fwf_zarr_dir) + str(
-#     f"/fwf-hourly-{domain}-{yesterday_forecast_date}.zarr"
+# hourly_file_dir = str(fwf_dir) + str(
+#     f"/fwf-hourly-{domain}-{yesterday_forecast_date}.nc"
 # )
 # ### Open datasets
 # my_dir = Path(hourly_file_dir)
 # if my_dir.is_dir():
-#     hourly_ds = xr.open_zarr(hourly_file_dir)
+#     hourly_ds = xr.open_dataset(hourly_file_dir)
 
 #     ### Get timezone mask
 #     tzone_ds = xr.open_dataset(str(tzone_dir) + f"/tzone_wrf_{domain}.nc")
