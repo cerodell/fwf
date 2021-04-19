@@ -1,8 +1,3 @@
-""""
-
-"""
-
-
 import context
 import json
 import salem
@@ -53,6 +48,10 @@ anderson_array = anderson_ds.data.values
 cfbp_array = cfbp_ds.data.values
 anderson_unique, anderson_count = getunique(anderson_array)
 cfbp_unique, cfbp_count = getunique(cfbp_array)
+
+
+array = cfbp_array[anderson_array == val]
+array = anderson_array[cfbp_array == cfbp_unique[2]]
 
 
 con_dict = {}

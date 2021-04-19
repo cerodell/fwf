@@ -22,7 +22,7 @@ tzone_dir = root_dir / Path("data/tzone/")
 xr_dir = root_dir / Path("data/xr/")
 nc_dir = root_dir / Path("data/nc/")
 fwf_zarr_dir = Path("/Volumes/cer/fireweather/data/FWF-WAN00CP-04/")
-
+gog_dir = Path("/Users/rodell/Google Drive/Shared drives/")
 wrf_dir = Path("/Volumes/cer/fireweather/data/WAN00CP-04/")
 vol_dir = Path("/Volumes/cer/fireweather/data/")
 
