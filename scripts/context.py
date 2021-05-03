@@ -28,6 +28,7 @@ ops_dir = Path("/bluesky/archive/fireweather/forecasts/")
 # fwf_zarr_dir = root_dir / Path("data/FWF-WAN00CG-01/")
 fwf_dir = root_dir / Path("data/FWF-WAN00CG-01/")
 
+
 # wrf_dir = Path("/Volumes/cer/fireweather/data/WAN00CG-01/")
 wrf_dir = Path("/bluesky/working/wrf2arl/WAN00CG-01/")
 

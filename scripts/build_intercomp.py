@@ -52,6 +52,7 @@ stations_df_og = stations_df_og.drop(
 )
 
 date = pd.Timestamp("today")
+# date = pd.Timestamp(2021, 5, 1)
 day1_obs_date = date - np.timedelta64(1, "D")
 day1_obs_date = day1_obs_date.strftime("%Y%m%d06")
 day2_obs_date = date - np.timedelta64(2, "D")
@@ -70,6 +71,7 @@ for domain in ["d02", "d03"]:
     stations_df = stations_df_og
 
     day1_ds = daily_merge_ds(day1_obs_date, domain, wrf_model)
+    # day1_ds = daily_merge_ds(day2_obs_date, domain, wrf_model)
 
     day2_ds = daily_merge_ds(day2_obs_date, domain, wrf_model)
 
@@ -149,6 +151,7 @@ for domain in ["d02", "d03"]:
         var_columns = day1_ds[var].values[:, south_north, west_east]
         var_columns = np.array(var_columns, dtype="float32")
         final_df[name_upper + "_day1"] = var_columns[0, :]
+        # final_df[name_upper + "_day1"] = var_columns[1, :]
 
         if day2_ds is None:
             # print('day2_ds is none')
@@ -183,6 +186,7 @@ for domain in ["d02", "d03"]:
     tz_correct = final_df["tz_correct"].values.astype(int)
     try:
         day = np.array(day1_ds.Time[0], dtype="datetime64[D]")
+        # day = np.array(day1_ds.Time[1], dtype="datetime64[D]")
     except:
         day = np.array(day1_ds.Time, dtype="datetime64[D]")
 

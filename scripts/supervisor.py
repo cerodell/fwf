@@ -36,7 +36,7 @@ if lenght >= avg_wrf:
 else:
     elapsed = 0
     while lenght < avg_wrf:
-        print(f"slepping....WRf Folder lenght: {lenght}")
+        print(f"slepping for {elapsed} mins....WRf Folder lenght: {lenght}")
         time.sleep(60)
         elapsed += 1
         lenght = len(sorted(Path(filein).glob(f"wrfout_{domain}_*00")))

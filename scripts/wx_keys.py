@@ -41,12 +41,13 @@ with open(str(data_dir) + "/json/colormaps-dev.json") as f:
 name_list = list(cmaps)
 
 forecast_date = pd.Timestamp("today").strftime("%Y%m%d00")
+# forecast_date = pd.Timestamp(2021, 5, 1).strftime("%Y%m%d00")
 make_dir = Path(f"/bluesky/archive/fireweather/forecasts/{forecast_date}/data/")
 make_dir.mkdir(parents=True, exist_ok=True)
 
 
 date = pd.Timestamp("today")
-# date = pd.Timestamp(2021, 2, 13)
+# date = pd.Timestamp(2021, 5, 1)
 forecast_date = date.strftime("%Y%m%d06")
 obs_date = (date - np.timedelta64(1, "D")).strftime("%Y%m%d")
 
