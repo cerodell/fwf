@@ -1,12 +1,3 @@
-""""
-This script take of fuels data for the US and Canada and converst them to CFFDRS fuel types.
-
-Also, transform the fuels data to the same domain as the met wrf domains the
-masks and replace (mosacis) into one simple gridded array.
-
-"""
-
-
 import context
 import json
 import salem
@@ -35,19 +26,19 @@ print("RUN STARTED AT: ", str(startTime))
 
 ## Choose wrf domain
 domain = "d02"
-wrf_model = "wrf4"
+wrf_model = "wrf3"
 
-save_zarr = str(data_dir) + f"/fbp/fuels-{wrf_model}-{domain}-test.zarr"
+save_zarr = str(data_dir) + f"/fbp/fuels-{wrf_model}-{domain}-2019.zarr"
 ## Path to Fuel converter spreadsheet
-fuel_converter = str(data_dir) + "/fbp/fuel_converter.csv"
+fuel_converter = str(data_dir) + "/fbp/fuel_converter_dev.csv"
 ## Path to any wrf file used in transformation
 if wrf_model == "wrf3":
     wrf_filein = f"/Users/rodell/Google Drive/Shared drives/WAN00CP-04/18093000/wrfout_{domain}_2018-10-02_11:00:00"
 else:
     wrf_filein = f"/Users/rodell/Google Drive/Shared drives/WAN00CG-01/21022000/wrfout_{domain}_2021-02-20_11:00:00"
 
-## Path to 2014 nrcan fuels data tif
-fbp2014_filein = str(vol_dir) + f"/fuels/resampled/{domain}/nrcan.tif"
+## Path to 2019 nrcan fuels data tif
+fbp2019_filein = str(vol_dir) + f"/fuels/resampled/{domain}/nrcan_2019.tif"
 
 ## Path to 2016 land fire US fuels data tif
 us_filein = str(vol_dir) + f"/fuels/resampled/{domain}/landfire.tif"
@@ -56,16 +47,15 @@ us_filein = str(vol_dir) + f"/fuels/resampled/{domain}/landfire.tif"
 ## Open all files mentioned above
 fc_df = pd.read_csv(fuel_converter)
 wrf_ds = salem.open_xr_dataset(wrf_filein)
-fbp2014_tiff = salem.open_xr_dataset(fbp2014_filein)
+XLONG, XLAT = wrf_ds.XLONG.values[0], wrf_ds.XLAT.values[0]
+
+fbp2019_tiff = salem.open_xr_dataset(fbp2019_filein)
 us_tiff = salem.open_xr_dataset(us_filein)
 
 
 ## Using nearest neighbor transformation tif to wrf domain
-fbp2014_ds = wrf_ds.salem.transform(fbp2014_tiff)
+fbp2019_ds = wrf_ds.salem.transform(fbp2019_tiff)
 us_ds = wrf_ds.salem.transform(us_tiff.data)
-
-## take US Anderson 13 fuel valsue and convert to CFFDRS fuel types
-us_array = us_ds.values
 
 
 def getunique(array):
@@ -74,22 +64,57 @@ def getunique(array):
     return unique, count
 
 
-us_unique, us_count = getunique(us_array)
+## with converter US fuels in CFFDRS mask and replace location of missing data that use array can fill
+fbp2019 = np.array(fbp2019_ds.data)
+fbp_unique, fbp_count = getunique(fbp2019)
+for i in range(len(fc_df.National_FBP_Fueltypes_2019.values)):
+    if fc_df.National_FBP_Fueltypes_2019[i] == -99:
+        pass
+    else:
+        fbp2019[fbp2019 == fc_df.National_FBP_Fueltypes_2019[i]] = fc_df.FWF_Code[i]
+fbp2019_unique_new, fbp2019_count_new = getunique(fbp2019)
+
+fbp2019[fbp2019 == 0] = np.nan
+fbp2019[fbp2019 == 65535] = np.nan
 
 
+## take US Anderson 13 fuel valsue and convert to CFFDRS fuel types
+us_array = us_ds.values
+us_array_og = us_array
+
+us_unique, us_count = getunique(us_array_og)
+## Ensure ponderosa fuel types carry over
+mask = np.where((XLONG < -100) & (us_array_og == 9))
+
+us_count[us_unique == 9]
 for i in range(len(fc_df.LF_16.values)):
     if fc_df.LF_16[i] == -99:
         pass
     else:
-        us_array[us_array == fc_df.LF_16[i]] = fc_df.National_FBP_Fueltypes_2014[i]
+        us_array[us_array == float(fc_df.LF_16[i])] = fc_df.FWF_Code[i]
+        # if fc_df.LF_16[i] == 6:
+        #     us_array[us_array == fc_df.LF_16[i]] = fc_df.FWF_Code[i]
+        #     us_array = np.where((XLONG < -96) & (us_array == fc_df.FWF_Code[i]), 3, us_array)
+        # else:
+        #     us_array[us_array == fc_df.LF_16[i]] = fc_df.FWF_Code[i]
+
+us_array = np.where((XLONG > -120) & (us_array == 5), 3, us_array)
+us_array = np.where((XLONG < -96) & (us_array == 11), 3, us_array)
+us_array[mask] = 7
+
+
+# XLAT = XLAT.ravel()
+# XLONG = XLONG.ravel()
+# us_array = us_array.ravel()
+# mask = list(np.where((XLAT< 49.0) & (XLONG < -100)  & (us_array == 3))[0])
+# us_array[mask] = np.random.choice([3,3,3,3,3,3,3,3,7],len(mask))
+# us_array = np.reshape(us_array, us_array_og.shape)
+
 us_unique_new, us_count_new = getunique(us_array)
 
-## with converter US fuels in CFFDRS mask and replace location of missing data that use array can fill
-fbp2014 = np.array(fbp2014_ds.data)
-fbp2014[fbp2014 == 0] = np.nan
-ind = np.isnan(fbp2014)
-fbp2014[ind] = us_array[ind]
-fbp_unique, fbp_count = getunique(fbp2014)
+ind = np.isnan(fbp2019)
+fbp2019[ind] = us_array[ind]
+
 
 ## loop all tiffs of AK to gridded adn mask fuels type tag to be the same as CFFDRS
 folders = ["%.2d" % i for i in range(1, 21)]
@@ -103,26 +128,25 @@ for folder in folders:
         if fc_df.AK_Fuels[i] == -99:
             pass
         else:
-            ak_array[ak_array == fc_df.AK_Fuels[i]] = fc_df.National_FBP_Fueltypes_2014[
-                i
-            ]
+            ak_array[ak_array == fc_df.AK_Fuels[i]] = fc_df.FWF_Code[i]
 
-    ind = np.isnan(fbp2014)
-    fbp2014[ind] = ak_array[ind]
+    ind = np.isnan(fbp2019)
+    fbp2019[ind] = ak_array[ind]
 
-fbp_unique, fbp_count = getunique(fbp2014)
+fbp_unique, fbp_count = getunique(fbp2019)
 
 ## concidered remianing missing data to be water
-ind = np.isnan(fbp2014)
-fbp2014[np.isnan(fbp2014)] = 118
+ind = np.isnan(fbp2019)
+fbp2019[np.isnan(fbp2019)] = 17
+
 
 ## make dataset add coordinates and write to zarr file
-fuels_ds = xr.DataArray(fbp2014, name="fuels", dims=("south_north", "west_east"))
+fuels_ds = xr.DataArray(fbp2019, name="fuels", dims=("south_north", "west_east"))
 T2 = wrf_ds.T2
 fuels_ds = xr.merge([fuels_ds, T2])
 fuels_ds = fuels_ds.drop_vars("T2")
 fuels_final = fuels_ds.isel(Time=0)
-# fuels_final.to_zarr(save_zarr, mode="w")
+fuels_final.to_zarr(save_zarr, mode="w")
 
 ### Timer
 print("Total Run Time: ", datetime.now() - startTime)

@@ -4,7 +4,7 @@
 Class to solve the Fire Weather Indices using output from a numerical weather model
 """
 
-import context
+# import context
 import math
 import json
 import numpy as np
@@ -17,7 +17,8 @@ from pathlib import Path
 # from netCDF4 import Dataset
 from datetime import datetime
 from utils.read_wrfout import readwrf
-from context import data_dir, fwf_zarr_dir
+
+# from context import data_dir, fwf_zarr_dir
 
 __author__ = "Christopher Rodell"
 __email__ = "crodell@eoas.ubc.ca"

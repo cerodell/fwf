@@ -12,16 +12,10 @@ import matplotlib.pyplot as plt
 from context import data_dir, vol_dir, gog_dir, fwf_zarr_dir
 from datetime import datetime, date, timedelta
 
+PA = 360
+cor = 0.6 * PA + 2.5
+cor = 1.6 * PA - 194
 
-domain = "d02"
-wrf_model = "wrf3"
-date = pd.Timestamp(2018, 4, 1)
-forecast_date = date.strftime("%Y%m%d06")
-date = pd.Timestamp(2019, 10, 1)
-intercomp_today_dir = date.strftime("%Y%m%d")
-
-
-ds = xr.open_dataset("/Users/rodell/Downloads/wrfout_d01_0001-01-01_00:48:00")
 # daily_ds = xr.open_zarr(
 #     str(fwf_zarr_dir) + f"/fwf-daily-{domain}-{forecast_date}.zarr"
 # )

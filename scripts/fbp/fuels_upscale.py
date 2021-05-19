@@ -13,7 +13,7 @@ import rasterio
 from rasterio import Affine, MemoryFile
 from rasterio.enums import Resampling
 
-from context import data_dir, wrf_dir, fwf_zarr_dir, vol_dir
+from context import data_dir, wrf_dir, vol_dir
 from datetime import datetime, date, timedelta
 
 startTime = datetime.now()
@@ -21,20 +21,28 @@ print("RUN STARTED AT: ", str(startTime))
 
 
 ## choose model domain
-domain = "test"
+domain = "d03"
 
 
 file_paths = []
 save_path = []
 
-## Path to 2014 nrcan fuels data tif
-fbp2014_filein = (
-    str(vol_dir) + "/fuels/National_FBP_Fueltypes_version2014b/nat_fbpfuels_2014b.tif"
-)
-file_paths.append(fbp2014_filein)
-save_path.append("nrcan.tif")
+# ## Path to 2014 nrcan fuels data tif
+# fbp2014_filein = (
+#     str(vol_dir) + "/fuels/National_FBP_Fueltypes_version2014b/nat_fbpfuels_2014b.tif"
+# )
+# file_paths.append(fbp2014_filein)
+# save_path.append("nrcan.tif")
 
-# ## Path to 2016 land fire US fuels data tif
+## Path toe Peter E's converted fuels grid
+# fbp2019_filein = (
+#     str(vol_dir) + "/fuels/can_fuels2019b.tif"
+# )
+
+# file_paths.append(fbp2019_filein)
+# save_path.append("nrcan_2019.tif")
+
+## Path to 2016 land fire US fuels data tif
 # us_filein = str(vol_dir) + "/fuels/LF2020_FBFM13_200_CONUS/Tif/LC20_F13_200.tif"
 # file_paths.append(us_filein)
 # save_path.append('landfire.tif')

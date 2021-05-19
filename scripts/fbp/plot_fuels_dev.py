@@ -25,63 +25,37 @@ print("RUN STARTED AT: ", str(startTime))
 ## Choose wrf domain
 domain = "d02"
 wrf_model = "wrf4"
-save_file = f"/images/cffdrs-{wrf_model}-{domain}-test.png"
+save_file = f"/images/cffdrs-{wrf_model}-{domain}-2019.png"
 save_dir = str(data_dir) + save_file
 
 ## Path to Fuel converter spreadsheet
-fuel_converter = str(data_dir) + "/fbp/fuel_converter.csv"
+fuel_converter = str(data_dir) + "/fbp/fuel_converter_dev.csv"
 ## Path to any wrf file used in transformation
-fuelsin = str(data_dir) + f"/fbp/fuels-{wrf_model}-{domain}-test.zarr"
+fuelsin = str(data_dir) + f"/fbp/fuels-{wrf_model}-{domain}-2019.zarr"
+
 ## Open all files mentioned above
 fc_df = pd.read_csv(fuel_converter)
-fc_df = fc_df.drop_duplicates(subset=["CFFDRS"])
-fc_df["Code"] = fc_df["National_FBP_Fueltypes_2014"]
-# fc_df = fc_df.set_index("CFFDRS")
-fc_dict = fc_df.transpose().to_dict()
+fc_df = fc_df.drop_duplicates(subset=["FWF_Code"])
+
 
 ds = xr.open_zarr(fuelsin)
 
-fuels = ds.fuels.values
-
-# XLAT = ds.XLAT.values.ravel()
-# fuels = ds.fuels.values.ravel()
-# mask = list(np.where((XLAT< 56.0) & (fuels == 122))[0])
-# fuels[mask] = np.random.choice([113,116],len(mask))
-# mask = list(np.where((XLAT< 56.0) & (fuels == 113))[0])
-# fuels[mask] = np.random.choice([113,116],len(mask))
-
-# fuels = np.reshape(fuels, ds.fuels.shape)
-
-
-# # ds['fuels'] = fuels
-
-
-# unique, count = np.unique(ds.fuels.values, return_counts=True)
-# count[unique==fc_dict["S1"]["Code"]]
-
-# unique = unique.astype(int)
-# fuels = ds.fuels
-
-
-# fuels = xr.where((ds.XLAT.values< 55.0) & (fuels == 122), 113, fuels)
-# fuels = xr.where(fuels == 122, 116, fuels)
-
-# drop_levels = list(
-#     set(list(unique.astype(str)))
-#     ^ set(list(fc_df.National_FBP_Fueltypes_2014.astype(str)))
-# )
-
-# for level in drop_levels:
-#     fc_df = fc_df[fc_df.National_FBP_Fueltypes_2014 != int(level)]
 
 lngs = ds.XLONG.values
 lats = ds.XLAT.values
 
-fillarray = fuels
+fillarray = ds.fuels.values.astype(int)
+# fillarray[fillarray!=7] = 0
+
+# p = plt.pcolormesh(lngs, lats, fillarray)
+# plt.colorbar(p)
+# plt.show()
+
+unique, count = np.unique(fillarray, return_counts=True)
 
 levels = []
-for i in range(0, len(fc_df.National_FBP_Fueltypes_2014.values)):
-    fillarray[fillarray == fc_df.National_FBP_Fueltypes_2014.values[i]] = i
+for i in range(0, len(fc_df.FWF_Code.values)):
+    fillarray[fillarray == fc_df.FWF_Code.values[i]] = i
     levels.append(i)
 
 
@@ -100,7 +74,6 @@ states_provinces = cfeature.NaturalEarthFeature(
     scale="50m",
     facecolor="none",
 )
-
 
 ## add map features
 ax.gridlines()
@@ -129,26 +102,15 @@ else:
 Plot_Title = f"Canadian Forest FBP Fuel Type Grid for WRF Domain {res}"
 ax.set_title(Plot_Title, fontsize=20, weight="bold")
 
-
 colors = fc_df.Colors.values.tolist()
 cmap = matplotlib.colors.ListedColormap(colors)
 Cnorm = matplotlib.colors.BoundaryNorm(levels, cmap.N)
-# Cnorm = matplotlib.colors.Normalize(vmin=int(np.min(levels)), vmax=int(np.max(levels)) + 1)
-
-# length = len(fc_df.Colors.values)
-# colors = fc_df.Colors.values
-# Cnorm = matplotlib.colors.Normalize(vmin=int(np.min(levels)), vmax=int(np.max(levels)) + 1)
-
 contourf = ax.pcolormesh(lngs, lats, fillarray + 0.5, zorder=10, norm=Cnorm, cmap=cmap)
-fig.add_axes(ax_cb)
-# ticks = fc_df.CFFDRS.values[:-4]
-ticks = fc_df.CFFDRS.values[:-1]
 
-# tick_levels = fc_df.National_FBP_Fueltypes_2014.values[:-3].astype(float)
+fig.add_axes(ax_cb)
+ticks = fc_df.CFFDRS.values[:-1]
 tick_levels = list(np.array(levels) - 0.5)
-# tick_levels[-1] = levels[-1]
 cbar = plt.colorbar(contourf, cax=ax_cb, ticks=tick_levels)
-# cbar = plt.colorbar(contourf, cax=ax_cb)
 cbar.ax.set_yticklabels(ticks)  # set ticks of your format
 cbar.ax.axes.tick_params(length=0)
 

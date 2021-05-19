@@ -22,3 +22,9 @@ save_unit1 = (
 )
 unit1 = df[df["title"] == "Unit_1"]
 unit1.to_file(save_unit1)
+
+save_unit5 = (
+    str(gog_dir) + "/Research/FireSmoke/FeildWork/PelicanMountain/unit_5/unit_5.shp"
+)
+unit5 = df[df["title"] == "Unit_5_C"]
+unit5.to_file(save_unit5)

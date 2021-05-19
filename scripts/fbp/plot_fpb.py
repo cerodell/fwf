@@ -5,7 +5,6 @@ import pandas as pd
 import xarray as xr
 from pathlib import Path
 from netCDF4 import Dataset
-from utils.make_intercomp import daily_merge_ds
 from pylab import *
 
 import cartopy.crs as ccrs
@@ -17,32 +16,19 @@ import scipy.ndimage as ndimage
 from scipy.ndimage.filters import gaussian_filter
 
 
-from context import data_dir, xr_dir, wrf_dir, tzone_dir, fwf_zarr_dir
+from context import data_dir, fwf_dir
 from datetime import datetime, date, timedelta
 
 
-date = pd.Timestamp(2018, 7, 18)
-domain = "d02"
-wrf_model = "wrf3"
+wrf_model = "wrf4"
+forecast_date = "2021051006"  ## "YYYYMMDDHH"
+domain = "d02"  ## or 'd03'
+name = "hourly"  ## or 'daily'
 
+filein = str(fwf_dir) + f"/fwf-{name}-{domain}-{forecast_date}.nc"
+ds = xr.open_dataset(filein)
 
-## Path to fuel converter spreadsheet
-fuel_converter = str(data_dir) + "/fbp/fuel_converter.csv"
-fc_df = pd.read_csv(fuel_converter)
-fc_df = fc_df.drop_duplicates(subset=["CFFDRS"])
-fc_df["Code"] = fc_df["National_FBP_Fueltypes_2014"]
-## set index
-fc_df = fc_df.set_index("CFFDRS")
-fc_dict = fc_df.transpose().to_dict()
-
-
-# filein = f"/Volumes/cer/fireweather/data/fwf-hourly-{domain}-2018040106-2018100106.zarr"
-# ds = xr.open_zarr(filein)
-
-ds = xr.open_zarr(str(vol_dir) + "/fwf-daily-d02-2019040100-2019100100.zarr")
-ds["time"] = ds.Time.values
-ds = ds.sel(time="2019-05-11")
-
+ds = ds.isel(time=14)
 
 # ## Path to fuels data terrain data
 # static_filein = str(data_dir) + f"/static/static-vars-{wrf_model}-{domain}.zarr"
@@ -130,7 +116,7 @@ contourf = ax.contourf(
     alpha=1,
 )
 
-plt.scatter(-113.540, 56, zorder=10, color="hotpink", s=500)
+# plt.scatter(-113.540, 56, zorder=10, color="hotpink", s=500)
 
 # contourf = ax.pcolormesh(ds.XLONG, ds.XLAT, ds[var], zorder=10, norm=Cnorm, cmap="RdYlBu_r", shading='flat')
 fig.add_axes(ax_cb)
