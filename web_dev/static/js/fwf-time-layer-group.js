@@ -289,6 +289,89 @@ L.TimeDimension.Layer.LayerGroup = L.TimeDimension.Layer.extend({
                 )
             })};
 
+        if (this._thisVar == 'HFI'){
+            fetch(url, {cache: "default"}).then(function(response){
+                return response.json();
+            }).then(function(json){
+                newLayer.addLayer(L.vectorGrid.slicer( json, {
+                    minZoom: 2,
+                    maxZoom: 18,
+                    rendererFactory: L.canvas.tile,
+                    vectorTileLayerStyles:{
+                        'hfi': geo_json_styler_hfi
+                            }
+                        }
+                    ).setZIndex(500)
+                )
+            })};
+
+        if (this._thisVar == 'ROS'){
+            fetch(url, {cache: "default"}).then(function(response){
+                return response.json();
+            }).then(function(json){
+                newLayer.addLayer(L.vectorGrid.slicer( json, {
+                    minZoom: 2,
+                    maxZoom: 18,
+                    rendererFactory: L.canvas.tile,
+                    vectorTileLayerStyles:{
+                        'ros': geo_json_styler_fbp
+                            }
+                        }
+                    ).setZIndex(500)
+                )
+            })};
+
+        if (this._thisVar == 'CFB'){
+            fetch(url, {cache: "default"}).then(function(response){
+                return response.json();
+            }).then(function(json){
+                newLayer.addLayer(L.vectorGrid.slicer( json, {
+                    minZoom: 2,
+                    maxZoom: 18,
+                    rendererFactory: L.canvas.tile,
+                    vectorTileLayerStyles:{
+                        'cfb': geo_json_styler_fbp
+                            }
+                        }
+                    ).setZIndex(500)
+                )
+            })};
+
+        if (this._thisVar == 'SFC'){
+            fetch(url, {cache: "default"}).then(function(response){
+                return response.json();
+            }).then(function(json){
+                newLayer.addLayer(L.vectorGrid.slicer( json, {
+                    minZoom: 2,
+                    maxZoom: 18,
+                    rendererFactory: L.canvas.tile,
+                    vectorTileLayerStyles:{
+                        'sfc': geo_json_styler_fbp
+                            }
+                        }
+                    ).setZIndex(500)
+                )
+            })};
+
+
+        if (this._thisVar == 'TFC'){
+            fetch(url, {cache: "default"}).then(function(response){
+                return response.json();
+            }).then(function(json){
+                newLayer.addLayer(L.vectorGrid.slicer( json, {
+                    minZoom: 2,
+                    maxZoom: 18,
+                    rendererFactory: L.canvas.tile,
+                    vectorTileLayerStyles:{
+                        'tfc': geo_json_styler_fbp
+                            }
+                        }
+                    ).setZIndex(500)
+                )
+            })};
+
+
+
         if (this._thisVar == 'wsp'){
             fetch(url, {cache: "default"}).then(function(response){
                 return response.json();

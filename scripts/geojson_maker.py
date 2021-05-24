@@ -51,12 +51,33 @@ with open(str(data_dir) + "/json/nested-index.json") as f:
     nested_index = json.load(f)
 
 
+def rechunk(ds):
+    ds = ds.chunk(chunks="auto")
+    ds = ds.unify_chunks()
+    return ds
+
+
 for domain in ["d02", "d03"]:
     hourly_file_dir = str(fwf_dir) + str(f"/fwf-hourly-{domain}-{forecast_date}.nc")
     daily_file_dir = str(fwf_dir) + str(f"/fwf-daily-{domain}-{forecast_date}.nc")
 
     hourly_ds = xr.open_dataset(hourly_file_dir)
     daily_ds = xr.open_dataset(daily_file_dir)
+    hourly_ds = hourly_ds.load()
+    daily_ds = daily_ds.load()
+
+    y1, y2, x1, x2 = (
+        nested_index["y1_" + domain],
+        nested_index["y2_" + domain],
+        nested_index["x1_" + domain],
+        nested_index["x2_" + domain],
+    )
+
+    shape = daily_ds.XLAT.shape
+    I = np.arange(y1, shape[0] - y2)
+    J = np.arange(x1, shape[1] - x2)
+    hourly_ds = hourly_ds.isel(south_north=I, west_east=J)
+    daily_ds = daily_ds.isel(south_north=I, west_east=J)
 
     r_hourly_list = []
     for i in range(len(hourly_ds.Time)):
@@ -68,13 +89,32 @@ for domain in ["d02", "d03"]:
     )
     hourly_ds["r_o_3hour"] = r_hourly
 
-    hourly_vars = ["F", "R", "S", "DSR", "W", "T", "H", "r_o", "r_o_3hour", "SNW"]
+    hourly_vars = [
+        "F",
+        "R",
+        "S",
+        "HFI",
+        "ROS",
+        "CFB",
+        "SFC",
+        "TFC",
+        "W",
+        "T",
+        "H",
+        "r_o",
+        "r_o_3hour",
+        "SNW",
+    ]
     for var in hourly_vars:
         hourly_ds[var] = xr.where(
             hourly_ds[var] < cmaps[var]["vmax"],
             hourly_ds[var],
             int(cmaps[var]["vmax"] + 1),
         )
+        if var == "CFB":
+            hourly_ds[var] = hourly_ds[var].round(0) * 100
+        else:
+            hourly_ds[var] = hourly_ds[var].round(0)
 
     daily_vars = ["D", "P", "U"]
     for var in daily_vars:
@@ -83,76 +123,61 @@ for domain in ["d02", "d03"]:
             daily_ds[var],
             int(cmaps[var]["vmax"] + 1),
         )
+        daily_ds[var] = daily_ds[var].round(0)
 
     # ## Get first timestamp of forecast and make dir to store files
     timestamp = np.array(hourly_ds.Time.dt.strftime("%Y%m%d%H"))
     folderdate = timestamp[0]
-    # ### make dir for that days forecast files
-    # forecast_dir = Path("/bluesky/archive/fireweather/forecasts/" + str(folderdate) + "/data/plot")
-    # forecast_dir = Path("/bluesky/fireweather/fwf/web_dev/data/")
-    # forecast_dir.mkdir(parents=True, exist_ok=True)
+
+    ### make dir for that days forecast files
+    forecast_dir = Path(
+        "/bluesky/archive/fireweather/forecasts/" + str(folderdate) + "/data/plot"
+    )
+    forecast_dir = Path("/bluesky/fireweather/fwf/web_dev/data/")
+    forecast_dir.mkdir(parents=True, exist_ok=True)
 
     make_dir = Path("/bluesky/fireweather/fwf/data/geojson/" + str(folderdate))
     make_dir.mkdir(parents=True, exist_ok=True)
 
-    ## Make geojson of ffmc, isi, fwf every 6 hours
-    print(f"{str(datetime.now())} ---> start loop of hourly fwf products")
+    # ## Make geojson of dmc, dc, bui at noon local for the two day forecast period
+    print(
+        f"{str(datetime.now())} ---> start loop of daily fwf products for domain {domain}"
+    )
+    try:
+        for i in range(len(daily_ds.Time)):
+            ds = daily_ds.isel(time=i)
+            timestamp = np.array(ds.Time.dt.strftime("%Y%m%d%H")).tolist()
+            timestamp = timestamp[:-2]
+            for var in daily_vars:
+                mycontourf_to_geojson(
+                    cmaps, var, ds[var], folderdate, domain, timestamp
+                )
+    except:
+        timestamp = np.array(ds.Time.dt.strftime("%Y%m%d%H")).tolist()
+        timestamp = timestamp[:-2]
+        for var in daily_vars:
+            mycontourf_to_geojson(cmaps, var, ds[var], folderdate, domain, timestamp)
+
+    print(
+        f"{str(datetime.now())} ---> end loop of daily fwf products for domain {domain}"
+    )
+
+    # Make geojson of ffmc, isi, fwf every 3 hours
+    print(
+        f"{str(datetime.now())} ---> start loop of hourly fwf products for domain {domain}"
+    )
 
     lenght = len(hourly_ds.F)
     index = np.arange(0, lenght, 3, dtype=int)
     for i in index:
-        mycontourf_to_geojson(
-            cmaps, "F", hourly_ds, i, folderdate, "colors18", domain, nested_index
-        )
-        mycontourf_to_geojson(
-            cmaps, "R", hourly_ds, i, folderdate, "colors18", domain, nested_index
-        )
-        mycontourf_to_geojson(
-            cmaps, "S", hourly_ds, i, folderdate, "colors18", domain, nested_index
-        )
-        mycontourf_to_geojson(
-            cmaps, "W", hourly_ds, i, folderdate, "colors18", domain, nested_index
-        )
-        mycontourf_to_geojson(
-            cmaps, "T", hourly_ds, i, folderdate, "colors47", domain, nested_index
-        )
-        mycontourf_to_geojson(
-            cmaps, "H", hourly_ds, i, folderdate, "colors18", domain, nested_index
-        )
-        mycontourf_to_geojson(
-            cmaps, "r_o", hourly_ds, i, folderdate, "colors18", domain, nested_index
-        )
-        mycontourf_to_geojson(
-            cmaps,
-            "r_o_3hour",
-            hourly_ds,
-            i,
-            folderdate,
-            "colors18",
-            domain,
-            nested_index,
-        )
-        mycontourf_to_geojson(
-            cmaps, "SNW", hourly_ds, i, folderdate, "colors", domain, nested_index
-        )
+        ds = hourly_ds.isel(time=i)
+        timestamp = np.array(ds.Time.dt.strftime("%Y%m%d%H")).tolist()
+        for var in hourly_vars:
+            mycontourf_to_geojson(cmaps, var, ds[var], folderdate, domain, timestamp)
+    print(
+        f"{str(datetime.now())} ---> end loop of hourly fwf products for domain {domain}"
+    )
 
-    print(f"{str(datetime.now())} ---> end loop of hourly fwf products")
-
-    # ## Make geojson of dmc, dc, bui at noon local for the two day forecast period
-    print(f"{str(datetime.now())} ---> start loop of daily fwf products")
-
-    for i in range(len(daily_ds.Time)):
-        mycontourf_to_geojson(
-            cmaps, "P", daily_ds, i, folderdate, "colors18", domain, nested_index
-        )
-        mycontourf_to_geojson(
-            cmaps, "D", daily_ds, i, folderdate, "colors18", domain, nested_index
-        )
-        mycontourf_to_geojson(
-            cmaps, "U", daily_ds, i, folderdate, "colors18", domain, nested_index
-        )
-
-    print(f"{str(datetime.now())} ---> end loop of daily fwf products")
 
 # ### Timer
 print("Run Time: ", datetime.now() - startTime)

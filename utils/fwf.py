@@ -131,7 +131,16 @@ class FWF:
         ## Define Static Variables for FPB
         print(f"FBP Mode {fbp_mode}")
         self.fbp_mode = fbp_mode
-        self.ELV, self.LAT, self.LON, self.FUELS, self.GS, self.SAZ, self.tzone = (
+        (
+            self.ELV,
+            self.LAT,
+            self.LON,
+            self.FUELS,
+            self.GS,
+            self.SAZ,
+            self.tzone,
+            self.PC,
+        ) = (
             static_ds.HGT.values,
             static_ds.XLAT.values,
             static_ds.XLONG.values * -1,
@@ -139,6 +148,7 @@ class FWF:
             static_ds.GS.values,
             static_ds.SAZ.values,
             static_ds.ZoneDT.values,
+            static_ds.PC.values,
         )
 
         # ### Create an hourly datasets for use with their respected codes/indices
@@ -942,19 +952,22 @@ class FWF:
         hourly_ds = self.rechunk(hourly_ds)
         fc_df = pd.read_csv(str(data_dir) + "/fbp/fuel_converter.csv")
         fc_df = fc_df.drop_duplicates(subset=["CFFDRS"])
-        fc_df["Code"] = fc_df["National_FBP_Fueltypes_2014"]
+        fc_df["Code"] = fc_df["FWF_Code"]
+        fc_df.loc[fc_df["CFFDRS"] == "M1 C25%", "CFFDRS"] = "M1"
+        fc_df = fc_df[~fc_df["CFFDRS"].str.contains("M1/")]
         fc_df = fc_df.set_index("CFFDRS")
         fc_dict = fc_df.transpose().to_dict()
 
         daily_ds = self.daily_ds
         daily_ds = self.rechunk(daily_ds)
-        ELV, LAT, LON, FUELS, GS, SAZ = (
+        ELV, LAT, LON, FUELS, GS, SAZ, PC = (
             self.ELV,
             self.LAT,
             self.LON,
             self.FUELS,
             self.GS,
             self.SAZ,
+            self.PC,
         )
         ## Define Static Variables
         WD, dx, dy = (
@@ -1003,13 +1016,18 @@ class FWF:
         ###################    Surface Fuel Consumption  #######################
         ########################################################################
         ## Define frequently used variables
-        FFMC, BUI, GFL, PC, PH = hourly_ds.F, daily_ds.U, 0.3, 50, 50
+        FFMC, BUI, GFL, PH = hourly_ds.F, daily_ds.U, 0.3, 50
         index = [i for i in range(1, len(FFMC) + 1) if i % 24 == 0]
         ## Build a BUI datarray fo equal length to hourly forecast bisecting is by day
         BUI_i = BUI.values
-        BUI_day1 = np.stack([BUI_i[0]] * index[0])
-        BUI_day2 = np.stack([BUI_i[1]] * (len(FFMC) - index[0]))
-        BUI = np.vstack([BUI_day1, BUI_day2])
+        try:
+            BUI_day1 = np.stack([BUI_i[0]] * index[0])
+            BUI_day2 = np.stack([BUI_i[1]] * (len(FFMC) - index[0]))
+            BUI = np.vstack([BUI_day1, BUI_day2])
+        except:
+            BUI = np.stack([BUI_i[0]] * len(FFMC))
+            print(len(BUI))
+
         BUI = xr.DataArray(BUI, name="BUI", dims=("time", "south_north", "west_east"))
         # hourly_ds["BUI"] = BUI
 

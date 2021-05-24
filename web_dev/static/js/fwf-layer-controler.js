@@ -4,6 +4,11 @@ var dc_topo_file = 'data/map/dc-merge-20200111.json';
 var isi_topo_file = 'data/map/isi-merge-2020011106.json';
 var bui_topo_file = 'data/map/bui-merge-20200111.json';
 var fwi_topo_file = 'data/map/fwi-merge-2020011106.json';
+var hfi_topo_file = 'data/map/hfi-merge-2020011106.json';
+var ros_topo_file = 'data/map/ros-merge-2020011106.json';
+var cfb_topo_file = 'data/map/cfb-merge-2020011106.json';
+var sfc_topo_file = 'data/map/sfc-merge-2020011106.json';
+var tfc_topo_file = 'data/map/tfc-merge-2020011106.json';
 var wsp_topo_file = 'data/map/ws-merge-2020011106.json';
 var temp_topo_file = 'data/map/temp-merge-2020011106.json';
 var rh_topo_file = 'data/map/rh-merge-2020011106.json';
@@ -19,6 +24,11 @@ var geo_json_dc = L.layerGroup();
 var geo_json_isi = L.layerGroup();
 var geo_json_bui = L.layerGroup();
 var geo_json_fwi = L.layerGroup();
+var geo_json_hfi = L.layerGroup();
+var geo_json_ros = L.layerGroup();
+var geo_json_cfb = L.layerGroup();
+var geo_json_sfc = L.layerGroup();
+var geo_json_tfc = L.layerGroup();
 var geo_json_wsp = L.layerGroup();
 var geo_json_temp = L.layerGroup();
 var geo_json_rh = L.layerGroup();
@@ -69,6 +79,41 @@ var fwiTimeLayer = L.timeDimension.layer.layerGroup(geo_json_fwi, {
     getUrlFunction: getHourlyForecast,
     getFileDir: fwi_topo_file,
     getVar: 'FWI'
+
+});
+
+var hfiTimeLayer = L.timeDimension.layer.layerGroup(geo_json_hfi, {
+    getUrlFunction: getHourlyForecast,
+    getFileDir: hfi_topo_file,
+    getVar: 'HFI'
+
+});
+
+var rosTimeLayer = L.timeDimension.layer.layerGroup(geo_json_ros, {
+    getUrlFunction: getHourlyForecast,
+    getFileDir: ros_topo_file,
+    getVar: 'ROS'
+
+});
+
+var cfbTimeLayer = L.timeDimension.layer.layerGroup(geo_json_cfb, {
+    getUrlFunction: getHourlyForecast,
+    getFileDir: cfb_topo_file,
+    getVar: 'CFB'
+
+});
+
+var sfcTimeLayer = L.timeDimension.layer.layerGroup(geo_json_sfc, {
+    getUrlFunction: getHourlyForecast,
+    getFileDir: sfc_topo_file,
+    getVar: 'SFC'
+
+});
+
+var tfcTimeLayer = L.timeDimension.layer.layerGroup(geo_json_tfc, {
+    getUrlFunction: getHourlyForecast,
+    getFileDir: tfc_topo_file,
+    getVar: 'TFC'
 
 });
 
@@ -134,6 +179,17 @@ var groupedOverlays = [
         ]
     },
     {
+        label: 'Fire Behavior Forecast',
+        children: [
+            {label: ' Head Fire Intensity (kW/m)', layer: hfiTimeLayer, radioGroup: 'bc'},
+            {label: ' Rate of Spread (m/min)', layer: rosTimeLayer, radioGroup: 'bc'},
+            {label: ' Crown Fraction Burned (%)', layer: cfbTimeLayer, radioGroup: 'bc'},
+            {label: ' Surface Fuel Consumption (kg/m<sup>2</sup>)', layer: sfcTimeLayer, radioGroup: 'bc'},
+            {label: ' Total Fuel Consumption (kg/m<sup>2</sup>)', layer: tfcTimeLayer, radioGroup: 'bc'},
+
+        ]
+    },
+    {
         label: 'Weather Forecast',
         children: [
             {label: ' Temperature (C)', layer: tempTimeLayer, radioGroup: 'bc'},
@@ -155,7 +211,7 @@ var groupedOverlays = [
 ];
 
 var groupedOptions = {
-    exclusiveGroups: ["Fire Weather Forecast"],
+    exclusiveGroups: ["Fire Weather Forecast", "Fire Behavior Forecast"],
 
 };
 // L.control.groupedLayers(baseLayers, groupedOverlays).addTo(map);

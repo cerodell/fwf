@@ -17,7 +17,7 @@ import scipy.ndimage as ndimage
 from scipy.ndimage.filters import gaussian_filter
 from pylab import *
 
-from context import data_dir, xr_dir, wrf_dir, tzone_dir, fwf_zarr_dir
+from context import data_dir, xr_dir, wrf_dir, tzone_dir, fwf_dir
 from datetime import datetime, date, timedelta
 from sklearn.metrics import mean_squared_error
 from sklearn.metrics import r2_score
@@ -27,9 +27,9 @@ from matplotlib.offsetbox import AnchoredText
 
 wrf_model = "wrf4"
 day_of = "_day1"
-domain = "d03"
+domain = "d02"
 # date = pd.Timestamp("today")
-date = pd.Timestamp(2021, 4, 5)
+date = pd.Timestamp(2021, 5, 19)
 
 intercomp_today_dir = date.strftime("%Y%m%d")
 

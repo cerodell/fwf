@@ -42,14 +42,14 @@ name_list = list(cmaps)
 
 
 forecast_date = pd.Timestamp("today").strftime("%Y%m%d00")
-# forecast_date = pd.Timestamp(2021, 5, 1).strftime("%Y%m%d00")
+# forecast_date = pd.Timestamp(2021, 5, 3).strftime("%Y%m%d00")
 
 make_dir = Path(f"/bluesky/archive/fireweather/forecasts/{forecast_date}/data/")
 make_dir.mkdir(parents=True, exist_ok=True)
 
 
 date = pd.Timestamp("today")
-# date = pd.Timestamp(2021, 5, 1)
+# date = pd.Timestamp(2021, 5, 3)
 forecast_date = date.strftime("%Y%m%d06")
 obs_date = (date - np.timedelta64(1, "D")).strftime("%Y%m%d")
 obs_date_int = (date - np.timedelta64(14, "D")).strftime("%Y%m%d")
@@ -106,37 +106,55 @@ def rechunk(ds):
 
 def reindex_ds(ds_d2, ds_d3, info):
     ds_d2, ds_d3 = rechunk(ds_d2), rechunk(ds_d3)
-    ds_d2["time"], ds_d3["time"] = (
-        ds_d2.Time.astype("datetime64[h]"),
-        ds_d3.Time.astype("datetime64[h]"),
-    )
-    if len(ds_d3.time) != len(ds_d2.time):
-        print(f"Unequal lenght datasets for {info}")
-        if len(ds_d3.time) > len(ds_d2.time):
-            print("d03 in longer")
-            time_array = ds_d2.Time.values.astype("datetime64[h]")
-            ds_d3 = ds_d3.sel(time=slice(str(time_array[0]), str(time_array[-1])))
-            print(
-                f"reindex d03 from {str(time_array[0])} - {str(time_array[-1])} for {info}"
-            )
-        elif len(ds_d3.time) < len(ds_d2.time):
-            print("d02 in longer")
-            time_array = ds_d3.Time.values.astype("datetime64[h]")
-            ds_d2 = ds_d2.sel(time=slice(str(time_array[0]), str(time_array[-1])))
-            print(
-                f"reindex d02 from {str(time_array[0])} - {str(time_array[-1])} for {info}"
-            )
+    try:
+        ds_d2["time"], ds_d3["time"] = (
+            ds_d2.Time.astype("datetime64[h]"),
+            ds_d3.Time.astype("datetime64[h]"),
+        )
+        if len(ds_d3.time) != len(ds_d2.time):
+            print(f"Unequal lenght datasets for {info}")
+            if len(ds_d3.time) > len(ds_d2.time):
+                print("d03 in longer")
+                time_array = ds_d2.Time.values.astype("datetime64[h]")
+                ds_d3 = ds_d3.sel(time=slice(str(time_array[0]), str(time_array[-1])))
+                print(
+                    f"reindex d03 from {str(time_array[0])} - {str(time_array[-1])} for {info}"
+                )
+            elif len(ds_d3.time) < len(ds_d2.time):
+                print("d02 in longer")
+                time_array = ds_d3.Time.values.astype("datetime64[h]")
+                ds_d2 = ds_d2.sel(time=slice(str(time_array[0]), str(time_array[-1])))
+                print(
+                    f"reindex d02 from {str(time_array[0])} - {str(time_array[-1])} for {info}"
+                )
+            else:
+                print("Faild")
         else:
-            print("Faild")
-    else:
-        ds_d2, ds_d3 = ds_d2, ds_d3
-
+            ds_d2, ds_d3 = ds_d2, ds_d3
+    except:
+        ds_d2, ds_d3 = xr.concat([ds_d2, ds_d2], dim="time"), xr.concat(
+            [ds_d3, ds_d3], dim="time"
+        )
+        time_hack = (date + np.timedelta64(1, "D")).strftime("%Y-%m-%d")
+        ds_d2["time"] = np.array(
+            [date.strftime("%Y-%m-%d"), time_hack], dtype="datetime64[h]"
+        )
+        ds_d3["time"] = np.array(
+            [date.strftime("%Y-%m-%d"), time_hack], dtype="datetime64[h]"
+        )
+        ds_d2["Time"] = np.array(
+            [date.strftime("%Y-%m-%d"), time_hack], dtype="datetime64[ns]"
+        )
+        ds_d3["Time"] = np.array(
+            [date.strftime("%Y-%m-%d"), time_hack], dtype="datetime64[ns]"
+        )
     return ds_d2, ds_d3
 
 
 ## reindex in datasets have unequal leght time series
 hourly_d2_ds, hourly_d3_ds = reindex_ds(hourly_d2_ds, hourly_d3_ds, "hourly_ds")
 daily_d2_ds, daily_d3_ds = reindex_ds(daily_d2_ds, daily_d3_ds, "daily_ds")
+
 
 ## reindex in datasets have unequal leght time series
 hourly_d2_yester_ds, hourly_d3_yester_ds = reindex_ds(
@@ -206,7 +224,6 @@ print(f"index of times {index} with time {int_time}Z")
 tzone_array = obs_ds.tz_correct.values
 unique, counts = np.unique(tzone_array, return_counts=True)
 
-
 for ztu in unique:
     ind = [i for i, n in enumerate(tzone_array) if n == ztu]
 
@@ -235,17 +252,21 @@ for ztu in unique:
 
     time = np.array(fianl_hourly_ds.Time.dt.strftime("%Y-%m-%dT%H"), dtype="<U13")
     day = np.array(wx_daily_ds.Noon.dt.strftime("%Y-%m-%dT%H"), dtype="<U13")
+
     time_obs = np.array(wx_obs_ds.Noon.dt.strftime("%Y-%m-%dT%H"), dtype="<U13")
 
     # coords_list = list(obs_ds.coords)
-    coords_list = ["time", "wmo"]
+    coords_list = ["time", "wmo", "name"]
     dict_var = {}
     for coords in coords_list:
         if coords != "time":
             coord_array = wx_obs_ds[coords].values
             coord_array = coord_array.tolist()
             if coords == "name":
-                coord_array = [item.replace(",", "") for item in coord_array]
+                coord_array = [item.strip() for item in coord_array]
+                coord_array = [item.replace("+", " ") for item in coord_array]
+                coord_array = [item.replace("_", " ") for item in coord_array]
+                coord_array = [item.replace(",", " ") for item in coord_array]
                 dict_var.update({coords.lower(): str(coord_array)})
             else:
                 dict_var.update({coords.lower(): str(coord_array)})

@@ -479,6 +479,209 @@ color_map_fwi.onAdd = function(map) {
     return div;
 }
 
+
+
+var color_map_hfi = L.control({position: "bottomleft"});
+color_map_hfi.onAdd = function(map) {
+    var div = L.DomUtil.create('div', 'fcst-legend leaflet-bar leaflet-control');
+    div.innerHTML =
+'<table id="values">\
+<tr id="colours">\
+<td style="background:#0000ff; width:30px; border-left:none;"></td>\
+<td style="background:#00c0c0; width:30px;"></td>\
+<td style="background:#008001; width:30px;"></td>\
+<td style="background:#01e001; width:30px;"></td>\
+<td style="background:#ffff00; width:30px;"></td>\
+<td style="background:#dfa000; width:30px;"></td>\
+<td style="background:#ff0000; width:30px;"></td>\
+<td style="background:#8b0000; width:30px;"></td>\
+</tr>\
+<tr id="ticks">\
+<td style="width:10px; border-left:none;"></td>\
+<td></td>\
+<td></td>\
+<td></td>\
+<td></td>\
+<td></td>\
+<td></td>\
+<td></td>\
+</tr>\
+</table>\
+<table id="labels">\
+<tr>\
+<td width="2px">0</td>\
+<td width="45px">10</td>\
+<td width="20px">500</td>\
+<td width="40px">2000</td>\
+<td width="28px">4000</td>\
+<td width="30px">10000</td>\
+<td width="30px">30000</td>\
+<td width="38px">40000+</td>\
+</tr>\
+</table>\
+<div class="legend-title">Head Fire Intensity (kW/m)</div>';
+    return div;
+}
+
+
+var color_map_ros = L.control({position: "bottomleft"});
+color_map_ros.onAdd = function(map) {
+    var div = L.DomUtil.create('div', 'fcst-legend leaflet-bar leaflet-control');
+    div.innerHTML =
+'<table id="values">\
+<tr id="colours">\
+<td style="background:#0000ff; width:30px; border-left:none;"></td>\
+<td style="background:#008001; width:30px;"></td>\
+<td style="background:#01e001; width:30px;"></td>\
+<td style="background:#ffff00; width:30px;"></td>\
+<td style="background:#dfa000; width:30px;"></td>\
+<td style="background:#ff0000; width:30px;"></td>\
+<td style="background:#8b0000; width:30px;"></td>\
+</tr>\
+<tr id="ticks">\
+<td style="width:10px; border-left:none;"></td>\
+<td></td>\
+<td></td>\
+<td></td>\
+<td></td>\
+<td></td>\
+<td></td>\
+</tr>\
+</table>\
+<table id="labels">\
+<tr>\
+<td width="2px">0</td>\
+<td width="43px">1</td>\
+<td width="23px">3</td>\
+<td width="36px">10</td>\
+<td width="30px">18</td>\
+<td width="34px">25</td>\
+<td width="35px">40+</td>\
+</tr>\
+</table>\
+<div class="legend-title">Rate of Spread (m/min)</div>';
+    return div;
+}
+
+
+var color_map_cfb = L.control({position: "bottomleft"});
+color_map_cfb.onAdd = function(map) {
+    var div = L.DomUtil.create('div', 'fcst-legend leaflet-bar leaflet-control');
+    div.innerHTML =
+'<table id="values">\
+<tr id="colours">\
+<td style="background:#0000ff; width:30px; border-left:none;"></td>\
+<td style="background:#008001; width:30px;"></td>\
+<td style="background:#01e001; width:30px;"></td>\
+<td style="background:#ffff00; width:30px;"></td>\
+<td style="background:#dfa000; width:30px;"></td>\
+<td style="background:#ff0000; width:30px;"></td>\
+</tr>\
+<tr id="ticks">\
+<td style="width:10px; border-left:none;"></td>\
+<td></td>\
+<td></td>\
+<td></td>\
+<td></td>\
+<td></td>\
+<td></td>\
+</tr>\
+</table>\
+<table id="labels">\
+<tr>\
+<td width="2px">0</td>\
+<td width="43px">10</td>\
+<td width="23px">30</td>\
+<td width="36px">50</td>\
+<td width="30px">70</td>\
+<td width="30px">90</td>\
+<td width="32px">100</td>\
+</tr>\
+</table>\
+<div class="legend-title">Crown Fraction Burned (%)</div>';
+    return div;
+}
+
+
+var color_map_sfc = L.control({position: "bottomleft"});
+color_map_sfc.onAdd = function(map) {
+    var div = L.DomUtil.create('div', 'fcst-legend leaflet-bar leaflet-control');
+    div.innerHTML =
+'<table id="values">\
+<tr id="colours">\
+<td style="background:#0000ff; width:30px; border-left:none;"></td>\
+<td style="background:#008001; width:30px;"></td>\
+<td style="background:#01e001; width:30px;"></td>\
+<td style="background:#ffff00; width:30px;"></td>\
+<td style="background:#dfa000; width:30px;"></td>\
+<td style="background:#ff0000; width:30px;"></td>\
+<td style="background:#8b0000; width:30px;"></td>\
+</tr>\
+<tr id="ticks">\
+<td style="width:10px; border-left:none;"></td>\
+<td></td>\
+<td></td>\
+<td></td>\
+<td></td>\
+<td></td>\
+<td></td>\
+</tr>\
+</table>\
+<table id="labels">\
+<tr>\
+<td width="2px">0</td>\
+<td width="46px">1</td>\
+<td width="17px">2</td>\
+<td width="44px">3</td>\
+<td width="18px">4</td>\
+<td width="44px">5</td>\
+<td width="26px">6+</td>\
+</tr>\
+</table>\
+<div class="legend-title">Surface Fuel Consumption (kg/m^2)</div>';
+    return div;
+}
+
+
+var color_map_tfc = L.control({position: "bottomleft"});
+color_map_tfc.onAdd = function(map) {
+    var div = L.DomUtil.create('div', 'fcst-legend leaflet-bar leaflet-control');
+    div.innerHTML =
+'<table id="values">\
+<tr id="colours">\
+<td style="background:#0000ff; width:30px; border-left:none;"></td>\
+<td style="background:#008001; width:30px;"></td>\
+<td style="background:#01e001; width:30px;"></td>\
+<td style="background:#ffff00; width:30px;"></td>\
+<td style="background:#dfa000; width:30px;"></td>\
+<td style="background:#ff0000; width:30px;"></td>\
+<td style="background:#8b0000; width:30px;"></td>\
+</tr>\
+<tr id="ticks">\
+<td style="width:10px; border-left:none;"></td>\
+<td></td>\
+<td></td>\
+<td></td>\
+<td></td>\
+<td></td>\
+<td></td>\
+</tr>\
+</table>\
+<table id="labels">\
+<tr>\
+<td width="2px">0</td>\
+<td width="46px">2</td>\
+<td width="17px">4</td>\
+<td width="44px">6</td>\
+<td width="18px">8</td>\
+<td width="44px">10</td>\
+<td width="26px">12+</td>\
+</tr>\
+</table>\
+<div class="legend-title">Total Fuel Consumption (kg/m^2)</div>';
+    return div;
+}
+
 var color_map_wsp = L.control({position: "bottomleft"});
 color_map_wsp.onAdd = function(map) {
     var div = L.DomUtil.create('div', 'fcst-legend leaflet-bar leaflet-control');
@@ -1285,6 +1488,52 @@ if (eventLayer.layer == fwiTimeLayer) {
 }});
 
 map.on('overlayadd', function (eventLayer) {
+    if (eventLayer.layer == hfiTimeLayer) {
+        color_map_hfi.addTo(map);
+    }});
+map.on('overlayremove', function (eventLayer) {
+if (eventLayer.layer == hfiTimeLayer) {
+    color_map_hfi.remove(map);
+}});
+
+map.on('overlayadd', function (eventLayer) {
+    if (eventLayer.layer == rosTimeLayer) {
+        color_map_ros.addTo(map);
+    }});
+map.on('overlayremove', function (eventLayer) {
+if (eventLayer.layer == rosTimeLayer) {
+    color_map_ros.remove(map);
+}});
+
+map.on('overlayadd', function (eventLayer) {
+    if (eventLayer.layer == cfbTimeLayer) {
+        color_map_cfb.addTo(map);
+    }});
+map.on('overlayremove', function (eventLayer) {
+if (eventLayer.layer == cfbTimeLayer) {
+    color_map_cfb.remove(map);
+}});
+
+map.on('overlayadd', function (eventLayer) {
+    if (eventLayer.layer == sfcTimeLayer) {
+        color_map_sfc.addTo(map);
+    }});
+map.on('overlayremove', function (eventLayer) {
+if (eventLayer.layer == sfcTimeLayer) {
+    color_map_sfc.remove(map);
+}});
+
+map.on('overlayadd', function (eventLayer) {
+    if (eventLayer.layer == tfcTimeLayer) {
+        color_map_tfc.addTo(map);
+    }});
+map.on('overlayremove', function (eventLayer) {
+if (eventLayer.layer == tfcTimeLayer) {
+    color_map_tfc.remove(map);
+}});
+
+
+map.on('overlayadd', function (eventLayer) {
     if (eventLayer.layer == wspTimeLayer) {
         color_map_wsp.addTo(map);
     }});
@@ -1383,7 +1632,50 @@ function geo_json_styler18(properties, zoom) {
         }
 
 
+function geo_json_styler_fbp(properties, zoom) {
+    var fillOpacity = 1
+    var opacity = 1
+    switch(properties.fill) {
+        case "#0000ff":
+            return {"color": "#0000ff", "opacity": opacity, "fillColor": "#0000ff", "fillOpacity": fillOpacity, "weight": 0.2, fill: true};
+        case "#008001":
+            return {"color": "#008001", "opacity": opacity, "fillColor": "#008001", "fillOpacity": fillOpacity, "weight": 0.2, fill: true};
+        case "#01e001":
+            return {"color": "#01e001", "opacity": opacity, "fillColor": "#01e001", "fillOpacity": fillOpacity, "weight": 0.2, fill: true};
+        case "#ffff00":
+            return {"color": "#ffff00", "opacity": opacity, "fillColor": "#ffff00", "fillOpacity": fillOpacity, "weight": 0.2, fill: true};
+        case "#dfa000":
+            return {"color": "#dfa000", "opacity": opacity, "fillColor": "#dfa000", "fillOpacity": fillOpacity, "weight": 0.2, fill: true};
+        case "#ff0000":
+            return {"color": "#ff0000", "opacity": opacity, "fillColor": "#ff0000", "fillOpacity": fillOpacity, "weight": 0.2, fill: true};
+        default:
+            return {"color": "#8b0000", "opacity": opacity, "fillColor": "#8b0000", "fillOpacity": fillOpacity, "weight": 0.2, fill: true};
+        }
+    }
 
+
+function geo_json_styler_hfi(properties, zoom) {
+    var fillOpacity = 1
+    var opacity = 1
+    switch(properties.fill) {
+        case "#0000ff":
+            return {"color": "#0000ff", "opacity": opacity, "fillColor": "#0000ff", "fillOpacity": fillOpacity, "weight": 0.2, fill: true};
+        case "#00c0c0":
+            return {"color": "#00c0c0", "opacity": opacity, "fillColor": "#00c0c0", "fillOpacity": fillOpacity, "weight": 0.2, fill: true};
+        case "#008001":
+            return {"color": "#008001", "opacity": opacity, "fillColor": "#008001", "fillOpacity": fillOpacity, "weight": 0.2, fill: true};
+        case "#01e001":
+            return {"color": "#01e001", "opacity": opacity, "fillColor": "#01e001", "fillOpacity": fillOpacity, "weight": 0.2, fill: true};
+        case "#ffff00":
+            return {"color": "#ffff00", "opacity": opacity, "fillColor": "#ffff00", "fillOpacity": fillOpacity, "weight": 0.2, fill: true};
+        case "#dfa000":
+            return {"color": "#dfa000", "opacity": opacity, "fillColor": "#dfa000", "fillOpacity": fillOpacity, "weight": 0.2, fill: true};
+        case "#ff0000":
+                return {"color": "#ff0000", "opacity": opacity, "fillColor": "#ff0000", "fillOpacity": fillOpacity, "weight": 0.2, fill: true};
+        default:
+            return {"color": "#8b0000", "opacity": opacity, "fillColor": "#8b0000", "fillOpacity": fillOpacity, "weight": 0.2, fill: true};
+        }
+    }
 
 function geo_json_styler_wsp(properties, zoom) {
     var fillOpacity = 1

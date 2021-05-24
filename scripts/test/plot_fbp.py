@@ -15,112 +15,155 @@ import matplotlib.pyplot as plt
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 import scipy.ndimage as ndimage
 from scipy.ndimage.filters import gaussian_filter
+import matplotlib.ticker as mticker
 
 
-from context import data_dir, xr_dir, wrf_dir, tzone_dir, fwf_zarr_dir
+from context import data_dir, xr_dir, wrf_dir, tzone_dir, fwf_dir
 from datetime import datetime, date, timedelta
 
 
-date = pd.Timestamp(2021, 4, 7)
+date = pd.Timestamp(2021, 5, 21)
 forecast_date = date.strftime("%Y%m%d06")
-domain = "d03"
+domain = "d02"
 wrf_model = "wrf4"
 
-file_dir = str(fwf_zarr_dir) + f"/fwf-hourly-{domain}-{forecast_date}.zarr"
-ds = xr.open_zarr(file_dir)
+
+### Open color map json
+with open(str(data_dir) + "/json/colormaps-dev.json") as f:
+    cmaps = json.load(f)
+
+
+file_dir = str(fwf_dir) + f"/fwf-hourly-{domain}-{forecast_date}.nc"
+ds = xr.open_dataset(file_dir)
 ds = ds.isel(time=14)
-# ## Path to fuel converter spreadsheet
-# fuel_converter = str(data_dir) + "/fbp/fuel_converter.csv"
-# fc_df = pd.read_csv(fuel_converter)
-# fc_df = fc_df.drop_duplicates(subset=["CFFDRS"])
-# fc_df["Code"] = fc_df["National_FBP_Fueltypes_2014"]
-# ## set index
-# fc_df = fc_df.set_index("CFFDRS")
-# fc_dict = fc_df.transpose().to_dict()
-
-
-var = "HFI"
-# levels = np.arange(0, 20000, 100)
-levels = [0, 10, 500, 2000, 4000, 10000, 30000, 40000]
-colors = ["#0000ff", "#00c0c0", "#008001", "#01e001", "#ffff00", "#dfa000", "#ff0000"]
-save_file = f"/images/{var}-{wrf_model}-{domain}.png"
-save_dir = str(data_dir) + save_file
-
-
 day_hour = np.datetime_as_string(ds.Time, unit="h")
-## bring in state/prov boundaries
-states_provinces = cfeature.NaturalEarthFeature(
-    category="cultural",
-    name="admin_1_states_provinces_lines",
-    scale="50m",
-    facecolor="none",
+day = day_hour.replace("-", "")
+
+### Open nested index json
+with open(str(data_dir) + "/json/nested-index.json") as f:
+    nested_index = json.load(f)
+
+
+y1, y2, x1, x2 = (
+    nested_index["y1_" + domain],
+    nested_index["y2_" + domain],
+    nested_index["x1_" + domain],
+    nested_index["x2_" + domain],
 )
+x1, x2 = 40, 8
+shape = ds.XLAT.shape
+I = np.arange(y1, shape[0] - y2)
+J = np.arange(x1, shape[1] - x2)
+ds = ds.isel(south_north=I, west_east=J)
 
 
-## make fig for make with projection
-fig = plt.figure(figsize=[16, 8])
-ax = fig.add_subplot(1, 1, 1, projection=ccrs.PlateCarree())
+var_list = ["HFI", "ROS", "CFB", "SFC", "TFC"]
 
-divider = make_axes_locatable(ax)
-ax_cb = divider.new_horizontal(size="5%", pad=0.1, axes_class=plt.Axes)
+for var in var_list:
+    vmin, vmax = cmaps[var]["vmin"], cmaps[var]["vmax"]
+    name, colors, sigma, levels = (
+        str(cmaps[var]["name"]),
+        cmaps[var]["colors"],
+        cmaps[var]["sigma"],
+        cmaps[var]["levels"],
+    )
 
-# cax = divider.append_axes('right', size='5%', pad=0.05)
+    if var == "CFB":
+        fillarray = ds[var].values * 100
+    else:
+        fillarray = ds[var].values
+    fillarray = np.round(fillarray, 0)
+    fillarray = ndimage.gaussian_filter(fillarray, sigma=sigma)
+    Cnorm = matplotlib.colors.Normalize(vmin=vmin, vmax=vmax + 1)
+    save_file = f"/images/fbp/{var}-{wrf_model}-{domain}-{day}.png"
+    save_dir = str(data_dir) + save_file
 
-## add map features
-ax.gridlines()
-ax.add_feature(cfeature.LAND, zorder=1)
-ax.add_feature(cfeature.LAKES, zorder=10)
-ax.add_feature(cfeature.OCEAN, zorder=10)
-ax.add_feature(cfeature.BORDERS, zorder=1)
-ax.add_feature(cfeature.COASTLINE, zorder=1)
-ax.add_feature(states_provinces, edgecolor="gray", zorder=6)
-ax.set_xlabel("Longitude", fontsize=18)
-ax.set_ylabel("Latitude", fontsize=18)
+    ## bring in state/prov boundaries
+    states_provinces = cfeature.NaturalEarthFeature(
+        category="cultural",
+        name="admin_1_states_provinces_lines",
+        scale="50m",
+        facecolor="none",
+    )
 
-## create tick mark labels and style
-ax.set_xticks(list(np.arange(-160, -40, 10)), crs=ccrs.PlateCarree())
-ax.set_yticks(list(np.arange(30, 80, 10)), crs=ccrs.PlateCarree())
-ax.tick_params(axis="both", which="major", labelsize=14)
-ax.tick_params(axis="both", which="minor", labelsize=14)
+    ## bring in state/prov boundaries
+    states_provinces = cfeature.NaturalEarthFeature(
+        category="cultural",
+        name="admin_1_states_provinces_lines",
+        scale="50m",
+        facecolor="none",
+    )
 
-## add title and adjust subplot buffers
-if domain == "d02":
-    res = "12 km"
-elif domain == "d03":
-    res = "4 km"
-else:
-    res = ""
-Plot_Title = f"{'HFI'} at {day_hour} \n {wrf_model} {res}"
-ax.set_title(Plot_Title, fontsize=20, weight="bold")
+    proj = ccrs.PlateCarree(central_longitude=0)
+    ## make fig for make with projection
+    fig = plt.figure(figsize=[16, 8])
+    ax = fig.add_subplot(1, 1, 1, projection=proj)
 
-Cnorm = matplotlib.colors.Normalize(vmin=int(np.min(levels)), vmax=int(np.max(levels)))
-contourf = ax.contourf(
-    ds.XLONG,
-    ds.XLAT,
-    ds[var],
-    levels=levels,
-    extend="both",
-    colors=colors,
-    norm=Cnorm,
-    zorder=10,
-    alpha=1,
-)
+    divider = make_axes_locatable(ax)
+    ax_cb = divider.new_horizontal(size="5%", pad=0.1, axes_class=plt.Axes)
 
-# plt.scatter(-113.540, 56, zorder=10, color="hotpink", s=500)
+    ## add map features
+    gl = ax.gridlines(
+        draw_labels=True,
+        crs=ccrs.PlateCarree(),
+        linewidth=0.5,
+        color="gray",
+        alpha=0.5,
+        linestyle="--",
+        zorder=10,
+    )
+    gl.top_labels = gl.right_labels = False
+    gl.xlocator = mticker.FixedLocator(list(np.arange(-180, 180, 10)))
+    ax.add_feature(cfeature.LAND, zorder=1)
+    ax.add_feature(cfeature.LAKES, zorder=9)
+    ax.add_feature(cfeature.OCEAN, zorder=9)
+    ax.add_feature(cfeature.BORDERS, zorder=9)
+    ax.add_feature(cfeature.COASTLINE, zorder=9)
+    ax.add_feature(states_provinces, edgecolor="k", zorder=9, lw=0.5)
+    ax.set_xlabel("Longitude", fontsize=18)
+    ax.set_ylabel("Latitude", fontsize=18)
+    ax.tick_params(axis="both", which="major", labelsize=14)
+    ax.tick_params(axis="both", which="minor", labelsize=14)
 
-# contourf = ax.pcolormesh(ds.XLONG, ds.XLAT, ds[var], zorder=10, norm=Cnorm, cmap="RdYlBu_r", shading='flat')
-fig.add_axes(ax_cb)
-cbar = plt.colorbar(contourf, cax=ax_cb)
+    ## add title and adjust subplot buffers
+    if domain == "d02":
+        res = "12 km"
+    elif domain == "d03":
+        res = "4 km"
+    else:
+        res = ""
 
-## set map bounds
-if wrf_model == "wrf3":
-    ax.set_xlim([-140, -60])
-    ax.set_ylim([36, 70])
-elif wrf_model == "wrf4":
-    ax.set_xlim([-174, -30])
-    ax.set_ylim([25, 80])
-else:
-    pass
+    ## add title and adjust subplot buffers
+    Plot_Title = f"{var} at {day_hour} \n {wrf_model} {res}"
+    ax.set_title(Plot_Title, fontsize=20, weight="bold")
 
+    Cnorm = matplotlib.colors.Normalize(
+        vmin=int(np.min(levels)), vmax=int(np.max(levels))
+    )
+    contourf = ax.contourf(
+        ds.XLONG,
+        ds.XLAT,
+        fillarray,
+        levels=levels,
+        extend="max",
+        colors=colors,
+        norm=Cnorm,
+        zorder=4,
+        alpha=1,
+    )
 
-fig.savefig(save_dir, dpi=240)
+    fig.add_axes(ax_cb)
+    cbar = plt.colorbar(contourf, cax=ax_cb)
+
+    ## set map bounds
+    if wrf_model == "wrf3":
+        ax.set_xlim([-140, -60])
+        ax.set_ylim([36, 70])
+    elif wrf_model == "wrf4":
+        ax.set_xlim([-174, -30])
+        ax.set_ylim([25, 80])
+    else:
+        pass
+
+    fig.savefig(save_dir, dpi=240)
+    plt.close()

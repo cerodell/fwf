@@ -18,9 +18,7 @@ from datetime import datetime, date, timedelta
 from wrf import getvar
 
 
-def mycontourf_to_geojson(
-    cmaps, var, ds, index, folderdate, colornumber, domain, nested_index
-):
+def mycontourf_to_geojson(cmaps, var, da, folderdate, domain, timestamp):
     """
     This makes a geojson file from a matplot lib countourf
 
@@ -56,46 +54,21 @@ def mycontourf_to_geojson(
         - ``../fwf/data/geojson/YYYYMMDDHH``
 
     """
-    y1, y2, x1, x2 = (
-        nested_index["y1_" + domain],
-        nested_index["y2_" + domain],
-        nested_index["x1_" + domain],
-        nested_index["x2_" + domain],
-    )
-    # timestamp  = str(np.array(ds.Time[index], dtype ='datetime64[h]'))
-    timestamp = np.array(ds.Time.dt.strftime("%Y%m%d%H"))
-    timestamp = timestamp[index]
+
     vmin, vmax = cmaps[var]["vmin"], cmaps[var]["vmax"]
     name, colors, sigma = (
         str(cmaps[var]["name"]),
-        cmaps[var][colornumber],
+        cmaps[var]["colors"],
         cmaps[var]["sigma"],
     )
-    if name == "dmc":
-        timestamp = timestamp[:-2]
-    elif name == "dc":
-        timestamp = timestamp[:-2]
-    elif name == "bui":
-        timestamp = timestamp[:-2]
-    else:
-        pass
-
-    lngs = ds.XLONG.values
-    lats = ds.XLAT.values
-    lngs = lngs[y1:-y2, x1:-x2]
-    lats = lats[y1:-y2, x1:-x2]
-
-    fillarray = ds[var][index].values[y1:-y2, x1:-x2]
-    fillarray = np.round(fillarray, 0)
-    fillarray = ndimage.gaussian_filter(fillarray, sigma=sigma)
 
     geojson_filepath = str(name + "-" + timestamp + "-" + domain)
     levels = cmaps[var]["levels"]
     Cnorm = matplotlib.colors.Normalize(vmin=vmin, vmax=vmax + 1)
     contourf = plt.contourf(
-        lngs,
-        lats,
-        fillarray,
+        da.XLONG.values,
+        da.XLAT.values,
+        ndimage.gaussian_filter(da.values, sigma=sigma),
         levels=levels,
         linestyles="None",
         norm=Cnorm,

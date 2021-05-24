@@ -26,7 +26,7 @@ btn_fire2.setAttribute("id", "button");
 btn_fire2.className = "btn_fire2";
 btn_fire2.innerHTML = "Fire Weather";
 // Insert text
-div2.appendChild(btn_fire2);               // Append <button> to <body>
+div2.appendChild(btn_fire2);                       // Append <button> to <body>
 
 
 var btn_wx2 = document.createElement("BUTTON");   // Create a <button> element
@@ -35,11 +35,21 @@ btn_wx2.className = "btn_wx2";
 btn_wx2.innerHTML = "Weather";                   // Insert text
 div2.appendChild(btn_wx2);
 
+
+var btn_fbp = document.createElement("BUTTON");   // Create a <button> element
+btn_fbp.setAttribute("id", "button");
+btn_fbp.className = "btn_fbp";
+btn_fbp.innerHTML = "Fire Behavior";                   // Insert text
+div2.appendChild(btn_fbp);
+
+
 let fwfclicklocation;
 fwfclicklocation = new L.marker();
 
 
 var filedate =  tinital.slice(0,4) +  tinital.slice(5,7) +  tinital.slice(8,10) +  tinital.slice(11,13)
+
+
 
 var searchboxControl=createSearchboxControl();
 const control = new searchboxControl({
@@ -65,7 +75,7 @@ const control = new searchboxControl({
 
 
 function makeplotly(e) {
-    let hovsize = 10;
+    let hovsize = 13;
     var clickedCircle = e.target;
     var json_dir = clickedCircle.options.customId;
     var index = clickedCircle.options.customIdx;
@@ -79,6 +89,8 @@ function makeplotly(e) {
     // console.log(ll);
     btn_fire2.onclick = fwiplot2;
     btn_wx2.onclick = wxplot2;
+    btn_fbp.onclick = fbpplot;
+
 
     var o = [ll.lat,ll.lng]
     // console.log(o);
@@ -93,10 +105,7 @@ function makeplotly(e) {
         var w = n.XLAT[h];
         var v = n.XLONG[h];
         var tz = n.TZONE[h];
-        // console.log(n);
-        // console.log(w);
-        // console.log('TIME ZONE');
-        // console.log(tz);
+        var fu = n.FUEL[h];
 
         // console.log(Intl.DateTimeFormat().resolvedOptions().timeZone)
         var timezone = moment.tz(Intl.DateTimeFormat().resolvedOptions().timeZone).zoneAbbr();
@@ -143,11 +152,6 @@ function makeplotly(e) {
         local_list2.push(res);
         };
         dict['geo_time'] = local_list2;
-        // console.log('UTC TIME');
-        // console.log(dict['time']);
-        // console.log('GEO TIME');
-        // console.log(local_list2);
-
         local_list = [];
         arrayLength = dict['time'].length;
         for (i = 0; i < arrayLength; i++) {
@@ -155,8 +159,6 @@ function makeplotly(e) {
             local_list.push(moment(a).format('YYYY-MM-DD HH:mm'));
         };
         dict['local_time'] = local_list;
-        // console.log('LOCAL TIME');
-        // console.log(local_list);
 
         selectList.onchange = function (){
             var value = this.value
@@ -180,6 +182,8 @@ function makeplotly(e) {
           }};
 
 
+
+
         function doplots(final_time,maptime, intitme, plottime) {
 
             if( /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ) {
@@ -191,23 +195,29 @@ function makeplotly(e) {
                 var st = 68;
                 var spad = 1;
                 var xticksize = 6;
-                var labelsize = 10;
+                var labelsize = 9;
                 var ticksize = 8;
-                var tsize = 12;
+                var tsize = 8;
+                var t_height = 16;
+                var c_height = 18;
+                var t_f = 8;
 
             }else{
 
-                var swidth = 600;
-                var sheight = 450;
-                var sl = 50;
+                var swidth = 700;
+                var sheight = 500;
+                var sl = 60;
                 var sr = 30;
                 var sb = 80;
                 var st = 100;
                 var spad = 2;
                 var xticksize = 11;
-                var labelsize = 12;
-                var ticksize = 9;
+                var labelsize = 11.5;
+                var ticksize = 10;
                 var tsize = 14;
+                var t_height = 20;
+                var c_height = 22;
+                var t_f = 12;
 
             };
 
@@ -224,8 +234,8 @@ function makeplotly(e) {
             [
                 {
                     type: "table",
-                    header: { values: [["Index/Code"], [dict['day'][0]], [dict['day'][1]]], align: "center", height:18, line: {color: "444444" }, fill: { color: "444444E6" }, font: { family: "inherit", size: 10, color: "white" } },
-                    cells: { values: T, align: "center",  height:18, line: { color: "444444", width: 1 }, fill: { color:[["#2ca02c1A", "#8c564b1A", "7f7f7f1A", "d627281A", "0000001A"]] }, font: { family: "inherit", size: 10, color:[["#2ca02c", "#8c564b", "7f7f7f", "d62728", "000000"]]} },
+                    header: { values: [["Index/Code"], [dict['day'][0]], [dict['day'][1]]], align: "center", height:t_height, line: {color: "444444" }, fill: { color: "444444E6" }, font: { family: "inherit", size: t_f, color: "white" } },
+                    cells: { values: T, align: "center",  height:c_height, line: { color: "444444", width: 1 }, fill: { color:[["#2ca02c1A", "#8c564b1A", "7f7f7f1A", "d627281A", "0000001A"]] }, font: { family: "inherit", size: 11, color:[["#2ca02c", "#8c564b", "7f7f7f", "d62728", "000000"]]} },
                     xaxis: "x",
                     yaxis: "y",
                     domain: { x: [0.0, 1.0], y: [0.54, 1] },
@@ -246,11 +256,12 @@ function makeplotly(e) {
                   t: st,
                   pad: spad
                 },
-                title: {text: "Fire Weather Forecast " + "<br>Lat: " + w.toString().slice(0,6) + ", Lon: " + v.toString().slice(0,8) , x:0.05},
+                title: {text: "Fire Weather Forecast " + "<br>Lat: " + w.toString().slice(0,6) + ", Lon: " + v.toString().slice(0,8) +"<br>Fuel Type: " + fu.toString(), x:0.05},
+
                 titlefont: { color: "#444444", size: tsize },
                 showlegend: !1,
-                yaxis2: {domain: [.26, .52], title: { text: "FFMC", font: { size: labelsize, color: "ff7f0e" } }, tickfont: {size: ticksize, color: "ff7f0e"}},
-                yaxis1: { domain: [0.0, 0.24], title: { text: "ISI", font: {size: labelsize, color: "9467bd" } }, tickfont: {size: ticksize, color: "9467bd"}},
+                yaxis2: {domain: [.27, .54], title: { text: "FFMC", font: { size: labelsize, color: "ff7f0e" } }, tickfont: {size: ticksize, color: "ff7f0e"}},
+                yaxis1: { domain: [0.0, 0.26], title: { text: "ISI", font: {size: labelsize, color: "9467bd" } }, tickfont: {size: ticksize, color: "9467bd"}},
                 xaxis: { tickfont: {size: xticksize, color: "444444"}},
                 shapes: [{
                     type: 'line',
@@ -258,7 +269,7 @@ function makeplotly(e) {
                     y0: 0,
                     x1: maptime,
                     yref: 'paper',
-                    y1: 0.52,
+                    y1: 0.54,
                     line: {
                       color: 'grey',
                       width: 1.5,
@@ -271,7 +282,7 @@ function makeplotly(e) {
                         x0: intitme,
                         y0: 0,
                         x1: plottime,
-                        y1: 0.52,
+                        y1: 0.54,
                         fillcolor: '#A7A7A7',
                         opacity: 0.2,
                         line: {
@@ -301,6 +312,7 @@ function makeplotly(e) {
             var w = n.XLAT[h];
             var v = n.XLONG[h];
             var tz = n.TZONE[h];
+            var fu = n.FUEL[h];
 
             // console.log(Intl.DateTimeFormat().resolvedOptions().timeZone)
             var timezone = moment.tz(Intl.DateTimeFormat().resolvedOptions().timeZone).zoneAbbr();
@@ -403,23 +415,30 @@ function makeplotly(e) {
                 var xticksize = 6;
                 var labelsize = 9;
                 var ticksize = 8;
-                var tsize = 12;
+                var tsize = 8;
+                var t_height = 16;
+                var c_height = 18;
+                var t_f = 8;
 
             }else{
 
-                var swidth = 600;
-                var sheight = 450;
-                var sl = 50;
+                var swidth = 700;
+                var sheight = 500;
+                var sl = 60;
                 var sr = 30;
                 var sb = 80;
                 var st = 100;
                 var spad = 2;
                 var xticksize = 11;
-                var labelsize = 10;
-                var ticksize = 9;
+                var labelsize = 11.5;
+                var ticksize = 10;
                 var tsize = 14;
+                var t_height = 20;
+                var c_height = 22;
+                var t_f = 12;
 
             };
+
 
 
             function doplots2(final_time,maptime, intitme, plottime) {
@@ -441,7 +460,8 @@ function makeplotly(e) {
                         t: st,
                         pad: spad
                     },
-                    title: {text: "Weather Forecast " + "<br>Lat: " + w.toString().slice(0,6) + ", Lon: " + v.toString().slice(0,8) , x:0.05},
+                    title: {text: "Weather Forecast " + "<br>Lat: " + w.toString().slice(0,6) + ", Lon: " + v.toString().slice(0,8) +"<br>Fuel Type: " + fu.toString(), x:0.05},
+
                     titlefont: { color: "#444444", size: tsize },
                     showlegend: !1,
                     yaxis5: { domain: [0.80, 0.98], title: { text: "Temp<br>(C)", font: {size: labelsize, color: "d62728" } }, tickfont: {size: ticksize, color: "d62728"}},
@@ -490,6 +510,207 @@ function makeplotly(e) {
             });
 };
 
+
+
+
+function fbpplot() {
+    fetch(json_dir).then(function(response){
+        return response.json();
+    }).then(function(n){
+    var h = index
+    var w = n.XLAT[h];
+    var v = n.XLONG[h];
+    var tz = n.TZONE[h];
+    var fu = n.FUEL[h];
+
+    // console.log(Intl.DateTimeFormat().resolvedOptions().timeZone)
+    var timezone = moment.tz(Intl.DateTimeFormat().resolvedOptions().timeZone).zoneAbbr();
+    // console.log(timezone);
+
+    //Create array of options to be added
+    var array = [timezone ,"UTC", "Geo Local"];
+
+    //Create and append select list
+    var selectList = document.createElement("select");
+    selectList.setAttribute("id", "mySelect");
+    selectList.className = "time_wx";
+    div2.appendChild(selectList);
+
+    //Create and append the options
+    for (var i = 0; i < array.length; i++) {
+        var option = document.createElement("option");
+        option.setAttribute("value", array[i]);
+        option.text = array[i];
+        selectList.appendChild(option);
+    }
+
+
+    var dict = {};
+    var arrayColumn = (arr, n) => arr.map(x => x[n]);
+    keys = ['dsr', 'ffmc', 'rh', 'isi', 'fwi', 'temp',
+            'ws', 'wdir', 'precip', 'dc', 'dmc', 'bui',
+            'hfi', 'ros', 'cfb', 'sfc', 'tfc'];
+
+    for (var key of keys) {
+        var array = JSON.parse(n[key]);
+        var array = arrayColumn(array,h);
+        dict[key] = array;
+    };
+
+    dict['time'] = n["Time"];
+    dict['day'] = n["Day"];
+
+
+    local_list2 = [];
+    arrayLength = dict['time'].length;
+    for (i = 0; i < arrayLength; i++) {
+    d = dict['time'][i]
+    var newtime2 = moment.utc(d).subtract({'hours': tz}).format('YYYY-MM-DD HH:mm z');
+    var res = newtime2.slice(0, 16);
+    local_list2.push(res)
+    };
+    dict['geo_time'] = local_list2;
+
+    local_list = [];
+    arrayLength = dict['time'].length;
+    for (i = 0; i < arrayLength; i++) {
+        a = new Date(dict['time'][i] + ':00Z').toLocaleString()
+        local_list.push(moment(a).format('YYYY-MM-DD HH:mm'))
+    };
+
+    dict['local_time'] = local_list;
+
+    selectList.onchange = function (){
+        var value = this.value
+        if (value == "UTC"){
+
+            doplots3(dict['time'],UTCTimeMap, intimeutc, UTCTimePlot)
+        }else if (value == "Geo Local"){
+            var geomaptimei = moment.utc(UTCTimeMap).subtract({'hours': tz}).format('YYYY-MM-DD HH:mm z');
+            var geomaptime = geomaptimei.slice(0, 16);
+            var geointtimei = moment.utc(intimeutc).subtract({'hours': tz}).format('YYYY-MM-DD HH:mm z');
+            var geointtime = geointtimei.slice(0, 16);
+            var geoplottimei = moment.utc(UTCTimePlot).subtract({'hours': tz}).format('YYYY-MM-DD HH:mm z');
+            var geoplottime = geoplottimei.slice(0, 16);
+            doplots3(dict['geo_time'],geomaptime, geointtime, geoplottime)
+        }else if (value == timezone){
+            if (UTCTimeMap.length < 20)
+                UTCTimeMap = UTCTimeMap + 'Z';
+            var localmaptime = moment(new Date(UTCTimeMap).toLocaleString()).format('YYYY-MM-DD HH:mm');
+            var localinttime = moment(new Date(intimeutc).toLocaleString()).format('YYYY-MM-DD HH:mm');
+            var localplottime = moment(new Date(UTCTimePlot).toLocaleString()).format('YYYY-MM-DD HH:mm');
+            doplots3(dict['local_time'],localmaptime, localinttime, localplottime)
+      }};
+
+
+      if( /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ) {
+        var swidth = 320;
+        var sheight = 400;
+        var sl = 50;
+        var sr = 30;
+        var sb = 60;
+        var st = 68;
+        var spad = 1;
+        var xticksize = 6;
+        var labelsize = 9;
+        var ticksize = 8;
+        var tsize = 8;
+        var t_height = 16;
+        var c_height = 18;
+        var t_f = 8;
+
+    }else{
+
+        var swidth = 700;
+        var sheight = 500;
+        var sl = 60;
+        var sr = 30;
+        var sb = 80;
+        var st = 100;
+        var spad = 2;
+        var xticksize = 11;
+        var labelsize = 11.5;
+        var ticksize = 10;
+        var tsize = 14;
+        var t_height = 20;
+        var c_height = 22;
+        var t_f = 12;
+
+    };
+
+
+
+    function doplots3(final_time,maptime, intitme, plottime) {
+        N =
+        [(temp = {x: final_time, y: dict['hfi'], mode: 'lines', line: { color: "9e1809" }, yaxis: "y5", hoverlabel:{font:{size: hovsize, color: "ffffff"}}, hovertemplate: "<b> HFI </b><br>" + "%{y:.2f} (kW/m)<br>" + "<extra></extra>"}),
+        (rh = {x: final_time, y: dict['ros'], mode: 'lines', line: { color: "21245b" }, yaxis: "y4", hoverlabel:{font:{size: hovsize, color: "ffffff"}}, hovertemplate: "<b> ROS </b><br>" + "%{y:.2f} (m/min))<br>" + "<extra></extra>"}),
+        (ws = {x: final_time, y: dict['cfb'], mode: 'lines', line: { color: "c99725" }, yaxis: "y3", hoverlabel:{font:{size: hovsize, color: "ffffff"}}, hovertemplate: "<b> CFB </b><br>" + "%{y:.2f} (%)<br>" + "<extra></extra>"}),
+        (wdir = {x: final_time, y: dict['sfc'], mode: 'lines', line: { color: "689783" }, yaxis: "y2",  hoverlabel:{font:{size: hovsize, color: "ffffff"}}, hovertemplate: "<b> SFC </b><br>" + "%{y:.2f} (kg/m<sup>2</sup>)<br>" + "<extra></extra>" }),
+        (precip = {x: final_time, y: dict['tfc'], mode: 'lines', line: { color: "384a39" }, yaxis: "y1",  hoverlabel:{font:{size: hovsize, color: "ffffff"}}, hovertemplate: "<b> TFC </b><br>" + "%{y:.2f} (kg/m<sup>2</sup>)<br>" + "<extra></extra>" }),
+        ];
+        S = {
+            autosize: false,
+            width: swidth,
+            height: sheight,
+            margin: {
+                l: sl,
+                r: sr,
+                b: sb,
+                t: st,
+                pad: spad
+            },
+            title: {text: "Fire Behavior Forecast " + "<br>Lat: " + w.toString().slice(0,6) + ", Lon: " + v.toString().slice(0,8) +"<br>Fuel Type: " + fu.toString(), x:0.05},
+            titlefont: { color: "#444444", size: tsize },
+            showlegend: !1,
+            yaxis5: { domain: [0.80, 0.98], title: { text: "HFI<br>(kW/m)", font: {size: labelsize, color: "9e1809" } }, tickfont: {size: ticksize, color: "9e1809"}},
+            yaxis4: { domain: [0.60, 0.78],  title: { text: "ROS<br>(m/min)", font: {size: labelsize, color: "21245b" } }, tickfont: {size: ticksize, color: "21245b"}},
+            yaxis3: { domain: [0.40, 0.58], title: { text: "CFB<br>(%)", font: {size: labelsize, color: "c99725" } } , tickfont: {size: ticksize, color: "c99725"}},
+            yaxis2: { domain: [0.20, 0.38], title: { text: "SFC<br>(kg/m<sup>2</sup>)", font: {size: labelsize, color: "689783" } }, tickfont: {size: ticksize, color: "689783"},},
+            yaxis1: { domain: [0, 0.18], title: { text: "TFC<br>(kg/m<sup>2</sup>)", font: {size: labelsize, color: "384a39" } }, tickfont: {size: ticksize, color: "384a39"}},
+            xaxis: { tickfont: {size: xticksize, color: "444444"}},
+            shapes: [{
+                type: 'line',
+                x0: maptime,
+                y0: 0,
+                x1: maptime,
+                yref: 'paper',
+                y1: 0.98,
+                line: {
+                    color: 'grey',
+                    width: 1.5,
+                    dash: 'dot'
+                }},
+                {
+                    type: 'rect',
+                    xref: 'x',
+                    yref: 'paper',
+                    x0: intitme,
+                    y0: 0,
+                    x1: plottime,
+                    y1: 0.98,
+                    fillcolor: '#A7A7A7',
+                    opacity: 0.2,
+                    line: {
+                        width: 0
+                    }
+                },],
+            };
+        Plotly.newPlot(C,  N, S);
+    };
+    if (UTCTimeMap.length < 20)
+        UTCTimeMap = UTCTimeMap + 'Z';
+    var maptime = moment(new Date(UTCTimeMap).toLocaleString()).format('YYYY-MM-DD HH:mm');
+    var inttime = moment(new Date(intimeutc).toLocaleString()).format('YYYY-MM-DD HH:mm');
+    var plottime = moment(new Date(UTCTimePlot).toLocaleString()).format('YYYY-MM-DD HH:mm');
+
+    doplots3(dict['local_time'],maptime, inttime, plottime);
+
+    });
+};
+
+
+
+
 };
 
 
@@ -513,8 +734,6 @@ function makeplots(n) {
                 });
                 const u = new KDBush(s);
 
-
-
                 for (var tt = o.ZONE_d03, ee = o.XLAT_d03, ll = o.XLONG_d03, aa = [], rr = [], cc = [(cc = [ee.length, ee[0].length])[1], cc[0]], ii = 0; ii < ee.length; ii++) aa = aa.concat(ee[ii]);
                 for (ii = 0; ii < ll.length; ii++) rr = rr.concat(ll[ii]);
                 (aa = aa.map(Number)), (rr = rr.map(Number));
@@ -523,10 +742,14 @@ function makeplots(n) {
                 });
                 const d3_tree = new KDBush(d3);
 
+
+
+
+
                 (loaded_zones = ["he"]);
                 (loaded_zones_d3 = ["he"]);
                 if( /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ) {
-                    var activate = 'click'
+                    var activate = 'dblclick'
 
 
                 }else{

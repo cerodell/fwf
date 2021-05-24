@@ -125,12 +125,7 @@ for domain in domains:
         "V10",
         "m_o",
         "r_o_hourly",
-        "CFB",
         "FMC",
-        "HFI",
-        "SFC",
-        "TFC",
-        "ROS",
         "ISI",
     ]
     hourly_var_list = list(set(hourly_var_list) - set(remove))
@@ -155,10 +150,12 @@ for domain in domains:
     xlat = daily_ds.XLAT.values[y1:-y2, x1:-x2]
     xlon = daily_ds.XLONG.values[y1:-y2, x1:-x2]
     tzon = static_ds.ZoneDT.values[y1:-y2, x1:-x2]
+    fuel = static_ds.FUELS_ID.values[y1:-y2, x1:-x2]
 
     xlat = np.round(xlat.flatten(), 5)
     xlon = np.round(xlon.flatten(), 5)
     tzon = tzon.flatten()
+    fuel = fuel.flatten()
 
     ## build dictionary with removed bad boundary conditions fro each variable in dataset
     ## also reshape into (time, (flatten XLAT/XLONG))
@@ -205,12 +202,15 @@ for domain in domains:
         xlon_array = xlon_array.astype("<U8")
         tzon_array = tzon[inds[0]]
         tzon_array = tzon_array.astype("<U2")
+        fuel_array = fuel[inds[0]]
+        fuel_array = fuel_array.astype("<U10")
 
         dict_file.update(
             {
                 "XLAT": xlat_array.tolist(),
                 "XLONG": xlon_array.tolist(),
                 "TZONE": tzon_array.tolist(),
+                "FUEL": fuel_array.tolist(),
             }
         )
 

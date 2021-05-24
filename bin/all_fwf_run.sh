@@ -47,6 +47,7 @@ ln -fnsv $(date '+%Y%m%d00') current
 echo "$(date) ---> new symlink created"
 
 
+
 echo "$(date) ---> start nc compressor"
 ### Compress netcdf fiels and write to forecast dir
 /bluesky/fireweather/fwf/scripts/netcdf_compressor.py

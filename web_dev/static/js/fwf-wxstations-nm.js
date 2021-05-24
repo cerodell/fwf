@@ -8,6 +8,7 @@ const div = document.createElement("div");
 
 // name the div class...this will be refernces in css for styling
 div.className = "wx-plot";
+div2=div.cloneNode(!0);
 // set attributes...again for css styling
 div.setAttribute("id", "wx_plot");
 
@@ -30,6 +31,9 @@ div.appendChild(btn_wx);
 
 
 
+
+
+
 // add to our laygroup we created above..use fetch to retrive json file..could retrive json file with other functions but i like fetch
 wx_station.onAdd = function(){
 fetch(wx_keys).then(function(response){
@@ -43,8 +47,8 @@ fetch(wx_keys).then(function(response){
         var ffmc_obs = JSON.parse(json.ffmc_obs);
         var temp_obs = JSON.parse(json.temp_obs);
         var tz_correct = JSON.parse(json.tz_correct);
-        var name = json['name']
-        var name = name.split(',');
+
+        // var name = name.split(',');
         // loop all lats/longs
         for (index = 0; index < lats.length; ++index) {
         var colors = ['#ff6760', '#ffff73', '#63a75c']
@@ -68,7 +72,7 @@ fetch(wx_keys).then(function(response){
             customLAT: lats[index].toString(),
             customLON: lons[index].toString(),
             customEL: elev[index].toString(),
-            customNM: name[index].toString()
+            // customNM: name[index].toString()
 
         // bind our div to the the popup and only active div window on click and launch circleClick function
         }).bindPopup(div, {maxWidth: "auto", maxHeight: "auto"}).on("click", circleClick));
@@ -86,8 +90,7 @@ function circleClick(e) {
     var lat = clickedCircle.options.customLAT;
     var lon = clickedCircle.options.customLON;
     var elev = clickedCircle.options.customEL;
-    var name = clickedCircle.options.customNM;
-    // console.log(name);
+
     // give purpose to our button we created in our div
     btn_fire.onclick = fwiplot;
     btn_wx.onclick = wxplot;
@@ -104,6 +107,9 @@ function circleClick(e) {
         }).then(function(json){
 
                 // parse data from json file
+                // var name = JSON.parse(json.name);
+                console.log(json.wmo);
+
                 var wmo = JSON.parse(json.wmo);
                 var index = wmo.indexOf(parseInt(target_wmo));
                 // set up dictionary to populate specific wx station data from json
@@ -135,12 +141,23 @@ function circleClick(e) {
             };
 
                 // loop other keys that dont have -99
-                keys = ['elev', 'lats', 'lons','tz_correct', 'wmo']
                 keys = ['wmo']
                 for (var key of keys) {
                     var array = JSON.parse(json[key]);
+                    console.log(array.length);
+
                     dict[key] = array[index];
                 };
+
+                var wx_name = json.name;
+                wx_name = wx_name.replace(/'/g, '');
+                wx_name = wx_name.replace('[', '');
+                wx_name = wx_name.replace(']', '');
+                var wx_name = wx_name.split(',')
+                console.log(wx_name.length);
+                console.log(index);
+                dict['wx_name'] = wx_name[index].trim();
+                console.log(dict['wx_name']);
 
 
                 // timezone keys for the plot
@@ -247,7 +264,7 @@ function circleClick(e) {
                 // create our ploting function for fwi!!
                 function doplots3(time_obs, time_fcd, time_fch,maptime, intitme, plottime) {
                     // check if user is on mobile devise and adjust plot size
-                      if( /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ) {
+                    if( /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ) {
                         var swidth = 320;
                         var sheight = 400;
                         var sl = 50;
@@ -258,28 +275,34 @@ function circleClick(e) {
                         var xticksize = 6;
                         var labelsize = 9;
                         var ticksize = 8;
-                        var tsize = 12;
+                        var tsize = 8;
+                        var t_height = 16;
+                        var c_height = 18;
+                        var t_f = 8;
 
                     }else{
-                    // check if user is on desktop use these plot size options
-                        var swidth = 600;
-                        var sheight = 450;
-                        var sl = 50;
+
+                        var swidth = 700;
+                        var sheight = 500;
+                        var sl = 60;
                         var sr = 30;
                         var sb = 80;
                         var st = 100;
                         var spad = 2;
                         var xticksize = 11;
-                        var labelsize = 10;
-                        var ticksize = 9;
+                        var labelsize = 11.5;
+                        var ticksize = 10;
                         var tsize = 14;
+                        var t_height = 20;
+                        var c_height = 22;
+                        var t_f = 12;
 
                     };
 
 
                 // call on div the plotly js with populate
                 C = document.getElementById('wx_plot');
-                hovsize = 10
+                hovsize = 12
                 // this is ungly but sets up all the vars to be ploted and defines the subplot they are in
                 N =
                 [(ffmc_obs = {x: time_obs, y: dict['ffmc_obs'], mode: 'lines', line: { color: "ff7f0e", dash: "dot" }, yaxis: "y6",  hoverlabel:{font:{size: hovsize, color: "#ffffff"}, bordercolor: "#ffffff"}, hovertemplate: "<b> FFMC Observed </b><br>" + "%{y:.2f} <br>" + "<extra></extra>" }),
@@ -321,8 +344,9 @@ function circleClick(e) {
                       b: sb,
                       t: st,
                       pad: spad
-                    },                    title: {text: "  WMO Station " + dict.wmo.toString() + " <br>Lat: " + lat.toString().slice(0,6)+ ", Lon: " + lon.toString().slice(0,8) + " <br>Elevation: " + elev.toString().slice(0,8) + " m", x:0.05},
-                    titlefont: { color: "#444444", size: 13 },
+                    },
+                    title: {text: dict.wx_name + " <br>WMO: " + dict.wmo.toString() + " <br>Lat: " + lat.toString().slice(0,6)+ ", Lon: " + lon.toString().slice(0,8) + " <br>Elevation: " +  elev.toString().slice(0,8) + " m", x:0.05},
+                    titlefont: { color: "#444444", size: tsize },
                     showlegend: !1,
                     yaxis6: {domain: [.8, .94], title: { text: "FFMC", font: { size: labelsize, color: "ff7f0e" } }, tickfont: {size: ticksize, color: "ff7f0e"}},
                     yaxis5: {domain: [0.64, 0.78], title: { text: "DMC", font: { size: labelsize,color: "2ca02c" } }, tickfont: {size: ticksize, color: "2ca02c"}},
@@ -412,13 +436,15 @@ function circleClick(e) {
                     dict[key] = array[index];
                 };
 
-                // var id = json['id']
-                // var id = id.split(',');
-                // dict['id'] = id[index];
-
-                // var name = json['name']
-                // var name = name.split(',');
-                // dict['name'] = name[index];
+                var wx_name = json.name;
+                wx_name = wx_name.replace(/'/g, '');
+                wx_name = wx_name.replace('[', '');
+                wx_name = wx_name.replace(']', '');
+                var wx_name = wx_name.split(',')
+                console.log(wx_name);
+                console.log(index);
+                dict['wx_name'] = wx_name[index].trim();
+                console.log(dict['wx_name']);
 
                 keys = ['time_obs','time_fch', 'time_fcd']
                 for (var key of keys) {
@@ -507,39 +533,43 @@ function circleClick(e) {
 
 
                       function doplots4(time_obs, time_fcd, time_fch,maptime, intitme, plottime) {
-
-
                         if( /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ) {
-                          var swidth = 320;
-                          var sheight = 400;
-                          var sl = 50;
-                          var sr = 30;
-                          var sb = 60;
-                          var st = 68;
-                          var spad = 1;
-                          var xticksize = 6;
-                          var labelsize = 9;
-                          var ticksize = 8;
-                          var tsize = 12;
+                            var swidth = 320;
+                            var sheight = 400;
+                            var sl = 50;
+                            var sr = 30;
+                            var sb = 60;
+                            var st = 68;
+                            var spad = 1;
+                            var xticksize = 6;
+                            var labelsize = 9;
+                            var ticksize = 8;
+                            var tsize = 8;
+                            var t_height = 16;
+                            var c_height = 18;
+                            var t_f = 8;
 
-                      }else{
+                        }else{
 
-                          var swidth = 600;
-                          var sheight = 450;
-                          var sl = 50;
-                          var sr = 30;
-                          var sb = 80;
-                          var st = 100;
-                          var spad = 2;
-                          var xticksize = 11;
-                          var labelsize = 10;
-                          var ticksize = 9;
-                          var tsize = 14;
+                            var swidth = 700;
+                            var sheight = 500;
+                            var sl = 60;
+                            var sr = 30;
+                            var sb = 80;
+                            var st = 100;
+                            var spad = 2;
+                            var xticksize = 11;
+                            var labelsize = 11.5;
+                            var ticksize = 10;
+                            var tsize = 14;
+                            var t_height = 20;
+                            var c_height = 22;
+                            var t_f = 12;
 
-                      };
+                        };
 
                 C = document.getElementById('wx_plot');
-                hovsize =10
+                hovsize =13
                 N =
                 [(temp_obs = {x: time_obs, y: dict['temp_obs'], mode: 'lines', line: { color: "d62728", dash: "dot" }, yaxis: "y5", hoverlabel:{font:{size: hovsize}}, hovertemplate: "<b> Temp Observed </b><br>" + "%{y:.2f} (C)<br>" + "<extra></extra>"}),
                 (temp_fc = {x: time_obs, y: dict['temp_pfc'],mode: 'lines', line: { color: "d62728", width: 0.5 }, yaxis: "y5", hoverlabel:{font:{size: hovsize}},  hovertemplate: "<b> Temp Previous Forecast </b><br>" + "%{y:.2f} (C)<br>" + "<extra></extra>" }),
@@ -576,8 +606,8 @@ function circleClick(e) {
                       b: sb,
                       t: st,
                       pad: spad
-                    },                    title: {text: "  WMO Station " + dict.wmo.toString() + " <br>Lat: " + lat.toString().slice(0,6)+ ", Lon: " + lon.toString().slice(0,8) + " <br>Elevation: " +  elev.toString().slice(0,8) + " m", x:0.05},
-                    titlefont: { color: "#444444", size: 13 },
+                    },                    title: {text: dict.wx_name + " <br>WMO: " + dict.wmo.toString() + " <br>Lat: " + lat.toString().slice(0,6)+ ", Lon: " + lon.toString().slice(0,8) + " <br>Elevation: " +  elev.toString().slice(0,8) + " m", x:0.05},
+                    titlefont: { color: "#444444", size: tsize },
                     showlegend: !1,
                     yaxis5: { domain: [0.80, 0.98], title: { text: "Temp<br>(C)", font: {size: labelsize, color: "d62728" } }, tickfont: {size: ticksize, color: "d62728"}},
                     yaxis4: { domain: [0.60, 0.78],  title: { text: "RH<br>(%)", font: {size: labelsize, color: "1f77b4" } }, tickfont: {size: ticksize, color: "1f77b4"}},

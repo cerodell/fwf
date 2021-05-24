@@ -1,6 +1,5 @@
 #!/bin/bash
 
-# cp /bluesky/fireweather/fwf/json/fwf-zone.json /bluesky/archive/fireweather/forecasts/$(date '+%Y%m%d06')/
 cp /bluesky/fireweather/fwf/data/json/topo.json /bluesky/archive/fireweather/forecasts/$(date '+%Y%m%d00')/
 
 # ### Convert FFMC to topojson and move to website directory
@@ -122,6 +121,139 @@ done
 
 
 
+# ### Convert HFI to topojson and move to website directory
+cd /bluesky/fireweather/fwf/data/geojson/$(date '+%Y%m%d06')/
+declare -a arr=("06" "09" "12" "15" "18" "21")
+for i in "${arr[@]}"
+do
+    /bluesky/fireweather/fwf/node_modules/@mapbox/geojson-merge/geojson-merge hfi-$(date '+%Y%m%d')"$i"-d02.geojson hfi-$(date '+%Y%m%d')"$i"-d03.geojson > hfi-merge-$(date '+%Y%m%d')"$i".geojson
+done
+
+declare -a arr=("00" "03" "06" "09" "12" "15" "18" "21")
+for i in "${arr[@]}"
+do
+    /bluesky/fireweather/fwf/node_modules/@mapbox/geojson-merge/geojson-merge hfi-$(date -d "+1 days" '+%Y%m%d')"$i"-d02.geojson hfi-$(date -d "+1 days" '+%Y%m%d')"$i"-d03.geojson > hfi-merge-$(date -d "+1 days" '+%Y%m%d')"$i".geojson
+done
+
+
+declare -a arr=("00" "03" "06" "09" "12")
+for i in "${arr[@]}"
+do
+    /bluesky/fireweather/fwf/node_modules/@mapbox/geojson-merge/geojson-merge hfi-$(date -d "+2 days" '+%Y%m%d')"$i"-d02.geojson hfi-$(date -d "+2 days" '+%Y%m%d')"$i"-d03.geojson > hfi-merge-$(date -d "+2 days" '+%Y%m%d')"$i".geojson
+done
+
+for filename in /bluesky/fireweather/fwf/data/geojson/$(date '+%Y%m%d06')/hfi-merge*.geojson; do
+    # echo "$filename"
+    /bluesky/fireweather/fwf/node_modules/topojson-server/bin/geo2topo -q 1e4 hfi="$filename" > "/bluesky/archive/fireweather/forecasts/$(date '+%Y%m%d00')/data/map/$(basename "$filename" .geojson).json"
+done
+
+
+# ### Convert ROS to topojson and move to website directory
+cd /bluesky/fireweather/fwf/data/geojson/$(date '+%Y%m%d06')/
+declare -a arr=("06" "09" "12" "15" "18" "21")
+for i in "${arr[@]}"
+do
+    /bluesky/fireweather/fwf/node_modules/@mapbox/geojson-merge/geojson-merge ros-$(date '+%Y%m%d')"$i"-d02.geojson ros-$(date '+%Y%m%d')"$i"-d03.geojson > ros-merge-$(date '+%Y%m%d')"$i".geojson
+done
+
+declare -a arr=("00" "03" "06" "09" "12" "15" "18" "21")
+for i in "${arr[@]}"
+do
+    /bluesky/fireweather/fwf/node_modules/@mapbox/geojson-merge/geojson-merge ros-$(date -d "+1 days" '+%Y%m%d')"$i"-d02.geojson ros-$(date -d "+1 days" '+%Y%m%d')"$i"-d03.geojson > ros-merge-$(date -d "+1 days" '+%Y%m%d')"$i".geojson
+done
+
+
+declare -a arr=("00" "03" "06" "09" "12")
+for i in "${arr[@]}"
+do
+    /bluesky/fireweather/fwf/node_modules/@mapbox/geojson-merge/geojson-merge ros-$(date -d "+2 days" '+%Y%m%d')"$i"-d02.geojson ros-$(date -d "+2 days" '+%Y%m%d')"$i"-d03.geojson > ros-merge-$(date -d "+2 days" '+%Y%m%d')"$i".geojson
+done
+
+for filename in /bluesky/fireweather/fwf/data/geojson/$(date '+%Y%m%d06')/ros-merge*.geojson; do
+    # echo "$filename"
+    /bluesky/fireweather/fwf/node_modules/topojson-server/bin/geo2topo -q 1e4 ros="$filename" > "/bluesky/archive/fireweather/forecasts/$(date '+%Y%m%d00')/data/map/$(basename "$filename" .geojson).json"
+done
+
+
+# ### Convert CFB to topojson and move to website directory
+cd /bluesky/fireweather/fwf/data/geojson/$(date '+%Y%m%d06')/
+declare -a arr=("06" "09" "12" "15" "18" "21")
+for i in "${arr[@]}"
+do
+    /bluesky/fireweather/fwf/node_modules/@mapbox/geojson-merge/geojson-merge cfb-$(date '+%Y%m%d')"$i"-d02.geojson cfb-$(date '+%Y%m%d')"$i"-d03.geojson > cfb-merge-$(date '+%Y%m%d')"$i".geojson
+done
+
+declare -a arr=("00" "03" "06" "09" "12" "15" "18" "21")
+for i in "${arr[@]}"
+do
+    /bluesky/fireweather/fwf/node_modules/@mapbox/geojson-merge/geojson-merge cfb-$(date -d "+1 days" '+%Y%m%d')"$i"-d02.geojson cfb-$(date -d "+1 days" '+%Y%m%d')"$i"-d03.geojson > cfb-merge-$(date -d "+1 days" '+%Y%m%d')"$i".geojson
+done
+
+
+declare -a arr=("00" "03" "06" "09" "12")
+for i in "${arr[@]}"
+do
+    /bluesky/fireweather/fwf/node_modules/@mapbox/geojson-merge/geojson-merge cfb-$(date -d "+2 days" '+%Y%m%d')"$i"-d02.geojson cfb-$(date -d "+2 days" '+%Y%m%d')"$i"-d03.geojson > cfb-merge-$(date -d "+2 days" '+%Y%m%d')"$i".geojson
+done
+
+for filename in /bluesky/fireweather/fwf/data/geojson/$(date '+%Y%m%d06')/cfb-merge*.geojson; do
+    # echo "$filename"
+    /bluesky/fireweather/fwf/node_modules/topojson-server/bin/geo2topo -q 1e4 cfb="$filename" > "/bluesky/archive/fireweather/forecasts/$(date '+%Y%m%d00')/data/map/$(basename "$filename" .geojson).json"
+done
+
+
+# ### Convert SFC to topojson and move to website directory
+cd /bluesky/fireweather/fwf/data/geojson/$(date '+%Y%m%d06')/
+declare -a arr=("06" "09" "12" "15" "18" "21")
+for i in "${arr[@]}"
+do
+    /bluesky/fireweather/fwf/node_modules/@mapbox/geojson-merge/geojson-merge sfc-$(date '+%Y%m%d')"$i"-d02.geojson sfc-$(date '+%Y%m%d')"$i"-d03.geojson > sfc-merge-$(date '+%Y%m%d')"$i".geojson
+done
+
+declare -a arr=("00" "03" "06" "09" "12" "15" "18" "21")
+for i in "${arr[@]}"
+do
+    /bluesky/fireweather/fwf/node_modules/@mapbox/geojson-merge/geojson-merge sfc-$(date -d "+1 days" '+%Y%m%d')"$i"-d02.geojson sfc-$(date -d "+1 days" '+%Y%m%d')"$i"-d03.geojson > sfc-merge-$(date -d "+1 days" '+%Y%m%d')"$i".geojson
+done
+
+
+declare -a arr=("00" "03" "06" "09" "12")
+for i in "${arr[@]}"
+do
+    /bluesky/fireweather/fwf/node_modules/@mapbox/geojson-merge/geojson-merge sfc-$(date -d "+2 days" '+%Y%m%d')"$i"-d02.geojson sfc-$(date -d "+2 days" '+%Y%m%d')"$i"-d03.geojson > sfc-merge-$(date -d "+2 days" '+%Y%m%d')"$i".geojson
+done
+
+for filename in /bluesky/fireweather/fwf/data/geojson/$(date '+%Y%m%d06')/sfc-merge*.geojson; do
+    # echo "$filename"
+    /bluesky/fireweather/fwf/node_modules/topojson-server/bin/geo2topo -q 1e4 sfc="$filename" > "/bluesky/archive/fireweather/forecasts/$(date '+%Y%m%d00')/data/map/$(basename "$filename" .geojson).json"
+done
+
+
+# ### Convert TFC to topojson and move to website directory
+cd /bluesky/fireweather/fwf/data/geojson/$(date '+%Y%m%d06')/
+declare -a arr=("06" "09" "12" "15" "18" "21")
+for i in "${arr[@]}"
+do
+    /bluesky/fireweather/fwf/node_modules/@mapbox/geojson-merge/geojson-merge tfc-$(date '+%Y%m%d')"$i"-d02.geojson tfc-$(date '+%Y%m%d')"$i"-d03.geojson > tfc-merge-$(date '+%Y%m%d')"$i".geojson
+done
+
+declare -a arr=("00" "03" "06" "09" "12" "15" "18" "21")
+for i in "${arr[@]}"
+do
+    /bluesky/fireweather/fwf/node_modules/@mapbox/geojson-merge/geojson-merge tfc-$(date -d "+1 days" '+%Y%m%d')"$i"-d02.geojson tfc-$(date -d "+1 days" '+%Y%m%d')"$i"-d03.geojson > tfc-merge-$(date -d "+1 days" '+%Y%m%d')"$i".geojson
+done
+
+
+declare -a arr=("00" "03" "06" "09" "12")
+for i in "${arr[@]}"
+do
+    /bluesky/fireweather/fwf/node_modules/@mapbox/geojson-merge/geojson-merge tfc-$(date -d "+2 days" '+%Y%m%d')"$i"-d02.geojson tfc-$(date -d "+2 days" '+%Y%m%d')"$i"-d03.geojson > tfc-merge-$(date -d "+2 days" '+%Y%m%d')"$i".geojson
+done
+
+for filename in /bluesky/fireweather/fwf/data/geojson/$(date '+%Y%m%d06')/tfc-merge*.geojson; do
+    # echo "$filename"
+    /bluesky/fireweather/fwf/node_modules/topojson-server/bin/geo2topo -q 1e4 tfc="$filename" > "/bluesky/archive/fireweather/forecasts/$(date '+%Y%m%d00')/data/map/$(basename "$filename" .geojson).json"
+done
 
 
 ## Convert Wind Speed to topojson and move to website directory
