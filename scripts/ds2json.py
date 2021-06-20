@@ -150,7 +150,7 @@ for domain in domains:
     xlat = daily_ds.XLAT.values[y1:-y2, x1:-x2]
     xlon = daily_ds.XLONG.values[y1:-y2, x1:-x2]
     tzon = static_ds.ZoneDT.values[y1:-y2, x1:-x2]
-    fuel = static_ds.FUELS_ID.values[y1:-y2, x1:-x2]
+    fuel = static_ds.FUELS_D.values[y1:-y2, x1:-x2]
 
     xlat = np.round(xlat.flatten(), 5)
     xlon = np.round(xlon.flatten(), 5)
@@ -203,7 +203,7 @@ for domain in domains:
         tzon_array = tzon[inds[0]]
         tzon_array = tzon_array.astype("<U2")
         fuel_array = fuel[inds[0]]
-        fuel_array = fuel_array.astype("<U10")
+        fuel_array = fuel_array.astype("<U2")
 
         dict_file.update(
             {

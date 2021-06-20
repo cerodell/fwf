@@ -8,7 +8,7 @@ const div = document.createElement("div");
 
 // name the div class...this will be refernces in css for styling
 div.className = "wx-plot";
-div2=div.cloneNode(!0);
+const div2=div.cloneNode(!0);
 // set attributes...again for css styling
 div.setAttribute("id", "wx_plot");
 

@@ -40,6 +40,14 @@
   text-align: center;
 }
 
+.wx-plot3 {
+  width: 700px;
+  height: 500px;
+  border: 2px ridge #969696;
+  background-color: white;
+  border-radius: 2px;
+  text-align: center;
+}
 
 .btn_fire{
   position: absolute;
@@ -171,6 +179,79 @@ color: white;
 
 
 
+.btn_fire3{
+  position: absolute;
+  right:218px;
+  z-index:1000;
+  float: right;
+  top: 65px;
+  padding: 8px 4px;
+  background-color: white;
+  color: #444444;
+  border: 1px solid #555555;
+  border-radius: 4px;
+  font-family: Verdana, sans-serif;
+  display: inline-block;
+  font-size: 14px;
+  margin: 4px 2px;
+  cursor: pointer;
+  }
+
+
+  .btn_fire3:hover {
+  background-color: #555555;
+  color: white;
+  }
+
+  .btn_wx3{
+  position: absolute;
+  right:40px;
+  z-index:1000;
+  float: right;
+  top: 65px;
+  padding: 8px 4px;
+  background-color: white;
+  color: #444444;
+  border: 1px solid #555555;
+  border-radius: 4px;
+  font-family: Verdana, sans-serif;
+  display: inline-block;
+  font-size: 14px;
+  margin: 4px 2px;
+  cursor: pointer;
+  }
+
+
+  .btn_wx3:hover {
+  background-color: #555555;
+  color: white;
+  }
+
+  .btn_fbp3{
+    position: absolute;
+    right:112px;
+    z-index:1000;
+    float: right;
+    top: 65px;
+    padding: 8px 4px;
+    background-color: white;
+    color: #444444;
+    border: 1px solid #555555;
+    border-radius: 4px;
+    font-family: Verdana, sans-serif;
+    display: inline-block;
+    font-size: 14px;
+    margin: 4px 2px;
+    cursor: pointer;
+    }
+
+
+    .btn_fbp3:hover {
+    background-color: #555555;
+    color: white;
+    }
+
+
 
 
 
@@ -187,6 +268,15 @@ color: white;
 }
 
 .wx-plot2 {
+  width: 320px;
+  height: 400px;
+  border: 2px ridge #969696;
+  background-color: white;
+  border-radius: 2px;
+  text-align: center;
+}
+
+.wx-plot3 {
   width: 320px;
   height: 400px;
   border: 2px ridge #969696;
@@ -336,264 +426,13 @@ color: white;
   color: white;
   }
 
-}
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-/*
-#map {
-    width: 1000px;
-    height: 1000px
-}
-
-
-
-.wx-plot {
-    width: 600px;
-    height: 450px;
-    border: 2px ridge #969696;
-    background-color: white;
-    border-radius: 2px;
-    text-align: center;
-  }
-
-  .wx-plot2 {
-    width: 600px;
-    height: 450px;
-    border: 2px ridge #969696;
-    background-color: white;
-    border-radius: 2px;
-    text-align: center;
-  }
-
-
-.btn_fire{
-    position: absolute;
-    right:112px;
-    z-index:1000;
-    float: right;
-    top: 60px;
-    padding: 8px 4px;
-    background-color: white;
-    color: #444444;
-    border: 1px solid #555555;
-    border-radius: 4px;
-    font-family: Verdana, sans-serif;
-    display: inline-block;
-    font-size: 14px;
-    margin: 4px 2px;
-    cursor: pointer;
-}
-
-
-.btn_fire:hover {
-  background-color: #555555;
-  color: white;
-}
-
-.btn_wx{
-    position: absolute;
-    right:40px;
-    z-index:1000;
-    float: right;
-    top: 60px;
-    padding: 8px 4px;
-    background-color: white;
-    color: #444444;
-    border: 1px solid #555555;
-    border-radius: 4px;
-    font-family: Verdana, sans-serif;
-    display: inline-block;
-    font-size: 14px;
-    margin: 4px 2px;
-    cursor: pointer;
-}
-
-
-.btn_wx:hover {
-  background-color: #555555;
-  color: white;
-}
-
-
-
-
-.time_wx{
+.btn_fire3{
   position: absolute;
-  right:265px;
+  right:120px;
   z-index:1000;
   float: right;
-  top: 420px;
-  padding: 8px 4px;
-  background-color: white;
-  color: #444444;
-  border: 1px solid #555555;
-  border-radius: 4px;
-  font-family: Verdana, sans-serif;
-  display: inline-block;
-  font-size: 14px;
-  margin: 4px 2px;
-  cursor: pointer;
-}
-
-
-
-.btn_fire2{
-  position: absolute;
-  right:112px;
-  z-index:1000;
-  float: right;
-  top: 60px;
-  padding: 8px 4px;
-  background-color: white;
-  color: #444444;
-  border: 1px solid #555555;
-  border-radius: 4px;
-  font-family: Verdana, sans-serif;
-  display: inline-block;
-  font-size: 14px;
-  margin: 4px 2px;
-  cursor: pointer;
-}
-
-
-.btn_fire2:hover {
-background-color: #555555;
-color: white;
-}
-
-.btn_wx2{
-  position: absolute;
-  right:40px;
-  z-index:1000;
-  float: right;
-  top: 60px;
-  padding: 8px 4px;
-  background-color: white;
-  color: #444444;
-  border: 1px solid #555555;
-  border-radius: 4px;
-  font-family: Verdana, sans-serif;
-  display: inline-block;
-  font-size: 14px;
-  margin: 4px 2px;
-  cursor: pointer;
-}
-
-
-.btn_wx2:hover {
-background-color: #555555;
-color: white;
-}
-
-
-@media (max-width: 1000px) {
-
-  .wx-plot {
-    width: 340px;
-    height: 420px;
-    border: 2px ridge #969696;
-    background-color: white;
-    border-radius: 2px;
-    text-align: center;
-  }
-
-  .wx-plot2 {
-    width: 340px;
-    height: 420px;
-    border: 2px ridge #969696;
-    background-color: white;
-    border-radius: 2px;
-    text-align: center;
-  }
-
-
-.btn_fire{
-    position: absolute;
-    right:80px;
-    z-index:1000;
-    float: right;
-    top: 60px;
-    padding: 4px 2px;
-    background-color: white;
-    color: #444444;
-    border: 1px solid #555555;
-    border-radius: 4px;
-    font-family: Verdana, sans-serif;
-    display: inline-block;
-    font-size: 10px;
-    margin: 2px 2px;
-    cursor: pointer;
-}
-
-
-.btn_fire:hover {
-  background-color: #555555;
-  color: white;
-}
-
-.btn_wx{
-    position: absolute;
-    right:20px;
-    z-index:1000;
-    float: right;
-    top: 60px;
-    padding: 4px 2px;
-    background-color: white;
-    color: #444444;
-    border: 1px solid #555555;
-    border-radius: 4px;
-    font-family: Verdana, sans-serif;
-    display: inline-block;
-    font-size: 10px;
-    margin: 2px 1px;
-    cursor: pointer;
-}
-
-
-.btn_wx:hover {
-  background-color: #555555;
-  color: white;
-}
-
-.time_wx{
-  position: absolute;
-  right:160px;
-  z-index:1000;
-  float: right;
-  top: 420px;
-  padding: 8px 4px;
-  background-color: white;
-  color: #444444;
-  border: 1px solid #555555;
-  border-radius: 4px;
-  font-family: Verdana, sans-serif;
-  display: inline-block;
-  font-size: 14px;
-  margin: 4px 2px;
-  cursor: pointer;
-}
-
-
-.btn_fire2{
-  position: absolute;
-  right:80px;
-  z-index:1000;
-  float: right;
-  top: 60px;
+  top: 48px;
   padding: 4px 2px;
   background-color: white;
   color: #444444;
@@ -601,23 +440,23 @@ color: white;
   border-radius: 4px;
   font-family: Verdana, sans-serif;
   display: inline-block;
-  font-size: 10px;
+  font-size: 8px;
   margin: 2px 2px;
   cursor: pointer;
-}
+  }
 
 
-.btn_fire2:hover {
-background-color: #555555;
-color: white;
-}
+  .btn_fire3:hover {
+  background-color: #555555;
+  color: white;
+  }
 
-.btn_wx2{
+  .btn_wx3{
   position: absolute;
   right:20px;
   z-index:1000;
   float: right;
-  top: 60px;
+  top: 48px;
   padding: 4px 2px;
   background-color: white;
   color: #444444;
@@ -625,15 +464,96 @@ color: white;
   border-radius: 4px;
   font-family: Verdana, sans-serif;
   display: inline-block;
-  font-size: 10px;
+  font-size: 8px;
   margin: 2px 1px;
   cursor: pointer;
+  }
+
+
+  .btn_wx3:hover {
+  background-color: #555555;
+  color: white;
+  }
+
+  .btn_fbp3{
+    position: absolute;
+    right:60px;
+    z-index:1000;
+    float: right;
+    top: 48px;
+    padding: 4px 2px;
+    background-color: white;
+    color: #444444;
+    border: 1px solid #555555;
+    border-radius: 4px;
+    font-family: Verdana, sans-serif;
+    display: inline-block;
+    font-size: 8px;
+    margin: 2px 2px;
+    cursor: pointer;
+    }
+
+
+    .btn_fbp3:hover {
+    background-color: #555555;
+    color: white;
+    }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 }
 
 
-.btn_wx2:hover {
-background-color: #555555;
-color: white;
-}
 
-} */
+/* markerCluster customization */
+
+.marker-cluster-small {
+  background-color: rgba(158, 24, 9, 0.8);
+  }
+.marker-cluster-small div {
+  background-color: rgba(158, 24, 9, 0.8);
+  }
+
+.marker-cluster-medium {
+  background-color: rgba(158, 24, 9, 0.8);
+  }
+.marker-cluster-medium div {
+  background-color: rgba(158, 24, 9, 0.8);
+  }
+
+.marker-cluster-large {
+  background-color: rgba(158, 24, 9, 0.8);
+  }
+.marker-cluster-large div {
+  background-color: rgba(158, 24, 9, 0.8);
+  }
+
+.marker-cluster div {
+  color: white;
+  }
+
+.help-img-hor {
+  border: 1px solid #d8d8d8;
+  border-radius: 4px;
+  width: 20px;
+}
+.help-img-ver {
+  border: 1px solid #d8d8d8;
+  border-radius: 4px;
+  height: 20px;
+}

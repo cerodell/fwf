@@ -46,6 +46,11 @@ cd /bluesky/archive/fireweather/forecasts/
 ln -fnsv $(date '+%Y%m%d00') current
 echo "$(date) ---> new symlink created"
 
+echo "$(date) ---> make symlink to kml file"
+cd /bluesky/archive/fireweather/forecasts/current/data
+ln -sv ../../../../forecasts/BSC00CA12-01/current/fire_locations.kml
+ln -sv ../../../../forecasts/BSC00CA12-01/current/fire_outlines.kml
+echo "$(date) ---> symlink to kml files created"
 
 
 echo "$(date) ---> start nc compressor"

@@ -103,7 +103,7 @@ const control = new searchboxControl({
 
 ObjectFun = {
     confuels: function (a){
-    console.log(parseInt(a));
+    // console.log(parseInt(a));
     // var fuel_id = ['C1', 'C2', 'C3', 'C4', 'C5', 'C6', 'C7', 'D1', 'M1 C25%', 'M1/M2 C35%', 'M1/M2 C50%', 'M1/M2 C65%', 'S1', 'O1a', 'O1b', 'Water', 'Non-fuel', 'Urban or built-up area'];
     var fuel_id = ['C1 - Spruce–Lichen Woodland', 'C2 - Boreal Spruce', 'C3 - Mature Jack or Lodgepole Pine', 'C4 - Immature Jack or Lodgepole Pine',
      'C5 - Red and White Pine', 'C6 - Conifer Plantation', 'C7 - Ponderosa Pine–Douglas-Fir', 'D1 - Leafless Aspen',
@@ -112,19 +112,19 @@ ObjectFun = {
     var fuel_code = [ 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 15, 16, 17, 18, 19];
     var index = fuel_code.indexOf(parseInt(a));
     var fu = fuel_id[index];
-    console.log(fu);
+    // console.log(fu);
     return fu
     }
 }
 
 function makeplotly(e) {
     let hovsize = 13;
-    console.log(e);
+    // console.log(e);
     var clickedCircle = e.target;
     var json_dir = clickedCircle.options.customId;
     var index = clickedCircle.options.customIdx;
 
-    console.log(index);
+    // console.log(index);
     var ll = clickedCircle._latlng
     btn_fire2.onclick = fwiplot2;
     btn_wx2.onclick = wxplot2;
@@ -145,7 +145,7 @@ function makeplotly(e) {
         var tz = n.TZONE[h];
         var ff = n.FUEL[h];
         var fu = ObjectFun.confuels(ff);
-        console.log(fu);
+        // console.log(fu);
 
 
         // console.log(Intl.DateTimeFormat().resolvedOptions().timeZone)
@@ -355,7 +355,7 @@ function makeplotly(e) {
             var tz = n.TZONE[h];
             var ff = n.FUEL[h];
             var fu = ObjectFun.confuels(ff);
-            console.log(fu);
+            // console.log(fu);
 
             // console.log(Intl.DateTimeFormat().resolvedOptions().timeZone)
             var timezone = moment.tz(Intl.DateTimeFormat().resolvedOptions().timeZone).zoneAbbr();
@@ -551,7 +551,7 @@ function makeplotly(e) {
         var tz = n.TZONE[h];
         var ff = n.FUEL[h];
         var fu = ObjectFun.confuels(ff);
-        console.log(fu);
+        // console.log(fu);
         // console.log(Intl.DateTimeFormat().resolvedOptions().timeZone)
         var timezone = moment.tz(Intl.DateTimeFormat().resolvedOptions().timeZone).zoneAbbr();
         // console.log(timezone);
@@ -750,9 +750,7 @@ function makeplotly3(e) {
     let hovsize = 13;
     var json_dir = e.customId;
     var index = e.customIdx;
-    console.log(index);
 
-    console.log(index);
     btn_fire3.onclick = fwiplot3;
     btn_wx3.onclick = wxplot3;
     btn_fbp3.onclick = fbpplot3;
@@ -773,7 +771,7 @@ function makeplotly3(e) {
         var tz = n.TZONE[h];
         var ff = n.FUEL[h];
         var fu = ObjectFun.confuels(ff);
-        console.log(fu);
+        // console.log(fu);
 
         // console.log(Intl.DateTimeFormat().resolvedOptions().timeZone)
         var timezone = moment.tz(Intl.DateTimeFormat().resolvedOptions().timeZone).zoneAbbr();
@@ -982,7 +980,7 @@ function makeplotly3(e) {
             var tz = n.TZONE[h];
             var ff = n.FUEL[h];
             var fu = ObjectFun.confuels(ff);
-            console.log(fu);
+            // console.log(fu);
             // console.log(Intl.DateTimeFormat().resolvedOptions().timeZone)
             var timezone = moment.tz(Intl.DateTimeFormat().resolvedOptions().timeZone).zoneAbbr();
             // console.log(timezone);
@@ -1177,7 +1175,7 @@ function makeplotly3(e) {
         var tz = n.TZONE[h];
         var ff = n.FUEL[h];
         var fu = ObjectFun.confuels(ff);
-        console.log(fu);
+        // console.log(fu);
         // console.log(Intl.DateTimeFormat().resolvedOptions().timeZone)
         var timezone = moment.tz(Intl.DateTimeFormat().resolvedOptions().timeZone).zoneAbbr();
         // console.log(timezone);
@@ -1484,7 +1482,7 @@ function makeplots(n) {
 
                         if ( _ == 'd3'){
                                 var ee = [parseFloat(o.latlng.lat.toFixed(4)), parseFloat(o.latlng.lng.toFixed(4))];
-                                console.log(ee);
+                                // console.log(ee);
                                 var ll = d3_tree.range(ee[0] - buffer, ee[1] - buffer, ee[0] + buffer, ee[1] + buffer).map((nn) => d3[nn]);
                                 (ll_diff2 = []),
                                     (function (nn, oo) {
@@ -1565,7 +1563,7 @@ function makeplots(n) {
                                 var ww = nn.XLAT[hh];
                                 var vv = nn.XLONG[hh];
 
-                                console.log(zone_json_d3);
+                                // console.log(zone_json_d3);
                                 fwfmodellocation = new L.marker([ww,vv],{icon: redIcon, customId: zone_json_d3, customIdx: hh});
                                 fwfmodellocation.bindPopup(div2, {maxWidth: "auto", maxHeight: "auto"});
                                 fwfmodellocation.setZIndexOffset(1000);
@@ -1630,6 +1628,7 @@ function makeplots(n) {
 
                         // Hotspot icon
                         // Hotspots layer with marker clustering
+
                         const hotspots = omnivore.kml('data/fire_locations.kml');
                         var hotspotIcon = L.icon({
                             iconUrl:   'static/img/fwf-fire3.png',
@@ -1657,20 +1656,20 @@ function makeplots(n) {
                         });
 
                         function hotplots(e) {
-                        console.log(e);
+                        // console.log(e);
                         var clickedFire = e.target;
                         lat = clickedFire._latlng.lat
                         lng = clickedFire._latlng.lng
 
 
-                        console.log(clickedFire)
-                        console.log(lat)
-                        console.log(lng)
+                        // console.log(clickedFire)
+                        // console.log(lat)
+                        // console.log(lng)
 
 
                         var e = [parseFloat(clickedFire._latlng.lat.toFixed(4)), parseFloat(clickedFire._latlng.lng.toFixed(4))];
                         var l = u.range(e[0] - buffer, e[1] - buffer, e[0] + buffer, e[1] + buffer).map((n) => s[n]);
-                        console.log(l);
+                        // console.log(l);
                         if (l === undefined || l.length == 0) {
                             // Do stuff if condition is true
                             map.closePopup();
@@ -1718,7 +1717,7 @@ function makeplots(n) {
 
                         if ( _ == 'd3'){
                                 var ee = [parseFloat(clickedFire._latlng.lat.toFixed(4)), parseFloat(clickedFire._latlng.lng.toFixed(4))];
-                                console.log(ee);
+                                // console.log(ee);
                                 var ll = d3_tree.range(ee[0] - buffer, ee[1] - buffer, ee[0] + buffer, ee[1] + buffer).map((nn) => d3[nn]);
                                 (ll_diff2 = []),
                                     (function (nn, oo) {
@@ -1800,7 +1799,7 @@ function makeplots(n) {
                                 var ww = nn.XLAT[hh];
                                 var vv = nn.XLONG[hh];
 
-                                console.log(zone_json_d3);
+                                // console.log(zone_json_d3);
                                 makeplotly3({customId: zone_json_d3, customIdx: hh, lat: ww, lng: vv});
 
                                 });
@@ -1848,7 +1847,7 @@ function makeplots(n) {
                             var w = n.XLAT[h];
                             var v = n.XLONG[h];
 
-                            console.log(zone_json);
+                            // console.log(zone_json);
                             makeplotly3({customId: zone_json, customIdx: h, lat: w, lng: v});
                             });
                             loaded_zones.push(_);
@@ -2005,8 +2004,8 @@ function makeplots(n) {
                             fetch(zone_json).then(function(response){
                                 return response.json();
                             }).then(function(n){
-                                console.log(n);
-                                console.log(o);
+                                // console.log(n);
+                                // console.log(o);
 
                              var buff = 0.2
                             for (var t = n.XLAT, e = n.XLONG, l = [], a = [], r = [(r = [t.length, t[0].length])[1], r[0]], c = 0; c < t.length; c++) l = l.concat(t[c]);

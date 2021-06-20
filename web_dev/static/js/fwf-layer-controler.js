@@ -18,6 +18,30 @@ var snw_topo_file = 'data/map/snw-merge-2020011106.json';
 
 
 
+// Fires layer
+var firesLayer = omnivore.kml('data/fire_outlines.kml')
+    .on('ready', function() {
+        this.setStyle({color: "#654321", fillOpacity: 0.8})
+    });
+
+
+// // Hotspots layer with marker clustering
+// var hotspots = omnivore.kml('data/fire_locations.kml'),
+hotspotsMarkers = L.markerClusterGroup({
+    showCoverageOnHover: false,
+    zoomToBoundsOnClick: true,
+    spiderfyOnMaxZoom: true,
+    removeOutsideVisibleBounds: true,
+    spiderLegPolylineOptions: {weight: 1.5, color: '#ff1100', opacity: 0.8},
+    maxClusterRadius: 60,
+    disableClusteringAtZoom: 11,
+});
+// hotspots.on('ready', MyObject.please)
+
+var fires = L.layerGroup([hotspotsMarkers, firesLayer]);
+
+
+
 var geo_json_ffmc = L.layerGroup();
 var geo_json_dmc = L.layerGroup();
 var geo_json_dc = L.layerGroup();
@@ -203,9 +227,12 @@ var groupedOverlays = [
         ]
     },
     {
-        label: 'Weather Observations',
+        label: 'Observations',
         children: [
             {label: ' Weather Stations', layer: wx_station},
+            // {label:" Modelled fires", layer:  firesLayer},
+            {label:" Satellite hotspots / Modelled Fires", layer: fires},
+
         ]
     },
 ];
@@ -214,7 +241,6 @@ var groupedOptions = {
     exclusiveGroups: ["Fire Weather Forecast", "Fire Behavior Forecast"],
 
 };
-// L.control.groupedLayers(baseLayers, groupedOverlays).addTo(map);
 
 L.control.layers.tree(baseLayers,groupedOverlays).addTo(map);
 

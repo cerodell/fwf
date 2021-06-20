@@ -87,7 +87,7 @@ def readwrf(filein, domain, wright):
         wrf_file = Dataset(path_in_str, "r")
 
         T = getvar(wrf_file, "T2", meta=True) - 273.15
-        TD = getvar(wrf_file, "td2", meta=True) - 273.15
+        TD = getvar(wrf_file, "td2", meta=True)
         H = getvar(wrf_file, "rh2", meta=True)
 
         wsp_wdir = g_uvmet.get_uvmet10_wspd_wdir(wrf_file, units="km h-1")

@@ -76,6 +76,103 @@ class FWF:
         if wrf_file_dir.endswith(".nc"):
             print("Re-run using nc file")
             wrf_ds = xr.open_dataset(wrf_file_dir)
+            keep_vars = [
+                "SNOWC",
+                "SNOWH",
+                "SNW",
+                "T",
+                "TD",
+                "U10",
+                "V10",
+                "W",
+                "WD",
+                "r_o",
+            ]
+            wrf_ds = wrf_ds.drop([var for var in list(wrf_ds) if var not in keep_vars])
+            if np.max(wrf_ds.r_o.values[0]) or np.max(wrf_ds.SNW.values[0]) > 0:
+                exit
+            if np.max(wrf_ds.TD) < -100:
+                wrf_ds["TD"] = wrf_ds.TD + 273.15
+                RH = (
+                    (6.11 * 10 ** (7.5 * (wrf_ds.TD / (237.7 + wrf_ds.TD))))
+                    / (6.11 * 10 ** (7.5 * (wrf_ds.T / (237.7 + wrf_ds.T))))
+                    * 100
+                )
+                RH = xr.where(RH > 100, 100, RH)
+                RH = xr.DataArray(
+                    RH, name="H", dims=("time", "south_north", "west_east")
+                )
+                wrf_ds["H"] = RH
+            else:
+                RH = (
+                    (6.11 * 10 ** (7.5 * (wrf_ds.TD / (237.7 + wrf_ds.TD))))
+                    / (6.11 * 10 ** (7.5 * (wrf_ds.T / (237.7 + wrf_ds.T))))
+                    * 100
+                )
+                RH = xr.where(RH > 100, 100, RH)
+                RH = xr.DataArray(
+                    RH, name="H", dims=("time", "south_north", "west_east")
+                )
+                wrf_ds["H"] = RH
+            if np.min(wrf_ds.H) > 90:
+                raise ValueError("ERROR: Check TD unphysical RH values")
+
+            print(f"Min RH : {float(np.min(wrf_ds.H))}")
+            print(f"Mean RH : {float(np.mean(wrf_ds.H))}")
+            print(f"Max RH : {float(np.max(wrf_ds.H))}")
+            print(f"Min TD : {float(np.min(wrf_ds.TD))}")
+            print(f"Max TD : {float(np.max(wrf_ds.TD))}")
+            print(list(wrf_ds))
+            ### Read then open WRF dataset
+        elif wrf_file_dir.endswith(".zarr"):
+            print("Re-run using zarr file")
+            wrf_ds = xr.open_zarr(wrf_file_dir)
+            keep_vars = [
+                "SNOWC",
+                "SNOWH",
+                "SNW",
+                "T",
+                "TD",
+                "U10",
+                "V10",
+                "W",
+                "WD",
+                "r_o",
+            ]
+            wrf_ds = wrf_ds.drop([var for var in list(wrf_ds) if var not in keep_vars])
+            if np.max(wrf_ds.r_o.values[0]) or np.max(wrf_ds.SNW.values[0]) > 0:
+                exit
+            if np.max(wrf_ds.TD) < -100:
+                wrf_ds["TD"] = wrf_ds.TD + 273.15
+                RH = (
+                    (6.11 * 10 ** (7.5 * (wrf_ds.TD / (237.7 + wrf_ds.TD))))
+                    / (6.11 * 10 ** (7.5 * (wrf_ds.T / (237.7 + wrf_ds.T))))
+                    * 100
+                )
+                RH = xr.where(RH > 100, 100, RH)
+                RH = xr.DataArray(
+                    RH, name="H", dims=("time", "south_north", "west_east")
+                )
+                wrf_ds["H"] = RH
+            else:
+                RH = (
+                    (6.11 * 10 ** (7.5 * (wrf_ds.TD / (237.7 + wrf_ds.TD))))
+                    / (6.11 * 10 ** (7.5 * (wrf_ds.T / (237.7 + wrf_ds.T))))
+                    * 100
+                )
+                RH = xr.where(RH > 100, 100, RH)
+                RH = xr.DataArray(
+                    RH, name="H", dims=("time", "south_north", "west_east")
+                )
+                wrf_ds["H"] = RH
+            if np.min(wrf_ds.H) > 90:
+                raise ValueError("ERROR: Check TD unphysical RH values")
+
+            print(f"Min RH : {float(np.min(wrf_ds.H))}")
+            print(f"Max RH : {float(np.max(wrf_ds.H))}")
+            print(f"Min TD : {float(np.min(wrf_ds.TD))}")
+            print(f"Max TD : {float(np.max(wrf_ds.TD))}")
+            print(list(wrf_ds))
         else:
             print("New-run, use readwrf to get vars from nc files")
             wrf_ds = readwrf(wrf_file_dir, domain, wright=False)
@@ -717,23 +814,26 @@ class FWF:
         Q_o = 800 * np.exp(-1 * D_o / 400)
 
         ########################################################################
+        ### (20) Solve for moisture equivalent (Q_r)
+        Q_r = Q_o + 3.937 * r_d
+
+        ########################################################################
         ### (21) Solve for DC after rain (D_r)
         ## Alteration to Eq. 21 (Lawson 2008)
-        D_r = D_o - 400 * np.log(1 + 3.937 * r_d / Q_o)
+        # D_r = D_o - 400 * np.log(1 + 3.937 * r_d / Q_o)
+        D_r = 400 * np.log(800 / Q_r)
         D_r = xr.where(D_r < 0, 0.0, D_r)
         D_r = xr.where(r_o <= 2.8, D_o, D_r)
 
         ########################################################################
         ### (22) Solve for potential evapotranspiration (V)
         # V = (0.36 * (T + 2.8)) + L_f
-        V = (
-            0.36 * (T + 2.8)
-        ) + L_f / 2  ## NOTE not sure why but they dived by to in the R code
+        V = (0.36 * (T + 2.8)) + L_f
         V = xr.where(V < 0, 0.0, V)
 
         ########################################################################
         ## Alteration to Eq. 23 (Lawson 2008)
-        D = D_r + V
+        D = D_r + V * 0.5
         # Hold D to D_initial if snow cover is more than 50%
         D = xr.where(SNOWC > self.snowfract, self.D_initial, D)
         D = xr.where(D < 0, 0.0, D)

@@ -1,6 +1,15 @@
 #!/bin/bash
 
 
+echo "$(date) ---> make symlink to kml file"
+cd /bluesky/archive/fireweather/forecasts/current/data
+rm -r fire_locations.kml
+rm -r fire_outlines.kml
+ln -sv ../../../../forecasts/BSC06CA12-01/current/fire_locations.kml
+ln -sv ../../../../forecasts/BSC06CA12-01/current/fire_outlines.kml
+echo "$(date) ---> symlink to kml files created"
+
+
 cd /bluesky/fireweather/fwf/data/FWF-WAN00CG-01
 echo "cleaning FWF-WAN00CG-01 to remove forecast dat: --> $(date '+%Y-%m-%dT%H')"
 rm -r fwf-daily-d02-$(date  -d "3 days ago" '+%Y%m%d06').nc

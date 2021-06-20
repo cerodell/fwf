@@ -638,7 +638,7 @@ color_map_sfc.onAdd = function(map) {
 <td width="26px">6+</td>\
 </tr>\
 </table>\
-<div class="legend-title">Surface Fuel Consumption (kg/m^2)</div>';
+<div class="legend-title">Surface Fuel Consumption (kg/m<sup>2</sup>)</div>';
     return div;
 }
 
@@ -678,7 +678,7 @@ color_map_tfc.onAdd = function(map) {
 <td width="26px">12+</td>\
 </tr>\
 </table>\
-<div class="legend-title">Total Fuel Consumption (kg/m^2)</div>';
+<div class="legend-title">Total Fuel Consumption (kg/m<sup>2</sup>)</div>';
     return div;
 }
 
