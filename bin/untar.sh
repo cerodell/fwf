@@ -75,19 +75,19 @@
 # done
 
 cd /bluesky/fireweather/fwf/data/FWF-WAN00CG-01
-for i in {16..28}
+for i in {13..14}
 # declare -a arr=("01" "02" "03" "04" "05" "06" "07" "08" "09")
 # for i in "${arr[@]}"
 do
-    echo fwf-hourly-d03-202104"$i"06.nc
-    rm -r fwf-hourly-d03-202104"$i"06.nc
+    echo fwf-hourly-d03-202106"$i"06.nc
+    rm -r fwf-hourly-d03-202106"$i"06.nc
 
-    echo fwf-daily-d03-202104"$i"06.nc
-    rm -r fwf-daily-d03-202104"$i"06.nc
+    echo fwf-daily-d03-202106"$i"06.nc
+    rm -r fwf-daily-d03-202106"$i"06.nc
 
-    echo fwf-hourly-d02-202104"$i"06.nc
-    rm -r fwf-hourly-d02-202104"$i"06.nc
+    echo fwf-hourly-d02-202106"$i"06.nc
+    rm -r fwf-hourly-d02-202106"$i"06.nc
 
-    echo fwf-daily-d02-202104"$i"06.nc
-    rm -r fwf-daily-d02-202104"$i"06.nc
+    echo fwf-daily-d02-202106"$i"06.nc
+    rm -r fwf-daily-d02-202106"$i"06.nc
 done

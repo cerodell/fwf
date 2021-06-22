@@ -29,7 +29,7 @@ wrf_model = "wrf4"
 day_of = "_day1"
 domain = "d02"
 # date = pd.Timestamp("today")
-date = pd.Timestamp(2021, 5, 19)
+date = pd.Timestamp(2021, 6, 14)
 
 intercomp_today_dir = date.strftime("%Y%m%d")
 
@@ -293,6 +293,7 @@ def reject_outliers(x, y, m=3):
 
 
 def checkstats(var, color):
+    print(var)
     time = np.array(ds.time.dt.strftime("%Y-%m-%d"), dtype="<U10")
     start_time = datetime.strptime(str(time[0]), "%Y-%m-%d").strftime("%Y%m%d")
     end_time = datetime.strptime(str(time[-1]), "%Y-%m-%d").strftime("%Y%m%d")
@@ -303,6 +304,10 @@ def checkstats(var, color):
     ind = ~np.isnan(var_obs)
     var_obs_ = var_obs[ind]
     var_modeld_ = var_modeld[ind]
+    ind = ~np.isnan(var_modeld_)
+    var_obs_ = var_obs_[ind]
+    var_modeld_ = var_modeld_[ind]
+    print(np.unique(~np.isnan(var_modeld_), return_counts=True))
     try:
         index = np.where(var_obs_ > var_dict[var]["ext"])[0]
         var_obs_ = var_obs_[index]

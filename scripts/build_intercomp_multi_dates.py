@@ -20,9 +20,9 @@ from netCDF4 import Dataset
 import matplotlib.pyplot as plt
 from wrf import ll_to_xy, xy_to_ll
 from datetime import datetime, date, timedelta
-from utils.make_intercomp import daily_merge_ds
+from utils.make_intercomp import daily_merge_ds_rerun
 
-from context import data_dir, fwf_zarr_dir, tzone_dir
+from context import data_dir
 
 startTime = datetime.now()
 print("RUN STARTED AT: ", str(startTime))
@@ -30,7 +30,7 @@ print("RUN STARTED AT: ", str(startTime))
 __author__ = "Christopher Rodell"
 __email__ = "crodell@eoas.ubc.ca"
 
-
+wrf_model = "wrf4"
 ## make dir for that intercomp files if it doest not all ready exist
 make_dir = Path(str(data_dir) + "/intercomp/")
 make_dir.mkdir(parents=True, exist_ok=True)
@@ -51,30 +51,32 @@ stations_df_og = stations_df_og.drop(
     columns=["tmm", "ua", "the_geom", "h_bul", "s_bul", "hly", "syn"]
 )
 
-date_range = pd.date_range("2021-02-08", "2021-02-14")
+date_range = pd.date_range("2021-05-02", "2021-06-14")
 domains = ["d02", "d03"]
-
 # """######### get directory to yesterdays hourly/daily .zarr files.  #############"""
+def rechunk(ds):
+    ds = ds.chunk(chunks="auto")
+    ds = ds.unify_chunks()
+    for var in list(ds):
+        ds[var].encoding = {}
+    return ds
+
+
 for date in date_range:
     stations_df = stations_df_og
     day1_obs_date = date.strftime("%Y%m%d06")
     day2_obs_date = date - np.timedelta64(1, "D")
     day2_obs_date = day2_obs_date.strftime("%Y%m%d06")
-    for domain in domains:
-        ### Get Path to most recent FWI forecast and open
-        # d = pd.Timestamp("today")
-        # day1_obs_date = d.strftime("%Y%m%d06")
-        # print(day1_obs_date)
-        day1_ds = daily_merge_ds(day1_obs_date, domain)
 
-        # d = d - np.timedelta64(1, "D")
-        # day2_obs_date = d.strftime("%Y%m%d06")
-        day2_ds = daily_merge_ds(day2_obs_date, domain)
+    for domain in ["d02", "d03"]:
+        stations_df = stations_df_og
+
+        day1_ds = daily_merge_ds_rerun(day1_obs_date, domain, wrf_model)
+        # day1_ds = daily_merge_ds(day2_obs_date, domain, wrf_model)
+
+        day2_ds = daily_merge_ds_rerun(day2_obs_date, domain, wrf_model)
 
         ### Get a wrf file
-        # wrf_filein = date.today().strftime('/%y%m%d00/')
-        # wrf_filein = "/20122400/"
-        # wrf_file_dir = str(wrf_dir_new) + wrf_filein
         wrf_filein = "/wrf/"
         wrf_file_dir = str(data_dir) + wrf_filein
         wrf_file_dir = sorted(Path(wrf_file_dir).glob(f"wrfout_{domain}_*"))
@@ -150,6 +152,7 @@ for date in date_range:
             var_columns = day1_ds[var].values[:, south_north, west_east]
             var_columns = np.array(var_columns, dtype="float32")
             final_df[name_upper + "_day1"] = var_columns[0, :]
+            # final_df[name_upper + "_day1"] = var_columns[1, :]
 
             if day2_ds is None:
                 # print('day2_ds is none')
@@ -184,6 +187,7 @@ for date in date_range:
         tz_correct = final_df["tz_correct"].values.astype(int)
         try:
             day = np.array(day1_ds.Time[0], dtype="datetime64[D]")
+            # day = np.array(day1_ds.Time[1], dtype="datetime64[D]")
         except:
             day = np.array(day1_ds.Time, dtype="datetime64[D]")
 
@@ -213,29 +217,27 @@ for date in date_range:
         intercomp_today_ds = xr.merge(xr_list)
         intercomp_today_ds = intercomp_today_ds.isel(time=0)
 
+        intercomp_today_ds.attrs["TITLE"] = str(
+            "wrfout/fwf model versus wmo weather station observations"
+        ).upper()
         for var in var_list:
             name_upper = cmaps[var]["name"].upper()
             attrs = day1_ds[var].attrs
-            # print(attrs)
-            intercomp_today_ds[name_upper].attrs = attrs
+            intercomp_today_ds[name_upper].attrs["description"] = attrs
             intercomp_today_ds[name_upper].attrs["description"] = (
                 "OBSERVED " + attrs["description"]
             )
-            intercomp_today_ds[name_upper + "_day1"].attrs = attrs
+            intercomp_today_ds[name_upper + "_day1"].attrs["description"] = attrs
             intercomp_today_ds[name_upper + "_day1"].attrs["description"] = (
                 "ONE DAY FORECASTED " + attrs["description"]
             )
-            intercomp_today_ds[name_upper + "_day2"].attrs = attrs
+            intercomp_today_ds[name_upper + "_day2"].attrs["description"] = attrs
             intercomp_today_ds[name_upper + "_day2"].attrs["description"] = (
                 "TWO DAY FORECASTED " + attrs["description"]
             )
 
         intercomp_today_dir = day1_obs_date[:-2]
         intercomp_yesterday_dir = day2_obs_date[:-2]
-
-        intercomp_today_ds.attrs["TITLE"] = str(
-            "wrfout/fwf model versus wmo weather station observations"
-        ).upper()
 
         my_dir = Path(
             str(data_dir)
@@ -251,6 +253,8 @@ for date in date_range:
             final_ds = xr.combine_nested(
                 [intercomp_yesterday_ds, intercomp_today_ds], "time"
             )
+
+            final_ds = rechunk(final_ds)
             final_ds.to_zarr(
                 str(data_dir)
                 + "/intercomp/"
@@ -258,13 +262,14 @@ for date in date_range:
                 mode="w",
             )
             print(
-                "wrote archive "
+                "Wrote:   "
                 + str(data_dir)
                 + "/intercomp/"
                 + f"intercomp-{domain}-{intercomp_today_dir}.zarr"
             )
         else:
             final_ds = intercomp_today_ds
+            final_ds = rechunk(final_ds)
             final_ds.to_zarr(
                 str(data_dir)
                 + "/intercomp/"
@@ -272,12 +277,11 @@ for date in date_range:
                 mode="w",
             )
             print(
-                "wrote archive "
+                "Wrote:   "
                 + str(data_dir)
                 + "/intercomp/"
                 + f"intercomp-{domain}-{intercomp_today_dir}.zarr"
             )
-
 
 ### Timer
 print("Total Run Time: ", datetime.now() - startTime)

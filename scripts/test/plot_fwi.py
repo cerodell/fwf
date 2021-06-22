@@ -20,14 +20,16 @@ from datetime import datetime, date, timedelta
 
 domain = "d02"
 wrf_model = "wrf4"
-forecast_date = "2021022306"
-file, var, index = "hourly", "H", 0
+forecast_date = "2021061506"
+file, var, index = "daily", "D", 0
 
 
+# ds = xr.open_dataset(
+#     f"/bluesky/archive/fireweather/data/fwf-{file}-{domain}-{forecast_date}.nc"
+# )
 ds = xr.open_dataset(
-    f"/bluesky/archive/fireweather/data/fwf-{file}-{domain}-{forecast_date}.nc"
+    f"/bluesky/fireweather/fwf/data/FWF-WAN00CG-01/fwf-{file}-{domain}-{forecast_date}.nc"
 )
-# ds = xr.open_dataset(f'/bluesky/fireweather/fwf/datxa/FWF-WAN00CG-01/fwf-{file}-{domain}-{forecast_date}.nc')
 
 
 # ds.D.min()

@@ -29,7 +29,7 @@ __email__ = "crodell@eoas.ubc.ca"
 warnings.filterwarnings("ignore", category=RuntimeWarning)
 
 wrf_model = "wrf4"
-date_range = pd.date_range("2021-05-01", "2021-06-15")
+date_range = pd.date_range("2021-05-25", "2021-06-15")
 
 # """######### get directory to yesterdays hourly/daily .zarr files.  #############"""
 for date in date_range:
