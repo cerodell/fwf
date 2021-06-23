@@ -1,10 +1,5 @@
 #!/bluesky/fireweather/miniconda3/envs/fwf/bin/python
 
-"""
-Builds a dataset of wrfout/fwf model versus all wmo weather station
-observations within model domain. Writes Dataset as zarr with attribute of of wmo.
-
-"""
 
 import context
 import io
@@ -20,7 +15,7 @@ from netCDF4 import Dataset
 import matplotlib.pyplot as plt
 from wrf import ll_to_xy, xy_to_ll
 from datetime import datetime, date, timedelta
-from utils.make_intercomp import daily_merge_ds_rerun
+from utils.make_intercomp import daily_merge_ds
 
 from context import data_dir
 
@@ -51,7 +46,7 @@ stations_df_og = stations_df_og.drop(
     columns=["tmm", "ua", "the_geom", "h_bul", "s_bul", "hly", "syn"]
 )
 
-date_range = pd.date_range("2021-05-02", "2021-06-14")
+date_range = pd.date_range("2021-05-01", "2021-06-21")
 domains = ["d02", "d03"]
 # """######### get directory to yesterdays hourly/daily .zarr files.  #############"""
 def rechunk(ds):
@@ -71,10 +66,10 @@ for date in date_range:
     for domain in ["d02", "d03"]:
         stations_df = stations_df_og
 
-        day1_ds = daily_merge_ds_rerun(day1_obs_date, domain, wrf_model)
+        day1_ds = daily_merge_ds(day1_obs_date, domain, wrf_model)
         # day1_ds = daily_merge_ds(day2_obs_date, domain, wrf_model)
 
-        day2_ds = daily_merge_ds_rerun(day2_obs_date, domain, wrf_model)
+        day2_ds = daily_merge_ds(day2_obs_date, domain, wrf_model)
 
         ### Get a wrf file
         wrf_filein = "/wrf/"

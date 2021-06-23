@@ -735,7 +735,7 @@ class FWF:
         P = P_r + K
         # Hold P to P_initial if snow cover is more than 50%
         P = xr.where(SNOWC > self.snowfract, self.P_initial, P)
-        P = xr.where(P < 0, 0.0, P)
+        P = xr.where(P < 0, 1.0, P)
 
         self.P = P
         return P
@@ -836,7 +836,7 @@ class FWF:
         D = D_r + V * 0.5
         # Hold D to D_initial if snow cover is more than 50%
         D = xr.where(SNOWC > self.snowfract, self.D_initial, D)
-        D = xr.where(D < 0, 0.0, D)
+        D = xr.where(D < 0, 1.0, D)
 
         self.D = D
         return D

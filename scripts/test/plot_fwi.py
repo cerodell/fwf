@@ -20,7 +20,7 @@ from datetime import datetime, date, timedelta
 
 domain = "d02"
 wrf_model = "wrf4"
-forecast_date = "2021061506"
+forecast_date = "2021062006"
 file, var, index = "daily", "D", 0
 
 

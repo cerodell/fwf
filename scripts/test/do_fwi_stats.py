@@ -27,9 +27,9 @@ from matplotlib.offsetbox import AnchoredText
 
 wrf_model = "wrf4"
 day_of = "_day1"
-domain = "d02"
+domain = "d03"
 # date = pd.Timestamp("today")
-date = pd.Timestamp(2021, 6, 14)
+date = pd.Timestamp(2021, 6, 21)
 
 intercomp_today_dir = date.strftime("%Y%m%d")
 
@@ -39,6 +39,8 @@ with open(str(data_dir) + f"/json/fwf-attrs.json", "r") as fp:
 ds = xr.open_zarr(
     str(data_dir) + "/intercomp/" + f"intercomp-{domain}-{intercomp_today_dir}.zarr",
 )
+
+
 date_range = pd.date_range(ds.time.values[0], ds.time.values[-1])
 ds = ds.chunk(chunks="auto")
 ds = ds.unify_chunks()
@@ -53,6 +55,8 @@ else:
 df = ds.to_dataframe().dropna()
 df = df.reset_index()
 df = df[~np.isnan(df.BUI)]
+df = df[~np.isnan(df.BUI_day1)]
+
 unique, counts = np.unique(df.wmo.values, return_counts=True)
 # wmo_of_int = unique[counts > 170]
 # df = df[df.wmo.isin(wmo_of_int)]

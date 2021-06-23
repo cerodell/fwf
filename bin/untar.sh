@@ -74,20 +74,33 @@
 #     rm -r fwf-daily-d02-202103"$i"06.nc
 # done
 
-cd /bluesky/fireweather/fwf/data/FWF-WAN00CG-01
-for i in {13..14}
+# cd /bluesky/fireweather/fwf/data/FWF-WAN00CG-01
+# for i in {10..27}
+# # declare -a arr=("01" "02" "03" "04" "05" "06" "07" "08" "09")
+# # for i in "${arr[@]}"
+# do
+#     echo fwf-hourly-d03-202104"$i"06.nc
+#     rm -r fwf-hourly-d03-202104"$i"06.nc
+
+#     echo fwf-daily-d03-202104"$i"06.nc
+#     rm -r fwf-daily-d03-202104"$i"06.nc
+
+#     echo fwf-hourly-d02-202104"$i"06.nc
+#     rm -r fwf-hourly-d02-202104"$i"06.nc
+
+#     echo fwf-daily-d02-202104"$i"06.nc
+#     rm -r fwf-daily-d02-202104"$i"06.nc
+# done
+
+
+cd /bluesky/fireweather/fwf/data/intercomp
 # declare -a arr=("01" "02" "03" "04" "05" "06" "07" "08" "09")
 # for i in "${arr[@]}"
+for i in {10..18}
 do
-    echo fwf-hourly-d03-202106"$i"06.nc
-    rm -r fwf-hourly-d03-202106"$i"06.nc
+    echo intercomp-d02-202106"$i".zarr
+    rm -r intercomp-d02-202106"$i".zarr
 
-    echo fwf-daily-d03-202106"$i"06.nc
-    rm -r fwf-daily-d03-202106"$i"06.nc
-
-    echo fwf-hourly-d02-202106"$i"06.nc
-    rm -r fwf-hourly-d02-202106"$i"06.nc
-
-    echo fwf-daily-d02-202106"$i"06.nc
-    rm -r fwf-daily-d02-202106"$i"06.nc
+    echo intercomp-d03-202106"$i".zarr
+    rm -r intercomp-d03-202106"$i".zarr
 done

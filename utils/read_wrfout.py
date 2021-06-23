@@ -87,8 +87,8 @@ def readwrf(filein, domain, wright):
         wrf_file = Dataset(path_in_str, "r")
 
         T = getvar(wrf_file, "T2", meta=True) - 273.15
-        TD = getvar(wrf_file, "td2", meta=True)
-        H = getvar(wrf_file, "rh2", meta=True)
+        TD = getvar(wrf_file, "td2", meta=True, units="degC")
+        # H = getvar(wrf_file, "rh2", meta=True)
 
         wsp_wdir = g_uvmet.get_uvmet10_wspd_wdir(wrf_file, units="km h-1")
         wsp_array = np.array(wsp_wdir[0])
@@ -109,15 +109,27 @@ def readwrf(filein, domain, wright):
         SNOWC = getvar(wrf_file, "SNOWC", meta=True)
         SNOWH = getvar(wrf_file, "SNOWH", meta=True)
 
-        var_list = [T, TD, H, W, WD, r_o, SNW, SNOWC, SNOWH, U10, V10]
+        # var_list = [T, TD, H, W, WD, r_o, SNW, SNOWC, SNOWH, U10, V10]
+        var_list = [T, TD, W, WD, r_o, SNW, SNOWC, SNOWH, U10, V10]
         ds = xr.merge(var_list)
         ds_list.append(ds)
 
     ### Combine xarray and rename to match van wangers defs
     wrf_ds = xr.combine_nested(ds_list, "time")
-    wrf_ds = wrf_ds.rename_vars({"T2": "T", "td2": "TD", "rh2": "H", "SNOWNC": "SNW"})
+    wrf_ds = wrf_ds.rename_vars({"T2": "T", "td2": "TD", "SNOWNC": "SNW"})
     wrf_ds["SNW"] = wrf_ds.SNW - wrf_ds.SNW.isel(time=0)
     wrf_ds["r_o"] = wrf_ds.r_o - wrf_ds.r_o.isel(time=0)
+
+    RH = (
+        (6.11 * 10 ** (7.5 * (wrf_ds.TD / (237.7 + wrf_ds.TD))))
+        / (6.11 * 10 ** (7.5 * (wrf_ds.T / (237.7 + wrf_ds.T))))
+        * 100
+    )
+    RH = xr.where(RH > 100, 100, RH)
+    RH = xr.DataArray(RH, name="H", dims=("time", "south_north", "west_east"))
+    wrf_ds["H"] = RH
+    if np.min(wrf_ds.H) > 90:
+        raise ValueError("ERROR: Check TD unphysical RH values")
 
     wrf_file = Dataset(str(pathlist[0]), "r")
     nc_attrs = wrf_file.ncattrs()
@@ -127,7 +139,7 @@ def readwrf(filein, domain, wright):
     wrf_ds = wrf_ds.load()
     for var in list(wrf_ds):
         wrf_ds[var].encoding = {}
-
+    print(list(wrf_ds))
     if wright == True:
         print(wrf_ds)
         time = np.array(wrf_ds.Time.dt.strftime("%Y-%m-%dT%H"))
