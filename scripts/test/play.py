@@ -17,8 +17,12 @@ startTime = datetime.now()
 
 date_range = pd.date_range("2021-02-23", "2021-03-01")
 
-ds = xr.open_dataset(
-    f"/bluesky/fireweather/fwf/data/FWF-WAN00CG-01/fwf-hourly-d03-2021061606.nc"
+ds_new = xr.open_dataset(
+    f"/bluesky/fireweather/fwf/data/FWF-WAN00CG-01/fwf-hourly-d03-2021062406.nc"
+)
+
+ds_old = xr.open_dataset(
+    f"/bluesky/archive/fireweather/data/fwf-hourly-d03-2021062406.nc"
 )
 print(f"Min RH : {float(np.min(ds.H))}")
 print(f"Mean RH : {float(np.mean(ds.H))}")

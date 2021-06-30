@@ -1049,17 +1049,7 @@ class FWF:
         FBPloopTime = datetime.now()
         print("Start of FBP")
         ## Open fuels converter
-        hourly_ds = self.rechunk(hourly_ds)
-        fc_df = pd.read_csv(str(data_dir) + "/fbp/fuel_converter.csv")
-        fc_df = fc_df.drop_duplicates(subset=["CFFDRS"])
-        fc_df["Code"] = fc_df["FWF_Code"]
-        fc_df.loc[fc_df["CFFDRS"] == "M1 C25%", "CFFDRS"] = "M1"
-        fc_df = fc_df[~fc_df["CFFDRS"].str.contains("M1/")]
-        fc_df = fc_df.set_index("CFFDRS")
-        fc_dict = fc_df.transpose().to_dict()
-
-        daily_ds = self.daily_ds
-        daily_ds = self.rechunk(daily_ds)
+        # hourly_ds = self.rechunk(hourly_ds)
         ELV, LAT, LON, FUELS, GS, SAZ, PC = (
             self.ELV,
             self.LAT,
@@ -1069,6 +1059,22 @@ class FWF:
             self.SAZ,
             self.PC,
         )
+        unique = np.unique(FUELS)
+
+        fc_df = pd.read_csv(str(data_dir) + "/fbp/fuel_converter.csv")
+        fc_df = fc_df.drop_duplicates(subset=["CFFDRS"])
+        fc_df["Code"] = fc_df["FWF_Code"]
+        drop_fuels = list(set(fc_df["Code"].values) - set(unique))
+        for code in drop_fuels:
+            fc_df = fc_df[fc_df["Code"] != code]
+        fc_df.loc[fc_df["CFFDRS"] == "M1 C25%", "CFFDRS"] = "M1"
+        fc_df = fc_df[~fc_df["CFFDRS"].str.contains("M1/")]
+        fc_df = fc_df.set_index("CFFDRS")
+        fc_dict = fc_df.transpose().to_dict()
+
+        daily_ds = self.daily_ds
+        # daily_ds = self.rechunk(daily_ds)
+
         ## Define Static Variables
         WD, dx, dy = (
             hourly_ds.WD,
@@ -1145,9 +1151,9 @@ class FWF:
 
         ## Solve Fuel Consumption for C2, M3, and M4 Fuels  (10)
         SFC = xr.where(
-            (FUELS == fc_dict["C2"]["Code"])
-            | (FUELS == fc_dict["M3"]["Code"])
-            | (FUELS == fc_dict["M4"]["Code"]),
+            (FUELS == fc_dict["C2"]["Code"]),
+            # | (FUELS == fc_dict["M3"]["Code"])
+            # | (FUELS == fc_dict["M4"]["Code"]),
             5.0 * (1 - np.exp(-0.0115 * BUI)),
             SFC,
         )
@@ -1181,7 +1187,7 @@ class FWF:
 
         ## Solve Fuel Consumption for M1, M2 Fuels  (17)
         SFC = xr.where(
-            (FUELS == fc_dict["M1"]["Code"]) | (FUELS == fc_dict["M2"]["Code"]),
+            (FUELS == fc_dict["M1"]["Code"]),  # | (FUELS == fc_dict["M2"]["Code"]),
             PC / 100 * (5.0 * (1 - np.exp(-0.0115 * BUI)))
             + ((100 - PC) / 100 * (1.5 * (1 - np.exp(-0.0183 * BUI)))),
             SFC,
@@ -1194,26 +1200,26 @@ class FWF:
             SFC,
         )
 
-        ## Solve Fuel Consumption for S1 Fuels  (19, 20, 25)
-        SFC = xr.where(
-            (FUELS == fc_dict["S1"]["Code"]),
-            4.0 * (1 - np.exp(-0.025 * BUI)) + 4.0 * (1 - np.exp(-0.034 * BUI)),
-            SFC,
-        )
+        # ## Solve Fuel Consumption for S1 Fuels  (19, 20, 25)
+        # SFC = xr.where(
+        #     (FUELS == fc_dict["S1"]["Code"]),
+        #     4.0 * (1 - np.exp(-0.025 * BUI)) + 4.0 * (1 - np.exp(-0.034 * BUI)),
+        #     SFC,
+        # )
 
-        ## Solve Fuel Consumption for S2 Fuels  (21, 22, 25)
-        SFC = xr.where(
-            (FUELS == fc_dict["S2"]["Code"]),
-            10.0 * (1 - np.exp(-0.013 * BUI)) + 6.0 * (1 - np.exp(-0.060 * BUI)),
-            SFC,
-        )
+        # ## Solve Fuel Consumption for S2 Fuels  (21, 22, 25)
+        # SFC = xr.where(
+        #     (FUELS == fc_dict["S2"]["Code"]),
+        #     10.0 * (1 - np.exp(-0.013 * BUI)) + 6.0 * (1 - np.exp(-0.060 * BUI)),
+        #     SFC,
+        # )
 
-        ## Solve Fuel Consumption for S3 Fuels  (23, 24, 25)
-        SFC = xr.where(
-            (FUELS == fc_dict["S3"]["Code"]),
-            12.0 * (1 - np.exp(-0.0166 * BUI)) + 20.0 * (1 - np.exp(-0.0210 * BUI)),
-            SFC,
-        )
+        # ## Solve Fuel Consumption for S3 Fuels  (23, 24, 25)
+        # SFC = xr.where(
+        #     (FUELS == fc_dict["S3"]["Code"]),
+        #     12.0 * (1 - np.exp(-0.0166 * BUI)) + 20.0 * (1 - np.exp(-0.0210 * BUI)),
+        #     SFC,
+        # )
 
         # Remove negative SFC value
         SFC = xr.where(SFC <= 0, 0.01, SFC)
@@ -1245,6 +1251,18 @@ class FWF:
             )
             return ROS
 
+        ## General Rate of Spread Equation for C-1 to C-5, and C-7 (26)
+        # def solve_gen_ros(ROS, fueltype, ISI):
+        #     func = lambda ROS, fueltype, ISI: xr.where(FUELS == fc_dict[fueltype]["Code"],
+        #                                     fc_dict[fueltype]["a"]
+        #                                     * (
+        #                                         (1 - np.exp(-fc_dict[fueltype]["b"] * ISI))
+        #                                         ** fc_dict[fueltype]["c"]
+        #                                     ),
+        #                                     ROS,
+        #                                 )
+        #     return xr.apply_ufunc(func, ROS, fueltype, ISI)
+
         def solve_M_ros(fueltype, ISI):
             ROS = fc_dict[fueltype]["a"] * (
                 (1 - np.exp(-fc_dict[fueltype]["b"] * ISI)) ** fc_dict[fueltype]["c"]
@@ -1252,15 +1270,15 @@ class FWF:
             return ROS
 
         def solve_ros(ISI, FMC, PDF, fc_dict, *args):
-            ##  (M-3)
-            fc_dict["M3"]["a"] = 170 * np.exp(-35.0 / PDF)  # (29)
-            fc_dict["M3"]["b"] = 0.082 * np.exp(-36 / PDF)  # (30)
-            fc_dict["M3"]["c"] = 1.698 - 0.00303 * PDF  # (31)
+            # ##  (M-3)
+            # fc_dict["M3"]["a"] = 170 * np.exp(-35.0 / PDF)  # (29)
+            # fc_dict["M3"]["b"] = 0.082 * np.exp(-36 / PDF)  # (30)
+            # fc_dict["M3"]["c"] = 1.698 - 0.00303 * PDF  # (31)
 
-            ##  (M-4)
-            fc_dict["M4"]["a"] = 140 * np.exp(-35.5 / PDF)  # (22)
-            fc_dict["M4"]["b"] = 0.0404  # (33)
-            fc_dict["M4"]["c"] = 3.02 * np.exp(-0.00714 * PDF)  # (34)
+            # ##  (M-4)
+            # fc_dict["M4"]["a"] = 140 * np.exp(-35.5 / PDF)  # (22)
+            # fc_dict["M4"]["b"] = 0.0404  # (33)
+            # fc_dict["M4"]["c"] = 3.02 * np.exp(-0.00714 * PDF)  # (34)
 
             ROS = zero_full3D
             for fueltype in [
@@ -1271,11 +1289,11 @@ class FWF:
                 "C5",
                 "C7",
                 "D1",
-                "S1",
-                "S2",
-                "S3",
-                "M3",
-                "M4",
+                # "S1",
+                # "S2",
+                # "S3",
+                # "M3",
+                # "M4",
             ]:
                 ROS = solve_gen_ros(ROS, fueltype, ISI)
 
@@ -1288,13 +1306,13 @@ class FWF:
                 zero_full3D,
             )
 
-            ##  (M-2 green)   (28)
-            ROS_M2 = xr.where(
-                FUELS == fc_dict["M2"]["Code"],
-                ((PC / 100) * solve_M_ros("C2", ISI))
-                + (0.2 * ((PC / 100) * solve_M_ros("D1", ISI))),
-                zero_full3D,
-            )
+            # ##  (M-2 green)   (28)
+            # ROS_M2 = xr.where(
+            #     FUELS == fc_dict["M2"]["Code"],
+            #     ((PC / 100) * solve_M_ros("C2", ISI))
+            #     + (0.2 * ((PC / 100) * solve_M_ros("D1", ISI))),
+            #     zero_full3D,
+            # )
 
             ROS_O1a = xr.where(
                 (FUELS == fc_dict["O1a"]["Code"]),
@@ -1314,10 +1332,12 @@ class FWF:
             )
             if args:
                 ## Surface spread rate
-                ROS = ROS + ROS_M1 + ROS_M2 + ROS_O1a + ROS_O1b
+                ROS = ROS + ROS_M1 + ROS_O1a + ROS_O1b
+                # ROS = ROS + ROS_M1 + ROS_M2 + ROS_O1a + ROS_O1b
                 ROS = ROS * BE
             else:
-                ROS = ROS + ROS_M1 + ROS_M2 + ROS_O1a + ROS_O1b
+                ROS = ROS + ROS_M1 + ROS_O1a + ROS_O1b
+                # ROS = ROS + ROS_M1 + ROS_M2 + ROS_O1a + ROS_O1b
 
             return ROS
 
@@ -1397,6 +1417,23 @@ class FWF:
             )
             return ISF
 
+        # def solve_isf(ISF, fueltype, RSF):
+        #     func = lambda ISF, fueltype, RSF:  xr.where(
+        #         FUELS == fc_dict[fueltype]["Code"],
+        #         xr.where(
+        #             (1 - (RSF / fc_dict[fueltype]["a"]) ** (1 / fc_dict[fueltype]["c"]))
+        #             >= 0.01,
+        #             np.log(
+        #                 1
+        #                 - (RSF / fc_dict[fueltype]["a"]) ** (1 / fc_dict[fueltype]["c"])
+        #             )
+        #             / -fc_dict[fueltype]["b"],
+        #             np.log(0.01) / -fc_dict[fueltype]["b"],
+        #         ),
+        #         ISF,
+        #     )
+        #     return xr.apply_ufunc(func, ISF, fueltype, RSF)
+
         ISF = zero_full3D
         for fueltype in [
             "C1",
@@ -1407,15 +1444,15 @@ class FWF:
             "C6",
             "C7",
             "D1",
-            "S1",
-            "S2",
-            "S3",
+            # "S1",
+            # "S2",
+            # "S3",
         ]:
             ISF = solve_isf(ISF, fueltype, RSF)
 
         ## Solve ISF (ie ISI, with zero wind upslope) for M1 and M2 (42)
         ISF_M1M2 = xr.where(
-            (FUELS == fc_dict["M1"]["Code"]) | (FUELS == fc_dict["M2"]["Code"]),
+            (FUELS == fc_dict["M1"]["Code"]),  # | (FUELS == fc_dict["M2"]["Code"]),
             np.log(
                 1
                 - ((100 - RSF) / (PC * fc_dict["C2"]["a"])) ** (1 / fc_dict["C2"]["c"])
@@ -1501,6 +1538,22 @@ class FWF:
                 BE,
             )
             return BE
+
+        # def solve_be(BE, fueltype, BUI):
+        #     func = lambda BE, fueltype, BUI: xr.where(
+        #         FUELS == fc_dict[fueltype]["Code"],
+        #         xr.where(
+        #             (BUI > 0) & (fc_dict[fueltype]["BUI_o"] > 0),
+        #             np.exp(
+        #                 50
+        #                 * np.log(fc_dict[fueltype]["q"])
+        #                 * ((1 / BUI) - (1 / fc_dict[fueltype]["BUI_o"]))
+        #             ),
+        #             1,
+        #         ),
+        #         BE,
+        #     )
+        #     return xr.apply_ufunc(func, BE, fueltype, BUI)
 
         BE = zero_full3D
         for fueltype in fc_df.index.values[:-8]:
