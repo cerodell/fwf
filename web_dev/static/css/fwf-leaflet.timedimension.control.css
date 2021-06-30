@@ -246,87 +246,76 @@ a.timecontrol-play.loading:before {
 .timecontrol-loop:before {
   content: "\e030";
 }
-
-
-
 @media (max-width: 1000px) {
-
-
   @font-face {
-    font-family: "Glyphicons Halflings";
-    src: url(//netdna.bootstrapcdn.com/bootstrap/3.0.0/fonts/glyphicons-halflings-regular.eot);
-    src: url(//netdna.bootstrapcdn.com/bootstrap/3.0.0/fonts/glyphicons-halflings-regular.eot?#iefix) format("embedded-opentype"), url(//netdna.bootstrapcdn.com/bootstrap/3.0.0/fonts/glyphicons-halflings-regular.woff) format("woff"),
-        url(//netdna.bootstrapcdn.com/bootstrap/3.0.0/fonts/glyphicons-halflings-regular.ttf) format("truetype"),
-        url(//netdna.bootstrapcdn.com/bootstrap/3.0.0/fonts/glyphicons-halflings-regular.svg#glyphicons-halflingsregular) format("svg");
+      font-family: "Glyphicons Halflings";
+      src: url(//netdna.bootstrapcdn.com/bootstrap/3.0.0/fonts/glyphicons-halflings-regular.eot);
+      src: url(//netdna.bootstrapcdn.com/bootstrap/3.0.0/fonts/glyphicons-halflings-regular.eot?#iefix) format("embedded-opentype"), url(//netdna.bootstrapcdn.com/bootstrap/3.0.0/fonts/glyphicons-halflings-regular.woff) format("woff"),
+          url(//netdna.bootstrapcdn.com/bootstrap/3.0.0/fonts/glyphicons-halflings-regular.ttf) format("truetype"),
+          url(//netdna.bootstrapcdn.com/bootstrap/3.0.0/fonts/glyphicons-halflings-regular.svg#glyphicons-halflingsregular) format("svg");
       font-size: 8px;
   }
   .leaflet-bar-timecontrol {
-    background-color: #fff;
-    color: #000;
+      background-color: #fff;
+      color: #000;
   }
   .leaflet-bar-timecontrol * {
-    box-sizing: border-box;
+      box-sizing: border-box;
   }
   .leaflet-bar-timecontrol .leaflet-control-timecontrol {
-    float: left;
-    height: 4px;
-    line-height: 1px;
-    border: solid #a5a5a5;
-    background-color: #fff;
-    border-width: 0 1px 0 0;
-    font-size: 10px;
-
+      float: left;
+      height: 4px;
+      line-height: 1px;
+      border: solid #a5a5a5;
+      background-color: #fff;
+      border-width: 0 1px 0 0;
+      font-size: 10px;
   }
   .leaflet-bar-timecontrol .leaflet-control-timecontrol:first-child {
-    border-radius: 2px 0 0 2px;
+      border-radius: 2px 0 0 2px;
   }
   .leaflet-bar-timecontrol .leaflet-control-timecontrol:last-child {
-    border-radius: 0 2px 2px 0;
+      border-radius: 0 2px 2px 0;
   }
   .leaflet-bar-timecontrol .leaflet-control-timecontrol:before {
-    font-family: "Glyphicons Halflings";
-    display: block;
+      font-family: "Glyphicons Halflings";
+      display: block;
   }
   .leaflet-bar-timecontrol .timecontrol-slider {
-    position: relative;
-    width: auto;
-    cursor: auto;
+      position: relative;
+      width: auto;
+      cursor: auto;
   }
   .leaflet-bar-timecontrol a.timecontrol-date,
   .leaflet-bar-timecontrol a.timecontrol-date:hover {
-    position: relative;
-    min-width: 10px;
-    width: auto;
-    padding: 0 4px 0 12px;
-    white-space: nowrap;
+      position: relative;
+      min-width: 10px;
+      width: auto;
+      padding: 0 4px 0 12px;
+      white-space: nowrap;
   }
   .leaflet-bar-timecontrol a.timecontrol-date.utc,
   .leaflet-bar-timecontrol a.timecontrol-date.utc:hover {
-    min-width: 1px;
+      min-width: 1px;
   }
   .leaflet-bar-timecontrol a.timecontrol-date.loading,
   .leaflet-bar-timecontrol a.timecontrol-date.loading:hover {
-    background-color: #ffefa4;
+      background-color: #ffefa4;
   }
   .leaflet-bar-timecontrol .timecontrol-dateslider .slider {
-    width: 140px;
+      width: 140px;
   }
-
-
   .leaflet-bar-timecontrol .timecontrol-date,
   .leaflet-bar-timecontrol .timecontrol-slider {
-    clear: both;
-    float: none;
-    border-right: none;
+      clear: both;
+      float: none;
+      border-right: none;
   }
-
   .leaflet-touch .leaflet-bar-timecontrol .leaflet-control-timecontrol {
-    height: 16px;
-    line-height: 16px;
+      height: 16px;
+      line-height: 16px;
   }
   .leaflet-touch .timecontrol-slider .slider {
-    margin-top: 4px;
+      margin-top: 4px;
   }
-
-
 }
