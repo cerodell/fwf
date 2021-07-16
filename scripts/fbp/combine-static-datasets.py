@@ -5,24 +5,18 @@ import pandas as pd
 import xarray as xr
 from pathlib import Path
 from netCDF4 import Dataset
-from utils.make_intercomp import daily_merge_ds
-from pylab import *
 
-import cartopy.crs as ccrs
-import cartopy.feature as cfeature
-import matplotlib.colors
-import matplotlib.pyplot as plt
-from mpl_toolkits.axes_grid1 import make_axes_locatable
-import scipy.ndimage as ndimage
-from scipy.ndimage.filters import gaussian_filter
-
-
-from context import data_dir, xr_dir, wrf_dir, tzone_dir, fwf_zarr_dir
+from context import data_dir, xr_dir, wrf_dir, tzone_dir
 from datetime import datetime, date, timedelta
 
 
-domain = "d02"
-wrf_model = "wrf3"
+domain = "d03"
+wrf_model = "wrf4"
+
+### Open Fuel converter spreadsheet
+fuel_converter = str(data_dir) + "/fbp/fuel_converter_dev.csv"
+fc_df = pd.read_csv(fuel_converter)
+fc_df = fc_df.drop_duplicates(subset=["FWF_Code"])
 
 ### Open any wrf dataset
 ### Get a wrf file
@@ -54,11 +48,52 @@ tzone_dt_ds["ZoneDT"] = tzone_dt_ds["Zone"]
 tzone_dt_ds = tzone_dt_ds.drop_vars("Zone")
 
 ### Open fuels  dataset
-fuels_fielin = str(data_dir) + f"/fbp/fuels-{wrf_model}-{domain}-test.zarr"
+fuels_fielin = str(data_dir) + f"/fbp/fuels-{wrf_model}-{domain}-2019.zarr"
 fuels_ds = xr.open_zarr(fuels_fielin)
-fuels_ds["FUELS"] = fuels_ds["fuels"]
+
+## get array of values to make percent conifer (PC) mask
+fuels = fuels_ds["fuels"].values
+shape = fuels.shape
+
+## make an zero full array of domain shape
+pc_mask = np.zeros(shape, dtype="float32")
+id_mask = np.zeros(shape, dtype="<U10")
+
+## get all M type fuels..M fuels type us PC in FBP calculations
+ms_df = fc_df[fc_df["CFFDRS"].str.contains("M1")]
+
+## no populate zero full with PC values defined in CFFDRS columns
+index = ms_df.index.values
+for i in index:
+    ## build mask for PC
+    pc_mask[fuels == ms_df["FWF_Code"][i]] = ms_df["CFFDRS"][i][-3:-1]
+    ## replace all fuels values of M type to be the same code. This will greatly increat comps speed in FBP code
+    fuels[fuels == ms_df["FWF_Code"][i]] = ms_df["FWF_Code"][index[0]]
+
+## can print for sanity check
+unique, count = np.unique(fuels, return_counts=True)
+
+## make PC Dataarray and add to fuels dataset
+PC = xr.DataArray(pc_mask, name="PC", dims=("south_north", "west_east"))
+fuels_ds["PC"] = PC
+
+## make new fuels Dataarray and add to fuels dataset
+FUELS = xr.DataArray(fuels, name="FUELS", dims=("south_north", "west_east"))
+fuels_ds["FUELS"] = FUELS
+## lets also keep the origanil fuels array for ploting purposes
+fuels_ds["FUELS_D"] = fuels_ds["fuels"]
 fuels_ds = fuels_ds.drop_vars("fuels")
 
+## no populate zero full with PC values defined in CFFDRS columns
+index = fc_df.index.values
+fuels_d = fuels_ds["FUELS_D"].values
+for i in index:
+    if str(fc_df["CFFDRS"][i]) == "Urban or built-up area":
+        id_mask[fuels_d == fc_df["FWF_Code"][i]] = "Urban"
+    else:
+        id_mask[fuels_d == fc_df["FWF_Code"][i]] = str(fc_df["CFFDRS"][i])
+FUELS_ID = xr.DataArray(id_mask, name="FUELS_ID", dims=("south_north", "west_east"))
+fuels_ds["FUELS_ID"] = FUELS_ID
 
 ## Solve a few static variable in the FBP system and add to terrain dataframe
 ## Take gradient dz/dx and dz/dy of elevation
@@ -147,10 +182,10 @@ static_ds.FUELS.attrs = {
     "units": "fuel type code",
 }
 
-## Write to static dataset to zarr file
+## Write to static dataset to zarr file and load all arrays to memory
 static_ds = static_ds.compute()
 
 static_ds.to_zarr(
-    str(data_dir) + f"/static/static-vars-{wrf_model}-{domain}.zarr", mode="w"
+    str(data_dir) + f"/static/static-vars-{wrf_model}-{domain}-dev.zarr", mode="w"
 )
-print(f"Wrote: {str(data_dir)}/static/static-vars-{wrf_model}-{domain}.zarr")
+print(f"Wrote: {str(data_dir)}/static/static-vars-{wrf_model}-{domain}-dev.zarr")

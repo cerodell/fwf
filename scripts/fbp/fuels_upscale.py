@@ -34,9 +34,9 @@ save_path = []
 # file_paths.append(fbp2014_filein)
 # save_path.append("nrcan.tif")
 
-## Path toe Peter E's converted fuels grid
+# Path toe Peter E's converted fuels grid
 # fbp2019_filein = (
-#     str(vol_dir) + "/fuels/can_fuels2019b.tif"
+#     str(vol_dir) + "/fuels/can_fuels2019b/can_fuels2019b.tif"
 # )
 
 # file_paths.append(fbp2019_filein)

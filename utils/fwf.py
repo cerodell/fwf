@@ -18,7 +18,7 @@ from pathlib import Path
 from datetime import datetime
 from utils.read_wrfout import readwrf
 
-# from context import data_dir, fwf_zarr_dir
+from context import data_dir, fwf_zarr_dir
 
 __author__ = "Christopher Rodell"
 __email__ = "crodell@eoas.ubc.ca"
@@ -727,23 +727,26 @@ class FWF:
         Q_o = 800 * np.exp(-1 * D_o / 400)
 
         ########################################################################
+        ### (20) Solve for moisture equivalent (Q_r)
+        Q_r = Q_o + 3.937 * r_d
+
+        ########################################################################
         ### (21) Solve for DC after rain (D_r)
         ## Alteration to Eq. 21 (Lawson 2008)
-        D_r = D_o - 400 * np.log(1 + 3.937 * r_d / Q_o)
+        # D_r = D_o - 400 * np.log(1 + 3.937 * r_d / Q_o)
+        D_r = 400 * np.log(800 / Q_r)
         D_r = xr.where(D_r < 0, 0.0, D_r)
         D_r = xr.where(r_o <= 2.8, D_o, D_r)
 
         ########################################################################
         ### (22) Solve for potential evapotranspiration (V)
         # V = (0.36 * (T + 2.8)) + L_f
-        V = (
-            0.36 * (T + 2.8)
-        ) + L_f / 2  ## NOTE not sure why but they dived by to in the R code
+        V = (0.36 * (T + 2.8)) + L_f
         V = xr.where(V < 0, 0.0, V)
 
         ########################################################################
         ## Alteration to Eq. 23 (Lawson 2008)
-        D = D_r + V
+        D = D_r + V * 0.5
         # Hold D to D_initial if snow cover is more than 50%
         D = xr.where(SNOWC > self.snowfract, self.D_initial, D)
         D = xr.where(D < 0, 0.0, D)

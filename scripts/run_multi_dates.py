@@ -27,8 +27,8 @@ __email__ = "crodell@eoas.ubc.ca"
 # ignore RuntimeWarning
 warnings.filterwarnings("ignore", category=RuntimeWarning)
 
-wrf_model = "wrf3"
-date_range = pd.date_range("2018-04-02", "2018-04-02")
+wrf_model = "wrf4"
+date_range = pd.date_range("2018-05-01", "2018-10-01")
 
 # """######### get directory to yesterdays hourly/daily .zarr files.  #############"""
 for date in date_range:

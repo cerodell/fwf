@@ -35,31 +35,35 @@ date_range = pd.date_range("2018-04-01", "2018-04-01")
 
 
 ## Path to fuel converter spreadsheet
-fuel_converter = str(data_dir) + "/fbp/fuel_converter.csv"
+fuel_converter = str(data_dir) + "/fbp/fuel_converter_dev.csv"
 
 ## Open fuels converter
 fc_df = pd.read_csv(fuel_converter)
 fc_df = fc_df.drop_duplicates(subset=["CFFDRS"])
-fc_df["Code"] = fc_df["National_FBP_Fueltypes_2014"]
+fc_df["Code"] = fc_df["FWF_Code"]
+fc_df.loc[fc_df["CFFDRS"] == "M1 C25%", "CFFDRS"] = "M1"
+fc_df = fc_df[~fc_df["CFFDRS"].str.contains("M1/")]
+
 ## set index
 fc_df = fc_df.set_index("CFFDRS")
 fc_dict = fc_df.transpose().to_dict()
 
 
 ## Path to fuels data terrain data
-static_filein = str(data_dir) + f"/static/static-vars-{wrf_model}-{domain}.zarr"
+static_filein = str(data_dir) + f"/static/static-vars-{wrf_model}-{domain}-dev.zarr"
 
 ## Open gridded static
 static_ds = xr.open_zarr(static_filein)
 
 ## Define Static Variables
-ELV, LAT, LON, FUELS, GS, SAZ = (
+ELV, LAT, LON, FUELS, GS, SAZ, PC = (
     static_ds.HGT.values,
     static_ds.XLAT.values,
     static_ds.XLONG.values * -1,  ## Longitude cant be negative for the FMC equations
     static_ds.FUELS.values.astype(int),
     static_ds.GS.values,
     static_ds.SAZ.values,
+    static_ds.PC.values,
 )
 
 
@@ -139,7 +143,7 @@ hourly_ds["FMC"].attrs = {
 ###################    Surface Fuel Consumption  #######################
 ########################################################################
 ## Define frequently used variables
-FFMC, BUI, GFL, PC, PH = hourly_ds.F, daily_ds.U, 0.3, 50, 50
+FFMC, BUI, GFL, PH = hourly_ds.F, daily_ds.U, 0.3, 50
 index = [i for i in range(1, len(FFMC) + 1) if i % 24 == 0]
 ## Build a BUI datarray fo equal length to hourly forecast bisecting is by day
 BUI_i = BUI.values
@@ -636,6 +640,7 @@ def solve_tfc(TFC, fueltype, CFB):
 
 TFC = zero_full3D
 for fueltype in fc_df.index.values[:-8]:
+    print(fueltype)
     TFC = solve_tfc(TFC, fueltype, CFB)
 
 hourly_ds["TFC"] = TFC.astype(dtype="float32")

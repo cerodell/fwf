@@ -10,6 +10,9 @@ from datetime import datetime
 import matplotlib.colors
 import matplotlib.pyplot as plt
 import matplotlib.image as mpimg
+from sklearn.metrics import mean_squared_error
+from sklearn.metrics import r2_score
+from scipy import stats
 
 import matplotlib.pyplot as plt
 import cartopy.crs as ccrs
@@ -26,29 +29,104 @@ from wrf import to_np, getvar, get_cartopy, latlon_coords, g_uvmet, ll_to_xy, xy
 from context import data_dir, root_dir, fwf_zarr_dir, wrf_dir
 
 startTime = datetime.now()
+wrf_model = "wrf3"
+domain = "d02"
 
-wrf_dir = "/Users/rodell/Google Drive/Shared drives/WAN00CG-01/21041100"
-### Open WRF d01 domain
-filein = str(wrf_dir) + f"/wrfout_d01_2021-04-11_00:00:00"
-wrf_d01 = xr.open_dataset(filein)
+if wrf_model == "wrf4":
+    wrf_dir = "/Users/rodell/Google Drive/Shared drives/WAN00CG-01/21041100"
+    ### Open WRF d01 domain
+    filein = str(wrf_dir) + f"/wrfout_d01_2021-04-11_00:00:00"
+    wrf_d01 = xr.open_dataset(filein)
 
-### Open WRF d02 domain
-filein = str(wrf_dir) + f"/wrfout_d02_2021-04-11_00:00:00"
-wrf_d02 = xr.open_dataset(filein)
+    ### Open WRF d02 domain
+    filein = str(wrf_dir) + f"/wrfout_d02_2021-04-11_00:00:00"
+    wrf_d02 = xr.open_dataset(filein)
 
-### Open WRF d03 domain
-filein = str(wrf_dir) + f"/wrfout_d03_2021-04-11_00:00:00"
-wrf_d03 = xr.open_dataset(filein)
+    ### Open WRF d03 domain
+    filein = str(wrf_dir) + f"/wrfout_d03_2021-04-11_00:00:00"
+    wrf_d03 = xr.open_dataset(filein)
+
+elif wrf_model == "wrf3":
+    wrf_dir = "/Users/rodell/Google Drive/Shared drives/WAN00CP-04/18021900"
+    ### Open WRF d01 domain
+    filein = str(wrf_dir) + f"/wrfout_d01_2018-02-19_00:00:00"
+    wrf_d01 = xr.open_dataset(filein)
+
+    ### Open WRF d02 domain
+    filein = str(wrf_dir) + f"/wrfout_d02_2018-02-19_00:00:00"
+    wrf_d02 = xr.open_dataset(filein)
+
+    ### Open WRF d03 domain
+    filein = str(wrf_dir) + f"/wrfout_d03_2018-02-19_00:00:00"
+    wrf_d03 = xr.open_dataset(filein)
+else:
+    exit
 
 
-### Open new hysplit domain
-filein = str(data_dir) + "/domain/dispersion.nc"
-ds_hysplit = xr.open_dataset(filein)
+date = pd.Timestamp(2018, 10, 1)
+intercomp_today_dir = date.strftime("%Y%m%d")
+date_range = pd.date_range("2018-04-01", "2018-10-01")
+
+ds = xr.open_zarr(
+    str(data_dir) + "/intercomp/" + f"intercomp-{domain}-{intercomp_today_dir}.zarr",
+)
+ds = ds.chunk(chunks="auto")
+ds = ds.unify_chunks()
+for var in list(ds):
+    ds[var].encoding = {}
+
+if domain == "d02":
+    res = "12 km"
+else:
+    res = "4 km"
+
+df = ds.to_dataframe().dropna()
+df = df.reset_index()
+df = df[~np.isnan(df.bui)]
+unique, counts = np.unique(df.wmo.values, return_counts=True)
+
+
+wmos, r2s, rmses, wmo_lats, wmo_lons = [], [], [], [], []
+var = "fwi"
+for wmo in unique:
+    df_i = df.loc[df["wmo"] == wmo]
+    df_i = df_i[~np.isnan(df_i[var])]
+    r2value = round(stats.pearsonr(df_i[var].values, df_i[var + "_day1"].values)[0], 2)
+    rmse = round(
+        mean_squared_error(df_i[var].values, df_i[var + "_day1"].values, squared=False),
+        2,
+    )
+    wmos.append(wmo)
+    r2s.append(r2value)
+    rmses.append(rmse)
+    wmo_lats.append(df_i.lats.values[0])
+    wmo_lons.append(df_i.lons.values[0])
+
+
+wmos, r2s, rmses, wmo_lats, wmo_lons = (
+    np.array(wmos),
+    np.array(r2s),
+    np.array(rmses),
+    np.array(wmo_lats),
+    np.array(wmo_lons),
+)
+
+thres = 0.4
+wmos, r2s, rmses, wmo_lats, wmo_lons = (
+    wmos[r2s > thres],
+    r2s[r2s > thres],
+    rmses[r2s > thres],
+    wmo_lats[r2s > thres],
+    wmo_lons[r2s > thres],
+)
+
+df = df.loc[df["wmo"].isin(wmos)]
+
 
 ## set plot title and save dir/name
 Plot_Title = "Model Domains in Geographic Projection"
 # save_file = "/images/wrf4-hysplit-model-domains.png"
-save_file = "/images/fwf-model-domains.png"
+save_file = f"/images/fwf-{wrf_model}-model-domains.png"
 save_dir = str(data_dir) + save_file
 
 
@@ -68,7 +146,7 @@ proj = ccrs.PlateCarree(central_longitude=180)
 # box_proj = ccrs.PlateCarree(central_longitude=0)
 
 ## make fig for make with projection
-fig = plt.figure(figsize=[16, 8])
+fig = plt.figure(figsize=[12, 8])
 ax = fig.add_subplot(1, 1, 1, projection=proj)
 
 ## add map features
@@ -80,7 +158,9 @@ gl = ax.gridlines(
     alpha=0.5,
     linestyle="--",
 )
-gl.xlabels_top = False
+gl.top_labels = False
+gl.right_labels = False
+
 gl.xlocator = mticker.FixedLocator(list(np.arange(-180, 180, 10)))
 ax.add_feature(cfeature.LAND, zorder=1)
 ax.add_feature(cfeature.LAKES, zorder=1)
@@ -102,27 +182,32 @@ ax.tick_params(axis="both", which="minor", labelsize=14)
 fig.suptitle(Plot_Title, fontsize=20, weight="bold", y=0.9)
 
 
-# ## get d01 lats and lon
-# lats, lons = np.array(wrf_d01.XLAT), np.array(wrf_d01.XLONG)
-# lats, lons = lats[0], lons[0]
-# ## mask out past international dateline.....catorpy hates the dateline
-# lons = np.where(lons > -180, lons, np.nan)
-# lons = np.where(lons > 0, lons - 360, lons)
-# lons += 180
-
-# ## plot d01
-# ax.plot(lons[0], lats[0], color="green", linewidth=2, zorder=8, alpha=1)
-# ax.plot(lons[-1].T, lats[-1].T, color="green", linewidth=2, zorder=8, alpha=1)
-# ax.plot(lons[:, 0], lats[:, 0], color="green", linewidth=2, zorder=8, alpha=1)
-# ax.plot(
-#     lons[:, -1].T,
-#     lats[:, -1].T,
-#     color="green",
-#     linewidth=2,
-#     zorder=8,
-#     alpha=1,
-#     label="36 km WRF",
+# ax.scatter(wmo_lons+180,wmo_lats,
+#              s=10,
+#             zorder = 10, color = 'k', label="WxStation",
 # )
+
+## get d01 lats and lon
+lats, lons = np.array(wrf_d01.XLAT), np.array(wrf_d01.XLONG)
+lats, lons = lats[0], lons[0]
+## mask out past international dateline.....catorpy hates the dateline
+lons = np.where(lons > -180, lons, np.nan)
+lons = np.where(lons > 0, lons - 360, lons)
+lons += 180
+
+## plot d01
+ax.plot(lons[0], lats[0], color="green", linewidth=2, zorder=8, alpha=1)
+ax.plot(lons[-1].T, lats[-1].T, color="green", linewidth=2, zorder=8, alpha=1)
+ax.plot(lons[:, 0], lats[:, 0], color="green", linewidth=2, zorder=8, alpha=1)
+ax.plot(
+    lons[:, -1].T,
+    lats[:, -1].T,
+    color="green",
+    linewidth=2,
+    zorder=8,
+    alpha=1,
+    label="36 km WRF",
+)
 
 
 ## get d02 lats and lon
@@ -141,7 +226,7 @@ ax.plot(
     linewidth=2,
     zorder=8,
     alpha=1,
-    label="12 km FWF",
+    label="12 km WRF",
 )
 
 
@@ -161,7 +246,7 @@ ax.plot(
     linewidth=2,
     zorder=8,
     alpha=1,
-    label="4 km FWF",
+    label="4 km WRF",
 )
 
 
