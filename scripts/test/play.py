@@ -24,12 +24,12 @@ ds_new = xr.open_dataset(
 ds_old = xr.open_dataset(
     f"/bluesky/archive/fireweather/data/fwf-hourly-d03-2021062406.nc"
 )
-print(f"Min RH : {float(np.min(ds.H))}")
-print(f"Mean RH : {float(np.mean(ds.H))}")
+# print(f"Min RH : {float(np.min(ds.H))}")
+# print(f"Mean RH : {float(np.mean(ds.H))}")
 
-print(f"Max RH : {float(np.max(ds.H))}")
-print(f"Min TD : {float(np.min(ds.TD))}")
-print(f"Max TD : {float(np.max(ds.TD))}")
+# print(f"Max RH : {float(np.max(ds.H))}")
+# print(f"Min TD : {float(np.min(ds.TD))}")
+# print(f"Max TD : {float(np.max(ds.TD))}")
 
 # def solve_rh(ds):
 #   ds['TD'] = ds.TD +273.15
