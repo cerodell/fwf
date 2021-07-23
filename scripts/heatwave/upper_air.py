@@ -65,7 +65,7 @@ ncfile = Dataset(str(gog_dir) + f"/wrfout_{domain}_2021-07-20_21:00:00")
 
 # Extract the pressure, geopotential height, and wind variables
 p = getvar(ncfile, "pressure")
-# wrf_ds = salem.open_xr_dataset(str(gog_dir) + f"/wrfout_{domain}_2021-07-20_21:00:00")
+wrf_ds = salem.open_xr_dataset(str(gog_dir) + f"/wrfout_{domain}_2021-07-20_21:00:00")
 # wrf_ds = wrf_ds.isel(Time = 0)
 # ds_anom = salem.open_xr_dataset('data_1.nc')
 # del ds_anom['P']
@@ -133,20 +133,26 @@ states = NaturalEarthFeature(
 
 sub_name = list(string.ascii_uppercase)
 
-height_500 = ds1.height_interp_500.values
-height_500 = smooth2d(height_500, 3, cenweight=4)
-height_500 = height_500.values[ty1:ty2, tx1:tx2]
+# height_500 = ds1.height_interp_500.values
+# height_500 = smooth2d(height_500, 3, cenweight=4)
+# height_500 = height_500.values[ty1:ty2, tx1:tx2]
 
-wsp = ds.wspd_wdir10
 
-ind = np.unravel_index(
-    np.argmin(np.where(lons > -124, height_500, 99999), axis=None), height_500.shape
-)
+# temp_500 = interplevel(ds1.temp - 273.15, ds1.pressure, 500)
+# temp_500 = smooth2d(temp_500.values, 3, cenweight=4)
+# temp_500 = temp_500[ty1:ty2, tx1:tx2]
 
-temp_500 = interplevel(ds1.temp - 273.15, ds1.pressure, 500)
-temp_500 = smooth2d(temp_500.values, 3, cenweight=4)
-temp_500 = temp_500[ty1:ty2, tx1:tx2]
+
+slp = ds1.slp.values
+slp = smooth2d(slp, 3, cenweight=4)
+slp = slp.values[ty1:ty2, tx1:tx2]
+
+
+temp_925 = interplevel(ds1.temp - 273.15, ds1.pressure, 925.0)
+# temp_925 = smooth2d(temp_925.values, 3, cenweight=4)
+temp_925 = temp_925[ty1:ty2, tx1:tx2]
 cart_proj = get_cartopy(p)
+Cnorm = matplotlib.colors.Normalize(vmin=vmin, vmax=vmax + 1)
 
 fig = plt.figure(figsize=(14, 10))
 ax = fig.add_subplot(1, 1, 1, projection=cart_proj)
@@ -155,25 +161,31 @@ ax.coastlines("50m", linewidth=0.8)
 CS = ax.contour(
     lons,
     lats,
-    height_500,
+    slp,
     # levels=np.arange(960, 1032, 2),
     linewidths=0.9,
     colors="black",
     zorder=10,
     transform=crs.PlateCarree(),
 )
-CS = ax.contourf(
+contourf = ax.contourf(
     lons,
     lats,
-    temp_500,
+    temp_925,
     levels=levels,
-    cmap=cmap,
+    norm=Cnorm,
+    colors=colors,
     extend="both",
     zorder=9,
     transform=crs.PlateCarree(),
 )
 
+# fig.subplots_adjust(right=0.99, wspace=-0.45)
+# cbaxes = fig.add_axes([0.88, 0.04, 0.03, 0.8])
+# clb = fig.colorbar(contourf, cax=cbaxes, pad=0.2)
+# clb = fig.colorbar(contourf,  pad=0.2)
 
+plt.show()
 # # Create a figure
 # fig = plt.figure(figsize=(14, 10))
 # for i in range(1, 10):
