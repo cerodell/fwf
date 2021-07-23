@@ -12,5 +12,5 @@ All the FWF products and associated meteorology are available on an interactive 
 
 ---
 ## Websites
-[Current Fire Weather Forecast](https://firesmoke.ca/forecasts/fireweather/current/)
-[Fire Weather Forecast Documentation](https://cerodell.github.io/fwf-docs/)
+- [Current Fire Weather Forecast](https://firesmoke.ca/forecasts/fireweather/current/)
+- [Fire Weather Forecast Documentation](https://cerodell.github.io/fwf-docs/)
