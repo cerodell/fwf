@@ -87,92 +87,10 @@ class FWF:
                 "W",
                 "WD",
                 "r_o",
+                "H",
             ]
             wrf_ds = wrf_ds.drop([var for var in list(wrf_ds) if var not in keep_vars])
-            if np.max(wrf_ds.r_o.values[0]) or np.max(wrf_ds.SNW.values[0]) > 0:
-                exit
-            if np.max(wrf_ds.TD) < -100:
-                wrf_ds["TD"] = wrf_ds.TD + 273.15
-                RH = (
-                    (6.11 * 10 ** (7.5 * (wrf_ds.TD / (237.7 + wrf_ds.TD))))
-                    / (6.11 * 10 ** (7.5 * (wrf_ds.T / (237.7 + wrf_ds.T))))
-                    * 100
-                )
-                RH = xr.where(RH > 100, 100, RH)
-                RH = xr.DataArray(
-                    RH, name="H", dims=("time", "south_north", "west_east")
-                )
-                wrf_ds["H"] = RH
-            else:
-                RH = (
-                    (6.11 * 10 ** (7.5 * (wrf_ds.TD / (237.7 + wrf_ds.TD))))
-                    / (6.11 * 10 ** (7.5 * (wrf_ds.T / (237.7 + wrf_ds.T))))
-                    * 100
-                )
-                RH = xr.where(RH > 100, 100, RH)
-                RH = xr.DataArray(
-                    RH, name="H", dims=("time", "south_north", "west_east")
-                )
-                wrf_ds["H"] = RH
-            if np.min(wrf_ds.H) > 90:
-                raise ValueError("ERROR: Check TD unphysical RH values")
 
-            print(f"Min RH : {float(np.min(wrf_ds.H))}")
-            print(f"Mean RH : {float(np.mean(wrf_ds.H))}")
-            print(f"Max RH : {float(np.max(wrf_ds.H))}")
-            print(f"Min TD : {float(np.min(wrf_ds.TD))}")
-            print(f"Max TD : {float(np.max(wrf_ds.TD))}")
-            print(list(wrf_ds))
-            ### Read then open WRF dataset
-        elif wrf_file_dir.endswith(".zarr"):
-            print("Re-run using zarr file")
-            wrf_ds = xr.open_zarr(wrf_file_dir)
-            keep_vars = [
-                "SNOWC",
-                "SNOWH",
-                "SNW",
-                "T",
-                "TD",
-                "U10",
-                "V10",
-                "W",
-                "WD",
-                "r_o",
-            ]
-            wrf_ds = wrf_ds.drop([var for var in list(wrf_ds) if var not in keep_vars])
-            if np.max(wrf_ds.r_o.values[0]) or np.max(wrf_ds.SNW.values[0]) > 0:
-                exit
-            if np.max(wrf_ds.TD) < -100:
-                wrf_ds["TD"] = wrf_ds.TD + 273.15
-                RH = (
-                    (6.11 * 10 ** (7.5 * (wrf_ds.TD / (237.7 + wrf_ds.TD))))
-                    / (6.11 * 10 ** (7.5 * (wrf_ds.T / (237.7 + wrf_ds.T))))
-                    * 100
-                )
-                RH = xr.where(RH > 100, 100, RH)
-                RH = xr.DataArray(
-                    RH, name="H", dims=("time", "south_north", "west_east")
-                )
-                wrf_ds["H"] = RH
-            else:
-                RH = (
-                    (6.11 * 10 ** (7.5 * (wrf_ds.TD / (237.7 + wrf_ds.TD))))
-                    / (6.11 * 10 ** (7.5 * (wrf_ds.T / (237.7 + wrf_ds.T))))
-                    * 100
-                )
-                RH = xr.where(RH > 100, 100, RH)
-                RH = xr.DataArray(
-                    RH, name="H", dims=("time", "south_north", "west_east")
-                )
-                wrf_ds["H"] = RH
-            if np.min(wrf_ds.H) > 90:
-                raise ValueError("ERROR: Check TD unphysical RH values")
-
-            print(f"Min RH : {float(np.min(wrf_ds.H))}")
-            print(f"Max RH : {float(np.max(wrf_ds.H))}")
-            print(f"Min TD : {float(np.min(wrf_ds.TD))}")
-            print(f"Max TD : {float(np.max(wrf_ds.TD))}")
-            print(list(wrf_ds))
         else:
             print("New-run, use readwrf to get vars from nc files")
             wrf_ds = readwrf(wrf_file_dir, domain, wright=False)
