@@ -25,6 +25,8 @@ web_dev
 nm
 fwf-web/
 fwf-web
+__pycache__
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]

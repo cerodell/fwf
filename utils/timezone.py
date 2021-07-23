@@ -3,12 +3,6 @@
 """
 Creates a time zone mask for each grid point in model domain.
 
-NOTE: I hate this script, take hours to run by using lat/lng for
-each gird in model and find offset from utc. There must be a better way to do this.......
-
-Thankfully it only needs to be run once as its save mask as a netcdf file :)
-# conda install -c conda-forge xarray=0.16.2=pyhd8ed1ab_0
-
 """
 import context
 import math
@@ -43,8 +37,6 @@ wrf_model = "wrf4"
 season = "ST"
 
 ## Path to hourly/daily fwi data
-# forecast_date = date.strftime("%Y%m%d06")
-# hourly_file_dir = str(data_dir) + f"/FWF-WAN00CP-04/fwf-hourly-{domain}-{forecast_date}.zarr"
 if wrf_model == "wrf3":
     wrf_filein = f"/Users/rodell/Google Drive/Shared drives/WAN00CP-04/18072000/wrfout_{domain}_2018-07-20_11:00:00"
 else:
@@ -147,9 +139,15 @@ ds_zones = ds_zones.compute()
 ds_zones.to_zarr(
     str(tzone_dir) + str(f"/tzone_{wrf_model}_{domain}-{season}.zarr"), mode="w"
 )
-test = xr.open_zarr(str(tzone_dir) + str(f"/tzone_{wrf_model}_{domain}-{season}.zarr"))
-print(test.Zone.values)
 
+
+# test = xr.open_zarr(str(tzone_dir) + str(f"/tzone_{wrf_model}_{domain}-{season}.zarr"))
+# print(test.Zone.values)
+
+
+####################################
+## plot for santity check
+####################################
 ## set plot title and save dir/name
 if domain == "d02":
     res = "12 km"
@@ -270,5 +268,6 @@ else:
 
 ## tighten up fig
 plt.tight_layout()
+plt.show()
 ## save as png
-fig.savefig(save_dir, dpi=240)
+# fig.savefig(save_dir, dpi=240)

@@ -1,5 +1,3 @@
-#!/bluesky/fireweather/miniconda3/envs/fwf/bin/python
-
 import context
 from utils.test.sumdef import summe
 
