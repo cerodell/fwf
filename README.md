@@ -16,8 +16,8 @@ All the FWF products and associated meteorology are available on an interactive 
 - [Fire Weather Forecast Documentation](https://cerodell.github.io/fwf-docs/)
 
 ---
-## license
-
+## License
+[MIT License](https://github.com/cerodell/fwf/blob/master/LICENSE)
 
 ## Contact
 Christopher Rodell crodell@eoas.ubc.ca
