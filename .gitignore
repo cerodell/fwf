@@ -1,6 +1,7 @@
 # My Stuff
 .ipynb_checkpoints
 data
+.vscode
 .DS_Store
 *.DS_Store
 images
