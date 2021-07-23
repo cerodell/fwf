@@ -6,9 +6,18 @@ data
 images
 fwf-docs
 fwf-docs/
+web_dev
+web_dev/
+fwf-web
+fwf-web/
+docs
+nm/
+nm
 web_dev/data
 *.nc
 zarr/
+node_modules
+node_modules/
 *.tgz
 
 # Byte-compiled / optimized / DLL files
