@@ -19,7 +19,12 @@ zarr/
 node_modules
 node_modules/
 *.tgz
-
+web_dev/
+nm/
+web_dev
+nm
+fwf-web/
+fwf-web
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
