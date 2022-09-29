@@ -12,11 +12,47 @@ from netCDF4 import Dataset
 import matplotlib.pyplot as plt
 from wrf import ll_to_xy, xy_to_ll
 from datetime import datetime, date, timedelta
+from utils.fwi import solve_ffmc, solve_isi, solve_fwi
 
 from context import data_dir, root_dir, fwf_dir
 
+fwf_dir = '/Volumes/Scratch/FWF-WAN00CG/d03/202112'
+
+# def daily_merge_ds(date_to_merge, domain, wrf_model):
+
+#     with open(str(data_dir) + f"/json/fwf-attrs.json", "r") as fp:
+#         var_dict = json.load(fp)
+
+#     hourly_file_dir = str(fwf_dir) + str(f"/fwf-hourly-{domain}-{date_to_merge}.nc")
+#     daily_file_dir = str(fwf_dir) + str(f"/fwf-daily-{domain}-{date_to_merge}.nc")
+#     ### Open datasets
+#     my_dir = Path(hourly_file_dir)
+#     if my_dir.is_file():
+#         # hourly_ds = xr.open_dataset(hourly_file_dir)
+
+#         daily_ds = xr.open_dataset(daily_file_dir)
+
+#         final_ds = solve_ffmc(daily_ds)
+#         final_ds = solve_isi(final_ds)
+#         final_ds = solve_fwi(final_ds)
+
+#         # hourly_daily_ds = xr.combine_nested(files_ds, "time")
+#         # final_ds = xr.merge([daily_ds, hourly_daily_ds], compat="override")
+#         # final_ds.attrs = hourly_ds.attrs
+#         for var in final_ds.data_vars:
+#             final_ds[var] = final_ds[var].astype(dtype="float32")
+#             final_ds[var].attrs = var_dict[var]
+
+#     else:
+#         final_ds = None
+
+#     return final_ds
+
 
 def daily_merge_ds(date_to_merge, domain, wrf_model):
+
+    with open(str(data_dir) + f"/json/fwf-attrs.json", "r") as fp:
+        var_dict = json.load(fp)
 
     hourly_file_dir = str(fwf_dir) + str(f"/fwf-hourly-{domain}-{date_to_merge}.nc")
     daily_file_dir = str(fwf_dir) + str(f"/fwf-daily-{domain}-{date_to_merge}.nc")
@@ -26,6 +62,7 @@ def daily_merge_ds(date_to_merge, domain, wrf_model):
         hourly_ds = xr.open_dataset(hourly_file_dir)
 
         daily_ds = xr.open_dataset(daily_file_dir)
+
         ### Call on variables
         static_ds = xr.open_dataset(
             str(data_dir) + f"/static/static-vars-{wrf_model}-{domain}.nc"
@@ -92,6 +129,9 @@ def daily_merge_ds(date_to_merge, domain, wrf_model):
         hourly_daily_ds = xr.combine_nested(files_ds, "time")
         final_ds = xr.merge([daily_ds, hourly_daily_ds], compat="override")
         final_ds.attrs = hourly_ds.attrs
+        for var in final_ds.data_vars:
+            final_ds[var] = final_ds[var].astype(dtype="float32")
+            final_ds[var].attrs = var_dict[var]
 
     else:
         final_ds = None
