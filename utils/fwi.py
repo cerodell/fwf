@@ -27,10 +27,10 @@ __email__ = "crodell@eoas.ubc.ca"
 def solve_ffmc(ds):
     W, T, H, r_o = (ds.W, ds.T, ds.H, ds.r_o)
     try:
-      F = ds.F
+        F = ds.F
     except:
-      print('Initalizing FFMC')
-      F = np.full(W.shape, 85, dtype=float)
+        print("Initalizing FFMC")
+        F = np.full(W.shape, 85, dtype=float)
 
     # #Eq. 1
     m_o = 147.2 * (101 - F) / (59.5 + F)
@@ -84,7 +84,7 @@ def solve_ffmc(ds):
     )
 
     ########################################################################
-    ### (4b)  Log wettfor hourly computation, log to base 10 (k_w)
+    ### (4b)  Log wet for hourly computation, log to base 10 (k_w)
     k_w = k_b * 0.581 * np.exp(0.0365 * T)
 
     ########################################################################
@@ -99,13 +99,14 @@ def solve_ffmc(ds):
     ### (5c) combwet, neutral moisture codes
     m = xr.where(m_o > E_d, m_d, m_w)
     m = xr.where((E_d >= m_o) & (m_o >= E_w), m_o, m)
-    m_o = xr.DataArray(m, name="m_o", dims=("temp", "wind", "rh", "precip"))
-    ds["m_o"] = m_o
+    # m_o = xr.DataArray(m, name="m_o", dims=("temp", "wind", "rh", "precip"))
+
+    # ds["m_o"] = m_o
 
     ########################################################################
     ### (6) Solve for FFMC
     F = (59.5 * (250 - m)) / (147.2 + m)  ## Van 1985
-    F = xr.DataArray(F, name="F", dims=("temp", "wind", "rh", "precip"))
+    # F = xr.DataArray(F, name="F", dims=("temp", "wind", "rh", "precip"))
     ds["F"] = F
 
     return ds

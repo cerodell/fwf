@@ -1,4 +1,4 @@
-#!/bluesky/fireweather/miniconda3/envs/fwf/bin/python
+#!/Users/crodell/miniconda3/envs/fwf/bin/python
 
 """
 Runs the FWF model for each model domain.
@@ -13,7 +13,7 @@ import pandas as pd
 import xarray as xr
 from pathlib import Path
 
-from datetime import datetime, date, timedelta
+from datetime import datetime, timedelta
 
 startTime = datetime.now()
 print("RUN STARTED AT: ", str(startTime))
@@ -29,29 +29,110 @@ __email__ = "crodell@eoas.ubc.ca"
 warnings.filterwarnings("ignore", category=RuntimeWarning)
 
 wrf_model = "wrf4"
-date_range = pd.date_range("2021-06-20", "2021-06-22")
+date_range = pd.date_range("2021-04-30", "2022-06-01")
 
-# """######### get directory to yesterdays hourly/daily .zarr files.  #############"""
+# """######### get directory to yesterdays hourly/daily .nc files.  #############"""
 for date in date_range:
-    forecast_date = date.strftime("%Y%m%d00")
-    domains = ["d02", "d03"]
+    # forecast_date = date.strftime("%Y%m%d")
+    era_day5 = pd.to_datetime(str(date - np.timedelta64(5, "D")))
+    fwf_day4 = pd.to_datetime(str(date - np.timedelta64(4, "D")))
+    fwf_day3 = pd.to_datetime(str(date - np.timedelta64(3, "D")))
+    fwf_day2 = pd.to_datetime(str(date - np.timedelta64(2, "D")))
+    fwf_day1 = pd.to_datetime(str(date - np.timedelta64(1, "D")))
+    fwf_day0 = date
+
+    domains = ["d02"]
     for domain in domains:
         domain_startTime = datetime.now()
         print(f"start of domain {domain}: ", str(domain_startTime))
-        # """######### get directory to todays wrf_out .nc files.  #############"""
+        # """######### run era5  #############"""
+        print("######### run era5  #############")
+        era_filein = (
+            f'/Volumes/WFRT-Data02/era5/era5-{era_day5.strftime("%Y%m%d%H")}.nc'
+        )
+        coeff = FWF(
+            era_filein,
+            domain,
+            iterator="era5",
+            fbp_mode=False,
+            initialize=False,
+            forecast=False,
+        )
+        coeff.daily()
+        coeff.hourly()
 
-        # wrf_file_dir = str(wrf_dir) + f"/{forecast_date}/"
-        wrf_file_dir = f"/bluesky/archive/fireweather/data/fwf-hourly-{domain}-{forecast_date[:-2]}06.nc"
-        # wrf_file_dir = str(gog_dir) + f"/wrfout-{domain}-{forecast_date[:-2]}06.zarr"
-        print(wrf_file_dir)
+        """######### run fwf day4  #############"""
+        print("######### run fwf day4  #############")
+        fwf4_filein = f'/Volumes/Scratch/FWF-WAN00CG/{domain}/{fwf_day4.strftime("%Y%m")}/fwf-hourly-d02-{fwf_day4.strftime("%Y%m%d06")}.nc'
+        coeff = FWF(
+            fwf4_filein,
+            domain,
+            iterator="era5",
+            fbp_mode=False,
+            initialize=False,
+            forecast=False,
+        )
+        coeff.daily()
+        coeff.hourly()
 
-        # """######### Open wrf_out.nc and write  new hourly/daily .zarr files #############"""
-        coeff = FWF(wrf_file_dir, domain, wrf_model, fbp_mode=True, initialize=False)
+        # """######### run fwf day3  #############"""
+        print("######### run fwf day3  #############")
+        fwf3_filein = f'/Volumes/Scratch/FWF-WAN00CG/{domain}/{fwf_day3.strftime("%Y%m")}/fwf-hourly-d02-{fwf_day3.strftime("%Y%m%d06")}.nc'
+        coeff = FWF(
+            fwf3_filein,
+            domain,
+            iterator="fwf",
+            fbp_mode=False,
+            initialize=False,
+            forecast=False,
+        )
+        coeff.daily()
+        coeff.hourly()
 
+        # """######### run fwf day2  #############"""
+        print("######### run fwf day2  #############")
+        fwf2_filein = f'/Volumes/Scratch/FWF-WAN00CG/{domain}/{fwf_day2.strftime("%Y%m")}/fwf-hourly-d02-{fwf_day2.strftime("%Y%m%d06")}.nc'
+        coeff = FWF(
+            fwf2_filein,
+            domain,
+            iterator="fwf",
+            fbp_mode=False,
+            initialize=False,
+            forecast=False,
+        )
+        coeff.daily()
+        coeff.hourly()
+
+        # """######### run fwf day1  #############"""
+        print("######### run fwf day1  #############")
+        fwf1_filein = f'/Volumes/Scratch/FWF-WAN00CG/{domain}/{fwf_day1.strftime("%Y%m")}/fwf-hourly-d02-{fwf_day1.strftime("%Y%m%d06")}.nc'
+        coeff = FWF(
+            fwf1_filein,
+            domain,
+            iterator="fwf",
+            fbp_mode=False,
+            initialize=False,
+            forecast=False,
+        )
+        coeff.daily()
+        coeff.hourly()
+
+        # """######### run fwf day0  #############"""
+        print("######### run fwf day0  #############")
+        fwf0_filein = f'/Volumes/Scratch/FWF-WAN00CG/{domain}/{fwf_day0.strftime("%Y%m")}/fwf-hourly-d02-{fwf_day0.strftime("%Y%m%d06")}.nc'
+        coeff = FWF(
+            fwf0_filein,
+            domain,
+            iterator="fwf",
+            fbp_mode=False,
+            initialize=False,
+            forecast=True,
+        )
         coeff.daily()
         coeff.hourly()
 
         print(f"Domain {domain} run time: ", datetime.now() - domain_startTime)
 
-    ### Timer
-    print("Total Run Time: ", datetime.now() - startTime)
+
+### Timer
+print("Total Run Time: ", datetime.now() - startTime)

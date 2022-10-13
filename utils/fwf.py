@@ -5,6 +5,7 @@ Class to solve the Fire Weather Indices using output from a numerical weather mo
 """
 
 import context
+import os
 import math
 import json
 import numpy as np
@@ -17,7 +18,10 @@ from pathlib import Path
 # from netCDF4 import Dataset
 from datetime import datetime
 from utils.read_wrfout import readwrf
-from context import data_dir, fwf_dir
+from utils.era5 import config_era5
+
+from context import data_dir
+
 
 __author__ = "Christopher Rodell"
 __email__ = "crodell@eoas.ubc.ca"
@@ -30,7 +34,7 @@ class FWF:
     Parameters
     ----------
 
-    wrf_file_dir: str
+    filein_dir: str
         - File directory to (nc) file of WRF met variables to calculate FWI
     domain: str
         - the wrf domain tag, examples d03 or d02
@@ -66,40 +70,52 @@ class FWF:
     """ ######################## Initialize FWI model #########################"""
     """########################################################################"""
 
-    def __init__(self, wrf_file_dir, domain, wrf_model, fbp_mode, initialize):
+    def __init__(self, filein_dir, domain, iterator, fbp_mode, initialize, forecast):
         """
         Initialize Fire Weather Index Model
 
 
         """
         ### Read then open WRF dataset
-        if wrf_file_dir.endswith(".nc"):
-            print("Re-run using nc file")
-            wrf_ds = xr.open_dataset(wrf_file_dir)
-            keep_vars = [
-                "SNOWC",
-                "SNOWH",
-                "SNW",
-                "T",
-                "TD",
-                "U10",
-                "V10",
-                "W",
-                "WD",
-                "r_o",
-                "H",
-            ]
-            wrf_ds = wrf_ds.drop([var for var in list(wrf_ds) if var not in keep_vars])
+        if filein_dir.endswith(".nc"):
+            if "era5" in filein_dir:
+                print("Updating Fuel Codes with ERA5")
+                wrf_ds = config_era5(filein_dir)
+                self.save_dir = "/Volumes/WFRT-Data02/FWF-WAN00CG/d02/era5"
+
+            else:
+                print("Re-run using nc file")
+                wrf_ds = xr.open_dataset(filein_dir)
+                keep_vars = [
+                    "SNOWC",
+                    "SNOWH",
+                    "SNW",
+                    "T",
+                    "TD",
+                    "U10",
+                    "V10",
+                    "W",
+                    "WD",
+                    "r_o",
+                    "H",
+                ]
+                wrf_ds = wrf_ds.drop(
+                    [var for var in list(wrf_ds) if var not in keep_vars]
+                )
+                wrf_ds = wrf_ds.isel(time=slice(0, 24))
+                # print(wrf_ds)
+                self.save_dir = "/Volumes/WFRT-Data02/FWF-WAN00CG/d02/fwf"
 
         else:
             print("New-run, use readwrf to get vars from nc files")
-            wrf_ds = readwrf(wrf_file_dir, domain, wright=False)
+            wrf_ds = readwrf(filein_dir, domain, wright=False)
+            self.save_dir = "/Volumes/WFRT-Data02/FWF-WAN00CG/d02/fwf"
 
         wrf_ds = wrf_ds.load()
         ## Get dataset attributes
         self.attrs = wrf_ds.attrs
-
-        ############ Mathematical Constants and Usefull Arrays ################
+        self.forecast = forecast
+        ############ Mathematical Constants and UsefulArrays ################
         ### Math Constants
         # e = math.e
         self.F_initial = 85.0
@@ -114,14 +130,14 @@ class FWF:
         shape = np.shape(wrf_ds.T[0, :, :])
         self.shape = shape
         self.domain = domain
-        self.wrf_model = wrf_model
+        self.iterator_dir = f"/Volumes/WFRT-Data02/FWF-WAN00CG/d02/{iterator}/"
         print("Domain shape:  ", shape)
 
         # self.e_full    = np.full(shape,e, dtype=float)
         self.zero_full = np.zeros(shape, dtype=float)
         self.ones_full = np.full(shape, 1, dtype=float)
 
-        ### Daylength factor in Duff Moisture Code
+        ### Day length factor in Duff Moisture Code
         month = np.datetime_as_string(wrf_ds.Time[0], unit="h")
         print("Current Month:  ", month[5:7])
         month = int(month[5:7]) - 1
@@ -140,7 +156,7 @@ class FWF:
 
         ## Open gridded static
         static_ds = xr.open_dataset(
-            str(data_dir) + f"/static/static-vars-{wrf_model}-{domain}.nc"
+            str(data_dir) + f"/static/static-vars-wrf4-{domain}.nc"
         )
 
         ## Define Static Variables for FPB
@@ -213,16 +229,18 @@ class FWF:
 
             ### Create dataarrays for F and m_m
             F = xr.DataArray(F_o_full, name="F", dims=("south_north", "west_east"))
-            m_o = xr.DataArray(m_o, name="m_o", dims=("south_north", "west_east"))
+            # m_o = xr.DataArray(m_o, name="m_o", dims=("south_north", "west_east"))
+            self.F = F
+            self.F_hourly = F
 
             ### Add dataarrays to hourly dataset
             # self.hourly_ds["F"] = F
             # self.hourly_ds["m_o"] = m_o
 
-            F = F.to_dataset(name="F")
-            F["m_o"] = m_o
+            # F = F.to_dataset(name="F")
+            # F["m_o"] = m_o
 
-            self.F_ds = F
+            # self.F_hourly = F
 
             # """ ####################   Duff Moisture Code (DMC)    ##################### """
             previous_time = np.array(wrf_ds.Time.dt.strftime("%Y-%m-%dT%H"))
@@ -251,47 +269,53 @@ class FWF:
 
             int_time = wrf_ds.Time.values
             try:
-                retrive_time = pd.to_datetime(str(int_time[0] - np.timedelta64(1, "D")))
-                retrive_time = retrive_time.strftime("%Y%m%d%H")
-                hourly_file_dir = (
-                    str(fwf_dir) + f"/fwf-hourly-{domain}-{retrive_time}.nc"
+                retrieve_time = pd.to_datetime(
+                    str(int_time[0] - np.timedelta64(1, "D"))
                 )
-                daily_file_dir = str(fwf_dir) + f"/fwf-daily-{domain}-{retrive_time}.nc"
+                retrieve_time = retrieve_time.strftime("%Y%m%d%H")
+                hourly_file_dir = (
+                    str(self.iterator_dir) + f"/fwf-hourly-{domain}-{retrieve_time}.nc"
+                )
+                daily_file_dir = (
+                    str(self.iterator_dir) + f"/fwf-daily-{domain}-{retrieve_time}.nc"
+                )
 
                 previous_hourly_ds = xr.open_dataset(hourly_file_dir)
                 previous_daily_ds = xr.open_dataset(daily_file_dir)
                 print(
-                    f"{Path(hourly_file_dir).exists()}: Found previous FFMC on date {retrive_time}, will merge with hourly_ds"
+                    f"{Path(hourly_file_dir).exists()}: Found previous FFMC on date {retrieve_time}, will merge with hourly_ds"
                 )
                 print(
-                    f"{Path(daily_file_dir).exists()}: Found previous DMC on date {retrive_time}, will merge with daily_ds"
+                    f"{Path(daily_file_dir).exists()}: Found previous DMC on date {retrieve_time}, will merge with daily_ds"
                 )
                 print(
-                    f"{Path(daily_file_dir).exists()}: Found previous DC on date {retrive_time}, will merge with daily_ds"
+                    f"{Path(daily_file_dir).exists()}: Found previous DC on date {retrieve_time}, will merge with daily_ds"
                 )
             except:
                 try:
-                    retrive_time = pd.to_datetime(
+                    retrieve_time = pd.to_datetime(
                         str(int_time[0] - np.timedelta64(2, "D"))
                     )
-                    retrive_time = retrive_time.strftime("%Y%m%d%H")
+                    retrieve_time = retrieve_time.strftime("%Y%m%d%H")
                     hourly_file_dir = (
-                        str(fwf_dir) + f"/fwf-hourly-{domain}-{retrive_time}.nc"
+                        str(self.iterator_dir)
+                        + f"/fwf-hourly-{domain}-{retrieve_time}.nc"
                     )
                     daily_file_dir = (
-                        str(fwf_dir) + f"/fwf-daily-{domain}-{retrive_time}.nc"
+                        str(self.iterator_dir)
+                        + f"/fwf-daily-{domain}-{retrieve_time}.nc"
                     )
 
                     previous_hourly_ds = xr.open_dataset(hourly_file_dir)
                     previous_daily_ds = xr.open_dataset(daily_file_dir)
                     print(
-                        f"{Path(hourly_file_dir).exists()}: Found previous FFMC on date {retrive_time}, will merge with hourly_ds"
+                        f"{Path(hourly_file_dir).exists()}: Found previous FFMC on date {retrieve_time}, will merge with hourly_ds"
                     )
                     print(
-                        f"{Path(daily_file_dir).exists()}: Found previous DMC on date {retrive_time}, will merge with daily_ds"
+                        f"{Path(daily_file_dir).exists()}: Found previous DMC on date {retrieve_time}, will merge with daily_ds"
                     )
                     print(
-                        f"{Path(daily_file_dir).exists()}: Found previous DC on date {retrive_time}, will merge with daily_ds"
+                        f"{Path(daily_file_dir).exists()}: Found previous DC on date {retrieve_time}, will merge with daily_ds"
                     )
                 except:
                     raise FileNotFoundError(
@@ -316,20 +340,20 @@ class FWF:
             (index,) = np.where(previous_times == int_time)
             index = int(index[0])
             F = np.array(previous_hourly_ds.F[index])
-            m_o = np.array(previous_hourly_ds.m_o[index])
+            # m_o = np.array(previous_hourly_ds.m_o[index])
 
             ### Create dataarrays for F and m_m
             F = xr.DataArray(F, name="F", dims=("south_north", "west_east"))
-            m_o = xr.DataArray(m_o, name="m_o", dims=("south_north", "west_east"))
+            # m_o = xr.DataArray(m_o, name="m_o", dims=("south_north", "west_east"))
 
             ### Add dataarrays to hourly dataset
             # self.hourly_ds["F"] = F
             # self.hourly_ds["m_o"] = m_o
 
-            F = F.to_dataset(name="F")
-            F["m_o"] = m_o
+            # F = F.to_dataset(name="F")
+            # F["m_o"] = m_o
 
-            self.F_ds = F
+            self.F_hourly = F
 
             # """ ####################   Daily Dataset    ##################### """
             ### Open previous days daily_ds
@@ -367,18 +391,36 @@ class FWF:
             else:
                 index = int(index[0])
             print(f"Using {previous_times[index]} to initialize")
-            P = np.array(previous_daily_ds.P[index])
+
+            # """ ####################   Carry over precipitation (r_o_previous)    ##################### """
+
             r_o_previous = np.array(previous_daily_ds.r_o_tomorrow[0])
 
+            ### Add carry over rain to first time step
+            self.daily_ds["r_o"][0] = self.daily_ds["r_o"][0] + np.array(r_o_previous)
+
+            # """ ####################   Fine Fuel Moisture Code (FFMC)    ##################### """
+            ### Get last time step of F that coincides with the
+            ### initialization time of current model run
+            F = np.array(previous_daily_ds.F[index])
+
+            ### Create dataarrays for P
+            F = xr.DataArray(F, name="F", dims=("south_north", "west_east"))
+
+            ### Add dataarrays to daily dataset
+            self.F = F
+
             # """ ####################   Duff Moisture Code (DCM)    ##################### """
+            ### Get last time step of D that coincides with the
+            ### initialization time of current model run
+            P = np.array(previous_daily_ds.P[index])
+
             ### Create dataarrays for P
             P = xr.DataArray(P, name="P", dims=("south_north", "west_east"))
 
             ### Add dataarrays to daily dataset
             # self.daily_ds["P"] = P
             self.P = P
-            ### Add carry over rain to first time step
-            self.daily_ds["r_o"][0] = self.daily_ds["r_o"][0] + np.array(r_o_previous)
 
             # """ #####################     Drought Code (DC)       ########################### """
             ### Get last time step of D that coincides with the
@@ -403,7 +445,7 @@ class FWF:
     """ #################### Fine Fuel Moisture Code #########################"""
     """########################################################################"""
 
-    def solve_ffmc(self, hourly_ds):
+    def solve_hourly_ffmc(self, hourly_ds):
 
         """
         Calculates the Fine Fuel Moisture Code at a one-hour interval writes/outputs as an xarray
@@ -448,21 +490,24 @@ class FWF:
         """
 
         ### Call on initial conditions
-        W, T, H, r_o, m_o, F = (
+        W, T, H, r_o, F_o = (
             hourly_ds.W,
             hourly_ds.T,
             hourly_ds.H,
             hourly_ds.r_o_hourly,
-            self.F_ds.m_o,
-            self.F_ds.F,
+            self.F_hourly,
         )
+
+        # #Eq. 1
+        m_o = 147.2 * (101 - F_o) / (59.5 + F_o)
 
         ########################################################################
         ### Solve for the effective rainfall routine (r_f)
-        r_f = xr.where(r_o > 0.5, (r_o - 0.5), xr.where(r_o < 1e-7, 1e-5, r_o))
+        r_f = np.where(r_o > 0.5, (r_o - 0.5), np.where(r_o < 1e-7, 1e-5, r_o))
+
         ########################################################################
         ### (1) Solve the Rainfall routine as defined in  Van Wagner 1985 (m_r)
-        m_o = xr.where(
+        m_o = np.where(
             m_o <= 150,
             m_o
             + (42.5 * r_f * np.exp((-100 / (251 - m_o))) * (1 - np.exp((-6.93 / r_f)))),
@@ -471,7 +516,8 @@ class FWF:
             + (0.0015 * np.power((m_o - 150), 2) * np.power(r_f, 0.5)),
         )
 
-        m_o = np.where(m_o > 250, 250, np.where(m_o < 0, 0.0, m_o))
+        m_o = np.where(m_o > 250, 250, np.where(m_o < 0, 0.1, m_o))
+        #
 
         ########################################################################
         ### (2a) Solve Equilibrium Moisture content for drying (E_d)
@@ -521,22 +567,117 @@ class FWF:
 
         ########################################################################
         ### (5c) combine dry, wet, neutral moisture codes
-        m = xr.where(m_o > E_d, m_d, m_w)
-        m = xr.where((E_d >= m_o) & (m_o >= E_w), m_o, m)
+        m = np.where(m_o > E_d, m_d, m_w)
+        m = np.where((E_d >= m_o) & (m_o >= E_w), m_o, m)
 
         ########################################################################
         ### (6) Solve for FFMC
         F = (59.5 * (250 - m)) / (147.27723 + m)  ## Van 1985
+        F = np.where(F < 0, 1.0, F)
 
-        ### Recast initial moisture code for next time stamp
-        m_o = 147.27723 * (101 - F) / (59.5 + F)  ## Van 1985
+        ## Recast initial moisture code for next time stamp
+        # m_o = 147.27723 * (101 - F) / (59.5 + F)  ## Van 1985
 
-        F = F.to_dataset(name="F")
-        F["m_o"] = m_o
+        # m_o = xr.DataArray(m_o, name="m_o", dims=("south_north", "west_east"))
+        F = xr.DataArray(F, name="F", dims=("south_north", "west_east"))
+        # F = F.to_dataset(name="F")
 
-        self.F_ds = F
+        # F["m_o"] = m_o
+        self.F_hourly = F
 
         ### Return dataarray
+        return F
+
+    def solve_ffmc(self, daily_ds):
+
+        W, T, H, r_o, F_o, SNOWC = (
+            daily_ds.W,
+            daily_ds.T,
+            daily_ds.H,
+            daily_ds.r_o,
+            self.F,
+            daily_ds.SNOWC,
+        )
+
+        # #Eq. 1
+        m_o = 147.2 * (101 - F_o) / (59.5 + F_o)
+
+        ########################################################################
+        ### Solve for the effective raut
+        r_f = np.where(r_o > 0.5, (r_o - 0.5), np.where(r_o < 1e-7, 1e-5, r_o))
+
+        ########################################################################
+        ### (1) Solve the Rautfagner 1985 (m_r)
+        m_o = np.where(
+            m_o <= 150,
+            m_o
+            + (42.5 * r_f * np.exp((-100 / (251 - m_o))) * (1 - np.exp((-6.93 / r_f)))),
+            m_o
+            + (42.5 * r_f * np.exp((-100 / (251 - m_o))) * (1 - np.exp((-6.93 / r_f))))
+            + (0.0015 * np.power((m_o - 150), 2) * np.power(r_f, 0.5)),
+        )
+
+        m_o = np.where(m_o > 250, 250, np.where(m_o < 0, 0.1, m_o))
+
+        ########################################################################
+        ### (2a) Solve Equilibrium Moisture content for dry
+
+        E_d = (
+            0.942 * np.power(H, 0.679)
+            + 11 * np.exp((H - 100) / 10)
+            + 0.18 * (21.1 - T) * (1 - np.exp((-0.115 * H)))
+        )
+
+        ########################################################################
+        ### (2b) Solve Equilibrium Moisture content for wett
+
+        E_w = (
+            0.618 * (np.power(H, 0.753))
+            + 10 * np.exp((H - 100) / 10)
+            + 0.18 * (21.1 - T) * (1 - np.exp((-0.115 * H)))
+        )
+        ########################################################################
+        ### (3a) ate step to k_d (k_a)
+        k_a = 0.424 * (1 - np.power(H / 100, 1.7)) + 0.0694 * (np.power(W, 0.5)) * (
+            1 - np.power(H / 100, 8)
+        )
+
+        ########################################################################
+        ### (3b) Log dry for hourly computation, log to base 10 (k_d)
+        k_d = k_a * 0.581 * np.exp(0.0365 * T)
+
+        ########################################################################
+        ### (4a) ate steps to k_w (k_b)
+        k_b = 0.424 * (1 - np.power(((100 - H) / 100), 1.7)) + 0.0694 * np.power(
+            W, 0.5
+        ) * (1 - np.power(((100 - H) / 100), 8))
+
+        ########################################################################
+        ### (4b)  Log wettfor hourly computation, log to base 10 (k_w)
+        k_w = k_b * 0.581 * np.exp(0.0365 * T)
+
+        ########################################################################
+        ### (5a) ate dry moisture code (m_d)
+        m_d = E_d + (m_o - E_d) * 10 ** (-k_d)
+
+        ########################################################################
+        ### (5b) ate wet moisture code (m_w)
+        m_w = E_w - (E_w - m_o) * 10 ** (-k_w)
+
+        ########################################################################
+        ### (5c) combine dry, wet, neutral moisture codes
+        m = np.where(m_o > E_d, m_d, m_w)
+        m = np.where((E_d >= m_o) & (m_o >= E_w), m_o, m)
+
+        ########################################################################
+        ### (6) Solve for FFMC
+        F = (59.5 * (250 - m)) / (147.2 + m)  ## Van 1985
+        # Hold P to P_initial if snow cover is more than 80%
+        F = np.where(SNOWC > self.snowfract, self.F_initial, F)
+        F = np.where(F < 1, 1.0, F)
+
+        F = xr.DataArray(F, name="F", dims=("south_north", "west_east"))
+        self.F = F
         return F
 
     """########################################################################"""
@@ -604,7 +745,7 @@ class FWF:
 
         zero_full = self.zero_full
         ## Set min low temp
-        T = xr.where(T < -1.1, -1.1, T)
+        T = np.where(T < -1.1, -1.1, T)
 
         ########################################################################
         ### (11) Solve for the effective rain (r_e)
@@ -616,17 +757,17 @@ class FWF:
 
         ########################################################################
         ### (13a) Solve for coefficients b where P_o <= 33 (b_low)
-        b_low = xr.where(P_o <= 33, 100 / (0.5 + 0.3 * P_o), zero_full)
+        b_low = np.where(P_o <= 33, 100 / (0.5 + 0.3 * P_o), zero_full)
 
         ########################################################################
         ### (13b) Solve for coefficients b where 33 < P_o <= 65 (b_mid)
 
-        b_mid = xr.where((P_o > 33) & (P_o <= 65), 14 - 1.3 * np.log(P_o), zero_full)
+        b_mid = np.where((P_o > 33) & (P_o <= 65), 14 - 1.3 * np.log(P_o), zero_full)
 
         ########################################################################
         ### (13c) Solve for coefficients b where  P_o > 65 (b_high)
 
-        b_high = xr.where(P_o > 65, 6.2 * np.log(P_o) - 17.2, zero_full)
+        b_high = np.where(P_o > 65, 6.2 * np.log(P_o) - 17.2, zero_full)
         ########################################################################
         ### Combine (13a 13b 13c) for coefficients b
         b = b_low + b_mid + b_high
@@ -639,8 +780,8 @@ class FWF:
         ### (15) Duff moisture code (P_r) Alteration more accurate calculation (Lawson 2008)
         P_r = 43.43 * (5.6348 - np.log(M_r - 20))
         ## Apply rain condition if precip is less than 2.8 then use yesterday's DC
-        P_r = xr.where(r_o <= 1.5, P_o, P_r)
-        P_r = xr.where(P_r < 0, 0, P_r)
+        P_r = np.where(r_o <= 1.5, P_o, P_r)
+        P_r = np.where(P_r < 0, 0, P_r)
 
         ########################################################################
         ### (16) Log drying rate (K)
@@ -651,9 +792,10 @@ class FWF:
         ########################################################################
         ### (17) Duff moisture
         P = P_r + K
-        # Hold P to P_initial if snow cover is more than 50%
-        P = xr.where(SNOWC > self.snowfract, self.P_initial, P)
-        P = xr.where(P < 0, 1.0, P)
+        # Hold P to P_initial if snow cover is more than 80%
+        P = np.where(SNOWC > self.snowfract, self.P_initial, P)
+        P = np.where(P < 1, 1.0, P)
+        P = xr.DataArray(P, name="P", dims=("south_north", "west_east"))
 
         self.P = P
         return P
@@ -721,7 +863,7 @@ class FWF:
 
         zero_full = self.zero_full
         ## Hold T to min value
-        T = xr.where(T < (-2.8), -2.8, T)
+        T = np.where(T < (-2.8), -2.8, T)
 
         ########################################################################
         ### (18) Solve for the effective rain (r_d)
@@ -740,21 +882,22 @@ class FWF:
         ## Alteration to Eq. 21 (Lawson 2008)
         # D_r = D_o - 400 * np.log(1 + 3.937 * r_d / Q_o)
         D_r = 400 * np.log(800 / Q_r)
-        D_r = xr.where(D_r < 0, 0.0, D_r)
-        D_r = xr.where(r_o <= 2.8, D_o, D_r)
+        D_r = np.where(D_r < 0, 0.0, D_r)
+        D_r = np.where(r_o <= 2.8, D_o, D_r)
 
         ########################################################################
         ### (22) Solve for potential evapotranspiration (V)
         # V = (0.36 * (T + 2.8)) + L_f
         V = (0.36 * (T + 2.8)) + L_f
-        V = xr.where(V < 0, 0.0, V)
+        V = np.where(V < 0, 0.0, V)
 
         ########################################################################
         ## Alteration to Eq. 23 (Lawson 2008)
         D = D_r + V * 0.5
-        # Hold D to D_initial if snow cover is more than 50%
-        D = xr.where(SNOWC > self.snowfract, self.D_initial, D)
-        D = xr.where(D < 0, 1.0, D)
+        # Hold D to D_initial if snow cover is more than 80%
+        D = np.where(SNOWC > self.snowfract, self.D_initial, D)
+        D = np.where(D < 1, 1.0, D)
+        D = xr.DataArray(D, name="D", dims=("south_north", "west_east"))
 
         self.D = D
         return D
@@ -784,11 +927,14 @@ class FWF:
             - Datarray of ISI
         """
         ### Call on initial conditions
-        W, F, m_o = hourly_ds.W, hourly_ds.F, hourly_ds.m_o
+        W, F = W, hourly_ds.F
+
+        # #Eq. 1
+        m_o = 147.2 * (101 - F) / (59.5 + F)
 
         ########################################################################
         ### (24) Solve for wind function (f_W) with condition for fbp
-        f_W = xr.where(
+        f_W = np.where(
             (W >= 40) & (fbp == True),
             12 * (1 - np.exp(-0.0818 * (W - 28))),
             np.exp(0.05039 * W),
@@ -842,16 +988,16 @@ class FWF:
 
         ########################################################################
         ### (27a and 27b) Solve for build up index where P =< 0.4D (U_a)
-        U_low = xr.where(P <= 0.4 * D, 0.8 * P * D / (P + (0.4 * D)), zero_full)
+        U_low = np.where(P <= 0.4 * D, 0.8 * P * D / (P + (0.4 * D)), zero_full)
 
-        U_high = xr.where(
+        U_high = np.where(
             P > 0.4 * D,
             P - (1 - 0.8 * D / (P + (0.4 * D))) * (0.92 + np.power((0.0114 * P), 1.7)),
             zero_full,
         )
 
         U = U_low + U_high
-        U = xr.where(U < 0, 0.0, U)
+        U = np.where(U < 0, 1.0, U)
         U = xr.DataArray(U, name="U", dims=("time", "south_north", "west_east"))
 
         return U
@@ -860,7 +1006,7 @@ class FWF:
     """ ###################### Fire Weather Index #############################"""
     """########################################################################"""
 
-    def solve_fwi(self):
+    def solve_fwi(self, hourly):
 
         """
         Calculates the hourly fire weather index and daily severity rating
@@ -892,36 +1038,39 @@ class FWF:
 
         ########################################################################
         ### (28 & 29) Solve for duff moisture function where U =< 80(f_D_a)
-        U_limit = 80
-        f_D = xr.where(
+        # U_limit = 80
+        f_D = np.where(
             U > 80,
             1000 / (25 + 108.64 * np.exp(-0.023 * U)),
             (0.626 * np.power(U, 0.809)) + 2,
         )
 
         ########################################################################
-        index = [i for i in range(1, len(R) + 1) if i % 24 == 0]
-        if len(index) == 1:
-            ### (29a) Solve FWI intermediate form  for day 1(B_a)
-            B = 0.1 * R[:] * f_D[0]
-        elif len(index) == 2:
-            # print("fwi index", index[0])
-            B_a = 0.1 * R[: index[0]] * f_D[0]
-            ### (29b) Solve FWI intermediate form for day 2 (B_b)
-            B_b = 0.1 * R[index[0] :] * f_D[1]
-            ### (29c) COmbine FWI intermediate (B)
-            B = xr.combine_nested([B_a, B_b], "time")
+        if hourly == True:
+            index = [i for i in range(1, len(R) + 1) if i % 24 == 0]
+            if len(index) == 1:
+                ### (29a) Solve FWI intermediate form  for day 1(B_a)
+                B = 0.1 * R[:] * f_D[0]
+            elif len(index) == 2:
+                # print("fwi index", index[0])
+                B_a = 0.1 * R[: index[0]] * f_D[0]
+                ### (29b) Solve FWI intermediate form for day 2 (B_b)
+                B_b = 0.1 * R[index[0] :] * f_D[1]
+                ### (29c) COmbine FWI intermediate (B)
+                B = xr.combine_nested([B_a, B_b], "time")
+            else:
+                raise ValueError(
+                    "ERROR: Rodell was lazy and needs to rethink indexing of multi length wrf runs"
+                )
         else:
-            raise ValueError(
-                "ERROR: Rodell was lazy and needs to rethink indexing of multi length wrf runs"
-            )
+            B = 0.1 * R * f_D
 
         #### HOPEFULLY SOLVES RUNTIME WARNING
-        B = xr.where(B > 0, B, 1e-6)
+        B = np.where(B > 0, B, 1e-6)
 
         ########################################################################
         ### (30) Solve FWI
-        S = xr.where(B <= 1, B, np.exp(2.72 * np.power((0.434 * np.log(B)), 0.647)))
+        S = np.where(B <= 1, B, np.exp(2.72 * np.power((0.434 * np.log(B)), 0.647)))
 
         S = xr.DataArray(S, name="S", dims=("time", "south_north", "west_east"))
 
@@ -1009,7 +1158,7 @@ class FWF:
 
         ## Reorient to Wind Azimuth (WAZ)
         WAZ = WD + np.pi
-        WAZ = xr.where(WAZ > 2 * np.pi, WAZ - 2 * np.pi, WAZ)
+        WAZ = np.where(WAZ > 2 * np.pi, WAZ - 2 * np.pi, WAZ)
 
         ###################    Foliar Moisture Content:  #######################
         ########################################################################
@@ -1029,11 +1178,11 @@ class FWF:
 
         ## Solve Foliar moisture content(%) where ND < 30 (6)
         FMC = zero_full
-        FMC = xr.where(ND < 30.0, 85 + 0.0189 * ND ** 2, FMC)
+        FMC = np.where(ND < 30.0, 85 + 0.0189 * ND ** 2, FMC)
         ## Solve Foliar moisture content(%) where 30 <= ND < 50 (7)
-        FMC = xr.where((ND >= 30) & (ND < 50), 32.9 + 3.17 * ND - 0.0288 * ND ** 2, FMC)
+        FMC = np.where((ND >= 30) & (ND < 50), 32.9 + 3.17 * ND - 0.0288 * ND ** 2, FMC)
         ## Solve Foliar moisture content(%) where ND >= 50 (8)
-        FMC = xr.where(ND >= 50, 120, FMC)
+        FMC = np.where(ND >= 50, 120, FMC)
         FMC = xr.DataArray(FMC, name="FMC", dims=("south_north", "west_east"))
         hourly_ds["FMC"] = FMC.astype(dtype="float32")
 
@@ -1057,9 +1206,9 @@ class FWF:
 
         ## Solve Surface Fuel Consumption for C1 Fuels adjusted from (Wotton et. al. 2009) (9)
         SFC = zero_full3D
-        SFC = xr.where(
+        SFC = np.where(
             FUELS == fc_dict["C1"]["Code"],
-            xr.where(
+            np.where(
                 FFMC > 84,
                 0.75 + 0.75 * (1 - np.exp(-0.23 * (FFMC - 84))) ** 0.5,
                 0.75 - 0.75 * (1 - np.exp(-0.23 * (84 - FFMC))) ** 0.5,
@@ -1068,7 +1217,7 @@ class FWF:
         )
 
         ## Solve Fuel Consumption for C2, M3, and M4 Fuels  (10)
-        SFC = xr.where(
+        SFC = np.where(
             (FUELS == fc_dict["C2"]["Code"]),
             # | (FUELS == fc_dict["M3"]["Code"])
             # | (FUELS == fc_dict["M4"]["Code"]),
@@ -1077,34 +1226,34 @@ class FWF:
         )
 
         ## Solve Fuel Consumption for C3, C4 Fuels  (11)
-        SFC = xr.where(
+        SFC = np.where(
             (FUELS == fc_dict["C3"]["Code"]) | (FUELS == fc_dict["C4"]["Code"]),
             5.0 * (1 - np.exp(-0.0164 * BUI)) ** 2.24,
             SFC,
         )
 
         ## Solve Fuel Consumption for C5, C6 Fuels  (12)
-        SFC = xr.where(
+        SFC = np.where(
             (FUELS == fc_dict["C5"]["Code"]) | (FUELS == fc_dict["C6"]["Code"]),
             5.0 * (1 - np.exp(-0.0149 * BUI)) ** 2.48,
             SFC,
         )
 
         ## Solve Fuel Consumption for C7 Fuels  (13, 14, 15)
-        SFC = xr.where(
+        SFC = np.where(
             (FUELS == fc_dict["C7"]["Code"]),
-            xr.where(FFMC > 70, 2 * (1 - np.exp(-0.104 * (FFMC - 70))), 0)
+            np.where(FFMC > 70, 2 * (1 - np.exp(-0.104 * (FFMC - 70))), 0)
             + 1.5 * (1 - np.exp(-0.0201 * BUI)),
             SFC,
         )
 
         ## Solve Fuel Consumption for D1 Fuels  (16)
-        SFC = xr.where(
+        SFC = np.where(
             (FUELS == fc_dict["D1"]["Code"]), 1.5 * (1 - np.exp(-0.0183 * BUI)), SFC
         )
 
         ## Solve Fuel Consumption for M1, M2 Fuels  (17)
-        SFC = xr.where(
+        SFC = np.where(
             (FUELS == fc_dict["M1"]["Code"]),  # | (FUELS == fc_dict["M2"]["Code"]),
             PC / 100 * (5.0 * (1 - np.exp(-0.0115 * BUI)))
             + ((100 - PC) / 100 * (1.5 * (1 - np.exp(-0.0183 * BUI)))),
@@ -1112,35 +1261,35 @@ class FWF:
         )
 
         ## Solve Fuel Consumption for O1a, O1b Fuels  (18)
-        SFC = xr.where(
+        SFC = np.where(
             (FUELS == fc_dict["O1a"]["Code"]) | (FUELS == fc_dict["O1b"]["Code"]),
             GFL,
             SFC,
         )
 
         # ## Solve Fuel Consumption for S1 Fuels  (19, 20, 25)
-        # SFC = xr.where(
+        # SFC = np.where(
         #     (FUELS == fc_dict["S1"]["Code"]),
         #     4.0 * (1 - np.exp(-0.025 * BUI)) + 4.0 * (1 - np.exp(-0.034 * BUI)),
         #     SFC,
         # )
 
         # ## Solve Fuel Consumption for S2 Fuels  (21, 22, 25)
-        # SFC = xr.where(
+        # SFC = np.where(
         #     (FUELS == fc_dict["S2"]["Code"]),
         #     10.0 * (1 - np.exp(-0.013 * BUI)) + 6.0 * (1 - np.exp(-0.060 * BUI)),
         #     SFC,
         # )
 
         # ## Solve Fuel Consumption for S3 Fuels  (23, 24, 25)
-        # SFC = xr.where(
+        # SFC = np.where(
         #     (FUELS == fc_dict["S3"]["Code"]),
         #     12.0 * (1 - np.exp(-0.0166 * BUI)) + 20.0 * (1 - np.exp(-0.0210 * BUI)),
         #     SFC,
         # )
 
         # Remove negative SFC value
-        SFC = xr.where(SFC <= 0, 0.01, SFC)
+        SFC = np.where(SFC <= 0, 0.01, SFC)
         SFC = xr.DataArray(SFC, name="SFC", dims=("time", "south_north", "west_east"))
         hourly_ds["SFC"] = SFC.astype(dtype="float32")
 
@@ -1152,13 +1301,13 @@ class FWF:
         # hourly_ds["ISZ"] = ISZ.astype(dtype="float32")
 
         ## (O-1A grass) grass curing coefficient (Wotton et. al. 2009)
-        CF = xr.where(
+        CF = np.where(
             C < 58.8, 0.005 * (np.exp(0.061 * C) - 1), 0.176 + 0.02 * (C - 58.8)
         )
 
         ## General Rate of Spread Equation for C-1 to C-5, and C-7 (26)
         def solve_gen_ros(ROS, fueltype, ISI):
-            ROS = xr.where(
+            ROS = np.where(
                 FUELS == fc_dict[fueltype]["Code"],
                 fc_dict[fueltype]["a"]
                 * (
@@ -1171,7 +1320,7 @@ class FWF:
 
         ## General Rate of Spread Equation for C-1 to C-5, and C-7 (26)
         # def solve_gen_ros(ROS, fueltype, ISI):
-        #     func = lambda ROS, fueltype, ISI: xr.where(FUELS == fc_dict[fueltype]["Code"],
+        #     func = lambda ROS, fueltype, ISI: np.where(FUELS == fc_dict[fueltype]["Code"],
         #                                     fc_dict[fueltype]["a"]
         #                                     * (
         #                                         (1 - np.exp(-fc_dict[fueltype]["b"] * ISI))
@@ -1217,7 +1366,7 @@ class FWF:
 
             ## Fuel Type Specific Rate of Spread Equations
             ##  (M-1 leaftess) (27)
-            ROS_M1 = xr.where(
+            ROS_M1 = np.where(
                 FUELS == fc_dict["M1"]["Code"],
                 ((PC / 100) * solve_M_ros("C2", ISI))
                 + ((PC / 100) * solve_M_ros("D1", ISI)),
@@ -1225,14 +1374,14 @@ class FWF:
             )
 
             # ##  (M-2 green)   (28)
-            # ROS_M2 = xr.where(
+            # ROS_M2 = np.where(
             #     FUELS == fc_dict["M2"]["Code"],
             #     ((PC / 100) * solve_M_ros("C2", ISI))
             #     + (0.2 * ((PC / 100) * solve_M_ros("D1", ISI))),
             #     zero_full3D,
             # )
 
-            ROS_O1a = xr.where(
+            ROS_O1a = np.where(
                 (FUELS == fc_dict["O1a"]["Code"]),
                 fc_dict["O1a"]["a"]
                 * ((1 - np.exp(-fc_dict["O1a"]["b"] * ISI)) ** fc_dict["O1a"]["c"])
@@ -1241,7 +1390,7 @@ class FWF:
             )
 
             ## (O-1B grass) grass curing coefficient (Wotton et. al. 2009)
-            ROS_O1b = xr.where(
+            ROS_O1b = np.where(
                 (FUELS == fc_dict["O1b"]["Code"]),
                 fc_dict["O1b"]["a"]
                 * ((1 - np.exp(-fc_dict["O1b"]["b"] * ISI)) ** fc_dict["O1b"]["c"])
@@ -1265,7 +1414,7 @@ class FWF:
             h = 460 + 25.9 * FMC  # (60)
             FME = (((1.5 - 0.00275 * FMC) ** 4.0) / (460 + (25.9 * FMC))) * 1000  # (61)
 
-            ROS_C6 = xr.where(
+            ROS_C6 = np.where(
                 (FUELS == fc_dict["C6"]["Code"]),
                 30 * (1 - np.exp(-0.08 * ISI)) ** 3.0,
                 zero_full3D,
@@ -1275,7 +1424,7 @@ class FWF:
                 ## (63)
                 RSS = ROS_C6 * BE
                 ## (64)
-                RSC = xr.where(
+                RSC = np.where(
                     (FUELS == fc_dict["C6"]["Code"]),
                     60 * (1 - np.exp(-0.0497 * ISI)) ** 1.0 * (FME / 0.778),
                     zero_full3D,
@@ -1285,8 +1434,8 @@ class FWF:
                 ## (57)
                 RSO = CSI / (300 * SFC)
                 ## (58)
-                CFB = xr.where(RSS > RSO, 1 - np.exp(-0.23 * (RSS - RSO)), 0)
-                CFB = xr.where(CFB < 0, 0.0, CFB)
+                CFB = np.where(RSS > RSO, 1 - np.exp(-0.23 * (RSS - RSO)), 0)
+                CFB = np.where(CFB < 0, 0.0, CFB)
                 # CFB = 1 - np.exp(-0.23 * (ROS_C6 - RSO))
                 ## (65)
                 ROS = np.where(
@@ -1310,7 +1459,7 @@ class FWF:
         ## Solve Factor, Upslope (39)
         ## NOTE they use have another condition in the R code: if GS >= 70 SF = 10
         ## Also they don't have the GS<60 condition in the code..not sure why
-        SF = xr.where(GS < 60, np.exp(3.533 * ((GS / 100) ** 1.2)), zero_full)
+        SF = np.where(GS < 60, np.exp(3.533 * ((GS / 100) ** 1.2)), zero_full)
 
         ## Surface spread rate with zero wind, upslope (40)
         RSF = RSZ * SF
@@ -1319,9 +1468,9 @@ class FWF:
         ## Solve ISF (ie ISI, with zero wind upslope) for the majority of fuels (41)
         ## NOTE adjusted base don 41a, 41b (Wotton 2009)
         def solve_isf(ISF, fueltype, RSF):
-            ISF = xr.where(
+            ISF = np.where(
                 FUELS == fc_dict[fueltype]["Code"],
-                xr.where(
+                np.where(
                     (1 - (RSF / fc_dict[fueltype]["a"]) ** (1 / fc_dict[fueltype]["c"]))
                     >= 0.01,
                     np.log(
@@ -1336,9 +1485,9 @@ class FWF:
             return ISF
 
         # def solve_isf(ISF, fueltype, RSF):
-        #     func = lambda ISF, fueltype, RSF:  xr.where(
+        #     func = lambda ISF, fueltype, RSF:  np.where(
         #         FUELS == fc_dict[fueltype]["Code"],
-        #         xr.where(
+        #         np.where(
         #             (1 - (RSF / fc_dict[fueltype]["a"]) ** (1 / fc_dict[fueltype]["c"]))
         #             >= 0.01,
         #             np.log(
@@ -1369,7 +1518,7 @@ class FWF:
             ISF = solve_isf(ISF, fueltype, RSF)
 
         ## Solve ISF (ie ISI, with zero wind upslope) for M1 and M2 (42)
-        ISF_M1M2 = xr.where(
+        ISF_M1M2 = np.where(
             (FUELS == fc_dict["M1"]["Code"]),  # | (FUELS == fc_dict["M2"]["Code"]),
             np.log(
                 1
@@ -1380,14 +1529,14 @@ class FWF:
         )
 
         ## Solve ISF (ie ISI, with zero wind upslope) for O1a and O1b (grass)(43)
-        ISF_O1a = xr.where(
+        ISF_O1a = np.where(
             (FUELS == fc_dict["O1a"]["Code"]),
             np.log(1 - (RSF / (CF * fc_dict["O1a"]["a"])) ** (1 / fc_dict["O1a"]["c"]))
             / -fc_dict["O1a"]["b"],
             zero_full3D,
         )
 
-        ISF_O1b = xr.where(
+        ISF_O1b = np.where(
             (FUELS == fc_dict["O1b"]["Code"]),
             np.log(1 - (RSF / (CF * fc_dict["O1b"]["a"])) ** (1 / fc_dict["O1b"]["c"]))
             / -fc_dict["O1b"]["b"],
@@ -1401,21 +1550,21 @@ class FWF:
         ### (25) Solve for fine fuel moisture function (f_F)
         m_o = hourly_ds.m_o
         f_F = 91.9 * np.exp(-0.1386 * m_o) * (1 + ((m_o ** 5.31) / 4.93e7))
-        f_F = xr.where(f_F < 0.0, 0.1, f_F)
+        f_F = np.where(f_F < 0.0, 0.1, f_F)
 
         ## Compute the slope equivalent wind speed (WSE) (44)
-        WSE = xr.where(ISF > 0.1, np.log(ISF / (0.208 * f_F)) / 0.05039, zero_full3D)
+        WSE = np.where(ISF > 0.1, np.log(ISF / (0.208 * f_F)) / 0.05039, zero_full3D)
         # print('WSE ',np.mean(WSE.values))
 
         # NOTE Adjusted Slope equivalent wind speed (44b 44e) (Wotton 2009)
-        WSE = xr.where(
+        WSE = np.where(
             (WSE > 40) & (ISF < (0.999 * 2.496 * f_F)),
             28 - (1 / 0.0818 * np.log(1 - ISF / (2.496 * f_F))),
             WSE,
         )
 
         # NOTE Adjusted Slope equivalent wind speed (44c) (Wotton 2009)
-        WSE = xr.where((WSE > 40) & (ISF >= (0.999 * 2.496 * f_F)), 112.45, WSE)
+        WSE = np.where((WSE > 40) & (ISF >= (0.999 * 2.496 * f_F)), 112.45, WSE)
         # print('WSE ',np.mean(WSE.values))
 
         ## Net vectored wind speed in the x-direction (47)
@@ -1431,7 +1580,7 @@ class FWF:
         ## Spread direction azimuth and convert from radians to degrees (50)
         RAZ = np.arccos(WSY / WSV) * 180 / np.pi
         ## Convert RAZ values at locations of negative WSX to account for the full compass circle. (51)
-        RAZ = xr.where(WSX < 0, 360 - RAZ, RAZ)
+        RAZ = np.where(WSX < 0, 360 - RAZ, RAZ)
 
         ## Solve ISI equation (from the FWI System) (52, 53, 53a)
         ISI = self.solve_isi(hourly_ds, WSV, fbp=True)
@@ -1442,9 +1591,9 @@ class FWF:
         #######################################################################
         ## Buildup effect on spread rate (54)
         def solve_be(BE, fueltype, BUI):
-            BE = xr.where(
+            BE = np.where(
                 FUELS == fc_dict[fueltype]["Code"],
-                xr.where(
+                np.where(
                     (BUI > 0) & (fc_dict[fueltype]["BUI_o"] > 0),
                     np.exp(
                         50
@@ -1458,9 +1607,9 @@ class FWF:
             return BE
 
         # def solve_be(BE, fueltype, BUI):
-        #     func = lambda BE, fueltype, BUI: xr.where(
+        #     func = lambda BE, fueltype, BUI: np.where(
         #         FUELS == fc_dict[fueltype]["Code"],
-        #         xr.where(
+        #         np.where(
         #             (BUI > 0) & (fc_dict[fueltype]["BUI_o"] > 0),
         #             np.exp(
         #                 50
@@ -1480,7 +1629,7 @@ class FWF:
         ROS = solve_ros(ISI, FMC, PDF, fc_dict, BE)
         ROS_C6 = solve_c6(ISI, FMC, fc_dict, BE)
         ROS = ROS + ROS_C6
-        ROS = xr.where(ROS < 0, 0.0, ROS)
+        ROS = np.where(ROS < 0, 0.0, ROS)
         hourly_ds["ROS"] = ROS.astype(dtype="float32")
 
         ################   Critical Surface Fire Intensity  ###################
@@ -1499,10 +1648,10 @@ class FWF:
                 ## Solve Critical spread rate for crowning (57)
                 RSO = CSI / (300 * SFC)
                 # Solve Crown fraction burned (58)
-                CFB_i = xr.where(ROS > RSO, 1 - np.exp(-0.23 * (ROS - RSO)), CFB)
+                CFB_i = np.where(ROS > RSO, 1 - np.exp(-0.23 * (ROS - RSO)), CFB)
                 # CFB_i = 1 - np.exp(-0.23 * (ROS - RSO))
-                CFB_i = xr.where(CFB_i < 0, 0.0, CFB_i)
-                CFB = xr.where(FUELS == fc_dict[fueltype]["Code"], CFB_i, CFB)
+                CFB_i = np.where(CFB_i < 0, 0.0, CFB_i)
+                CFB = np.where(FUELS == fc_dict[fueltype]["Code"], CFB_i, CFB)
             return CFB
 
         CFB = zero_full3D
@@ -1515,10 +1664,10 @@ class FWF:
 
         def solve_tfc(TFC, fueltype, CFB):
             if fc_dict[fueltype]["CFL"] == -99:
-                TFC = xr.where(FUELS == fc_dict[fueltype]["Code"], SFC, TFC)
+                TFC = np.where(FUELS == fc_dict[fueltype]["Code"], SFC, TFC)
             else:
                 CFC = fc_dict[fueltype]["CFL"] * CFB
-                TFC = xr.where(FUELS == fc_dict[fueltype]["Code"], SFC + CFC, TFC)
+                TFC = np.where(FUELS == fc_dict[fueltype]["Code"], SFC + CFC, TFC)
             return TFC
 
         TFC = zero_full3D
@@ -1556,7 +1705,7 @@ class FWF:
         -------
             daily_ds: DataSet
                 Dataset of daily variables at noon local averaged from (1100-1300)
-                local the averageing was done as a buffer for any frontal passage.
+                local the averaging was done as a buffer for any frontal passage.
         """
 
         print("Create Daily ds")
@@ -1660,7 +1809,10 @@ class FWF:
         loopTime = datetime.now()
         print("Start Hourly loop length: ", length)
         FFMC = xr.combine_nested(
-            [self.solve_ffmc(self.hourly_ds.isel(time=i)) for i in range(length)],
+            [
+                self.solve_hourly_ffmc(self.hourly_ds.isel(time=i))
+                for i in range(length)
+            ],
             "time",
         )
         print(f"Hourly loop done, Time: {datetime.now() - loopTime}")
@@ -1669,7 +1821,7 @@ class FWF:
         ISI = self.solve_isi(hourly_ds, hourly_ds.W, fbp=False)
         hourly_ds["R"] = ISI
         self.R = ISI
-        FWI, DSR = self.solve_fwi()
+        FWI, DSR = self.solve_fwi(hourly=True)
         hourly_ds["S"] = FWI
         hourly_ds["DSR"] = DSR
         if self.fbp_mode == True:
@@ -1699,16 +1851,29 @@ class FWF:
         daily_list = []
         print("Start Daily loop length: ", length)
         for i in range(length):
+            F = self.solve_ffmc(self.daily_ds.isel(time=i))
             P = self.solve_dmc(self.daily_ds.isel(time=i))
             D = self.solve_dc(self.daily_ds.isel(time=i))
-            ds = P.to_dataset(name="P")
+            ds = F.to_dataset(name="F")
+            ds["P"] = P
             ds["D"] = D
             daily_list.append(ds)
         print("Daily loop done")
         daily_ds = xr.combine_nested(daily_list, "time")
         daily_ds = xr.merge([daily_ds, self.daily_ds])
+
+        ISI = self.solve_isi(daily_ds, daily_ds.W, fbp=False)
+        self.R = ISI
+
         U = self.solve_bui(daily_ds)
+        self.U = U
+
+        FWI, DSR = self.solve_fwi(hourly=False)
+
+        daily_ds["R"] = ISI
         daily_ds["U"] = U
+        daily_ds["S"] = FWI
+        daily_ds["DSR"] = DSR
         self.U = U
         return daily_ds
 
@@ -1759,7 +1924,10 @@ class FWF:
 
         # # ## Write and save DataArray (.nc) file
         make_dir = Path(
-            str(fwf_dir) + str("/fwf-hourly-") + self.domain + str(f"-{file_date}.nc")
+            str(self.save_dir)
+            + str("/fwf-hourly-")
+            + self.domain
+            + str(f"-{file_date}.nc")
         )
         # make_dir.mkdir(parents=True, exist_ok=True)
         hourly_ds = self.prepare_ds(hourly_ds)
@@ -1768,7 +1936,11 @@ class FWF:
         hourly_ds.to_netcdf(make_dir, mode="w")
         print("Write Time: ", datetime.now() - writeTime)
         print(f"wrote working {make_dir}")
-
+        if self.forecast == True:
+            command = f'cp -r {str(self.save_dir) + str("/fwf-hourly-") + self.domain + str(f"-{file_date}.nc")}  {str("/Volumes/WFRT-Data02/FWF-WAN00CG/d02/forecast/fwf-hourly-") + self.domain + str(f"-{file_date}.nc")}'
+            os.system(command)
+        else:
+            pass
         return str(make_dir)
 
     """#######################################"""
@@ -1803,7 +1975,10 @@ class FWF:
 
         # # ## Write and save DataArray (.nc) file
         make_dir = Path(
-            str(fwf_dir) + str("/fwf-daily-") + self.domain + str(f"-{file_date}.nc")
+            str(self.save_dir)
+            + str("/fwf-daily-")
+            + self.domain
+            + str(f"-{file_date}.nc")
         )
         # make_dir.mkdir(parents=True, exist_ok=True)
         daily_ds = self.prepare_ds(daily_ds)
@@ -1813,5 +1988,9 @@ class FWF:
         daily_ds.to_netcdf(make_dir, mode="w")
         print("Write Time: ", datetime.now() - writeTime)
         print(f"wrote working {make_dir}")
-
+        if self.forecast == True:
+            command = f'cp -r {str(self.save_dir) + str("/fwf-daily-") + self.domain + str(f"-{file_date}.nc")}  {str("/Volumes/WFRT-Data02/FWF-WAN00CG/d02/forecast/fwf-daily-") + self.domain + str(f"-{file_date}.nc")}'
+            os.system(command)
+        else:
+            pass
         return str(make_dir)
