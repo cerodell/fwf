@@ -29,7 +29,7 @@ __email__ = "crodell@eoas.ubc.ca"
 warnings.filterwarnings("ignore", category=RuntimeWarning)
 
 wrf_model = "wrf4"
-date_range = pd.date_range("2021-04-30", "2022-06-01")
+date_range = pd.date_range("2022-08-04", "2022-08-04")
 
 # """######### get directory to yesterdays hourly/daily .nc files.  #############"""
 for date in date_range:
@@ -59,7 +59,7 @@ for date in date_range:
             forecast=False,
         )
         coeff.daily()
-        coeff.hourly()
+        # coeff.hourly()
 
         """######### run fwf day4  #############"""
         print("######### run fwf day4  #############")
@@ -73,7 +73,7 @@ for date in date_range:
             forecast=False,
         )
         coeff.daily()
-        coeff.hourly()
+        # coeff.hourly()
 
         # """######### run fwf day3  #############"""
         print("######### run fwf day3  #############")
@@ -87,7 +87,7 @@ for date in date_range:
             forecast=False,
         )
         coeff.daily()
-        coeff.hourly()
+        # coeff.hourly()
 
         # """######### run fwf day2  #############"""
         print("######### run fwf day2  #############")
@@ -101,7 +101,7 @@ for date in date_range:
             forecast=False,
         )
         coeff.daily()
-        coeff.hourly()
+        # coeff.hourly()
 
         # """######### run fwf day1  #############"""
         print("######### run fwf day1  #############")
@@ -115,9 +115,9 @@ for date in date_range:
             forecast=False,
         )
         coeff.daily()
-        coeff.hourly()
+        # coeff.hourly()
 
-        # """######### run fwf day0  #############"""
+        """######### run fwf day0  #############"""
         print("######### run fwf day0  #############")
         fwf0_filein = f'/Volumes/Scratch/FWF-WAN00CG/{domain}/{fwf_day0.strftime("%Y%m")}/fwf-hourly-d02-{fwf_day0.strftime("%Y%m%d06")}.nc'
         coeff = FWF(
@@ -129,7 +129,7 @@ for date in date_range:
             forecast=True,
         )
         coeff.daily()
-        coeff.hourly()
+        # coeff.hourly()
 
         print(f"Domain {domain} run time: ", datetime.now() - domain_startTime)
 

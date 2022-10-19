@@ -62,7 +62,7 @@ def config_era5(filein):
         "H",
     ]
     era5_ds = era5_ds.drop([var for var in list(era5_ds) if var not in keep_vars])
-
+    print(era5_ds)
     krig_ds = salem.open_xr_dataset(str(data_dir) + "/d02-grid.nc")
     fwf_d02_ds = xr.open_dataset(
         f'/Volumes/Scratch/FWF-WAN00CG/d02/{doi.strftime("%Y%m")}/fwf-hourly-d02-{doi.strftime("%Y%m%d06")}.nc'
@@ -71,6 +71,7 @@ def config_era5(filein):
     fwf_d02_ds = fwf_d02_ds.sel(
         time=slice(doi.strftime("%Y%m%dT06"), tomorrow.strftime("%Y%m%dT05"))
     )
+    print(krig_ds)
 
     # krig_ds = fwf_d02_ds.salem.grid.to_dataset()
     # krig_ds = krig_ds.rename({'x': 'west_east','y': 'south_north'})
