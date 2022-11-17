@@ -25,6 +25,11 @@ domain = "d02"
 forecast_date = "2021092906"
 
 
+# Volumes/WFRT-Data02/FWF-WAN00CG/d02/WRF05/fwf/fwf-daily-d02-2021010106.nc
+
+filein = "/Volumes/WFRT-Data02/FWF-WAN00CG/d02/WRF05/fwf/fwf-daily-d02-2021010206.nc"
+ds = xr.open_dataset(filein)
+
 # filein = "/Volumes/Scratch/FWF-WAN00CG/d02/202205/fwf-hourly-d02-2022051006.nc"
 # # filein = "/Users/crodell/fwf/fwf-hourly-d02-2022051706.nc"
 # ds = xr.open_dataset(filein)
@@ -37,20 +42,20 @@ forecast_date = "2021092906"
 
 # cp -r /Users/crodell/fwf/fwf-hourly-d02-2022051806.nc /Volumes/Scratch/FWF-WAN00CG/d02/202205/
 
-date_range = pd.date_range("2021-01-01", "2022-08-01")
-"""######### get directory to yesterdays hourly/daily .nc files.  #############"""
-for date in date_range:
-    #     filein = f'/Volumes/Scratch/FWF-WAN00CG/{domain}/'
-    #     file_doi = filein + f'{date.strftime("%Y%m")}/fwf-hourly-d02-{date.strftime("%Y%m%d06")}.nc'
-    file_doi = f'/Volumes/WFRT-Data02/FWF-WAN00CG/d02/forecast/fwf-daily-d02-{date.strftime("%Y%m%d06")}.nc'
+# date_range = pd.date_range("2021-01-01", "2022-08-01")
+# """######### get directory to yesterdays hourly/daily .nc files.  #############"""
+# for date in date_range:
+#     #     filein = f'/Volumes/Scratch/FWF-WAN00CG/{domain}/'
+#     #     file_doi = filein + f'{date.strftime("%Y%m")}/fwf-hourly-d02-{date.strftime("%Y%m%d06")}.nc'
+#     file_doi = f'/Volumes/WFRT-Data02/FWF-WAN00CG/d02/forecast/fwf-daily-d02-{date.strftime("%Y%m%d06")}.nc'
 
-    my_file = Path(file_doi)
-    if my_file.is_file():
-        pass
-    else:
-        pass
-        day1 = pd.to_datetime(str(date - np.timedelta64(1, "D")))
-        print(f'No file on {date.strftime("%Y%m%d06")}')
+#     my_file = Path(file_doi)
+#     if my_file.is_file():
+#         pass
+#     else:
+#         pass
+#         day1 = pd.to_datetime(str(date - np.timedelta64(1, "D")))
+#         print(f'No file on {date.strftime("%Y%m%d06")}')
 #       file_doi_y = filein + f'{day1.strftime("%Y%m")}/fwf-daily-d02-{day1.strftime("%Y%m%d06")}.nc'
 #       command = f'cp -r {file_doi_y}  {file_doi}'
 #       os.system(command)

@@ -1,3 +1,5 @@
+#!/Users/crodell/miniconda3/envs/fwf/bin/python
+
 import context
 import io
 import json
@@ -26,9 +28,10 @@ __email__ = "crodell@eoas.ubc.ca"
 
 wrf_model = "wrf4"
 domain = "d02"
-date_range = pd.date_range("2022-06-24", "2022-08-01")
+date_range = pd.date_range("2021-01-07", "2021-11-01")
+# date_range = pd.date_range("2021-01-06", "2021-01-06")
 
-nc_filein = "/Volumes/WFRT-Data02/FWF-WAN00CG/d02/"
+fwf_dir = "/Volumes/WFRT-Data02/FWF-WAN00CG/d02/"
 ## make dir for that intercomp files if it doest not all ready exist
 make_dir = Path(str(data_dir) + "/intercomp/")
 make_dir.mkdir(parents=True, exist_ok=True)
@@ -79,8 +82,12 @@ stations_df = stations_df.drop(
 stations_df = stations_df.drop(stations_df.index[np.where(stations_df["x"] < x1 - 1)])
 stations_df = stations_df.drop(stations_df.index[np.where(stations_df["y"] < y1 - 1)])
 
-# filein_obs = "https://cwfis.cfs.nrcan.gc.ca/downloads/fwi_obs/cwfis_fwi2020sopEC.csv"
-# obs_df = pd.read_csv(filein_obs, sep=",", skiprows=0)
+
+def interpolate(da, x, y, method):
+    ## get models values at wxstation locations
+    var_columns = da.interp(west_east=x, south_north=y, method=method).values
+    var_columns = np.array(var_columns, dtype="float32")
+    return var_columns
 
 
 # """######### get directory to yesterdays hourly/daily .zarr files.  #############"""
@@ -98,48 +105,52 @@ for date in date_range:
     day2_obs_date = day2_obs_date.strftime("%Y%m%d06")
 
     era5_ds = salem.open_xr_dataset(
-        nc_filein + f"/era5/fwf-daily-{domain}-{day1_obs_date}.nc"
+        fwf_dir + f"/ERA501/era5/fwf-daily-{domain}-{day1_obs_date}.nc"
     )
 
-    day1_ds = salem.open_xr_dataset(
-        nc_filein + f"/forecast/fwf-daily-{domain}-{day1_obs_date}.nc"
+    wrf01_ds = salem.open_xr_dataset(
+        fwf_dir + f"/WRF01/fwf/fwf-daily-{domain}-{day1_obs_date}.nc"
     )
+
+    wrfera5_ds = salem.open_xr_dataset(
+        fwf_dir + f"/ERA5WRF03/forecast/fwf-daily-{domain}-{day1_obs_date}.nc"
+    )
+
+    # wrf03_ds = salem.open_xr_dataset(
+    #     fwf_dir + f"/WRF03/fwf/fwf-daily-{domain}-{day1_obs_date}.nc"
+    # )
+
+    # wrf04_ds = salem.open_xr_dataset(
+    #     fwf_dir + f"/WRF04/fwf/fwf-daily-{domain}-{day1_obs_date}.nc"
+    # )
+
     try:
-        day2_ds = salem.open_xr_dataset(
-            nc_filein + f"/forecast/fwf-daily-{domain}-{day2_obs_date}.nc"
-        )
+        ## Get Daily observations CSV
+        url2 = f"https://cwfis.cfs.nrcan.gc.ca/downloads/fwi_obs/current/cwfis_fwi_{day1_obs_date[:-2]}.csv"
+        headers = list(pd.read_csv(url2, nrows=0))
+        obs_df = pd.read_csv(url2, sep=",", names=headers)
+        obs_df = obs_df.drop_duplicates()
+        obs_df = obs_df.drop(obs_df.index[[0]])
+        del obs_df["NAME"]
+        obs_df["wmo"] = obs_df["WMO"].astype(str).astype(int)
+        del obs_df["WMO"]
+        obs_df.columns = obs_df.columns.str.lower()
     except:
-        day2_ds = None
+        filein_obs = (
+            "https://cwfis.cfs.nrcan.gc.ca/downloads/fwi_obs/cwfis_fwi2020sopEC.csv"
+        )
+        obs_df = pd.read_csv(filein_obs, sep=",", skiprows=0)
+        # index obs dateframe to get date of interest
+        obs_df = obs_df[obs_df["rep_date"] == date.strftime("%Y-%m-%d 12:00:00")]
 
-    ### Get a wrf file
-    wrf_filein = "/wrf/"
-    wrf_file_dir = str(data_dir) + wrf_filein
-    wrf_file_dir = sorted(Path(wrf_file_dir).glob(f"wrfout_{domain}_*"))
-    wrf_file = Dataset(wrf_file_dir[0], "r")
-
-    ### Get Daily observations CSV
-    url2 = f"https://cwfis.cfs.nrcan.gc.ca/downloads/fwi_obs/current/cwfis_fwi_{day1_obs_date[:-2]}.csv"
-    headers = list(pd.read_csv(url2, nrows=0))
-    obs_df = pd.read_csv(url2, sep=",", names=headers)
-    obs_df = obs_df.drop_duplicates()
-    obs_df = obs_df.drop(obs_df.index[[0]])
-    del obs_df["NAME"]
-    obs_df["wmo"] = obs_df["WMO"].astype(str).astype(int)
-    del obs_df["WMO"]
-    obs_df.columns = obs_df.columns.str.lower()
-
-    # index obs dateframe to get date of interest
-    # obs_df_on_date = obs_df[
-    #     obs_df["rep_date"] == date.strftime("%Y-%m-%d 12:00:00")
-    # ]
+    # merge with stations data information
     wmo_df = stations_df
     final_df = wmo_df.merge(obs_df, on="wmo", how="left")
-    # merge with stations data information
-    # final_df = wmo_df.merge(obs_df_on_date, on="wmo", how="left")
     final_df = final_df.replace("NULL", np.nan)
     final_df = final_df.replace(" NULL", np.nan)
     final_df = final_df.replace("  NULL", np.nan)
     final_df = final_df.drop_duplicates(subset=["wmo"], keep="last")
+
     ## convert to float 32 for smaller storage
     final_df = final_df.astype(
         {
@@ -165,8 +176,7 @@ for date in date_range:
     ).to_crs(
         "+proj=stere +lat_0=90 +lat_ts=53.25 +lon_0=-110 +x_0=0 +y_0=0 +R=6370000 +units=m +no_defs"
     )
-    # gpm25["west_east"], gpm25["south_north"] = gpm25.geometry.x, gpm25.geometry.y
-    # gpm25.head()
+
     x = xr.DataArray(
         np.array(gpm25.geometry.x),
         dims="wmo",
@@ -177,8 +187,8 @@ for date in date_range:
         dims="wmo",
         coords=dict(wmo=gpm25.wmo.values),
     )
-    south_north, west_east = final_df["y"].values, final_df["x"].values
-    var_list = list(day1_ds)
+
+    var_list = list(wrf01_ds)
     remove = ["r_o_tomorrow", "SNOWC", "r_o_hourly"]
     var_list = list(set(var_list) - set(remove))
     final_var_list = []
@@ -186,55 +196,35 @@ for date in date_range:
         name_lower = cmaps[var]["name"].lower()
 
         ## get era5 models values at wxstation locations
-        var_columns_interp = era5_ds[var].interp(west_east=x, south_north=y).values
-        var_columns_interp = np.array(var_columns_interp, dtype="float32")
-        final_df[name_lower + "_era5_interp"] = var_columns_interp[0, :]
+        final_df[name_lower + "_era5"] = interpolate(era5_ds[var], x, y, "linear")[0, :]
 
-        var_columns = era5_ds[var].values[:, south_north, west_east]
-        var_columns = np.array(var_columns, dtype="float32")
-        final_df[name_lower + "_era5_nearest"] = var_columns[0, :]
+        ## get fwf models values at wxstation locations for wrf01 forecast
+        final_df[name_lower + "_wrf01"] = interpolate(wrf01_ds[var], x, y, "linear")[
+            0, :
+        ]
 
-        ## get fwf models values at wxstation locations for day 1 forecast
-        var_columns_interp = day1_ds[var].interp(west_east=x, south_north=y).values
-        var_columns_interp = np.array(var_columns_interp, dtype="float32")
-        final_df[name_lower + "_day1_interp"] = var_columns_interp[0, :]
+        ## get fwf models values at wxstation locations for wrf02 forecast
+        final_df[name_lower + "_wrfera5"] = interpolate(
+            wrfera5_ds[var], x, y, "linear"
+        )[0, :]
 
-        var_columns = day1_ds[var].values[:, south_north, west_east]
-        var_columns = np.array(var_columns, dtype="float32")
-        final_df[name_lower + "_day1_nearest"] = var_columns[0, :]
+        # ## get fwf models values at wxstation locations for wrf03 forecast
+        # final_df[name_lower + "_wrf03"] = interpolate(wrf03_ds[var], x, y, "linear")[0, :]
 
-        if day2_ds is None:
-            # print('day2_ds is none')
-            a = np.empty(len(south_north))
-            a[:] = np.nan
-            a = np.array(a, dtype="float32")
-            final_df[name_lower + "_day2_interp"] = a
-            final_df[name_lower + "_day2_nearest"] = a
+        # ## get fwf models values at wxstation locations for wrf04 forecast
+        # final_df[name_lower + "_wrf04"] = interpolate(wrf04_ds[var], x, y, "linear")[0, :]
 
-        else:
-            ## get fwf models values at wxstation locations for day 2 forecast
-            var_columns_interp = day2_ds[var].interp(west_east=x, south_north=y).values
-            var_columns_interp = np.array(var_columns_interp, dtype="float32")
-
-            var_columns = day2_ds[var].values[:, south_north, west_east]
-            var_columns = np.array(var_columns, dtype="float32")
-            try:
-                final_df[name_lower + "_day2_interp"] = var_columns_interp[1, :]
-                final_df[name_lower + "_day2_nearest"] = var_columns[1, :]
-            except:
-                a = np.empty(len(south_north))
-                a[:] = np.nan
-                a = np.array(a, dtype="float32")
-                final_df[name_lower + "_day2_interp"] = a
-                final_df[name_lower + "_day2_nearest"] = a
         ## append varible names to list
         final_var_list.append(name_lower)
-        final_var_list.append(name_lower + "_era5_interp")
-        final_var_list.append(name_lower + "_era5_nearest")
-        final_var_list.append(name_lower + "_day1_interp")
-        final_var_list.append(name_lower + "_day1_nearest")
-        final_var_list.append(name_lower + "_day2_interp")
-        final_var_list.append(name_lower + "_day2_nearest")
+        final_var_list.append(name_lower + "_era5")
+        final_var_list.append(name_lower + "_wrf01")
+        final_var_list.append(name_lower + "_wrfera5")
+        # final_var_list.append(name_lower + "_wrf03")
+        # final_var_list.append(name_lower + "_wrf04")
+
+    final_df["snowc"] = interpolate(wrf01_ds["SNOWC"], x, y, "nearest")[0, :]
+    # print(final_df["snowc"])
+    final_var_list.append("snowc")
 
     wmos = final_df["wmo"].values
     _, index, count = np.unique(wmos, return_index=True, return_counts=True)
@@ -246,10 +236,10 @@ for date in date_range:
     elevs = final_df["elev"].values.astype("float32")
     tz_correct = final_df["tz_correct"].values.astype(int)
     try:
-        day = np.array(day1_ds.Time[0], dtype="datetime64[D]")
+        day = np.array(wrf01_ds.Time[0], dtype="datetime64[D]")
         # day = np.array(day1_ds.Time[1], dtype="datetime64[D]")
     except:
-        day = np.array(day1_ds.Time, dtype="datetime64[D]")
+        day = np.array(wrf01_ds.Time, dtype="datetime64[D]")
 
     xr_list = []
     for var in final_var_list:
@@ -283,42 +273,32 @@ for date in date_range:
     ).upper()
     for var in var_list:
         name_lower = cmaps[var]["name"].lower()
-        attrs = day1_ds[var].attrs
+        attrs = wrf01_ds[var].attrs
         intercomp_today_ds[name_lower].attrs["description"] = attrs
         intercomp_today_ds[name_lower].attrs["description"] = (
             "OBSERVED " + attrs["description"]
         )
 
-        intercomp_today_ds[name_lower + "_era5_interp"].attrs["description"] = attrs
-        intercomp_today_ds[name_lower + "_era5_interp"].attrs["description"] = (
+        intercomp_today_ds[name_lower + "_era5"].attrs["description"] = attrs
+        intercomp_today_ds[name_lower + "_era5"].attrs["description"] = (
             "ERA5 INTERPOLATED " + attrs["description"]
         )
+        # for i in range(1,5):
+        #     # print(i)
+        #     intercomp_today_ds[name_lower + f"_wrf0{i}"].attrs["description"] = attrs
+        #     intercomp_today_ds[name_lower + f"_wrf0{i}"].attrs["description"] = (
+        #         f"WRF0{i} INTERPOLATED FORECASTED " + attrs["description"]
+        #     )
 
-        intercomp_today_ds[name_lower + "_era5_nearest"].attrs["description"] = attrs
-        intercomp_today_ds[name_lower + "_era5_nearest"].attrs["description"] = (
-            "ERA5 NEAREST NEIGHBOR " + attrs["description"]
+        intercomp_today_ds[name_lower + f"_wrf01"].attrs["description"] = attrs
+        intercomp_today_ds[name_lower + f"_wrf01"].attrs["description"] = (
+            f"WRF01 INTERPOLATED FORECASTED " + attrs["description"]
         )
 
-        intercomp_today_ds[name_lower + "_day1_interp"].attrs["description"] = attrs
-        intercomp_today_ds[name_lower + "_day1_interp"].attrs["description"] = (
-            "ONE DAY INTERPOLATED FORECASTED " + attrs["description"]
+        intercomp_today_ds[name_lower + f"_wrfera5"].attrs["description"] = attrs
+        intercomp_today_ds[name_lower + f"_wrfera5"].attrs["description"] = (
+            f"WRF01 INTERPOLATED FORECASTED " + attrs["description"]
         )
-
-        intercomp_today_ds[name_lower + "_day1_nearest"].attrs["description"] = attrs
-        intercomp_today_ds[name_lower + "_day1_nearest"].attrs["description"] = (
-            "ONE DAY NEAREST NEIGHBOR FORECASTED " + attrs["description"]
-        )
-
-        intercomp_today_ds[name_lower + "_day2_interp"].attrs["description"] = attrs
-        intercomp_today_ds[name_lower + "_day2_interp"].attrs["description"] = (
-            "TWO DAY INTERPOLATED FORECASTED " + attrs["description"]
-        )
-
-        intercomp_today_ds[name_lower + "_day2_nearest"].attrs["description"] = attrs
-        intercomp_today_ds[name_lower + "_day2_nearest"].attrs["description"] = (
-            "TWO DAY NEAREST NEIGHBOR FORECASTED " + attrs["description"]
-        )
-
     intercomp_today_dir = day1_obs_date[:-2]
     intercomp_yesterday_dir = day2_obs_date[:-2]
 

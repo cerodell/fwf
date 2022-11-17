@@ -70,7 +70,9 @@ class FWF:
     """ ######################## Initialize FWI model #########################"""
     """########################################################################"""
 
-    def __init__(self, filein_dir, domain, iterator, fbp_mode, initialize, forecast):
+    def __init__(
+        self, filein_dir, domain, iterator, fbp_mode, initialize, forecast, config
+    ):
         """
         Initialize Fire Weather Index Model
 
@@ -82,7 +84,7 @@ class FWF:
             if "era5" in filein_dir:
                 print("Updating Fuel Codes with ERA5")
                 int_ds = config_era5(filein_dir)
-                self.save_dir = "/Volumes/WFRT-Data02/FWF-WAN00CG/d02/era5"
+                self.save_dir = f"/Volumes/WFRT-Data02/FWF-WAN00CG/d02/{config}/era5/"
 
             else:
                 print("Re-run using nc file")
@@ -99,18 +101,21 @@ class FWF:
                     "WD",
                     "r_o",
                     "H",
+                    "Df",
+                    "r_w",
                 ]
                 int_ds = int_ds.drop(
                     [var for var in list(int_ds) if var not in keep_vars]
                 )
                 # int_ds = int_ds.isel(time=slice(0, 24))
                 # print(int_ds)
-                self.save_dir = "/Volumes/WFRT-Data02/FWF-WAN00CG/d02/fwf"
+                # self.save_dir = "/Volumes/WFRT-Data02/FWF-WAN00CG/d02/ERA5WRF02/fwf/"
+                self.save_dir = f"/Volumes/WFRT-Data02/FWF-WAN00CG/d02/{config}/fwf/"
 
         else:
             print("New-run, use readwrf to get vars from nc files")
             int_ds = readwrf(filein_dir, domain, wright=False)
-            self.save_dir = "/Volumes/WFRT-Data02/FWF-WAN00CG/d02/fwf"
+            self.save_dir = f"/Volumes/WFRT-Data02/FWF-WAN00CG/d02/{config}/fwf"
         ###########################################################################################################
 
         ############ Set up dataset and get attributes ################
@@ -118,6 +123,7 @@ class FWF:
         self.attrs = int_ds.attrs
         self.forecast = forecast
         self.initialize = initialize
+        self.config = config
 
         ############ Mathematical Constants and UsefulArrays ################
         ### Math Constants
@@ -134,7 +140,18 @@ class FWF:
         shape = np.shape(self.int_ds.T[0, :, :])
         self.shape = shape
         self.domain = domain
-        self.iterator_dir = f"/Volumes/WFRT-Data02/FWF-WAN00CG/d02/{iterator}/"
+        # if iterator == 'era5':
+        #     print('Getting ERA5 from old config ERA501')
+        #     self.iterator_dir = f"/Volumes/WFRT-Data02/FWF-WAN00CG/d02/ERA501/{iterator}/"
+        #     print(self.iterator_dir)
+        # else:
+        #     self.iterator_dir = f"/Volumes/WFRT-Data02/FWF-WAN00CG/d02/{config}/{iterator}/"
+        #     print(self.iterator_dir)
+        self.iterator_dir = f"/Volumes/WFRT-Data02/FWF-WAN00CG/d02/{config}/{iterator}/"
+
+        ## TODO remove this when operational
+        self.filein_dir = filein_dir.rsplit("/", 1)[0]
+
         print("Domain shape:  ", shape)
 
         # self.e_full    = np.full(shape,e, dtype=float)
@@ -212,6 +229,7 @@ class FWF:
 
         ### Create an hourly and daily datasets for use with their respected codes/indices
         self.daily_ds = self.create_daily_ds(self.int_ds)
+
         for var in self.hourly_ds.data_vars:
             if var in {"SNW", "SNOWH", "U10", "V10"}:
                 pass
@@ -225,8 +243,11 @@ class FWF:
     def iteration(self, timestep):
         int_time = self.int_ds.Time.values
 
+        self.FS_mask(int_time, "hourly")
+
         if timestep == "hourly":
             previous_hourly_ds = self.ds_retriever(int_time, timestep)
+
             # """ ################## Fine Fuel Moisture Code (FFMC) ##################### """
             ### Open previous days hourly_ds
             previous_time = np.array(previous_hourly_ds.Time.dt.strftime("%Y-%m-%dT%H"))
@@ -310,6 +331,27 @@ class FWF:
             D = xr.DataArray(D, name="D", dims=("south_north", "west_east"))
             self.D = D
 
+            # """ #####################    Fall Drought Code (DC)       ########################### """
+            ### Get last time step of Df that coincides with the
+            ### initialization time of current model run
+            Df = np.array(previous_daily_ds.Df[index])
+            Df = xr.DataArray(Df, name="Df", dims=("south_north", "west_east"))
+            self.Df = Df
+
+            # """ #####################     Winter Rain Fall (r_w)       ########################### """
+            ### Get last time step of r_w that coincides with the
+            ### initialization time of current model run
+            r_w = np.array(previous_daily_ds.r_w[index])
+            r_w = xr.DataArray(r_w, name="r_w", dims=("south_north", "west_east"))
+            self.r_w = r_w
+
+            # """ #####################     Fire Season Mask (FSy)       ########################### """
+            ### Get last time step of FS that coincides with the
+            ### initialization time of current model run
+            FSy = np.array(previous_daily_ds.FS[index])
+            FSy = xr.DataArray(FSy, name="FSy", dims=("south_north", "west_east"))
+            self.FSy = FSy
+
         else:
             raise ValueError(
                 f"ERROR: {timestep} is not a valid option for timestep, only hourly or daily are at this time"
@@ -382,6 +424,31 @@ class FWF:
             D = xr.DataArray(D_o_full, name="D", dims=("south_north", "west_east"))
             self.D = D
 
+            # """ #####################    Fall Drought Code (DC)       ########################### """
+            print(f"{initialize}: Initialize DCf on date {int_time}, with 15s")
+            D_f = self.D_initial
+            D_f_full = np.full(shape, D_f, dtype=float)
+            Df = xr.DataArray(D_f_full, name="Df", dims=("south_north", "west_east"))
+            self.Df = Df
+
+            # """ #####################     Winter Rain Fall (r_w)       ########################### """
+            print(f"{initialize}: Initialize r_w on date {int_time}, with zeros")
+            r_w = np.full(shape, 0, dtype=float)
+            r_w = xr.DataArray(r_w, name="r_w", dims=("south_north", "west_east"))
+            self.r_w = r_w
+
+            # """ #####################     Fire Season Mask (FSy)       ########################### """
+            print(f"{initialize}: Initialize FSy on date {int_time}, with zeros")
+            FSy = np.full(shape, 0, dtype=float)
+            FSy = xr.DataArray(FSy, name="FSy", dims=("south_north", "west_east"))
+            self.FSy = FSy
+
+            # """ #####################     Temperature Maximum (TMAX)       ########################### """
+            print(
+                f"{initialize}: Initialize TMAX on date {int_time}, with max tmeps on that date"
+            )
+            self.TMAX = self.hourly_ds.T.max(dim="time")
+
         elif initialize == False:
 
             self.iteration(timestep)
@@ -390,6 +457,97 @@ class FWF:
             raise ValueError(
                 "ERROR: Can Not Run FWF Model With initialize Option Provided"
             )
+
+        return
+
+    """########################################################################"""
+    """ ############ Get average snow cover for past 5 days ###################"""
+    """########################################################################"""
+
+    def FS_mask(self, time_array, timestep):
+
+        FSy = self.FSy
+        print("runnig TMAX")
+
+        int_time = int(pd.Timestamp(time_array[0]).hour)
+        length = len(time_array) + 1
+        num_days = [i - 12 for i in range(1, length) if i % 24 == 0]
+        index = [
+            i - int_time if 12 - int_time >= 0 else i + 24 - int_time for i in num_days
+        ]
+
+        # for
+        if timestep == "daily":
+            tslice = 0
+        elif timestep == "hourly":
+            tslice = slice(0, 24)
+        else:
+            raise ValueError(
+                f"Invalide timesept option of {timestep}, can only take daily or hourly"
+            )
+
+        previous_dss = []
+        for i in range(3, 0, -1):
+            retrieve_time_np = time_array[0] - np.timedelta64(i, "D")
+            retrieve_time = pd.to_datetime(retrieve_time_np).strftime("%Y%m%d06")
+            int_file_dir = (
+                str(self.filein_dir)
+                + f"/fwf-{timestep}-{self.domain}-{retrieve_time}.nc"
+            )
+            try:
+                da = (
+                    xr.open_dataset(int_file_dir)
+                    .isel(time=tslice)
+                    .chunk("auto")
+                    .T.max(dim="time")
+                )
+                # da = xr.open_dataset(int_file_dir).isel(time = tslice).chunk('auto').SNOWC.mean(dim = 'time')
+                da = da.assign_coords(
+                    {"Time": retrieve_time_np.astype("datetime64[D]")}
+                )
+                previous_dss.append(da)
+            except:
+                pass
+
+        try:
+            cont_ds = xr.concat(previous_dss, dim="time")
+            TMAX = cont_ds.mean(dim="time")
+            TMAX = TMAX.assign_coords({"Time": time_array[0].astype("datetime64[D]")})
+            ## TMAX for the tow day forecast
+            da = self.hourly_ds.isel(time=tslice).chunk("auto").T.max(dim="time")
+            da = da.assign_coords({"Time": time_array[0].astype("datetime64[D]")})
+            previous_dss.append(da)
+            cont_ds = xr.concat(previous_dss[1:], dim="time")
+            TMAX2 = cont_ds.mean(dim="time").load()
+            retrieve_time_np = time_array[0] + np.timedelta64(i, "D")
+            TMAX2 = TMAX2.assign_coords(
+                {"Time": retrieve_time_np.astype("datetime64[D]")}
+            )
+            TMAX = xr.concat([TMAX, TMAX2], dim="time")
+        except:
+
+            TMAX = xr.concat([TMAX, TMAX], dim="time")
+
+        nan_full = np.full(TMAX.shape, np.nan)
+        FSi = xr.where(TMAX < 5, 1, nan_full)
+        FSi = xr.where(TMAX > 12, 0, FSi)
+        print("FSi")
+        print(FSi)
+
+        ## take dif of yesterdays FS mask minus intermediate FS mask
+        dFS = FSy - FSi
+        print("dFS")
+        print(dFS)
+        self.dFS = xr.DataArray(
+            dFS, name="dFS", dims=("time", "south_north", "west_east")
+        )
+
+        ## create todays FS binary mask
+        FS = xr.where(dFS == -1, 1, FSy)
+        FS = xr.where(dFS == 1, 0, FS)
+        print("FS")
+        print(FS)
+        self.FS = xr.DataArray(FS, name="FS", dims=("time", "south_north", "west_east"))
 
         return
 
@@ -542,13 +700,12 @@ class FWF:
 
     def solve_ffmc(self, daily_ds):
 
-        W, T, H, r_o, F_o, SNOWC = (
+        W, T, H, r_o, F_o = (
             daily_ds.W,
             daily_ds.T,
             daily_ds.H,
             daily_ds.r_o,
             self.F,
-            daily_ds.SNOWC,
         )
 
         # #Eq. 1
@@ -624,8 +781,8 @@ class FWF:
         ########################################################################
         ### (6) Solve for FFMC
         F = (59.5 * (250 - m)) / (147.2 + m)  ## Van 1985
-        # Hold P to P_initial if snow cover is more than 80%
-        F = np.where(SNOWC > self.snowfract, self.F_initial, F)
+        # Hold P to P_initial if snow cover is over snowfract
+        # F = np.where(SNOWC > self.snowfract, self.F_initial, F)
         F = np.where(F < 1, 1.0, F)
 
         F = xr.DataArray(F, name="F", dims=("south_north", "west_east"))
@@ -685,14 +842,13 @@ class FWF:
             - Adds DMC to DataSet
         """
 
-        W, T, H, r_o, P_o, L_e, SNOWC = (
+        W, T, H, r_o, P_o, L_e = (
             daily_ds.W,
             daily_ds.T,
             daily_ds.H,
             daily_ds.r_o,
             self.P,
             self.L_e,
-            daily_ds.SNOWC,
         )
 
         zero_full = self.zero_full
@@ -744,8 +900,8 @@ class FWF:
         ########################################################################
         ### (17) Duff moisture
         P = P_r + K
-        # Hold P to P_initial if snow cover is more than 80%
-        P = np.where(SNOWC > self.snowfract, self.P_initial, P)
+        # Hold P to P_initial if snow cover is over snowfract
+        # P = np.where(SNOWC > self.snowfract, self.P_initial, P)
         P = np.where(P < 1, 1.0, P)
         P = xr.DataArray(P, name="P", dims=("south_north", "west_east"))
 
@@ -803,17 +959,15 @@ class FWF:
             - Adds DC dataset
         """
         ### Call on initial conditions
-        W, T, H, r_o, D_o, L_f, SNOWC = (
-            daily_ds.W,
+        T, r_o, L_f, r_w = (
             daily_ds.T,
-            daily_ds.H,
             daily_ds.r_o,
-            self.D,
             self.L_f,
-            daily_ds.SNOWC,
+            daily_ds.r_w,
         )
 
-        zero_full = self.zero_full
+        D_o, Df = self.overwinter_dc(daily_ds)
+
         ## Hold T to min value
         T = np.where(T < (-2.8), -2.8, T)
 
@@ -839,20 +993,55 @@ class FWF:
 
         ########################################################################
         ### (22) Solve for potential evapotranspiration (V)
-        # V = (0.36 * (T + 2.8)) + L_f
         V = (0.36 * (T + 2.8)) + L_f
         V = np.where(V < 0, 0.0, V)
 
         ########################################################################
         ## Alteration to Eq. 23 (Lawson 2008)
         D = D_r + V * 0.5
-        # Hold D to D_initial if snow cover is more than 80%
-        D = np.where(SNOWC > self.snowfract, self.D_initial, D)
-        D = np.where(D < 1, 1.0, D)
+
+        ########################################################################
+        # Hold D to D_initial if snow cover is over snowfract
+        # D = np.where(SNOWC > self.snowfract, self.D_initial, D)
+
+        ## Constrain DC and make into DataArray
+        D = np.where(D < self.D_initial, self.D_initial, D)
         D = xr.DataArray(D, name="D", dims=("south_north", "west_east"))
 
         self.D = D
-        return D
+        self.Df = Df
+
+        return D, Df
+
+    """########################################################################"""
+    """ ###################### Overwinter Drought Code ########################"""
+    """########################################################################"""
+
+    def overwinter_dc(self, daily_ds):
+        Df, D, r_w, dFS = (self.Df, self.D, daily_ds.r_w, daily_ds.dFS)
+        ## TODO update coefficients, these are the defaults as suggested by Lawson and Armitage (2008) and Anderson and Otway (2003)
+        a, b = 1, 0.75
+
+        ## Eq. 3 - Final fall moisture equivalent of the DC
+        Qf = 800 * np.exp(-Df / 400)
+        ## Eq. 2 - Starting spring moisture equivalent of the DC
+        Qs = a * Qf + b * (3.94 * r_w)
+
+        ## Eq. 4 - Spring start-up value for the DC
+        Ds = 400 * np.log(800 / Qs)
+
+        ## Apply FS mask to fill Ds at start up locations
+        D = np.where(dFS == 1, Ds, D)
+
+        ## Constrain DC and make into DataArray
+        D = np.where(D < self.D_initial, self.D_initial, D)
+        D = xr.DataArray(D, name="D", dims=("south_north", "west_east"))
+
+        ## Apply FS mask to save D as Df if winter oneset occured
+        Df = np.where(dFS == -1, D, Df)
+        Df = xr.DataArray(Df, name="Df", dims=("south_north", "west_east"))
+
+        return D, Df
 
     """########################################################################"""
     """ #################### Initial Spread Index #############################"""
@@ -1651,7 +1840,7 @@ class FWF:
         Parameters
         ----------
             int_ds: DataSet
-                WRF dataset at 4-km spatial resolution and one hour tempolar resolution
+                WRF dataset at 4/12-km spatial resolution and one hour tempolar resolution
 
         Returns
         -------
@@ -1670,6 +1859,7 @@ class FWF:
 
         ## determine index for looping based on length of time array and initial time
         time_array = int_ds.Time.values
+        print(time_array[0])
         int_time = int(pd.Timestamp(time_array[0]).hour)
         length = len(time_array) + 1
         num_days = [i - 12 for i in range(1, length) if i % 24 == 0]
@@ -1697,6 +1887,7 @@ class FWF:
                     )
                     var_da["Time"] = day
                     mean_da.append(var_da)
+                    pass
                 else:
                     var_array = int_ds[var].values
                     noon_minus = var_array[(i + tzone - 1), I, J]
@@ -1800,15 +1991,30 @@ class FWF:
 
         length = len(self.daily_ds.time)
 
+        r_w = np.where(self.dFS == -1, 0, self.r_w.values)
+        # ## create dataarray of accumualted preciptaiton on model grids, this is used for over wintering
+        r_w = [r_w + self.daily_ds["r_o"].isel(time=i).values for i in range(length)]
+        r_w = np.stack(r_w)
+        r_w = xr.DataArray(
+            r_w,
+            name="r_w",
+            dims=("time", "south_north", "west_east"),
+            coords=self.daily_ds.coords,
+        )
+        self.daily_ds["r_w"] = r_w
+        self.daily_ds["dFS"] = self.dFS
+        self.daily_ds["FS"] = self.FS
+
         daily_list = []
         print("Start Daily loop length: ", length)
         for i in range(length):
             F = self.solve_ffmc(self.daily_ds.isel(time=i))
             P = self.solve_dmc(self.daily_ds.isel(time=i))
-            D = self.solve_dc(self.daily_ds.isel(time=i))
+            D, Df = self.solve_dc(self.daily_ds.isel(time=i))
             ds = F.to_dataset(name="F")
             ds["P"] = P
             ds["D"] = D
+            ds["Df"] = Df
             daily_list.append(ds)
         print("Daily loop done")
         daily_ds = xr.combine_nested(daily_list, "time")
@@ -1826,6 +2032,9 @@ class FWF:
         daily_ds["U"] = U
         daily_ds["S"] = FWI
         daily_ds["DSR"] = DSR
+        daily_ds["dFS"] = self.dFS
+        daily_ds["FS"] = self.FS
+
         self.U = U
         return daily_ds
 
@@ -1948,9 +2157,13 @@ class FWF:
         daily_ds.to_netcdf(make_dir, mode="w")
         print("Write Time: ", datetime.now() - writeTime)
         print(f"wrote working {make_dir}")
+        print(daily_ds)
+
         if self.forecast == True:
             forecast_dir = (
-                str("/Volumes/WFRT-Data02/FWF-WAN00CG/d02/forecast/fwf-daily-")
+                str(
+                    f"/Volumes/WFRT-Data02/FWF-WAN00CG/d02/{self.config}/forecast/fwf-daily-"
+                )
                 + self.domain
                 + str(f"-{file_date}.nc")
             )

@@ -24,13 +24,8 @@ __email__ = "crodell@eoas.ubc.ca"
 """########################################################################"""
 
 
-def solve_ffmc(ds):
+def solve_ffmc(ds, F):
     W, T, H, r_o = (ds.W, ds.T, ds.H, ds.r_o)
-    try:
-        F = ds.F
-    except:
-        print("Initalizing FFMC")
-        F = np.full(W.shape, 85, dtype=float)
 
     # #Eq. 1
     m_o = 147.2 * (101 - F) / (59.5 + F)
@@ -176,7 +171,7 @@ def solve_dmc(ds, P, L_e):
     ### (17) Duff moisture
     P = P_r + K
 
-    P = xr.DataArray(P, name="P", dims=("temp", "wind", "rh", "precip"))
+    # P = xr.DataArray(P, name="P", dims=("temp", "wind", "rh", "precip"))
     ds["P"] = P
 
     return ds
@@ -228,7 +223,7 @@ def solve_dc(ds, D, L_f):
     ########################################################################
     ## Alteration to Eq. 23 (Lawson 2008)
     D = D_r + V * 0.5
-    D = xr.DataArray(D, name="D", dims=("temp", "wind", "rh", "precip"))
+    # D = xr.DataArray(D, name="D", dims=("temp", "wind", "rh", "precip"))
     ds["D"] = D
 
     return ds
@@ -241,7 +236,9 @@ def solve_dc(ds, D, L_f):
 
 def solve_isi(ds, fbp=False):
     ### Call on initial conditions
-    W, m_o = ds.W, ds.m_o
+    W, F = ds.W, ds.F
+
+    m_o = 147.2 * (101 - F) / (59.5 + F)
 
     ########################################################################
     ### (24) Solve for wind function (f_W) with condition for fbp
@@ -258,7 +255,7 @@ def solve_isi(ds, fbp=False):
     ########################################################################
     ### (26) Solve for initial spread index (R)
     R = 0.208 * f_W * f_F
-    R = xr.DataArray(R, name="R", dims=("temp", "wind", "rh", "precip"))
+    # R = xr.DataArray(R, name="R", dims=("temp", "wind", "rh", "precip"))
     ds["R"] = R
 
     return ds
@@ -286,7 +283,7 @@ def solve_bui(ds):
     )
 
     U = U_low + U_high
-    U = xr.DataArray(U, name="U", dims=("temp", "wind", "rh", "precip"))
+    # U = xr.DataArray(U, name="U", dims=("temp", "wind", "rh", "precip"))
     ds["U"] = U
 
     return ds
@@ -318,13 +315,13 @@ def solve_fwi(ds):
     ########################################################################
     ### (30) Solve FWI
     S = xr.where(B <= 1, B, np.exp(2.72 * np.power((0.434 * np.log(B)), 0.647)))
-    S = xr.DataArray(S, name="S", dims=("temp", "wind", "rh", "precip"))
+    # S = xr.DataArray(S, name="S", dims=("temp", "wind", "rh", "precip"))
     ds["S"] = S
 
     ########################################################################
     ### (31) Solve for daily severity rating (DSR)
     DSR = 0.0272 * np.power(S, 1.77)
-    DSR = xr.DataArray(DSR, name="DSR", dims=("temp", "wind", "rh", "precip"))
+    # DSR = xr.DataArray(DSR, name="DSR", dims=("temp", "wind", "rh", "precip"))
     ds["DSR"] = DSR
 
     return ds
