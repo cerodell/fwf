@@ -29,8 +29,8 @@ __email__ = "crodell@eoas.ubc.ca"
 warnings.filterwarnings("ignore", category=RuntimeWarning)
 
 wrf_model = "wrf4"
-# date_range = pd.date_range("2021-01-02", "2021-01-02")
-date_range = pd.date_range("2021-01-01", "2021-01-01")
+date_range = pd.date_range("2021-01-02", "2022-12-30")
+# date_range = pd.date_range("2021-01-01", "2021-01-01")
 
 # """######### get directory to yesterdays hourly/daily .nc files.  #############"""
 for date in date_range:
@@ -132,9 +132,10 @@ for date in date_range:
             domain,
             iterator="fwf",
             fbp_mode=False,
-            initialize=True,
+            overwinter=False,
+            initialize=False,
             forecast=False,
-            config="WRF05",
+            config="WRF06",
         )
         coeff.daily()
         # coeff.hourly()
