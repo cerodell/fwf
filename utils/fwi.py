@@ -194,6 +194,8 @@ def solve_dc(ds, D, L_f):
         L_f,
     )
 
+    T = np.where(T < (-2.8), -2.8, T)
+
     ########################################################################
     ### (18) Solve for the effective rain (r_d)
     r_d = 0.83 * r_o - 1.27
@@ -209,8 +211,8 @@ def solve_dc(ds, D, L_f):
     ########################################################################
     ### (21) Solve for DC after rain (D_r)
     ## Alteration to Eq. 21 (Lawson 2008)
-    # D_r = D_o - 400 * np.log(1 + 3.937 * r_d / Q_o)
-    D_r = 400 * np.log(800 / Q_r)
+    D_r = D_o - 400 * np.log(1 + 3.937 * r_d / Q_o)
+    # D_r = 400 * np.log(800 / Q_r)
     D_r = xr.where(D_r < 0, 0.0, D_r)
     D_r = xr.where(r_o <= 2.8, D_o, D_r)
 

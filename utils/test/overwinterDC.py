@@ -19,15 +19,21 @@ from context import data_dir
 
 timestep = "hourly"
 domain = "d02"
-iterator_dir = "/Volumes/WFRT-Data02/FWF-WAN00CG/d02/WRF02/fwf"
-# int_time =  xr.open_dataset(str(iterator_dir) + f"/fwf-{timestep}-{domain}-2021050106.nc").Time.values
-hourly_ds = xr.open_dataset(
-    str(iterator_dir) + f"/fwf-{timestep}-{domain}-2021010606.nc"
-).chunk("auto")
-# hourly_dsY = xr.open_dataset(str(iterator_dir) + f"/fwf-{timestep}-{domain}-2021043006.nc")
+iterator = "fwf"
+## test fwf with an hourly_ds
+filein_dir = "/Volumes/Scratch/FWF-WAN00CG/d02/202104/"
 
+# hourly_list = [xr.open_dataset(str(filein_dir) + f"fwf-{timestep}-{domain}-202104{i}06.nc").isel(time=slice(0,24)).chunk("auto")  for i in range(10,30)]
+# hourly_ds = xr.concat(hourly_list, dim="time", coords='minimal') #.load()
 
-daily_ds = xr.open_dataset(str(iterator_dir) + f"/fwf-daily-{domain}-2021010606.nc")
+hourly_ds = xr.open_dataset(str(filein_dir) + f"fwf-{timestep}-{domain}-2021041006.nc")
+# %%
+## test era5 with an hourly_ds
+# int_file_dir = f"/Volumes/WFRT-Data02/era5/fwf/fwf-{timestep}-{domain}-2020010106.nc"
+# hourly_ds = xr.open_dataset(int_file_dir).chunk("auto")
+
+## open a daily_ds as test
+# daily_ds = xr.open_dataset(str(filein_dir) + f"fwf-daily-{domain}-2021010606.nc")
 
 ## Open gridded static
 static_ds = xr.open_dataset(str(data_dir) + f"/static/static-vars-wrf4-{domain}.nc")
@@ -39,21 +45,28 @@ shape = tzone.shape
 FSy = np.full(shape, 0, dtype=float)
 FSy = xr.DataArray(FSy, name="FSy", dims=("south_north", "west_east"))
 
-## create I, J for quick indexing
-# I, J = np.ogrid[: shape[0], : shape[1]]
+r_w = np.random.randint(0, 300, size=shape)
+r_w = xr.DataArray(r_w, name="r_w", dims=("south_north", "west_east"))
+
+
+FS_days = np.random.randint(0, 300, size=shape)
+FS_days = xr.DataArray(FS_days, name="FS_days", dims=("south_north", "west_east"))
 
 ## determine index for looping based on length of time array and initial time
 time_array = hourly_ds.Time.values
 
-# retrieve_time_np = time_array[0] - np.timedelta64(1, "D")
-# retrieve_time = pd.to_datetime(retrieve_time_np).strftime("%Y%m%d06")
-# int_file_dir = (
-#     str(iterator_dir) + f"/fwf-{timestep}-{domain}-{retrieve_time}.nc"
-# )
-# ds_yesterday = xr.open_dataset(str(iterator_dir) + f"/fwf-{timestep}-{domain}-{retrieve_time}.nc").isel(time = slice(0,24)).chunk('auto')
-# hourly_ds_merge = xr.concat([ds_yesterday, hourly_ds], dim = 'time')
+
+"""########################################################################"""
+""" ####### Creat and fire season mask and based on tmax condition ########"""
+"""########################################################################"""
 
 
+FSy = FSy
+r_w = r_w
+XLAT = hourly_ds.XLAT.values
+XLONG = hourly_ds.XLONG.values
+
+## define time slicing based on hourly or daily data
 if timestep == "daily":
     tslice = 0
 elif timestep == "hourly":
@@ -63,277 +76,171 @@ else:
         f"Invalide timesept option of {timestep}, can only take daily or hourly"
     )
 
+## loop and try and open datasets from today to four days in the past
 previous_dss, days_of_max = [], []
-for i in range(4, -1, -1):
+for i in range(32, -1, -1):
     retrieve_time_np = time_array[0] - np.timedelta64(i, "D")
-    retrieve_time = pd.to_datetime(retrieve_time_np).strftime("%Y%m%d06")
-    int_file_dir = str(iterator_dir) + f"/fwf-{timestep}-{domain}-{retrieve_time}.nc"
+    retrieve_time = pd.to_datetime(retrieve_time_np).strftime("%Y%m%d%H")
+    if iterator == "fwf":
+        int_file_dir = (
+            str(filein_dir.rsplit("/", 2)[0])
+            + f"/{pd.to_datetime(retrieve_time_np).strftime('%Y%m')}/fwf-{timestep}-{domain}-{retrieve_time}.nc"
+        )
+    elif iterator == "era5":
+        int_file_dir = (
+            filein_dir.rsplit("/", 1)[0]
+            + f"/fwf-{timestep}-{domain}-{retrieve_time}.nc"
+        )
+    else:
+        raise ValueError("Bad iterator")
+
     try:
         if i == 0:
             da = xr.open_dataset(int_file_dir).chunk("auto").T
         else:
             da = xr.open_dataset(int_file_dir).isel(time=tslice).chunk("auto").T
-        # da = xr.open_dataset(int_file_dir).isel(time = tslice).chunk('auto').SNOWC.mean(dim = 'time')
         previous_dss.append(da)
         days_of_max.append(retrieve_time_np.astype("datetime64[D]"))
     except:
         pass
 
-
-cont_ds = xr.concat(previous_dss, dim="time").load()
-
-
+## combine the dataset into one continuous dataarray
+cont_ds = xr.concat(previous_dss, dim="time", coords="minimal").load()
+# print(cont_ds)
+## find all index of 00Z in the continuous dataarray based on the inital time
 time_array = cont_ds.Time.values
-
-print(time_array[0])
+# print(time_array[0])
 int_time = int(pd.Timestamp(time_array[0]).hour)
 length = len(time_array) + 1
 num_days = [i - 0 for i in range(1, length) if i % 24 == 0]
 index = [i - int_time if 12 - int_time >= 0 else i + 24 - int_time for i in num_days]
 index = index[:-1]
-print(f"index of times {index} with initial time {int_time}Z")
+if (len(cont_ds.time) - index[-1]) < (24 + float(np.max(tzone))):
+    index = index[:-1]
+else:
+    pass
+if iterator == "fwf":
+    pass
+elif iterator == "era5":
+    index = [0] + index
+else:
+    raise ValueError("Bad iterator")
 
-
+print(f"index of 00Z times {index} with initial time {int_time}Z")
+## loop every 00Z index and find daily max temps between local midnight to midnight using an array of utc offsets
 da_j_list = []
 for j in range(len(index)):
-    print(j)
     da_i_list = []
     for i in range(index[j], index[j] + 24):
-        print(i)
         ind_a = xr.DataArray(i + tzone, dims=["south_north", "west_east"])
         da_i = cont_ds.isel(time=ind_a)
+        try:
+            da_i = da_i.drop(["time"])
+        except:
+            pass
         da_i_list.append(da_i)
     da_j = xr.concat(da_i_list, dim="time").max(dim="time")
-    da_j = da_j.assign_coords({"Time": days_of_max[j]})
+    da_j = da_j.assign_coords(
+        {
+            "Time": days_of_max[j],
+            "XLAT": (("south_north", "west_east"), XLAT),
+            "XLONG": (("south_north", "west_east"), XLONG),
+        }
+    )
     da_j_list.append(da_j)
 
 TMAX_da = xr.concat(da_j_list, dim="time")
 
-
+## apply a try condition for when datas in the past doesn't exist
 ## TODO this is hacky, needs to be more robust for longer NWP forecast (only good for two day forecasts)
 try:
-    TMAX_today = (
+    TMAX_yesterday = (
         TMAX_da.isel(time=slice(0, 3))
+        .max(dim="time")
+        .assign_coords({"Time": days_of_max[-2]})
+    )
+    TMAX_today = (
+        TMAX_da.isel(time=slice(1, 4))
         .max(dim="time")
         .assign_coords({"Time": days_of_max[-1]})
     )
-    TMAX_tomorrow = (
-        TMAX_da.isel(time=slice(1, 4))
-        .max(dim="time")
-        .assign_coords({"Time": days_of_max[-1] + np.timedelta64(1, "D")})
-    )
-    TMAX = xr.concat([TMAX_today, TMAX_tomorrow], dim="time")
+    TMAX = xr.concat([TMAX_yesterday, TMAX_today], dim="time")
 except:
     TMAX = xr.concat(
         [
+            TMAX_da.assign_coords({"Time": days_of_max[0] - np.timedelta64(1, "D")}),
             TMAX_da.assign_coords({"Time": days_of_max[0]}),
-            TMAX_da.assign_coords({"Time": days_of_max[0] + np.timedelta64(1, "D")}),
         ],
         dim="time",
     )
+# if len(daily_ds.time) == 1:
+#     TMAX = xr.concat([TMAX_yesterday], dim="time")
+# else:
+#     pass
 
+# TMAX = TMAX_da
 
+# %%
+TMAX = xr.concat(
+    [
+        TMAX_da.isel(time=slice(i, i + 3))
+        .max(dim="time")
+        .assign_coords({"Time": days_of_max[i]})
+        for i in range(int(len(days_of_max) / 3))
+    ],
+    dim="time",
+)
 ## apply fire season onset condtions and create binary mask
-dFS_list, FS_list = [], []
+dFS_list, FS_list, r_w_list, FS_days_list = [], [], [], []
 for i in range(len(TMAX)):
+
+    FS_daysL = FS_days + 1
+    FS_days = FS_daysL
     TMAXi = TMAX.isel(time=i)
     nan_full = np.full(TMAXi.shape, np.nan)
     FSi = xr.where(TMAXi < 5, 1, nan_full)
     FSi = xr.where(TMAXi > 12, 0, FSi)
-    print("FSi")
-    print(FSi)
 
-    ## take dif of yesterdays FS mask minus intermediate FS mask
-    dFS = FSy - FSi
-    print("dFS")
-    print(dFS)
+    ## take difference of yesterdays FS mask minus intermediate FS mask for an delta FS mask
+    dFSi = FSy - FSi
+
+    ## check where onset of summer or winter have occurred in the past month
+    ## if onset has happened in the past month do nothing
+    dFS = np.where((FS_days > 30) & (dFSi == -1), -1, nan_full)
+    dFS = np.where((FS_days > 30) & (dFSi == 1), 1, dFS)
+
     dFS = xr.DataArray(dFS, name="dFS", dims=("south_north", "west_east"))
     dFS_list.append(dFS)
+
+    FS_days = np.where((dFS == -1) | (dFS == 1), 0, FS_days)
+    FS_days = xr.DataArray(FS_days, name="FS_days", dims=("south_north", "west_east"))
+    FS_days_list.append(FS_days)
+
     ## create todays FS binary mask
     FS = xr.where(dFS == -1, 1, FSy)
     FS = xr.where(dFS == 1, 0, FS)
-    print("FS")
-    print(FS)
     FS = xr.DataArray(FS, name="FS", dims=("south_north", "west_east"))
     FS_list.append(FS)
+
+    ## replace FSy with FS for next day's forecast
+    FSy = FS
+
+    ## accumulated precipitations on model grids that are in winter
+    # r_w = r_w + daily_ds["r_o"].isel(time=i)
+
+    ## Apply dFS mask to zero out r_w if winter onset occurred
+    r_w = np.where(dFS == -1, 0, r_w)
+
+    ## create dataarray of winter accumulated precipitation
+    r_w = xr.DataArray(r_w, name="r_w", dims=("south_north", "west_east"))
+    r_w_list.append(r_w)
+
 dFS = xr.concat(dFS_list, dim="time")
 FS = xr.concat(FS_list, dim="time")
+FS_days = xr.concat(FS_days_list, dim="time")
+r_w = xr.concat(r_w_list, dim="time")
 
-daily_ds["FS"] = FS
-
-
-# try:
-#     da_j_list = []
-#     for j in range(len(index)):
-#         print(j)
-#         da_i_list = []
-#         for i in range(index[j], index[j] + 24):
-#             print(i)
-#             ind_a = xr.DataArray(i + tzone, dims=["south_north", "west_east"])
-#             da_i = cont_ds.isel(time=ind_a)
-#             da_i_list.append(da_i)
-#         da_j = xr.concat(da_i_list, dim="time").max(dim="time")
-#         da_j = da_j.assign_coords({"Time": days_of_max[j]})
-#         da_j_list.append(da_j)
-
-#     TMAX_da = xr.concat(da_j_list, dim="time")
-#     print('yay')
-# except:
-#     da_i_list = []
-#     for i in range(index[0], index[0]+23):
-#         ind_a = xr.DataArray(index[0] + tzone, dims=["south_north", "west_east"])
-#         da_i = cont_ds.isel(time=ind_a)
-#         da_i_list.append(da_i)
-#         da = xr.concat(da_i_list, dim="time").max(dim="time")
-#         da_yesterday = da
-#         TMAX = xr.concat([da.assign_coords({"Time": days_of_max[0] - np.timedelta64(1, "D")}), da.assign_coords({"Time": days_of_max[0]})], dim="time")
-
-
-# TMAX_yesterday = TMAX_da.isel(time = slice(0,3)).max(dim='time').assign_coords({"Time": days_of_max[-2]})
-# TMAX_today = TMAX_da.isel(time = slice(1,4)).max(dim='time').assign_coords({"Time": days_of_max[-1]})
-
-# TMAX = xr.concat([TMAX_yesterday, TMAX_today], dim="time")
-
-
-## TODO take TMX avergae on the forecast days of int..ie 4-30 and 05-01
-
-# # D = daily_ds.isel(time = 0).D
-# TMAX = cont_ds.mean(dim = 'time').load()
-# TMAX = TMAX.assign_coords({'Time':time_array[0].astype('datetime64[D]')})
-
-
-# test = hourly_ds.isel(time = ind_a).T
-# test2 = hourly_ds.isel(time = 0).T
-# ## loop every 24 hours at noon local
-# files_ds = []
-# for i in index:
-#     print(i)
-#     ## loop each variable
-#     mean_da = []
-#     for var in int_ds.data_vars:
-#         if var == "SNOWC":
-#             var_array = int_ds[var].values
-#             noon = var_array[(i + tzone), I, J]
-
-# var_array = hourly_ds['T'].values
-
-# noon = var_array[(index[0] + tzone) , I, J]
-
-# if timestep == 'daily':
-#     tslice = 0
-# elif timestep == 'hourly':
-#     tslice = slice(0,24)
-# else:
-#     raise ValueError(f'Invalide timesept option of {timestep}, can only take daily or hourly')
-
-# previous_dss = []
-# for i in range(3,0,-1):
-#     retrieve_time_np = time_array[0] - np.timedelta64(i, "D")
-#     retrieve_time = pd.to_datetime(retrieve_time_np).strftime("%Y%m%d06")
-#     int_file_dir = (
-#         str(iterator_dir) + f"/fwf-{timestep}-{domain}-{retrieve_time}.nc"
-#     )
-#     try:
-#         da = xr.open_dataset(int_file_dir).isel(time = tslice).chunk('auto').T.max(dim = 'time')
-#         # da = xr.open_dataset(int_file_dir).isel(time = tslice).chunk('auto').SNOWC.mean(dim = 'time')
-#         da = da.assign_coords({'Time':retrieve_time_np.astype('datetime64[D]')})
-#         previous_dss.append(da)
-#     except:
-#         pass
-
-# cont_ds = xr.concat(previous_dss, dim = 'time')
-# # D = daily_ds.isel(time = 0).D
-# TMAX = cont_ds.mean(dim = 'time').load()
-# TMAX = TMAX.assign_coords({'Time':time_array[0].astype('datetime64[D]')})
-
-# try:
-#     da = hourly_ds.isel(time = tslice).chunk('auto').T.max(dim = 'time')
-#     da = da.assign_coords({'Time':time_array[0].astype('datetime64[D]')})
-#     previous_dss.append(da)
-#     cont_ds = xr.concat(previous_dss[1:], dim = 'time')
-#     TMAX2 = cont_ds.mean(dim = 'time').load()
-#     retrieve_time_np = time_array[0] + np.timedelta64(i, "D")
-#     TMAX2 = TMAX2.assign_coords({'Time':retrieve_time_np.astype('datetime64[D]')})
-#     TMAX = xr.concat([TMAX,TMAX2], dim = 'time')
-# except:
-#     TMAX = xr.concat([TMAX,TMAX], dim = 'time')
-
-
-# FSy = np.random.randint(0, 2, size=TMAX.shape)
-
-# nan_full = np.full(TMAX.shape, np.nan)
-# FSi = xr.where(TMAX < 5, 1, nan_full)
-# FSi = xr.where(TMAX > 12, 0, FSi)
-# print('FSi')
-# print(FSi)
-
-# ## take dif of yesterdays FS mask minus intermediate FS mask
-# dFS = FSy- FSi
-# print('dFS')
-# print(dFS)
-# dFS = xr.DataArray(dFS, name="dFS", dims=("time", "south_north", "west_east"))
-
-
-# ## create todays FS binary mask
-# FSt = xr.where(dFS == -1, 1, FSy)
-# FSt = xr.where(dFS == 1, 0, FSt)
-# print('FSt')
-# print(FSt)
-# FSt = xr.DataArray(FSt, name="FSt", dims=("time", "south_north", "west_east"))
-
-
-# ## 0 summer
-# ## 1 winter
-# FSy = np.random.randint(0, 2, size=(3,3))
-# print('FSy')
-# print(FSy)
-
-
-# TMAX = np.random.randint(1, 16, size=(3,3))
-# print('TMAX')
-# print(TMAX)
-
-
-# ## create intermediate mask of fire seaon based on TMAX from past 3 days
-# nan_full = np.full(TMAX.shape, np.nan)
-# FSi = np.where(TMAX < 5, 1, nan_full)
-# FSi = np.where(TMAX > 12, 0, FSi)
-# print('FSi')
-# print(FSi)
-
-
-# ## take dif of yesterdays FS mask minus intermediate FS mask
-# dFS = FSy- FSi
-# print('dFS')
-# print(dFS)
-
-# ## create todays FS binary mask
-# FSt = np.where(dFS == -1, 1, FSy)
-# FSt = np.where(dFS == 1, 0, FSt)
-# print('FSt')
-# print(FSt)
-
-
-# D_w =
-
-
-# if timestep == 'daily':
-#     tslice = 0
-# elif timestep == 'hourly':
-#     tslice = slice(0,24)
-# else:
-#     raise ValueError(f'Invalide timesept option of {timestep}, can only take daily or hourly')
-# previous_dss = []
-# for i in range(6,0,-1):
-#     retrieve_time = pd.to_datetime(str(int_time[0] - np.timedelta64(i, "D")))
-#     retrieve_time = retrieve_time.strftime("%Y%m%d06")
-#     int_file_dir = (
-#         str(self.iterator_dir) + f"/fwf-{timestep}-{self.domain}-{retrieve_time}.nc"
-#     )
-#     try:
-#         previous_dss.append(xr.open_dataset(int_file_dir).isel(time = timestep).chunk('auto'))
-#     except:
-#         pass
-
-# cont_ds = xr.concat(previous_dss, dim = 'time' )
-# self.SNOWC = cont_ds.SNOWC.mean(dim = 'time').load()
+# daily_ds["TMAX"] = TMAX
+# daily_ds["dFS"] = dFS
+# daily_ds["FS"] = FS
+# daily_ds["r_w"] = r_w

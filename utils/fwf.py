@@ -86,6 +86,7 @@ class FWF:
 
 
         """
+
         ## TODO Pull all this out of the FWF class and allow uses to give only a dataset with the variables needed to solve FWI/FBP. It will make it more flexable.
         ### Read then open WRF dataset
         if filein_dir.endswith(".nc"):
@@ -93,6 +94,13 @@ class FWF:
                 print("Updating Fuel Codes with ERA5")
                 int_ds = config_era5(filein_dir)
                 self.save_dir = f"/Volumes/WFRT-Data02/FWF-WAN00CG/d02/{config}/era5/"
+                save_time = pd.to_datetime(int_ds.Time.values[0]).strftime("%Y%m%d%H")
+                self.era5_save_dir = (
+                    f"/Volumes/WFRT-Data02/era5/fwf/fwf-hourly-{domain}-{save_time}.nc"
+                )
+                print(self.era5_save_dir)
+                print(int_ds)
+                int_ds.to_netcdf(self.era5_save_dir, mode="w")
 
             else:
                 print("Re-run using nc file")
@@ -133,6 +141,7 @@ class FWF:
         self.initialize = initialize
         self.config = config
         self.overwinter = overwinter
+        self.iterator = iterator
 
         ############ Mathematical Constants and UsefulArrays ################
         ### Math Constants
@@ -188,6 +197,9 @@ class FWF:
             str(data_dir) + f"/static/static-vars-wrf4-{domain}.nc"
         )
 
+        ## Print Over wintering status
+        print(f"Overwintering {self.overwinter}")
+
         ## Define Static Variables for FPB
         print(f"FBP Mode {fbp_mode}")
         self.fbp_mode = fbp_mode
@@ -233,7 +245,7 @@ class FWF:
         try:
             self.int_ds = self.int_ds.drop_vars(["SNW", "SNOWH", "U10", "V10"])
         except:
-            self.int_ds = self.int_ds.drop_vars(["SNW", "U10", "V10"])
+            self.int_ds = self.int_ds.drop_vars(["U10", "V10"])
 
         ### Create an hourly and daily datasets for use with their respected codes/indices
         self.daily_ds = self.create_daily_ds(self.int_ds)
@@ -480,7 +492,159 @@ class FWF:
         return
 
     """########################################################################"""
-    """ ############ Get average snow cover for past 5 days ###################"""
+    """ ####### Creat and fire season mask and based on tmax condition ########"""
+    """########################################################################"""
+
+    # def FS_mask(self, time_array, timestep):
+
+    #     FSy = self.FSy
+    #     r_w = self.r_w
+    #     XLAT = self.daily_ds.XLAT.values
+    #     XLONG = self.daily_ds.XLONG.values
+
+    #     ## define time slicing based on hourly or daily data
+    #     if timestep == "daily":
+    #         tslice = 0
+    #     elif timestep == "hourly":
+    #         tslice = slice(0, 24)
+    #     else:
+    #         raise ValueError(
+    #             f"Invalide timesept option of {timestep}, can only take daily or hourly"
+    #         )
+
+    #     ## loop and try and open datasets from today to four days in the past
+    #     previous_dss, days_of_max = [], []
+    #     for i in range(4, -1, -1):
+    #         retrieve_time_np = time_array[0] - np.timedelta64(i, "D")
+    #         retrieve_time = pd.to_datetime(retrieve_time_np).strftime("%Y%m%d06")
+    #         int_file_dir = (
+    #             str(self.filein_dir.rsplit("/", 1)[0])
+    #             + f"/{pd.to_datetime(retrieve_time_np).strftime('%Y%m')}/fwf-{timestep}-{self.domain}-{retrieve_time}.nc"
+    #         )
+    #         try:
+    #             if i == 0:
+    #                 da = xr.open_dataset(int_file_dir).chunk("auto").SNOWC
+    #             else:
+    #                 da = xr.open_dataset(int_file_dir).isel(time=tslice).chunk("auto").SNOWC
+    #             previous_dss.append(da)
+    #             days_of_max.append(retrieve_time_np.astype("datetime64[D]"))
+    #         except:
+    #             pass
+
+    #     ## combine the dataset into one continuous dataarray
+    #     cont_ds = xr.concat(previous_dss, dim="time").load()
+
+    #     ## find all index of 00Z in the continuous dataarray based on the inital time
+    #     time_array = cont_ds.Time.values
+    #     # print(time_array[0])
+    #     int_time = int(pd.Timestamp(time_array[0]).hour)
+    #     length = len(time_array) + 1
+    #     num_days = [i - 0 for i in range(1, length) if i % 24 == 0]
+    #     index = [
+    #         i - int_time if 12 - int_time >= 0 else i + 24 - int_time for i in num_days
+    #     ]
+    #     index = index[:-1]
+
+    #     if (len(cont_ds.time) - index[-1]) < (24 + float(np.max(self.tzone))):
+    #         index = index[:-1]
+    #     else:
+    #         pass
+
+    #     print(f"index of 00Z times {index} with initial time {int_time}Z")
+    #     ## loop every 00Z index and find daily max temps between local midnight to midnight using an array of utc offsets
+    #     da_j_list = []
+    #     for j in range(len(index)):
+    #         da_i_list = []
+    #         for i in range(index[j], index[j] + 24):
+    #             ind_a = xr.DataArray(i + self.tzone, dims=["south_north", "west_east"])
+    #             da_i = cont_ds.isel(time=ind_a)
+    #             da_i_list.append(da_i)
+    #         da_j = xr.concat(da_i_list, dim="time").max(dim="time")
+    #         da_j = da_j.assign_coords(
+    #             {
+    #                 "Time": days_of_max[j],
+    #                 "XLAT": (("south_north", "west_east"), XLAT),
+    #                 "XLONG": (("south_north", "west_east"), XLONG),
+    #             }
+    #         )
+    #         da_j_list.append(da_j)
+
+    #     SNOWC_da = xr.concat(da_j_list, dim="time")
+
+    #     ## apply a try condition for when datas in the past doesn't exist
+    #     ## TODO this is hacky, needs to be more robust for longer NWP forecast (only good for two day forecasts)
+    #     try:
+    #         SNOWC_yesterday = (
+    #             SNOWC_da.isel(time=slice(0, 3))
+    #             .max(dim="time")
+    #             .assign_coords({"Time": days_of_max[-2]})
+    #         )
+    #         SNOWC_today = (
+    #             SNOWC_da.isel(time=slice(1, 4))
+    #             .max(dim="time")
+    #             .assign_coords({"Time": days_of_max[-1]})
+    #         )
+    #         SNOWC = xr.concat([SNOWC_yesterday, SNOWC_today], dim="time")
+    #     except:
+    #         SNOWC = xr.concat(
+    #             [
+    #                 SNOWC_da.assign_coords(
+    #                     {"Time": days_of_max[0] - np.timedelta64(1, "D")}
+    #                 ),
+    #                 SNOWC_da.assign_coords({"Time": days_of_max[0]}),
+    #             ],
+    #             dim="time",
+    #         )
+    #     if len(self.daily_ds.time) == 1:
+    #         SNOWC = xr.concat([SNOWC_yesterday], dim="time")
+    #     else:
+    #         pass
+
+    #     ## apply fire season onset condtions and create binary mask
+    #     dFS_list, FS_list, r_w_list = [], [], []
+    #     for i in range(len(SNOWC)):
+    #         SNOWCi = SNOWC.isel(time=i)
+    #         nan_full = np.full(SNOWCi.shape, np.nan)
+    #         FSi = xr.where(SNOWCi > 0.6, 1, nan_full)
+    #         FSi = xr.where(SNOWCi <= 0.6, 0, FSi)
+
+    #         ## take dif of yesterdays FS mask minus intermediate FS mask
+    #         dFS = FSy - FSi
+    #         dFS = xr.DataArray(dFS, name="dFS", dims=("south_north", "west_east"))
+    #         dFS_list.append(dFS)
+
+    #         ## create todays FS binary mask
+    #         FS = xr.where(dFS == -1, 1, FSy)
+    #         FS = xr.where(dFS == 1, 0, FS)
+    #         FS = xr.DataArray(FS, name="FS", dims=("south_north", "west_east"))
+    #         FS_list.append(FS)
+
+    #         ## replace FSy with FS for next day's forecast
+    #         FSy = FS
+
+    #         ## accumualte preciptaiton on model grids that are in winter
+    #         r_w = r_w + self.daily_ds["r_o"].isel(time=i)
+
+    #         ## Apply dFS mask to zero out r_w if winter oneset occured
+    #         r_w = np.where(dFS == -1, 0, r_w)
+
+    #         ## create dataarray of winter accumulated preciptaiton
+    #         r_w = xr.DataArray(r_w, name="r_w", dims=("south_north", "west_east"))
+    #         r_w_list.append(r_w)
+
+    #     dFS = xr.concat(dFS_list, dim="time")
+    #     FS = xr.concat(FS_list, dim="time")
+    #     r_w = xr.concat(r_w_list, dim="time")
+
+    #     self.daily_ds["SNOWC"] = SNOWC
+    #     self.daily_ds["dFS"] = dFS
+    #     self.daily_ds["FS"] = FS
+    #     self.daily_ds["r_w"] = r_w
+
+    #     return
+
+    """########################################################################"""
+    """ ####### Creat and fire season mask and based on tmax condition ########"""
     """########################################################################"""
 
     def FS_mask(self, time_array, timestep):
@@ -504,26 +668,33 @@ class FWF:
         previous_dss, days_of_max = [], []
         for i in range(4, -1, -1):
             retrieve_time_np = time_array[0] - np.timedelta64(i, "D")
-            retrieve_time = pd.to_datetime(retrieve_time_np).strftime("%Y%m%d06")
-            int_file_dir = (
-                str(self.filein_dir.rsplit("/", 1)[0])
-                + f"/{pd.to_datetime(retrieve_time_np).strftime('%Y%m')}/fwf-{timestep}-{self.domain}-{retrieve_time}.nc"
-            )
+            retrieve_time = pd.to_datetime(retrieve_time_np).strftime("%Y%m%d%H")
+            if self.iterator == "fwf":
+                int_file_dir = (
+                    str(self.filein_dir.rsplit("/", 1)[0])
+                    + f"/{pd.to_datetime(retrieve_time_np).strftime('%Y%m')}/fwf-{timestep}-{self.domain}-{retrieve_time}.nc"
+                )
+            elif self.iterator == "era5":
+                int_file_dir = (
+                    self.era5_save_dir.rsplit("/", 1)[0]
+                    + f"/fwf-{timestep}-{self.domain}-{retrieve_time}.nc"
+                )
+            else:
+                raise ValueError("Bad iterator")
+
             try:
                 if i == 0:
                     da = xr.open_dataset(int_file_dir).chunk("auto").T
-                    da_today = da
                 else:
                     da = xr.open_dataset(int_file_dir).isel(time=tslice).chunk("auto").T
-                # da = xr.open_dataset(int_file_dir).isel(time = tslice).chunk('auto').SNOWC.mean(dim = 'time')
                 previous_dss.append(da)
                 days_of_max.append(retrieve_time_np.astype("datetime64[D]"))
             except:
                 pass
 
         ## combine the dataset into one continuous dataarray
-        cont_ds = xr.concat(previous_dss, dim="time").load()
-
+        cont_ds = xr.concat(previous_dss, dim="time", coords="minimal").load()
+        print(cont_ds)
         ## find all index of 00Z in the continuous dataarray based on the inital time
         time_array = cont_ds.Time.values
         # print(time_array[0])
@@ -534,11 +705,16 @@ class FWF:
             i - int_time if 12 - int_time >= 0 else i + 24 - int_time for i in num_days
         ]
         index = index[:-1]
-
         if (len(cont_ds.time) - index[-1]) < (24 + float(np.max(self.tzone))):
             index = index[:-1]
         else:
             pass
+        if self.iterator == "fwf":
+            pass
+        elif self.iterator == "era5":
+            index = [0] + index
+        else:
+            raise ValueError("Bad iterator")
 
         print(f"index of 00Z times {index} with initial time {int_time}Z")
         ## loop every 00Z index and find daily max temps between local midnight to midnight using an array of utc offsets
@@ -548,6 +724,10 @@ class FWF:
             for i in range(index[j], index[j] + 24):
                 ind_a = xr.DataArray(i + self.tzone, dims=["south_north", "west_east"])
                 da_i = cont_ds.isel(time=ind_a)
+                try:
+                    da_i = da_i.drop(["time"])
+                except:
+                    pass
                 da_i_list.append(da_i)
             da_j = xr.concat(da_i_list, dim="time").max(dim="time")
             da_j = da_j.assign_coords(
@@ -612,8 +792,13 @@ class FWF:
             ## replace FSy with FS for next day's forecast
             FSy = FS
 
-            ## create dataarray of accumualted preciptaiton on model grids, this is used for over wintering
+            ## accumualte preciptaiton on model grids that are in winter
             r_w = r_w + self.daily_ds["r_o"].isel(time=i)
+
+            ## Apply dFS mask to zero out r_w if winter oneset occured
+            r_w = np.where(dFS == -1, 0, r_w)
+
+            ## create dataarray of winter accumulated preciptaiton
             r_w = xr.DataArray(r_w, name="r_w", dims=("south_north", "west_east"))
             r_w_list.append(r_w)
 
@@ -785,6 +970,12 @@ class FWF:
             self.F,
         )
 
+        if self.overwinter == True:
+            dFS = daily_ds.dFS
+            ## Apply delta FS mask to initalize F with the default start up values F_initial  (dFS = 1 mean onset of summer)
+            F_o = np.where(dFS == 1, self.F_initial, F_o)
+        else:
+            pass
         # #Eq. 1
         m_o = 147.2 * (101 - F_o) / (59.5 + F_o)
 
@@ -858,12 +1049,13 @@ class FWF:
         ########################################################################
         ### (6) Solve for FFMC
         F = (59.5 * (250 - m)) / (147.2 + m)  ## Van 1985
-        # Hold P to P_initial if snow cover is over snowfract
-        # F = np.where(SNOWC > self.snowfract, self.F_initial, F)
-        F = np.where(F < 1, 1.0, F)
 
+        ########################################################################
+        ## constrain F to be non negative
+        F = np.where(F < 1, 1.0, F)
         F = xr.DataArray(F, name="F", dims=("south_north", "west_east"))
         self.F = F
+
         return F
 
     """########################################################################"""
@@ -919,14 +1111,20 @@ class FWF:
             - Adds DMC to DataSet
         """
 
-        W, T, H, r_o, P_o, L_e = (
-            daily_ds.W,
+        T, H, r_o, P_o, L_e = (
             daily_ds.T,
             daily_ds.H,
             daily_ds.r_o,
             self.P,
             self.L_e,
         )
+
+        if self.overwinter == True:
+            dFS = daily_ds.dFS
+            ## Apply delta FS mask to initalize P with the default start up values P_initial  (dFS = 1 mean onset of summer)
+            P_o = np.where(dFS == 1, self.P_initial, P_o)
+        else:
+            pass
 
         zero_full = self.zero_full
         ## Set min low temp
@@ -977,9 +1175,10 @@ class FWF:
         ########################################################################
         ### (17) Duff moisture
         P = P_r + K
-        # Hold P to P_initial if snow cover is over snowfract
-        # P = np.where(SNOWC > self.snowfract, self.P_initial, P)
-        P = np.where(P < 1, 1.0, P)
+
+        ########################################################################
+        ## constrain P to default start up and convert to dataarray
+        P = np.where(P < self.P_initial, self.P_initial, P)
         P = xr.DataArray(P, name="P", dims=("south_north", "west_east"))
 
         self.P = P
@@ -1064,8 +1263,8 @@ class FWF:
         ########################################################################
         ### (21) Solve for DC after rain (D_r)
         ## Alteration to Eq. 21 (Lawson 2008)
-        # D_r = D_o - 400 * np.log(1 + 3.937 * r_d / Q_o)
-        D_r = 400 * np.log(800 / Q_r)
+        D_r = D_o - 400 * np.log(1 + 3.937 * r_d / Q_o)
+        # D_r = 400 * np.log(800 / Q_r)
         D_r = np.where(D_r < 0, 0.0, D_r)
         D_r = np.where(r_o <= 2.8, D_o, D_r)
 
@@ -1079,10 +1278,7 @@ class FWF:
         D = D_r + V * 0.5
 
         ########################################################################
-        # Hold D to D_initial if snow cover is over snowfract
-        # D = np.where(SNOWC > self.snowfract, self.D_initial, D)
-
-        ## Constrain DC and make into DataArray
+        ## constrain P to default start up and convert to dataarray
         D = np.where(D < self.D_initial, self.D_initial, D)
         D = xr.DataArray(D, name="D", dims=("south_north", "west_east"))
 
@@ -1111,14 +1307,14 @@ class FWF:
         ## Eq. 4 - Spring start-up value for the DC
         Ds = 400 * np.log(800 / Qs)
 
-        ## Apply FS mask to fill Ds at start up locations
+        ## Apply delta FS mask to fill Ds at start up locations (dFS = 1 mean onset of summer)
         D = np.where(dFS == 1, Ds, D)
 
         ## Constrain DC and make into DataArray
         D = np.where(D < self.D_initial, self.D_initial, D)
         D = xr.DataArray(D, name="D", dims=("south_north", "west_east"))
 
-        ## Apply FS mask to save D as Df if winter oneset occured
+        ## Apply delta FS mask to save D as Df if winter onset occurred (dFS = -1 mean onset of winter)
         Df = np.where(dFS == -1, D, Df)
         Df = xr.DataArray(Df, name="Df", dims=("south_north", "west_east"))
 
@@ -2199,17 +2395,24 @@ class FWF:
             daily_ds[var] = daily_ds[var].astype(dtype="float32")
             daily_ds[var].attrs = self.var_dict[var]
 
+        # # ### Name file after initial time of wrf
+        # try:
+        #     file_date = str(np.array(self.daily_ds.Time[0], dtype="datetime64[h]"))
+        #     file_date = datetime.strptime(str(file_date), "%Y-%m-%dT%H").strftime(
+        #         "%Y%m%d06"
+        #     )
+        # except:
+        #     file_date = str(np.array(self.daily_ds.Time, dtype="datetime64[h]"))
+        #     file_date = datetime.strptime(str(file_date), "%Y-%m-%dT%H").strftime(
+        #         "%Y%m%d06"
+        #     )
+
         # ### Name file after initial time of wrf
-        try:
-            file_date = str(np.array(self.daily_ds.Time[0], dtype="datetime64[h]"))
-            file_date = datetime.strptime(str(file_date), "%Y-%m-%dT%H").strftime(
-                "%Y%m%d06"
-            )
-        except:
-            file_date = str(np.array(self.daily_ds.Time, dtype="datetime64[h]"))
-            file_date = datetime.strptime(str(file_date), "%Y-%m-%dT%H").strftime(
-                "%Y%m%d06"
-            )
+        file_date = str(np.array(self.hourly_ds.Time[0], dtype="datetime64[h]"))
+        file_date = datetime.strptime(str(file_date), "%Y-%m-%dT%H").strftime(
+            "%Y%m%d%H"
+        )
+        print("Hourly nc initialized at :", file_date)
 
         print("Daily nc initialized at :", file_date)
 
@@ -2225,10 +2428,10 @@ class FWF:
         self.daily_ds = daily_ds
         writeTime = datetime.now()
         print("Start Write ", datetime.now())
-        daily_ds.to_netcdf(make_dir, mode="w")
+        daily_ds, encoding = compressor(daily_ds, self.var_dict)
+        daily_ds.to_netcdf(make_dir, encoding=encoding, mode="w")
         print("Write Time: ", datetime.now() - writeTime)
         print(f"wrote working {make_dir}")
-        print(list(daily_ds))
 
         if self.forecast == True:
             forecast_dir = (

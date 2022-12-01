@@ -1,3 +1,9 @@
+"""
+This script compares how well the fwf model did compare to observed values.
+It solves FWI from obs met and model met at obs points. Creates a time series of
+all met/fwi values averaged across all wx stations in the model domain.
+"""
+
 import context
 import json
 import numpy as np
@@ -31,41 +37,48 @@ import warnings
 warnings.filterwarnings("ignore")
 # cp -r /Volumes/Scratch/FWF-WAN00CG/d03/202104 202104
 
-####### Define Inputs   #########
 
-with open(str(data_dir) + f"/json/fwf-attrs.json", "r") as fp:
-    var_dict = json.load(fp)
+##################################################################
+##################### Define Inputs   ###########################
+## time of interest
+start, stop = "2021-05-01", "2021-10-01"
 
+## default moisture code values
+F = 85.0
+P = 6.0
+D = 15.0
 
-ds_wmo = xr.open_zarr(
-    str(data_dir) + "/intercomp/" + f"intercomp-d02-20211101.zarr",
-)
-# ds_wmo = ds_wmo.sel(time=slice("2021-01-01", "2021-10-01"))
-# ds_wmo.sel(wmo = 71223).snowc.plot()
-# ds_wmo.sel(wmo = 71223).dc.plot()
-# ds_wmo.sel(wmo = 71223).temp.plot()
+## models to compare
+models = ["", "_wrf05", "_wrf06"]
 
-ds_wmo = ds_wmo.sel(time=slice("2021-05-01", "2021-10-01"))
-ds_wmo = ds_wmo.load()
-ds_wmo = ds_wmo.dropna(dim="wmo")
-
-
-# for i in range(10,20):
-#     ds_wmo.sel(wmo = 71765).snowc.plot()
-#     plt.show()
-
-
+## define directory to save figures
 save_dir = Path(str(data_dir) + f"/images/stats/final/")
 save_dir.mkdir(parents=True, exist_ok=True)
 
 
-####### End of Inputs  #########
+##################################################################
+#################### Open Data Files   ###########################
 
-## fuel code initial values
-F = 85.0
-P = 6.0
-D = 15.0
-models = ["", "_wrf01", "_era5", "_wrfera5"]
+#### Open Datafiles and modify based on inputs
+## open fwf attribute json file, used for axis labels in plotting
+with open(str(data_dir) + f"/json/fwf-attrs.json", "r") as fp:
+    var_dict = json.load(fp)
+
+## open intercomparsion data
+ds_wmo = xr.open_zarr(
+    str(data_dir) + "/intercomp/" + f"intercomp-d02-20221031.zarr",
+)
+
+## slice data acrcoss time of interest and drop any wx station with nan values.
+## droping the nan values gibves a contiual data stream over the time of int
+# ds_wmo = ds_wmo.sel(time=slice(start, stop))
+ds_wmo = ds_wmo.load()
+# ds_wmo = ds_wmo.dropna(dim="wmo")
+
+
+##################################################################
+######################### Solve FWI  #############################
+## create datasets for each model and the observations. Used as input to solve FWI
 ds_all = []
 for model in models:
     if model == "_wrfera5":
@@ -97,7 +110,7 @@ for model in models:
             }
         )
 
-    ## create a dataset of weather inputs where each input has a dimension of the others
+    ## solve RH and add to datasets
     RH = (
         (6.11 * 10 ** (7.5 * (ds_time.TD / (237.7 + ds_time.TD))))
         / (6.11 * 10 ** (7.5 * (ds_time.T / (237.7 + ds_time.T))))
@@ -109,10 +122,6 @@ for model in models:
     if np.min(ds_time.H) > 90:
         raise ValueError("ERROR: Check TD nonphysical RH values")
 
-    ## fuel code initial values
-    F = 85.0
-    P = 6.0
-    D = 15.0
     date_range = ds_wmo.time.values
 
     ## loop and solve fwi system for specified range of days
@@ -145,28 +154,6 @@ for model in models:
     ## concat all times on a new dimension time
     ds_concat = xr.concat(datasets, dim="time")
     ds_all.append(ds_concat)
-
-
-# fig = plt.figure()
-# ax = fig.add_subplot(1,1,1)
-
-# for k in range(len(ds_all)):
-#         model = models[k]
-#         if model == '':
-#             model = 'Observation'
-#         else:
-#             pass
-#         model_name = model.strip('_').upper()
-#         print(model_name)
-#         ax.plot(date_range, ds_all[k].T.mean(dim = 'wmo').values, label = model_name, color = colors[k])
-
-# ax.legend(
-#     loc="upper center",
-#     bbox_to_anchor=(0.5, 1.6),
-#     ncol=4,
-#     fancybox=True,
-#     shadow=True,
-# )
 
 
 def MBE(y_true, y_pred):

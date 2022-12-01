@@ -23,6 +23,14 @@ from scipy import stats
 from matplotlib.offsetbox import AnchoredText
 import matplotlib
 from pathlib import Path
+from utils.fwi import (
+    solve_ffmc,
+    solve_dmc,
+    solve_dc,
+    solve_isi,
+    solve_bui,
+    solve_fwi,
+)
 
 matplotlib.rcParams.update({"font.size": 14})
 
@@ -33,40 +41,33 @@ warnings.filterwarnings("ignore")
 warnings.filterwarnings("ignore", category=FutureWarning)
 
 wrf_model = "wrf4"
-# models = ["_era5", "_wrf01",  "_wrf02",  "_wrf03",  "_wrf04"]
-models = ["_era5", "_wrf01", "_wrfera5"]
+# models = ["_era5", "_wrf05",  "_wrf02",  "_wrf03",  "_wrf04"]
+models = ["_wrf05", "_wrf06"]
 
 
-save_dir = Path(str(data_dir) + f"/images/stats/era5wrf03/")
+save_dir = Path(str(data_dir) + f"/images/stats/wrf0506/")
 save_dir.mkdir(parents=True, exist_ok=True)
 
 domain = "d02"
 # date = pd.Timestamp("today")
-date = pd.Timestamp(2021, 11, 1)
+date = pd.Timestamp(2022, 10, 31)
 
 intercomp_today_dir = date.strftime("%Y%m%d")
 
 with open(str(data_dir) + f"/json/fwf-attrs.json", "r") as fp:
     var_dict = json.load(fp)
 
-# ds = xr.open_zarr(
-#     str(data_dir) + "/intercomp/d02/ERA5WRF01/" + f"intercomp-d02-20220730.zarr",
-# )
 
 ds = xr.open_zarr(
-    str(data_dir) + "/intercomp/" + f"intercomp-{domain}-{intercomp_today_dir}.zarr",
+    str(data_dir)
+    + "/intercomp/"
+    + f"final-intercomp-{domain}-{intercomp_today_dir}.zarr",
 )
-ds = ds.sel(time=slice("2021-05-01", "2021-10-01"))
+# ds = ds.sel(time=slice("2022-01-01", "2022-10-01"))
 ds = ds.load()
 
-ds = ds.dropna(dim="wmo")
-# ds.plot.scatter('ws', 'ws_wrf01')
 
 date_range = pd.date_range(ds.time.values[0], ds.time.values[-1])
-# ds = ds.chunk(chunks="auto")
-# ds = ds.unify_chunks()
-# for var in list(ds):
-#     ds[var].encoding = {}
 
 if domain == "d02":
     res = "12 km"
@@ -80,14 +81,7 @@ for i in range(len(date_range)):
     obs_df = df[df["time"] == date_range[i].strftime("%Y-%m-%d")]
     print(np.unique(obs_df.temp.isnull(), return_counts=True))
 
-# df = df[~np.isnan(df.bui)]
-# df = df[~np.isnan(df[f"bui_day1_{method}"])]
-
 unique, counts = np.unique(df.wmo.values, return_counts=True)
-# wmo_of_int = unique[counts > 170]
-# df = df[df.wmo.isin(wmo_of_int)]
-# unique, counts = np.unique(df.wmo.values, return_counts=True)
-
 
 var_list = list(ds)[::3]
 time = np.array(ds.time.dt.strftime("%Y-%m-%d"), dtype="<U10")
@@ -144,7 +138,7 @@ def plotstats(fig, var_list):
                 if model_name == "ERA5":
                     model_name += "       "
                     pass
-                elif model_name == "WRF01":
+                elif model_name == "WRF05":
                     model_name = "WRF        "
                 else:
                     pass
@@ -152,7 +146,7 @@ def plotstats(fig, var_list):
                 if model_name == "ERA5":
                     # model_name += "       "
                     pass
-                elif model_name == "WRF01":
+                elif model_name == "WRF05":
                     model_name = "WRF "
                 else:
                     pass
@@ -243,6 +237,7 @@ def plotstats(fig, var_list):
 
 
 fwi_list = ["ffmc", "dmc", "dc", "bui", "isi", "fwi"]
+# fwi_list = ["dmc", "dc"]
 
 fig = plt.figure(figsize=[10, 14])
 # fig.suptitle(
@@ -258,18 +253,18 @@ plt.close()
 
 ##########################################################################
 ##########################################################################
-met_list = ["temp", "td", "rh", "ws", "wdir", "precip"]
-# met_unit = ["C", "%", "km h^-1", "mm"]
-# length = len(met_list)
-models = ["_era5", "_wrf01"]
+# met_list = ["temp", "td", "rh", "ws", "wdir", "precip"]
+# # met_unit = ["C", "%", "km h^-1", "mm"]
+# # length = len(met_list)
+# # models = ["_era5", "_wrf05"]
 
-fig = plt.figure(figsize=[10, 14])
-# fig.suptitle(
-#     f'Comparison of Model Derived Met vs Observations at {len(unique)} Weather Stations \n {date_range[0].strftime("%Y%m%d")} - {date_range[-1].strftime("%Y%m%d")}',
-#     fontsize=14,
-# )
-plotstats(fig, met_list)
+# fig = plt.figure(figsize=[10, 14])
+# # fig.suptitle(
+# #     f'Comparison of Model Derived Met vs Observations at {len(unique)} Weather Stations \n {date_range[0].strftime("%Y%m%d")} - {date_range[-1].strftime("%Y%m%d")}',
+# #     fontsize=14,
+# # )
+# plotstats(fig, met_list)
 
-# fig.tight_layout()
-fig.savefig(str(save_dir) + f"/met-vars-{domain}-{intercomp_today_dir}-mean.png")
-plt.close()
+# # fig.tight_layout()
+# fig.savefig(str(save_dir) + f"/met-vars-{domain}-{intercomp_today_dir}-mean.png")
+# plt.close()
