@@ -92,15 +92,35 @@ class FWF:
         if filein_dir.endswith(".nc"):
             if "era5" in filein_dir:
                 print("Updating Fuel Codes with ERA5")
-                int_ds = config_era5(filein_dir)
+                # int_ds = config_era5(filein_dir)
                 self.save_dir = f"/Volumes/WFRT-Data02/FWF-WAN00CG/d02/{config}/era5/"
-                save_time = pd.to_datetime(int_ds.Time.values[0]).strftime("%Y%m%d%H")
-                self.era5_save_dir = (
-                    f"/Volumes/WFRT-Data02/era5/fwf/fwf-hourly-{domain}-{save_time}.nc"
+                # save_time = pd.to_datetime(int_ds.Time.values[0]).strftime("%Y%m%d%H")
+                # self.era5_save_dir = (
+                #     f"/Volumes/WFRT-Data02/era5/fwf/fwf-hourly-{domain}-{save_time}.nc"
+                # )
+                # print(self.era5_save_dir)
+                # print(int_ds)
+                # int_ds.to_netcdf(self.era5_save_dir, mode="w")
+                self.era5_save_dir = filein_dir
+                int_ds = xr.open_dataset(filein_dir)
+                keep_vars = [
+                    "SNOWC",
+                    "SNOWH",
+                    "SNW",
+                    "T",
+                    "TD",
+                    "U10",
+                    "V10",
+                    "W",
+                    "WD",
+                    "r_o",
+                    "H",
+                    "Df",
+                    "r_w",
+                ]
+                int_ds = int_ds.drop(
+                    [var for var in list(int_ds) if var not in keep_vars]
                 )
-                print(self.era5_save_dir)
-                print(int_ds)
-                int_ds.to_netcdf(self.era5_save_dir, mode="w")
 
             else:
                 print("Re-run using nc file")
@@ -119,6 +139,9 @@ class FWF:
                     "H",
                     "Df",
                     "r_w",
+                    "dFS",
+                    "FS_days",
+                    "FS",
                 ]
                 int_ds = int_ds.drop(
                     [var for var in list(int_ds) if var not in keep_vars]
@@ -369,6 +392,16 @@ class FWF:
                 FSy = np.array(previous_daily_ds.FS[index])
                 FSy = xr.DataArray(FSy, name="FSy", dims=("south_north", "west_east"))
                 self.FSy = FSy
+
+                # """ #####################     Fire Season Day (FS_days)     ########################### """
+                ### Get last time step of FS_days that coincides with the
+                ### initialization time of current model run
+                FS_days = np.array(previous_daily_ds.FS_days[index])
+                FS_days = xr.DataArray(
+                    FS_days, name="FS_days", dims=("south_north", "west_east")
+                )
+                self.FS_days = FS_days
+
             else:
                 pass
 
@@ -469,6 +502,15 @@ class FWF:
                 FSy = np.full(shape, 0, dtype=float)
                 FSy = xr.DataArray(FSy, name="FSy", dims=("south_north", "west_east"))
                 self.FSy = FSy
+
+                # """ #####################     Fire Season Day (FS_days)     ########################### """
+                print(f"{initialize}: Initialize FS_days on date {int_time}, with 30s")
+                FS_days = np.full(shape, 30, dtype=float)
+                FS_days = xr.DataArray(
+                    FS_days, name="FS_days", dims=("south_north", "west_east")
+                )
+                self.FS_days = FS_days
+
             else:
                 pass
             # """ #####################     Temperature Maximum (TMAX)       ########################### """
@@ -651,6 +693,8 @@ class FWF:
 
         FSy = self.FSy
         r_w = self.r_w
+        FS_days = self.FS_days
+
         XLAT = self.daily_ds.XLAT.values
         XLONG = self.daily_ds.XLONG.values
 
@@ -661,7 +705,7 @@ class FWF:
             tslice = slice(0, 24)
         else:
             raise ValueError(
-                f"Invalide timesept option of {timestep}, can only take daily or hourly"
+                f"Invalid timestep option of {timestep}, can only take daily or hourly"
             )
 
         ## loop and try and open datasets from today to four days in the past
@@ -693,8 +737,10 @@ class FWF:
                 pass
 
         ## combine the dataset into one continuous dataarray
-        cont_ds = xr.concat(previous_dss, dim="time", coords="minimal").load()
-        print(cont_ds)
+        cont_ds = xr.concat(
+            previous_dss, dim="time", coords="minimal", compat="override"
+        ).load()
+        # print(cont_ds)
         ## find all index of 00Z in the continuous dataarray based on the inital time
         time_array = cont_ds.Time.values
         # print(time_array[0])
@@ -771,17 +817,26 @@ class FWF:
             pass
 
         ## apply fire season onset condtions and create binary mask
-        dFS_list, FS_list, r_w_list = [], [], []
+        dFS_list, FS_list, r_w_list, FS_days_list = [], [], [], []
         for i in range(len(TMAX)):
+            FS_days = FS_days + 1
             TMAXi = TMAX.isel(time=i)
             nan_full = np.full(TMAXi.shape, np.nan)
-            FSi = xr.where(TMAXi < 5, 1, nan_full)
-            FSi = xr.where(TMAXi > 12, 0, FSi)
+            # FSi = xr.where(TMAXi < 5, 1, nan_full)
+            # FSi = xr.where(TMAXi > 12, 0, FSi)
+            FSi = xr.where((TMAXi < 5) & (FS_days > 215), 1, nan_full)
+            FSi = xr.where((TMAXi > 12) & (FS_days > 30), 0, FSi)
 
             ## take dif of yesterdays FS mask minus intermediate FS mask
             dFS = FSy - FSi
             dFS = xr.DataArray(dFS, name="dFS", dims=("south_north", "west_east"))
             dFS_list.append(dFS)
+
+            FS_days = np.where((dFS == -1) | (dFS == 1), 0, FS_days)
+            FS_days = xr.DataArray(
+                FS_days, name="FS_days", dims=("south_north", "west_east")
+            )
+            FS_days_list.append(FS_days)
 
             ## create todays FS binary mask
             FS = xr.where(dFS == -1, 1, FSy)
@@ -796,7 +851,8 @@ class FWF:
             r_w = r_w + self.daily_ds["r_o"].isel(time=i)
 
             ## Apply dFS mask to zero out r_w if winter oneset occured
-            r_w = np.where(dFS == -1, 0, r_w)
+            # r_w = np.where(dFS == -1, 0, r_w)
+            r_w = np.where((dFS == -1) | (dFS == 1), 0, r_w)
 
             ## create dataarray of winter accumulated preciptaiton
             r_w = xr.DataArray(r_w, name="r_w", dims=("south_north", "west_east"))
@@ -804,11 +860,13 @@ class FWF:
 
         dFS = xr.concat(dFS_list, dim="time")
         FS = xr.concat(FS_list, dim="time")
+        FS_days = xr.concat(FS_days_list, dim="time")
         r_w = xr.concat(r_w_list, dim="time")
 
         self.daily_ds["TMAX"] = TMAX
         self.daily_ds["dFS"] = dFS
         self.daily_ds["FS"] = FS
+        self.daily_ds["FS_days"] = FS_days
         self.daily_ds["r_w"] = r_w
 
         return
@@ -1127,7 +1185,8 @@ class FWF:
             pass
 
         zero_full = self.zero_full
-        ## Set min low temp
+        ##  Constrain temp
+        ##    - The log drying rate K is proportional to temperature, becoming negligible at about -1.1°C (Van Wagner 1985) .
         T = np.where(T < -1.1, -1.1, T)
 
         ########################################################################
@@ -1245,7 +1304,8 @@ class FWF:
         else:
             D_o = self.D
 
-        ## Hold T to min value
+        ##  Constrain temp
+        ##    - The log drying rate K is proportional to temperature, becoming negligible at about -2.8°C (Van Wagner 1985) .
         T = np.where(T < (-2.8), -2.8, T)
 
         ########################################################################
@@ -2428,8 +2488,9 @@ class FWF:
         self.daily_ds = daily_ds
         writeTime = datetime.now()
         print("Start Write ", datetime.now())
-        daily_ds, encoding = compressor(daily_ds, self.var_dict)
-        daily_ds.to_netcdf(make_dir, encoding=encoding, mode="w")
+        # daily_ds, encoding = compressor(daily_ds, self.var_dict)
+        # daily_ds.to_netcdf(make_dir, encoding=encoding, mode="w")
+        daily_ds.to_netcdf(make_dir, mode="w")
         print("Write Time: ", datetime.now() - writeTime)
         print(f"wrote working {make_dir}")
 

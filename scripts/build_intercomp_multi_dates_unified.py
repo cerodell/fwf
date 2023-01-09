@@ -228,10 +228,12 @@ for date in date_range:
         final_var_list.append(name_lower + "_wrf06")
 
     final_df["tmax"] = interpolate(wrf05_ds["TMAX"], x, y, "nearest")[0, :]
+    final_df["fs_days"] = interpolate(wrf05_ds["FS_days"], x, y, "nearest")[0, :]
     final_df["dfs"] = interpolate(wrf05_ds["dFS"], x, y, "nearest")[0, :]
     final_df["fs"] = interpolate(wrf05_ds["FS"], x, y, "nearest")[0, :]
     final_df["r_w"] = interpolate(wrf05_ds["r_w"], x, y, "nearest")[0, :]
     final_var_list.append("tmax")
+    final_var_list.append("fs_days")
     final_var_list.append("dfs")
     final_var_list.append("fs")
     final_var_list.append("r_w")

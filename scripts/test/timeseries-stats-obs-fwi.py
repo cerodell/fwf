@@ -33,7 +33,7 @@ warnings.filterwarnings("ignore")
 ##################################################################
 ##################### Define Inputs   ###########################
 ## time of interest
-start, stop = "2021-05-01", "2021-10-01"
+start, stop = "2022-04-01", "2022-10-01"
 
 ## default moisture code values
 F = 85.0
@@ -89,10 +89,10 @@ for model in models:
     ds_all.append(ds_time)
 
 var = "F"
-# index = ~np.isnan(ds_all[0][var]).values
-index = ds_all[0][var].dropna()
+index = ~np.isnan(ds_all[0][var])
+# index = ds_all[0][var].dropna()
 
-obs_var_da = ds_all[0][var][index]
+obs_var_da = ds_all[0][var].values[index]
 
 
 def MBE(y_true, y_pred):
@@ -133,12 +133,12 @@ def plotstats(fig, var_list, var_names, models, font_size):
             model_name = model.strip("_").upper()
             # print(model_name)
 
-            if model == "_wrf01":
+            if model == "_wrf05":
                 color = colors[0]
             elif model == "_era5":
                 color = colors[3]
             else:
-                color = colors[2]
+                color = colors[1]
 
             if model_name == "ERA5":
                 # model_name += "       "
@@ -146,12 +146,12 @@ def plotstats(fig, var_list, var_names, models, font_size):
             elif model_name == "WRF01":
                 model_name = "WRF "
             print(ds_all[0][var])
-            obs_var_da = ds_all[0][var][~np.isnan(ds_all[0][var])]
-            model_var_da = ds_all[k][var][~np.isnan(ds_all[0][var])]
+            obs_var_da = ds_all[0][var].values[~np.isnan(ds_all[0][var])]
+            model_var_da = ds_all[k][var].values[~np.isnan(ds_all[0][var])]
 
             obs_var, model_var = (
-                obs_var_da.values.ravel(),
-                model_var_da.values.ravel(),
+                obs_var_da.ravel(),
+                model_var_da.ravel(),
             )
             if var == "r_o":
                 print(f"number of data points before condtion {len(obs_var)}")
@@ -255,17 +255,15 @@ fig.savefig(str(save_dir) + f"/fwi-vars-mean-codes.png")
 plt.close()
 
 ##########################################################################
-# fwi_list = ["U", "R", "S"]
-# fwi_names = ["bui", "isi", "fwi"]
+fwi_list = ["U", "R", "S"]
+fwi_names = ["bui", "isi", "fwi"]
 
-# fig = plt.figure(figsize=[16, 14])
-# plotstats(fig, fwi_list,fwi_names, models, font_size=11)
-# fig.subplots_adjust(hspace=.5)
-# fig.savefig(
-#     str(save_dir) + f"/fwi-vars-mean-index.png"
-# )
+fig = plt.figure(figsize=[16, 14])
+plotstats(fig, fwi_list, fwi_names, models, font_size=11)
+fig.subplots_adjust(hspace=0.5)
+fig.savefig(str(save_dir) + f"/fwi-vars-mean-index.png")
 
-# plt.close()
+plt.close()
 
 ##########################################################################
 # met_list = ["T", "TD", "H", "W", "WD", "r_o"]

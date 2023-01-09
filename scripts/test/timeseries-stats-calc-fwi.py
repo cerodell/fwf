@@ -49,7 +49,7 @@ P = 6.0
 D = 15.0
 
 ## models to compare
-models = ["", "_wrf01", "_era5", "_wrfera5"]
+models = ["", "_wrf01", "_era5", "_wrfbias"]
 
 ## define directory to save figures
 save_dir = Path(str(data_dir) + f"/images/stats/final/")
@@ -66,14 +66,14 @@ with open(str(data_dir) + f"/json/fwf-attrs.json", "r") as fp:
 
 ## open intercomparsion data
 ds_wmo = xr.open_zarr(
-    str(data_dir) + "/intercomp/" + f"intercomp-d02-20211101.zarr",
+    str(data_dir) + "/intercomp/" + f"era5wrf02-intercomp-d02-20211101.zarr",
 )
 
 ## slice data acrcoss time of interest and drop any wx station with nan values.
 ## droping the nan values gibves a contiual data stream over the time of int
-# ds_wmo = ds_wmo.sel(time=slice(start, stop))
+ds_wmo = ds_wmo.sel(time=slice(start, stop))
 ds_wmo = ds_wmo.load()
-# ds_wmo = ds_wmo.dropna(dim="wmo")
+ds_wmo = ds_wmo.dropna(dim="wmo")
 
 
 ##################################################################
@@ -81,7 +81,7 @@ ds_wmo = ds_wmo.load()
 ## create datasets for each model and the observations. Used as input to solve FWI
 ds_all = []
 for model in models:
-    if model == "_wrfera5":
+    if model == "_wrfbias":
         ds_time = xr.Dataset(
             {
                 "F": (["time", "wmo"], ds_wmo["ffmc_wrf01"].values),
@@ -89,10 +89,10 @@ for model in models:
                 "D": (["time", "wmo"], ds_wmo["dc_wrf01"].values),
                 "W": (["time", "wmo"], ds_wmo["ws_wrf01"].values),
                 "WD": (["time", "wmo"], ds_wmo["wdir_wrf01"].values),
-                "T": (["time", "wmo"], ds_wmo["temp_wrf01"].values),
-                "TD": (["time", "wmo"], ds_wmo["td_era5"].values),
+                "T": (["time", "wmo"], ds_wmo["temp_wrf01"].values + 0.8),
+                "TD": (["time", "wmo"], ds_wmo["td_wrf01"].values - 0.3),
                 # "H": (["time", "wmo"], ds_wmo['rh'+model].values),
-                "r_o": (["time", "wmo"], ds_wmo["precip_era5"].values),
+                "r_o": (["time", "wmo"], ds_wmo["precip_wrf01"].values),
             }
         )
     else:
@@ -107,6 +107,7 @@ for model in models:
                 "TD": (["time", "wmo"], ds_wmo["td" + model].values),
                 # "H": (["time", "wmo"], ds_wmo['rh'+model].values),
                 "r_o": (["time", "wmo"], ds_wmo["precip" + model].values),
+                # "r_o": (["time", "wmo"], ds_wmo["precip_era5"].values),
             }
         )
 
@@ -123,7 +124,9 @@ for model in models:
         raise ValueError("ERROR: Check TD nonphysical RH values")
 
     date_range = ds_wmo.time.values
-
+    F = 85.0
+    P = 6.0
+    D = 15.0
     ## loop and solve fwi system for specified range of days
     datasets = []
     for i in range(len(date_range)):
@@ -211,15 +214,18 @@ def plotstats(fig, var_list, var_names, models, font_size):
                 ds_all[k][var].values.ravel(),
             )
             if var == "r_o":
-                print(f"number of data points before condtion {len(obs_var)}")
+                print(f"number of data points before condition {len(obs_var)}")
                 obs_var_int = obs_var[obs_var > 0.01]
                 model_var = model_var[obs_var > 0.01]
+                # obs_var_int = obs_var
+                # model_var = model_var
                 obs_var = obs_var_int
-                print(f"number of data points after condtion {len(obs_var)}")
-                print(ds_all[0][var] > 0.01)
+                print(f"number of data points after condition {len(obs_var)}")
+                # print(ds_all[0][var] > 0.01)
                 ax.plot(
                     date_range,
-                    ds_all[k][var][ds_all[0][var] > 0.01].mean(dim="wmo").values,
+                    # ds_all[k][var][ds_all[0][var] > 0.01].mean(dim="wmo").values,
+                    ds_all[k][var].mean(dim="wmo").values,
                     label=model_name,
                     color=color,
                     lw=2,
@@ -301,28 +307,24 @@ def plotstats(fig, var_list, var_names, models, font_size):
 matplotlib.rcParams.update({"font.size": 18})
 
 ##########################################################################
-# fwi_list = ["F", "P", "D"]
-# fwi_names = ["ffmc", "dmc", "dc"]
+fwi_list = ["F", "P", "D"]
+fwi_names = ["ffmc", "dmc", "dc"]
 
-# fig = plt.figure(figsize=[16, 14])
-# plotstats(fig, fwi_list,fwi_names, models, font_size=11)
-# fig.subplots_adjust(hspace=.5)
-# fig.savefig(
-#     str(save_dir) + f"/fwi-vars-mean-codes.png"
-# )
+fig = plt.figure(figsize=[16, 14])
+plotstats(fig, fwi_list, fwi_names, models, font_size=11)
+fig.subplots_adjust(hspace=0.5)
+fig.savefig(str(save_dir) + f"/fwi-vars-mean-codes.png")
 
 # plt.close()
 
 ##########################################################################
-# fwi_list = ["U", "R", "S"]
-# fwi_names = ["bui", "isi", "fwi"]
+fwi_list = ["U", "R", "S"]
+fwi_names = ["bui", "isi", "fwi"]
 
-# fig = plt.figure(figsize=[16, 14])
-# plotstats(fig, fwi_list,fwi_names, models, font_size=11)
-# fig.subplots_adjust(hspace=.5)
-# fig.savefig(
-#     str(save_dir) + f"/fwi-vars-mean-index.png"
-# )
+fig = plt.figure(figsize=[16, 14])
+plotstats(fig, fwi_list, fwi_names, models, font_size=11)
+fig.subplots_adjust(hspace=0.5)
+fig.savefig(str(save_dir) + f"/fwi-vars-mean-index.png")
 
 # plt.close()
 
@@ -336,4 +338,4 @@ models = ["", "_wrf01", "_era5"]
 fig = plt.figure(figsize=[16, 14])
 plotstats(fig, met_list, met_name, models, font_size=14)
 fig.savefig(str(save_dir) + f"/met-vars-mean.png")
-plt.close()
+# plt.close()

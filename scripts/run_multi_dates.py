@@ -29,7 +29,7 @@ __email__ = "crodell@eoas.ubc.ca"
 warnings.filterwarnings("ignore", category=RuntimeWarning)
 
 wrf_model = "wrf4"
-date_range = pd.date_range("2022-10-04", "2022-11-01")
+date_range = pd.date_range("2021-01-10", "2022-11-01")
 # date_range = pd.date_range("2021-01-02", "2021-01-10")
 # date_range = pd.date_range("2021-01-01", "2021-01-01")
 
@@ -40,36 +40,38 @@ for date in date_range:
     for domain in domains:
         domain_startTime = datetime.now()
         print(f"start of domain {domain}: ", str(domain_startTime))
-        # """######### run era5  #############"""
+        """######### run era5  #############"""
         print("######### run fwf era5  #############")
-        era_filein = f'/Volumes/WFRT-Data02/era5/era5-{date.strftime("%Y%m%d%H")}.nc'
-        coeff = FWF(
-            era_filein,
-            domain,
-            iterator="era5",
-            fbp_mode=False,
-            overwinter=True,
-            initialize=False,
-            forecast=False,
-            config="ERA504",
-        )
-        coeff.daily()
-        # coeff.hourly()
+        # era_filein = f'/Volumes/WFRT-Data02/era5/era5-{date.strftime("%Y%m%d%H")}.nc'
+        # era_filein = f'/Volumes/WFRT-Data02/era5/fwf/fwf-hourly-d02-{date.strftime("%Y%m%d%H")}.nc'
 
-        # """######### run fwf day0  #############"""
-        # print("######### run fwf wrf  #############")
-        # fwf0_filein = f'/Volumes/Scratch/FWF-WAN00CG/{domain}/{date.strftime("%Y%m")}/fwf-hourly-d02-{date.strftime("%Y%m%d06")}.nc'
         # coeff = FWF(
-        #     fwf0_filein,
+        #     era_filein,
         #     domain,
-        #     iterator="fwf",
+        #     iterator="era5",
         #     fbp_mode=False,
         #     overwinter=False,
         #     initialize=False,
         #     forecast=False,
-        #     config="WRF06",
+        #     config="ERA506",
         # )
         # coeff.daily()
+        # coeff.hourly()
+
+        # """######### run fwf day0  #############"""
+        # print("######### run fwf wrf  #############")
+        fwf0_filein = f'/Volumes/Scratch/FWF-WAN00CG/{domain}/{date.strftime("%Y%m")}/fwf-hourly-d02-{date.strftime("%Y%m%d06")}.nc'
+        coeff = FWF(
+            fwf0_filein,
+            domain,
+            iterator="fwf",
+            fbp_mode=False,
+            overwinter=True,
+            initialize=False,
+            forecast=False,
+            config="WRF05",
+        )
+        coeff.daily()
         # coeff.hourly()
 
         print(f"Domain {domain} run time: ", datetime.now() - domain_startTime)

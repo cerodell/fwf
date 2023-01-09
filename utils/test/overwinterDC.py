@@ -42,15 +42,6 @@ tzone = static_ds.ZoneST.values
 
 shape = tzone.shape
 
-FSy = np.full(shape, 0, dtype=float)
-FSy = xr.DataArray(FSy, name="FSy", dims=("south_north", "west_east"))
-
-r_w = np.random.randint(0, 300, size=shape)
-r_w = xr.DataArray(r_w, name="r_w", dims=("south_north", "west_east"))
-
-
-FS_days = np.random.randint(0, 300, size=shape)
-FS_days = xr.DataArray(FS_days, name="FS_days", dims=("south_north", "west_east"))
 
 ## determine index for looping based on length of time array and initial time
 time_array = hourly_ds.Time.values
@@ -178,36 +169,50 @@ except:
 # else:
 #     pass
 
-# TMAX = TMAX_da
+TMAX = TMAX_da
 
 # %%
-TMAX = xr.concat(
-    [
-        TMAX_da.isel(time=slice(i, i + 3))
-        .max(dim="time")
-        .assign_coords({"Time": days_of_max[i]})
-        for i in range(int(len(days_of_max) / 3))
-    ],
-    dim="time",
-)
+# TMAX = xr.concat(
+#     [
+#         TMAX_da.isel(time=slice(i, i + 3))
+#         .max(dim="time")
+#         .assign_coords({"Time": days_of_max[i]})
+#         for i in range(int(len(days_of_max) / 3))
+#     ],
+#     dim="time",
+# )
+
+
+# %%
 ## apply fire season onset condtions and create binary mask
+
+FSy = np.full(shape, 0, dtype=float)
+FSy = xr.DataArray(FSy, name="FSy", dims=("south_north", "west_east"))
+
+r_w = np.random.randint(0, 300, size=shape)
+r_w = xr.DataArray(r_w, name="r_w", dims=("south_north", "west_east"))
+
+FS_days = np.full(shape, 30, dtype=float)
+FS_days = xr.DataArray(FS_days, name="FS_days", dims=("south_north", "west_east"))
+
 dFS_list, FS_list, r_w_list, FS_days_list = [], [], [], []
 for i in range(len(TMAX)):
-
-    FS_daysL = FS_days + 1
-    FS_days = FS_daysL
+    FS_days = FS_days + 1
     TMAXi = TMAX.isel(time=i)
     nan_full = np.full(TMAXi.shape, np.nan)
-    FSi = xr.where(TMAXi < 5, 1, nan_full)
-    FSi = xr.where(TMAXi > 12, 0, FSi)
+    # FSi = xr.where(TMAXi < 5, 1, nan_full)
+    # FSi = xr.where(TMAXi > 12, 0, FSi)
+
+    FSi = xr.where((TMAXi < 5) & (FS_days > 30), 1, nan_full)
+    FSi = xr.where((TMAXi > 12) & (FS_days > 30), 0, FSi)
 
     ## take difference of yesterdays FS mask minus intermediate FS mask for an delta FS mask
-    dFSi = FSy - FSi
+    dFS = FSy - FSi
 
     ## check where onset of summer or winter have occurred in the past month
     ## if onset has happened in the past month do nothing
-    dFS = np.where((FS_days > 30) & (dFSi == -1), -1, nan_full)
-    dFS = np.where((FS_days > 30) & (dFSi == 1), 1, dFS)
+    # dFS = np.where((FS_days < 30) & (dFSi == -1), -1, nan_full)
+    # dFS = np.where((FS_days < 30) & (dFSi == 1), 1, dFS)
 
     dFS = xr.DataArray(dFS, name="dFS", dims=("south_north", "west_east"))
     dFS_list.append(dFS)
@@ -224,7 +229,7 @@ for i in range(len(TMAX)):
 
     ## replace FSy with FS for next day's forecast
     FSy = FS
-
+    FS_daysY = FS_days
     ## accumulated precipitations on model grids that are in winter
     # r_w = r_w + daily_ds["r_o"].isel(time=i)
 
@@ -240,7 +245,28 @@ FS = xr.concat(FS_list, dim="time")
 FS_days = xr.concat(FS_days_list, dim="time")
 r_w = xr.concat(r_w_list, dim="time")
 
+
+print(
+    f"dFS == 0 (no change of season)  {np.unique(dFS.isel(time = 32) == 0, return_counts = True)}"
+)
+print(
+    f"dFS == 1 (onset of summer)      {np.unique(dFS.isel(time = 32) == 1, return_counts = True)}"
+)
+print(
+    f"dFS == -1 (onset of winter)     {np.unique(dFS.isel(time = 32) == -1, return_counts = True)}"
+)
+
+
+import plotly.express as px
+
+df = dFS.isel(south_north=100, west_east=300).to_dataframe()
+df = df.reset_index()
+
+fig = px.line(df, x="time", y=["dFS"])
+fig.show()
 # daily_ds["TMAX"] = TMAX
 # daily_ds["dFS"] = dFS
 # daily_ds["FS"] = FS
 # daily_ds["r_w"] = r_w
+
+# %%

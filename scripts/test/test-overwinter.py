@@ -63,10 +63,11 @@ tmax = ds.tmax.sortby(ds.wmo)
 wmo = 71255
 # wmo = 3258
 # wmo = 71354
-wmo = 71741
+# wmo = 71741
 
-# wmo = 7244
-wmo = 7416
+wmo = 7244
+# wmo = 7416
+# wmo = 3133
 # ds_wmo = ds.sel(wmo =wmo, time = slice('2021-11-02', '2022-04-08'))
 # ds_wmo = ds.sel(wmo =wmo, time = slice('2021-09-01', '2022-10-01'))
 
@@ -102,9 +103,9 @@ fig.show()
 # # ds_mow1.dc.values
 # ds_mow1.dc.plot()
 
-564
+# 564
 
-175
+# 175
 
 
 # # ds_mow1.tmax.plot()

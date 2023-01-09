@@ -63,7 +63,7 @@ ds = xr.open_zarr(
     + "/intercomp/"
     + f"final-intercomp-{domain}-{intercomp_today_dir}.zarr",
 )
-# ds = ds.sel(time=slice("2022-01-01", "2022-10-01"))
+# ds = ds.sel(time=slice("2022-04-01", "2022-10-01"))
 ds = ds.load()
 
 
@@ -121,7 +121,7 @@ def plotstats(fig, var_list):
         var = var_list[i]
         stats_text = ""
         for j in range(len(models)):
-            df_final = df[~np.isnan(df[var])]
+            df_final = df  # [~np.isnan(df[var])]
             if var == "precip":
                 print(
                     f"number of data points before condtion {len(df_final['precip'])}"
@@ -181,7 +181,7 @@ def plotstats(fig, var_list):
                 var_model,
                 label=model_name,
                 zorder=2,
-                color=colors[j + 1],
+                color=colors[j],
             )
             stats_text += f"{model_name}   (r): {r2value} (mbe): {mbe} (rmse): {rmse} (mae): {mae} \n"
 
@@ -205,7 +205,7 @@ def plotstats(fig, var_list):
             var_obs,
             label="Observation",
             zorder=2,
-            color=colors[0],
+            color="k",
             lw=2,
         )
         # ax.plot(df_final.index, var_model, label="Forecast", zorder=2, color=colors[3])
@@ -237,7 +237,7 @@ def plotstats(fig, var_list):
 
 
 fwi_list = ["ffmc", "dmc", "dc", "bui", "isi", "fwi"]
-# fwi_list = ["dmc", "dc"]
+# fwi_list = ["ffmc","dmc", "dc"]
 
 fig = plt.figure(figsize=[10, 14])
 # fig.suptitle(
@@ -253,18 +253,18 @@ plt.close()
 
 ##########################################################################
 ##########################################################################
-# met_list = ["temp", "td", "rh", "ws", "wdir", "precip"]
+met_list = ["temp", "td", "rh", "ws", "wdir", "precip"]
 # # met_unit = ["C", "%", "km h^-1", "mm"]
 # # length = len(met_list)
 # # models = ["_era5", "_wrf05"]
 
-# fig = plt.figure(figsize=[10, 14])
+fig = plt.figure(figsize=[10, 14])
 # # fig.suptitle(
 # #     f'Comparison of Model Derived Met vs Observations at {len(unique)} Weather Stations \n {date_range[0].strftime("%Y%m%d")} - {date_range[-1].strftime("%Y%m%d")}',
 # #     fontsize=14,
 # # )
-# plotstats(fig, met_list)
+plotstats(fig, met_list)
 
-# # fig.tight_layout()
-# fig.savefig(str(save_dir) + f"/met-vars-{domain}-{intercomp_today_dir}-mean.png")
-# plt.close()
+# fig.tight_layout()
+fig.savefig(str(save_dir) + f"/met-vars-{domain}-{intercomp_today_dir}-mean.png")
+plt.close()

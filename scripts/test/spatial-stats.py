@@ -32,6 +32,7 @@ warnings.filterwarnings("ignore", category=FutureWarning)
 wrf_model = "wrf4"
 # models = ["_era5", "_wrf01",  "_wrf02",  "_wrf03",  "_wrf04"]
 models = ["_era5", "_wrf01"]
+models = ["_wrf05", "_wrf06"]
 
 domain = "d02"
 # date = pd.Timestamp("today")
@@ -198,6 +199,8 @@ def plotstats(var_list):
 ##########################################################################
 ##########################################################################
 fwi_list = ["ffmc", "dmc", "dc", "bui", "isi", "fwi"]
+fwi_list = ["dc"]
+
 plotstats(fwi_list)
 
 
