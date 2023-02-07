@@ -28,7 +28,7 @@ __email__ = "crodell@eoas.ubc.ca"
 
 wrf_model = "wrf4"
 domain = "d02"
-date_range = pd.date_range("2021-01-06", "2022-11-01")
+date_range = pd.date_range("2021-01-06", "2021-01-06")
 # date_range = pd.date_range("2021-01-01", "2021-01-06")
 
 fwf_dir = "/Volumes/WFRT-Data02/FWF-WAN00CG/d02/"
@@ -311,57 +311,57 @@ for date in date_range:
         # intercomp_today_ds[name_lower + f"_wrfera5"].attrs["description"] = (
         #     f"WRF01 INTERPOLATED FORECASTED " + attrs["description"]
         # )
-    intercomp_today_dir = day1_obs_date[:-2]
-    intercomp_yesterday_dir = day2_obs_date[:-2]
+#     intercomp_today_dir = day1_obs_date[:-2]
+#     intercomp_yesterday_dir = day2_obs_date[:-2]
 
-    my_dir = Path(
-        str(data_dir)
-        + "/intercomp/"
-        + f"intercomp-{domain}-{intercomp_yesterday_dir}.zarr"
-    )
-    if my_dir.is_dir():
-        intercomp_yesterday_ds = xr.open_zarr(
-            str(data_dir)
-            + "/intercomp/"
-            + f"intercomp-{domain}-{intercomp_yesterday_dir}.zarr"
-        )
-        final_ds = xr.combine_nested(
-            [intercomp_yesterday_ds, intercomp_today_ds], "time"
-        )
+#     my_dir = Path(
+#         str(data_dir)
+#         + "/intercomp/"
+#         + f"intercomp-{domain}-{intercomp_yesterday_dir}.zarr"
+#     )
+#     if my_dir.is_dir():
+#         intercomp_yesterday_ds = xr.open_zarr(
+#             str(data_dir)
+#             + "/intercomp/"
+#             + f"intercomp-{domain}-{intercomp_yesterday_dir}.zarr"
+#         )
+#         final_ds = xr.combine_nested(
+#             [intercomp_yesterday_ds, intercomp_today_ds], "time"
+#         )
 
-        final_ds = rechunk(final_ds)
-        final_ds.to_zarr(
-            str(data_dir)
-            + "/intercomp/"
-            + f"intercomp-{domain}-{intercomp_today_dir}.zarr",
-            mode="w",
-        )
-        print(
-            "Wrote:   "
-            + str(data_dir)
-            + "/intercomp/"
-            + f"intercomp-{domain}-{intercomp_today_dir}.zarr"
-        )
-        # print(final_ds)
-    else:
-        final_ds = intercomp_today_ds
-        final_ds = rechunk(final_ds)
-        final_ds.to_zarr(
-            str(data_dir)
-            + "/intercomp/"
-            + f"intercomp-{domain}-{intercomp_today_dir}.zarr",
-            mode="w",
-        )
-        print(
-            "Wrote:   "
-            + str(data_dir)
-            + "/intercomp/"
-            + f"intercomp-{domain}-{intercomp_today_dir}.zarr"
-        )
-        # print(final_ds)
+#         final_ds = rechunk(final_ds)
+#         final_ds.to_zarr(
+#             str(data_dir)
+#             + "/intercomp/"
+#             + f"intercomp-{domain}-{intercomp_today_dir}.zarr",
+#             mode="w",
+#         )
+#         print(
+#             "Wrote:   "
+#             + str(data_dir)
+#             + "/intercomp/"
+#             + f"intercomp-{domain}-{intercomp_today_dir}.zarr"
+#         )
+#         # print(final_ds)
+#     else:
+#         final_ds = intercomp_today_ds
+#         final_ds = rechunk(final_ds)
+#         final_ds.to_zarr(
+#             str(data_dir)
+#             + "/intercomp/"
+#             + f"intercomp-{domain}-{intercomp_today_dir}.zarr",
+#             mode="w",
+#         )
+#         print(
+#             "Wrote:   "
+#             + str(data_dir)
+#             + "/intercomp/"
+#             + f"intercomp-{domain}-{intercomp_today_dir}.zarr"
+#         )
+#         # print(final_ds)
 
-### Timer
-print("Total Run Time: ", datetime.now() - startTime)
+# ### Timer
+# print("Total Run Time: ", datetime.now() - startTime)
 
 
 # test = final_ds.load()

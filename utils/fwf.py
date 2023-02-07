@@ -18,6 +18,7 @@ from pathlib import Path
 # from netCDF4 import Dataset
 from datetime import datetime
 from utils.read_wrfout import readwrf
+from utils.bias_correct import bias_correct
 from utils.era5 import config_era5
 from utils.compressor import compressor, file_size
 from context import data_dir
@@ -78,6 +79,7 @@ class FWF:
         fbp_mode,
         overwinter,
         initialize,
+        correctbias,
         forecast,
         config,
     ):
@@ -146,6 +148,7 @@ class FWF:
                 int_ds = int_ds.drop(
                     [var for var in list(int_ds) if var not in keep_vars]
                 )
+
                 # int_ds = int_ds.isel(time=slice(0, 24))
                 # print(int_ds)
                 # self.save_dir = "/Volumes/WFRT-Data02/FWF-WAN00CG/d02/ERA5WRF02/fwf/"
@@ -158,13 +161,14 @@ class FWF:
         ###########################################################################################################
 
         ############ Set up dataset and get attributes ################
-        self.int_ds = int_ds.load()
+        self.int_ds = int_ds
         self.attrs = int_ds.attrs
         self.forecast = forecast
         self.initialize = initialize
         self.config = config
         self.overwinter = overwinter
         self.iterator = iterator
+        self.correctbias = correctbias
 
         ############ Mathematical Constants and UsefulArrays ################
         ### Math Constants
@@ -279,6 +283,16 @@ class FWF:
             else:
                 self.daily_ds[var].attrs = self.hourly_ds[var].attrs
         self.daily_ds["r_o_tomorrow"].attrs = self.daily_ds["r_o"].attrs
+
+        # test = self.daily_ds.H.values
+        if self.correctbias == True:
+            self.daily_ds = bias_correct(self.daily_ds, self.domain, self.config)
+        elif self.correctbias == False:
+            pass
+        else:
+            raise ValueError("Invalid correctbias option, must be boolean")
+        # print(self.daily_ds.H.values == test)
+
         ################################################################################
 
         return

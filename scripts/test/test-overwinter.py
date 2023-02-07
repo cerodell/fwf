@@ -12,7 +12,7 @@ import matplotlib.colors
 import matplotlib.pyplot as plt
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 import scipy.ndimage as ndimage
-from scipy.ndimage.filters import gaussian_filter
+from scipy.ndimage import gaussian_filter
 from pylab import *
 
 import plotly.express as px
@@ -44,59 +44,140 @@ warnings.filterwarnings("ignore", category=FutureWarning)
 
 
 domain = "d02"
+test_case = "WRF05060708"
 date = pd.Timestamp(2022, 10, 31)
 
 
 intercomp_today_dir = date.strftime("%Y%m%d")
 
 
-ds = xr.open_zarr(
-    str(data_dir)
-    + "/intercomp/"
-    + f"final-intercomp-{domain}-{intercomp_today_dir}.zarr",
-)
+# ds = xr.open_zarr(
+#     str(data_dir)
+#     + "/intercomp/"
+#     + f"final-intercomp-{domain}-{intercomp_today_dir}.zarr",
+# )
+
+ds = xr.open_dataset(str(data_dir) + f"/intercomp/d02/{test_case}/20210101-20221031.nc")
 # ds = ds.sel(time=slice("2022-01-01", "2022-10-01"))
-ds = ds.load()
-tmax = ds.tmax.sortby(ds.wmo)
+# tmax = ds.tmax.sortby(ds.wmo)
 
 
 wmo = 71255
+# wmo = 71163
 # wmo = 3258
 # wmo = 71354
 # wmo = 71741
 
-wmo = 7244
+# wmo = 7244
 # wmo = 7416
-# wmo = 3133
+# wmo = 721572
 # ds_wmo = ds.sel(wmo =wmo, time = slice('2021-11-02', '2022-04-08'))
-# ds_wmo = ds.sel(wmo =wmo, time = slice('2021-09-01', '2022-10-01'))
+# ds_wmo = ds.sel(wmo =wmo, time = slice('2021-09-01', '2022-10-01'))\
+# ds = ds.reset_coords()
+# ds = ds.set_coords(["lats", "lons", "id", "name", "prov", "elev", "tz_correct"])
 
-ds_wmo = ds.sel(wmo=wmo)
-r_w_list = []
-sum_rain = 0
-for i in range(len(ds_wmo.time)):
-    sum_rain += ds_wmo.precip.isel(time=i).values
-    r_w_list.append(sum_rain)
+# ds['prov'] = ds['prov'].astype(str)
 
-r_w = xr.DataArray(np.array(r_w_list), name="r_w_obs", dims="time")
+# ds = ds.set_index({"prov": "wmo"})
 
-ds_wmo["r_w_obs"] = r_w
-# ds_wmo.r_w.plot()
-# ds_wmo.r_w_obs.plot()
+# ds['prov'].sel(prov = 'BC')
+
+# ds = ds.assign_coords(prov= ("wmo",ds['prov'].values ))
+# provs = xr.DataArray(np.array(["BC", "AB"]), dims= 'prov')
+
+# ds_wmo2 = ds['fwi'].sel(prov = "BC")
+
+# test = ds.sel(tz_correct = -7)
+
+provs = [
+    "YT",
+    "BC",
+    "AB",
+    "MB",
+    "NB",
+    "NE",
+    "NF",
+    "NS",
+    "NT",
+    "NU",
+    "SK",
+    "PE",
+    "QC",
+    "ON",
+]
+index = np.isin(ds["prov"].values, provs)
+
+ds_wmo = ds.isel(wmo=index)
+ds_wmo = ds_wmo.sel(time=slice("2021-06-01", "2021-09-01"))
+ds_wmo = ds_wmo.dropna(dim="wmo", how="any")
+ds_wmo = ds_wmo.mean(dim="wmo")
 df = ds_wmo.to_dataframe()
 df = df.reset_index()
 
-fig = px.line(df, x="time", y=["dc", "dc_wrf05", "dc_wrf06"])
+
+var = "ffmc"
+title_list = ["prov", "wmo", "lats", "lons"]
+# fig = px.line(df, x="time", y=[var, f"{var}_wrf05", f"{var}_wrf06", f"{var}_wrf07", f"{var}_wrf08"],title="  ".join([f'{i} = {str(ds_wmo[i].values)}' for i in title_list]),)
+fig = px.line(
+    df,
+    x="time",
+    y=[var, f"{var}_wrf05", f"{var}_wrf06", f"{var}_wrf07", f"{var}_wrf08"],
+)
 fig.show()
 
-fig = px.line(df, x="time", y=["dfs"])
-fig.show()
 
-fig = px.line(df, x="time", y=["r_w"])
-fig.show()
+# ds = ds.set_coords(("lats", "lons", "id", "name", "prov", "elev", "tz_correct"))
+# ds['prov'] = ds['prov'].astype(str)
+var = "fwi"
+var_list = [var, f"{var}_wrf05", f"{var}_wrf06", f"{var}_wrf07", f"{var}_wrf08"]
 
-fig = px.line(df, x="time", y=["fs"])
-fig.show()
+# ds1 = ds.sel(time=slice("2021-06-01", "2021-09-01"))
+# ds1 = ds1.copy()[var_list]
+
+
+prov_list, counts = np.unique(ds["prov"], return_counts=True)
+# prov_list = prov_list[counts>2]
+# counts = counts[counts>2]
+
+# for prov, count in zip(prov_list, counts):
+#     ds_wmo2 = ds1.isel(wmo=np.where(ds['prov'] == prov)[0])
+#     ds_wmo1 = ds_wmo2.dropna(dim = 'wmo', how = 'any')
+#     ds_wmo = ds_wmo1.mean(dim = 'wmo')
+
+#     df = ds_wmo.to_dataframe()
+#     df = df.reset_index()
+
+#     var = 'fwi'
+#     fig = px.line(df, x="time", y=[var, f"{var}_wrf05", f"{var}_wrf06", f"{var}_wrf07", f"{var}_wrf08"], title= f"{prov}: {count}")
+#     fig.show()
+
+
+# r_w_list = []
+# sum_rain = 0
+# for i in range(len(ds_wmo.time)):
+#     sum_rain += ds_wmo.precip.isel(time=i).values
+#     r_w_list.append(sum_rain)
+
+# r_w = xr.DataArray(np.array(r_w_list), name="r_w_obs", dims="time")
+
+# ds_wmo["r_w_obs"] = r_w
+# ds_wmo.r_w.plot()
+# ds_wmo.r_w_obs.plot()
+
+
+# var = 'fwi'
+# title_list = ['prov', 'wmo', 'lats', 'lons']
+# fig = px.line(df, x="time", y=[var, f"{var}_wrf05", f"{var}_wrf06", f"{var}_wrf07", f"{var}_wrf08"],title="  ".join([f'{i} = {str(ds_wmo[i].values)}' for i in title_list]),)
+# fig.show()
+
+# fig = px.line(df, x="time", y=["dfs"])
+# fig.show()
+
+# fig = px.line(df, x="time", y=["r_w"])
+# fig.show()
+
+# fig = px.line(df, x="time", y=["fs"])
+# fig.show()
 
 # # %%
 # ds_mow1 = ds_wmo.sel(time = slice('2021-04-14', '2022-11-01'))
@@ -161,7 +242,7 @@ fig.show()
 #     {
 #         "F": (["time"], ds_wmo["ffmc"].values),
 #         "P": (["time"], ds_wmo["dmc"].values),
-#         "D": (["time"], ds_wmo["dc"].values),
+#         "D": (["time"], ds_wmo[f"{var}"].values),
 #         "W": (["time"], ds_wmo["ws"].values),
 #         "WD": (["time"], ds_wmo["wdir"].values),
 #         "T": (["time"], ds_wmo["temp"].values),

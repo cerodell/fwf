@@ -5,30 +5,100 @@ import pandas as pd
 import xarray as xr
 from pathlib import Path
 from netCDF4 import Dataset
-from datetime import datetime
-import string
+import scipy.stats
+import cartopy.crs as ccrs
+import cartopy.feature as cfeature
+import matplotlib.colors
+import matplotlib.pyplot as plt
+from mpl_toolkits.axes_grid1 import make_axes_locatable
+import scipy.ndimage as ndimage
+from scipy.ndimage.filters import gaussian_filter
+from pylab import *
 import salem
-import os
 
-from pathlib import Path
-
-
-from context import data_dir
+from context import data_dir, xr_dir, wrf_dir, tzone_dir
 from datetime import datetime, date, timedelta
+from sklearn.metrics import mean_squared_error, mean_absolute_error
+from sklearn.metrics import r2_score
+from scipy import stats
+from matplotlib.offsetbox import AnchoredText
+import matplotlib
+from pathlib import Path
+from utils.fwi import (
+    solve_ffmc,
+    solve_dmc,
+    solve_dc,
+    solve_isi,
+    solve_bui,
+    solve_fwi,
+)
 
-startTime = datetime.now()
+matplotlib.rcParams.update({"font.size": 14})
 
-fwf_dir = "/Volumes/WFRT-Data02/FWF-WAN00CG/d02/forecast"
+import warnings
+
+warnings.filterwarnings("ignore")
+
+warnings.filterwarnings("ignore", category=FutureWarning)
+
+
+"""
+
+BAD KRIGED TEMP file on 2021-02-24, fix and rerun all of WRF07
+
+"""
 
 wrf_model = "wrf4"
 domain = "d02"
-forecast_date = "2021092906"
+# time_slice = slice("2021-02-26", "2021-10-31")
+
+model_config = ["_wrf05", "_wrf06", "_wrf07"]
+trail_name = "WRF050607"
+nc_file = "20210101-20221031.nc"
 
 
-# Volumes/WFRT-Data02/FWF-WAN00CG/d02/WRF05/fwf/fwf-daily-d02-2021010106.nc
+with open(str(data_dir) + f"/json/fwf-attrs.json", "r") as fp:
+    var_dict = json.load(fp)
 
-filein = "/Volumes/WFRT-Data02/FWF-WAN00CG/d02/WRF05/fwf/fwf-daily-d02-2021010206.nc"
-ds = xr.open_dataset(filein)
+
+ds = xr.open_dataset(str(data_dir) + f"/intercomp/d02/{trail_name}/{nc_file}")
+
+try:
+    ds = ds.sel(time=time_slice)
+except:
+    pass
+
+ds = ds.load()
+
+
+# ds['dc_wrf07'].mean(dim = 'wmo').plot()
+
+doi = ds["temp_wrf07"].mean(dim="wmo").idxmin().values
+
+doi_krig = pd.to_datetime(str(doi - np.timedelta64(1, "D"))).strftime("%Y%m%d")
+doi = pd.to_datetime(str(doi)).strftime("%Y%m%d")
+
+ds_krig = salem.open_xr_dataset(
+    f"/Volumes/WFRT-Data02/FWF-WAN00CG/d02/krig-bias/fwf-krig-d02-{doi_krig}.nc"
+)
+
+ds_krig.T_bias.salem.quick_map()
+
+
+ds_fwf = salem.open_xr_dataset(
+    f"/Volumes/WFRT-Data02/FWF-WAN00CG/d02/WRF07/fwf/fwf-daily-d02-{doi}06.nc"
+)
+
+
+# ds_fwf['T'] = ds_fwf['T'] + ds_krig.T_bias.values
+# ds_fwf['T'].attrs['pyproj_srs'] = ds_fwf['TD'].attrs['pyproj_srs']
+
+ds_fwf.isel(time=0).T.salem.quick_map()
+
+
+if (np.max(ds_fwf.T) > 100) | (np.min(ds_fwf.T) < -100):
+    raise ValueError("ERROR: nonphysical T values")
+
 
 # filein = "/Volumes/Scratch/FWF-WAN00CG/d02/202205/fwf-hourly-d02-2022051006.nc"
 # # filein = "/Users/crodell/fwf/fwf-hourly-d02-2022051706.nc"

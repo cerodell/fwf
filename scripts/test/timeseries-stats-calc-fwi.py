@@ -42,14 +42,14 @@ warnings.filterwarnings("ignore")
 ##################### Define Inputs   ###########################
 ## time of interest
 start, stop = "2021-05-01", "2021-10-01"
-
+bias = "-fwi"
 ## default moisture code values
 F = 85.0
 P = 6.0
 D = 15.0
 
 ## models to compare
-models = ["", "_wrf01", "_era5", "_wrfbias"]
+models = ["", "_wrf05", "_wrfbias"]
 
 ## define directory to save figures
 save_dir = Path(str(data_dir) + f"/images/stats/final/")
@@ -65,9 +65,7 @@ with open(str(data_dir) + f"/json/fwf-attrs.json", "r") as fp:
     var_dict = json.load(fp)
 
 ## open intercomparsion data
-ds_wmo = xr.open_zarr(
-    str(data_dir) + "/intercomp/" + f"era5wrf02-intercomp-d02-20211101.zarr",
-)
+ds_wmo = xr.open_dataset(str(data_dir) + "/intercomp/d02/WRF0506/20210106-20221031.nc")
 
 ## slice data acrcoss time of interest and drop any wx station with nan values.
 ## droping the nan values gibves a contiual data stream over the time of int
@@ -84,15 +82,17 @@ for model in models:
     if model == "_wrfbias":
         ds_time = xr.Dataset(
             {
-                "F": (["time", "wmo"], ds_wmo["ffmc_wrf01"].values),
-                "P": (["time", "wmo"], ds_wmo["dmc_wrf01"].values),
-                "D": (["time", "wmo"], ds_wmo["dc_wrf01"].values),
-                "W": (["time", "wmo"], ds_wmo["ws_wrf01"].values),
-                "WD": (["time", "wmo"], ds_wmo["wdir_wrf01"].values),
-                "T": (["time", "wmo"], ds_wmo["temp_wrf01"].values + 0.8),
-                "TD": (["time", "wmo"], ds_wmo["td_wrf01"].values - 0.3),
+                "F": (["time", "wmo"], ds_wmo["ffmc_wrf05"].values),
+                "P": (["time", "wmo"], ds_wmo["dmc_wrf05"].values),
+                "D": (["time", "wmo"], ds_wmo["dc_wrf05"].values),
+                "W": (["time", "wmo"], ds_wmo["ws_wrf05"].values),
+                "WD": (["time", "wmo"], ds_wmo["wdir_wrf05"].values),
+                # "T": (["time", "wmo"], ds_wmo["temp_wrf05"].values + 0.8),
+                # "TD": (["time", "wmo"], ds_wmo["td_wrf05"].values - 0.4),
+                "T": (["time", "wmo"], ds_wmo["temp_wrf05"].values),
+                "TD": (["time", "wmo"], ds_wmo["td_wrf05"].values),
                 # "H": (["time", "wmo"], ds_wmo['rh'+model].values),
-                "r_o": (["time", "wmo"], ds_wmo["precip_wrf01"].values),
+                "r_o": (["time", "wmo"], ds_wmo["precip_wrf05"].values),
             }
         )
     else:
@@ -158,6 +158,9 @@ for model in models:
     ds_concat = xr.concat(datasets, dim="time")
     ds_all.append(ds_concat)
 
+# ds_all[1]['S'] = ds_all[1]['S'] + 3.4
+ds_all[2]["S"] = ds_all[2]["S"] + 3.4
+
 
 def MBE(y_true, y_pred):
     """
@@ -196,9 +199,9 @@ def plotstats(fig, var_list, var_names, models, font_size):
             model_name = model.strip("_").upper()
             # print(model_name)
 
-            if model == "_wrf01":
+            if model == "_wrf05":
                 color = colors[0]
-            elif model == "_era5":
+            elif model == "_wrf06":
                 color = colors[3]
             else:
                 color = colors[2]
@@ -313,7 +316,7 @@ fwi_names = ["ffmc", "dmc", "dc"]
 fig = plt.figure(figsize=[16, 14])
 plotstats(fig, fwi_list, fwi_names, models, font_size=11)
 fig.subplots_adjust(hspace=0.5)
-fig.savefig(str(save_dir) + f"/fwi-vars-mean-codes.png")
+fig.savefig(str(save_dir) + f"/fwi-vars-mean-codes{bias}.png")
 
 # plt.close()
 
@@ -324,7 +327,7 @@ fwi_names = ["bui", "isi", "fwi"]
 fig = plt.figure(figsize=[16, 14])
 plotstats(fig, fwi_list, fwi_names, models, font_size=11)
 fig.subplots_adjust(hspace=0.5)
-fig.savefig(str(save_dir) + f"/fwi-vars-mean-index.png")
+fig.savefig(str(save_dir) + f"/fwi-vars-mean-index{bias}.png")
 
 # plt.close()
 
@@ -333,9 +336,9 @@ fig.savefig(str(save_dir) + f"/fwi-vars-mean-index.png")
 # met_name = ["temp", "td", "rh", "ws", "wdir", "precip"]
 met_list = ["T", "H", "W", "r_o"]
 met_name = ["temp", "rh", "ws", "precip"]
-models = ["", "_wrf01", "_era5"]
+models = ["", "_wrf05", "_wrfbias"]
 
 fig = plt.figure(figsize=[16, 14])
 plotstats(fig, met_list, met_name, models, font_size=14)
-fig.savefig(str(save_dir) + f"/met-vars-mean.png")
+fig.savefig(str(save_dir) + f"/met-vars-mean{bias}.png")
 # plt.close()

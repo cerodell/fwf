@@ -1,8 +1,10 @@
-from distutils.command.config import config
+#!/Users/crodell/miniconda3/envs/fwf/bin/python
+
+
 import context
 
 import salem
-import numpy as np
+import numpy as npdd
 import xarray as xr
 import geopandas as gpd
 import pandas as pd

@@ -23,11 +23,9 @@ from datetime import datetime
 from context import data_dir
 import matplotlib
 
-
 import warnings
 
 warnings.filterwarnings("ignore")
-# cp -r /Volumes/Scratch/FWF-WAN00CG/d03/202104 202104
 
 
 ##################################################################
@@ -43,8 +41,10 @@ D = 15.0
 ## models to compare
 models = ["", "_wrf05", "_wrf06"]
 
+## test case
+test_case = "WRF0506"
 ## define directory to save figures
-save_dir = Path(str(data_dir) + f"/images/stats/overwinter/")
+save_dir = Path(str(data_dir) + f"/images/stats/{test_case}/")
 save_dir.mkdir(parents=True, exist_ok=True)
 
 
@@ -58,7 +58,7 @@ with open(str(data_dir) + f"/json/fwf-attrs.json", "r") as fp:
 
 ## open intercomparsion data
 ds_wmo = xr.open_zarr(
-    str(data_dir) + "/intercomp/" + f"final-intercomp-d02-20221031.zarr",
+    str(data_dir) + f"/intercomp/d02/{test_case}/20210106-20221031.zarr"
 )
 
 ## slice data acrcoss time of interest and drop any wx station with nan values.
@@ -78,6 +78,9 @@ for model in models:
             "F": (["time", "wmo"], ds_wmo["ffmc" + model].values),
             "P": (["time", "wmo"], ds_wmo["dmc" + model].values),
             "D": (["time", "wmo"], ds_wmo["dc" + model].values),
+            "R": (["time", "wmo"], ds_wmo["isi" + model].values),
+            "U": (["time", "wmo"], ds_wmo["bui" + model].values),
+            "S": (["time", "wmo"], ds_wmo["fwi" + model].values),
             "W": (["time", "wmo"], ds_wmo["ws" + model].values),
             "WD": (["time", "wmo"], ds_wmo["wdir" + model].values),
             "T": (["time", "wmo"], ds_wmo["temp" + model].values),

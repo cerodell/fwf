@@ -40,31 +40,38 @@ warnings.filterwarnings("ignore")
 
 warnings.filterwarnings("ignore", category=FutureWarning)
 
+
 wrf_model = "wrf4"
-# models = ["_era5", "_wrf05",  "_wrf02",  "_wrf03",  "_wrf04"]
-models = ["_wrf05", "_wrf06"]
+domain = "d02"
+# time_slice = slice("2022-04-01", "2022-10-31")
+
+model_config = ["_wrf05", "_wrf06", "_wrf07", "_wrf08"]
+trail_name = "WRF05060708"
+nc_file = "20210101-20221031.nc"
+
+# model_config = [ "_era505",  "_era506"]
+# trail_name = 'ERA50506'
+# nc_file = '20200101-20221031.nc'
 
 
-save_dir = Path(str(data_dir) + f"/images/stats/wrf0506/")
+## define directory to save figures
+save_dir = Path(str(data_dir) + f"/images/stats/{trail_name}/")
 save_dir.mkdir(parents=True, exist_ok=True)
 
-domain = "d02"
-# date = pd.Timestamp("today")
-date = pd.Timestamp(2022, 10, 31)
-
-intercomp_today_dir = date.strftime("%Y%m%d")
 
 with open(str(data_dir) + f"/json/fwf-attrs.json", "r") as fp:
     var_dict = json.load(fp)
 
 
-ds = xr.open_zarr(
-    str(data_dir)
-    + "/intercomp/"
-    + f"final-intercomp-{domain}-{intercomp_today_dir}.zarr",
-)
-# ds = ds.sel(time=slice("2022-04-01", "2022-10-01"))
+ds = xr.open_dataset(str(data_dir) + f"/intercomp/d02/{trail_name}/{nc_file}")
+
+try:
+    ds = ds.sel(time=time_slice)
+except:
+    pass
+
 ds = ds.load()
+# ds = ds.dropna(dim="wmo")
 
 
 date_range = pd.date_range(ds.time.values[0], ds.time.values[-1])
@@ -103,7 +110,7 @@ def MBE(y_true, y_pred):
     y_pred = np.array(y_pred)
     y_true = y_true.reshape(len(y_true), 1)
     y_pred = y_pred.reshape(len(y_pred), 1)
-    diff = y_true - y_pred
+    diff = y_pred - y_true
     mbe = diff.mean()
     # print('MBE = ', mbe)
     return mbe
@@ -120,7 +127,7 @@ def plotstats(fig, var_list):
         ax = fig.add_subplot(length + 1, 1, i + 1)
         var = var_list[i]
         stats_text = ""
-        for j in range(len(models)):
+        for j in range(len(model_config)):
             df_final = df  # [~np.isnan(df[var])]
             if var == "precip":
                 print(
@@ -131,25 +138,25 @@ def plotstats(fig, var_list):
             else:
                 pass
             # df_final = df_final[np.abs(df_final[var] - df_final[var].mean()) <= (2 * df_final[var].std())]
-            model = models[j]
+            model = model_config[j]
             model_name = model.strip("_").upper()
             # print(str(round(mean_absolute_error(df[var].values, df[var + model].values),2)))
-            if "ffmc" in var_list:
-                if model_name == "ERA5":
-                    model_name += "       "
-                    pass
-                elif model_name == "WRF05":
-                    model_name = "WRF        "
-                else:
-                    pass
-            else:
-                if model_name == "ERA5":
-                    # model_name += "       "
-                    pass
-                elif model_name == "WRF05":
-                    model_name = "WRF "
-                else:
-                    pass
+            # if "ffmc" in var_list:
+            #     if model_name == "ERA5":
+            #         model_name += "       "
+            #         pass
+            #     elif model_name == "WRF05":
+            #         model_name = "WRF        "
+            #     else:
+            #         pass
+            # else:
+            #     if model_name == "ERA5":
+            #         # model_name += "       "
+            #         pass
+            #     elif model_name == "WRF05":
+            #         model_name = "WRF "
+            #     else:
+            #         pass
             r2value = round(
                 stats.pearsonr(df_final[var].values, df_final[var + model].values)[0], 2
             )
@@ -226,7 +233,7 @@ def plotstats(fig, var_list):
             ax.legend(
                 loc="upper center",
                 bbox_to_anchor=(0.5, 1.6),
-                ncol=4,
+                ncol=6,
                 fancybox=True,
                 shadow=True,
             )
@@ -234,6 +241,10 @@ def plotstats(fig, var_list):
             pass
     ax.set_xlabel("Time")
     return
+
+
+start_date = date_range[0].strftime("%Y%m%d")
+stop_date = date_range[-1].strftime("%Y%m%d")
 
 
 fwi_list = ["ffmc", "dmc", "dc", "bui", "isi", "fwi"]
@@ -248,7 +259,7 @@ fig = plt.figure(figsize=[10, 14])
 plotstats(fig, fwi_list)
 # fig.tight_layout()
 
-fig.savefig(str(save_dir) + f"/fwi-vars-{domain}-{intercomp_today_dir}-mean.png")
+fig.savefig(str(save_dir) + f"/fwi-vars-{domain}-{start_date}-{stop_date}.png")
 plt.close()
 
 ##########################################################################
@@ -256,7 +267,7 @@ plt.close()
 met_list = ["temp", "td", "rh", "ws", "wdir", "precip"]
 # # met_unit = ["C", "%", "km h^-1", "mm"]
 # # length = len(met_list)
-# # models = ["_era5", "_wrf05"]
+# # model_config = ["_era5", "_wrf05"]
 
 fig = plt.figure(figsize=[10, 14])
 # # fig.suptitle(
@@ -265,6 +276,7 @@ fig = plt.figure(figsize=[10, 14])
 # # )
 plotstats(fig, met_list)
 
+
 # fig.tight_layout()
-fig.savefig(str(save_dir) + f"/met-vars-{domain}-{intercomp_today_dir}-mean.png")
+fig.savefig(str(save_dir) + f"/met-vars-{domain}-{start_date}-{stop_date}.png")
 plt.close()

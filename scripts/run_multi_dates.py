@@ -29,9 +29,14 @@ __email__ = "crodell@eoas.ubc.ca"
 warnings.filterwarnings("ignore", category=RuntimeWarning)
 
 wrf_model = "wrf4"
-date_range = pd.date_range("2021-01-10", "2022-11-01")
-# date_range = pd.date_range("2021-01-02", "2021-01-10")
+date_range = pd.date_range("2022-02-16", "2022-11-01")
+# date_range = pd.date_range("2021-01-01", "2021-01-10")
 # date_range = pd.date_range("2021-01-01", "2021-01-01")
+
+# date_range = pd.date_range("2020-01-10", "2022-10-31")
+# date_range = pd.date_range("2020-01-02", "2020-01-10")
+# date_range = pd.date_range("2020-01-01", "2020-01-01")
+
 
 # """######### get directory to yesterdays hourly/daily .nc files.  #############"""
 for date in date_range:
@@ -40,8 +45,8 @@ for date in date_range:
     for domain in domains:
         domain_startTime = datetime.now()
         print(f"start of domain {domain}: ", str(domain_startTime))
-        """######### run era5  #############"""
-        print("######### run fwf era5  #############")
+        # """######### run era5  #############"""
+        # print("######### run fwf era5  #############")
         # era_filein = f'/Volumes/WFRT-Data02/era5/era5-{date.strftime("%Y%m%d%H")}.nc'
         # era_filein = f'/Volumes/WFRT-Data02/era5/fwf/fwf-hourly-d02-{date.strftime("%Y%m%d%H")}.nc'
 
@@ -50,16 +55,17 @@ for date in date_range:
         #     domain,
         #     iterator="era5",
         #     fbp_mode=False,
-        #     overwinter=False,
+        #     overwinter=True,
         #     initialize=False,
+        #     correctbias=False,
         #     forecast=False,
-        #     config="ERA506",
+        #     config="ERA505",
         # )
         # coeff.daily()
         # coeff.hourly()
 
-        # """######### run fwf day0  #############"""
-        # print("######### run fwf wrf  #############")
+        """######### run fwf day0  #############"""
+        print("######### run fwf wrf  #############")
         fwf0_filein = f'/Volumes/Scratch/FWF-WAN00CG/{domain}/{date.strftime("%Y%m")}/fwf-hourly-d02-{date.strftime("%Y%m%d06")}.nc'
         coeff = FWF(
             fwf0_filein,
@@ -68,8 +74,9 @@ for date in date_range:
             fbp_mode=False,
             overwinter=True,
             initialize=False,
+            correctbias=True,
             forecast=False,
-            config="WRF05",
+            config="WRF08",
         )
         coeff.daily()
         # coeff.hourly()

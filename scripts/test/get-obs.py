@@ -10,6 +10,8 @@ from wrf import ll_to_xy, xy_to_ll
 
 from context import data_dir
 
+__author__ = "Christopher Rodell"
+__email__ = "crodell@eoas.ubc.ca"
 
 #################### INPUTS ####################
 ## define date range
