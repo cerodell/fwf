@@ -1,5 +1,6 @@
 import context
 import json
+import salem
 import numpy as np
 import pandas as pd
 import xarray as xr
@@ -18,7 +19,7 @@ from pylab import *
 import plotly.express as px
 
 
-from context import data_dir, xr_dir, wrf_dir, tzone_dir
+from context import data_dir, xr_dir, wrf_dir
 from datetime import datetime, date, timedelta
 from sklearn.metrics import mean_squared_error, mean_absolute_error
 from sklearn.metrics import r2_score
@@ -57,6 +58,19 @@ intercomp_today_dir = date.strftime("%Y%m%d")
 #     + f"final-intercomp-{domain}-{intercomp_today_dir}.zarr",
 # )
 
+fwf_ds = salem.open_xr_dataset(
+    f"/Volumes/WFRT-Data02/FWF-WAN00CG/d02/WRF05/fwf/fwf-daily-d02-{date.strftime('%Y%m%d')}06.nc"
+)
+static_ds = xr.open_dataset((str(data_dir) + "/static/static-vars-wrf4-d02.nc"))
+tz = static_ds.ZoneDT.values.astype(float)
+tz[tz < 1] = np.NaN
+fwf_ds["TZ"] = (("south_north", "west_east"), tz)
+fwf_ds["TZ"].attrs["pyproj_srs"] = fwf_ds["T"].attrs["pyproj_srs"]
+fwf_ds["TZ"].plot(levels=np.arange(1, 12, 1))
+# fwf_ds["TZ"].salem.quick_map()
+plt.show()
+
+
 ds = xr.open_dataset(str(data_dir) + f"/intercomp/d02/{test_case}/20210101-20221031.nc")
 # ds = ds.sel(time=slice("2022-01-01", "2022-10-01"))
 # tmax = ds.tmax.sortby(ds.wmo)
@@ -74,7 +88,7 @@ wmo = 71255
 # ds_wmo = ds.sel(wmo =wmo, time = slice('2021-11-02', '2022-04-08'))
 # ds_wmo = ds.sel(wmo =wmo, time = slice('2021-09-01', '2022-10-01'))\
 # ds = ds.reset_coords()
-# ds = ds.set_coords(["lats", "lons", "id", "name", "prov", "elev", "tz_correct"])
+# ds = ds.set_coords(["lats", "lons", "id", "name", "prov", "elev", ""tz"_correct"])
 
 # ds['prov'] = ds['prov'].astype(str)
 
@@ -87,8 +101,12 @@ wmo = 71255
 
 # ds_wmo2 = ds['fwi'].sel(prov = "BC")
 
-# test = ds.sel(tz_correct = -7)
+# test = ds.sel("tz"_correct = -7)
 
+index = np.isin(ds["prov"].values, "AB")
+
+ds_wmo = ds.isel(wmo=index)
+ds_wmo.tz_correct.values
 provs = [
     "YT",
     "BC",
@@ -126,7 +144,7 @@ fig = px.line(
 fig.show()
 
 
-# ds = ds.set_coords(("lats", "lons", "id", "name", "prov", "elev", "tz_correct"))
+# ds = ds.set_coords(("lats", "lons", "id", "name", "prov", "elev", ""tz"_correct"))
 # ds['prov'] = ds['prov'].astype(str)
 var = "fwi"
 var_list = [var, f"{var}_wrf05", f"{var}_wrf06", f"{var}_wrf07", f"{var}_wrf08"]

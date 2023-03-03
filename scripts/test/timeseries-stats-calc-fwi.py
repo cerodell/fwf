@@ -42,7 +42,7 @@ warnings.filterwarnings("ignore")
 ##################### Define Inputs   ###########################
 ## time of interest
 start, stop = "2021-05-01", "2021-10-01"
-bias = "-fwi"
+bias = "-mcodes"
 ## default moisture code values
 F = 85.0
 P = 6.0
@@ -50,9 +50,10 @@ D = 15.0
 
 ## models to compare
 models = ["", "_wrf05", "_wrfbias"]
+trail_name = "WRF05060708"
 
 ## define directory to save figures
-save_dir = Path(str(data_dir) + f"/images/stats/final/")
+save_dir = Path(str(data_dir) + f"/images/stats/test/")
 save_dir.mkdir(parents=True, exist_ok=True)
 
 
@@ -65,7 +66,9 @@ with open(str(data_dir) + f"/json/fwf-attrs.json", "r") as fp:
     var_dict = json.load(fp)
 
 ## open intercomparsion data
-ds_wmo = xr.open_dataset(str(data_dir) + "/intercomp/d02/WRF0506/20210106-20221031.nc")
+ds_wmo = xr.open_dataset(
+    str(data_dir) + "/intercomp/d02/WRF05060708/20210101-20221031.nc"
+)
 
 ## slice data acrcoss time of interest and drop any wx station with nan values.
 ## droping the nan values gibves a contiual data stream over the time of int
@@ -149,9 +152,15 @@ for model in models:
         ds = solve_fwi(ds)
         datasets.append(ds)
         # redefine moisture codes then drop for interation
-        F = ds.F
-        P = ds.P
-        D = ds.D
+        if model == "_wrfbias":
+            F = ds.F + 1.32
+            P = ds.P + 8.66
+            D = ds.D + 32.13
+        else:
+            F = ds.F
+            P = ds.P
+            D = ds.D
+
         ds = ds.drop_vars(["F", "P", "D"])
 
     ## concat all times on a new dimension time
@@ -159,7 +168,7 @@ for model in models:
     ds_all.append(ds_concat)
 
 # ds_all[1]['S'] = ds_all[1]['S'] + 3.4
-ds_all[2]["S"] = ds_all[2]["S"] + 3.4
+# ds_all[2]["S"] = ds_all[2]["S"] + 3.4
 
 
 def MBE(y_true, y_pred):

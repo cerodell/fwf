@@ -246,7 +246,7 @@ class FWF:
             static_ds.FUELS.values.astype(int),
             static_ds.GS.values,
             static_ds.SAZ.values,
-            static_ds.ZoneDT.values,
+            static_ds.ZoneST.values,
             static_ds.PC.values,
         )
 

@@ -32,7 +32,7 @@ warnings.filterwarnings("ignore", category=FutureWarning)
 wrf_model = "wrf4"
 # models = ["_era5", "_wrf01",  "_wrf02",  "_wrf03",  "_wrf04"]
 models = ["_era5", "_wrf01"]
-models = ["_wrf05", "_wrf07", "_wrf08"]
+models = ["_wrf05", "_wrf08"]
 # models = ["_wrf08"]
 
 domain = "d02"

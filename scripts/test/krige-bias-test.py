@@ -34,30 +34,37 @@ startTime = datetime.now()
 
 startTime = datetime.now()
 domain = "d02"
-var = "TD"
+var = "T"
 var_range = [-6, 6]
-date = pd.Timestamp("2022-08-01")
+date = pd.Timestamp("2021-02-01")
 # date = pd.Timestamp("2022-02-18")
-trail_name = "WRF050607"
+trail_name = "WRF0304050607"
 
 
 ##################################################################
 ##################### Open Data Files  ###########################
 krig_type = "uk"
-
+# date_range = pd.date_range("2021-01-01", "2022-10-31")
+# for date in date_range:
 test_ds = salem.open_xr_dataset(
     f'/Volumes/WFRT-Data02/FWF-WAN00CG/d02/krig-bias-{krig_type}/fwf-krig-d02-{date.strftime("%Y%m%d")}.nc'
 )
-
-
 fwf_ds = salem.open_xr_dataset(
-    f"/Volumes/WFRT-Data02/FWF-WAN00CG/d02/WRF05/fwf/fwf-daily-d02-{date.strftime('%Y%m%d')}06.nc"
+    f"/Volumes/WFRT-Data02/FWF-WAN00CG/d02/WRF03/fwf/fwf-daily-d02-{date.strftime('%Y%m%d')}06.nc"
 )
-# fwf_ds['T'].isel(time = 0).salem.quick_map()
 
+test_ds[f"{var}_bias"].salem.quick_map(
+    cmap="coolwarm", vmin=int(-6), vmax=int(6), extend="both"
+)
+
+
+# fwf_ds['T'].isel(time = 0).salem.quick_map()
 
 static_ds = xr.open_dataset((str(data_dir) + "/static/static-vars-wrf4-d02.nc"))
 
+
+# test = static_ds.ZoneDT.values
+# test[test<1] = 99
 
 ds = xr.open_dataset(
     str(data_dir) + f"/intercomp/d02/{trail_name}/20210101-20221031.nc",
@@ -95,18 +102,23 @@ var_lower = cmaps[var]["name"].lower()
 
 ##################################################################
 ################## Time Averaged Dataset #########################
+# index = np.isin(ds["prov"].values, ['BC'])
+
+# ds = ds.isel(wmo=index)
 ##### Plot bias at each wxstation averaged over 7 day period #####
-ds_tm = ds.copy()[[var_lower, f"{var_lower}_wrf05"]]
+ds_tm = ds.copy()[[var_lower, f"{var_lower}_wrf04"]]
 
 ## slice dataset into seven day segments
 valid_data = date.strftime("%Y-%m-%d")
 past_date = pd.to_datetime(str(date - np.timedelta64(6, "D"))).strftime("%Y-%m-%d")
-ds_tm[f"{var_lower}_bias"] = (
-    (ds_tm[f"{var_lower}_wrf05"] - ds_tm[var_lower])
-    .sel(time=slice(past_date, valid_data))
-    .mean(dim="time")
+# ds_tm[f"{var_lower}_bias"] = (
+#     (ds_tm[f"{var_lower}_wrf04"] - ds_tm[var_lower])
+#     .sel(time=slice(past_date, valid_data))
+#     .mean(dim="time")
+# )
+ds_tm[f"{var_lower}_bias"] = (ds_tm[f"{var_lower}_wrf04"] - ds_tm[var_lower]).mean(
+    dim="time"
 )
-# ds_tm[f'{var_lower}_bias'] = (ds_tm[f'{var_lower}_wrf05'] - ds_tm[var_lower]).mean(dim = 'time')
 ## drop all wxstation that are nulled values
 var_bias_tm = ds_tm[f"{var_lower}_bias"].dropna(dim="wmo")
 
@@ -165,36 +177,41 @@ gridy = fwf_ds.south_north.values
 
 # lr_model = LinearRegression(normalize=True, copy_X=True, fit_intercept=False)
 
-# y = xr.DataArray(
-#     np.array(obs_gdf["lats"]),
-#     dims="ids",
-#     coords=dict(ids=obs_gdf.id.values),
-# )
-# x = xr.DataArray(
-#     np.array(obs_gdf["lons"]),
-#     dims="ids",
-#     coords=dict(ids=obs_gdf.id.values),
-# )
-# var_points = ds[var].interp(lon=x, lat=y, method="linear")
-# # print(var_points)
-# if len(obs_gdf.index) == len(var_points.values):
-#     var_points = var_points.values
-# else:
-#     raise ValueError("Lengths dont match")
+y = xr.DataArray(
+    np.array(obs_gdf["Northing"]),
+    dims="ids",
+    coords=dict(ids=obs_gdf.id.values),
+)
+x = xr.DataArray(
+    np.array(obs_gdf["Easting"]),
+    dims="ids",
+    coords=dict(ids=obs_gdf.id.values),
+)
+static_ds["west_east"], static_ds["south_north"] = (
+    fwf_ds["west_east"],
+    fwf_ds["south_north"],
+)
+
+var_points = static_ds["HGT"].interp(west_east=x, south_north=y, method="nearest")
+# print(var_points)
+if len(obs_gdf.index) == len(var_points.values):
+    var_points = var_points.values
+else:
+    raise ValueError("Lengths dont match")
 
 
-# var_bias = obs_gdf[f'{var_lower}_bias_abs'].values.astype(float)
+var_bias = obs_gdf[f"{var_lower}_bias"].values.astype(float)
 # var_points = obs_gdf[f'elev'].values.astype(float)
-# lats, lons = obs_gdf[f'lats'], obs_gdf[f'lons']
-# regress = stats.linregress(var_points, var_bias)
-# trend = lambda x, y: regress.intercept + regress.slope * x
+lats, lons = obs_gdf[f"lats"], obs_gdf[f"lons"]
+regress = stats.linregress(var_points, var_bias)
+trend = lambda x, y: regress.intercept + regress.slope * x
 
-# plt.plot(var_points, var_bias, "o", label="original data")
-# plt.plot(
-#     var_points, regress.intercept + regress.slope * var_points, "r", label="fitted line"
-# )
-# plt.legend()
-# plt.show()
+plt.plot(var_points, var_bias, "o", label="original data")
+plt.plot(
+    var_points, regress.intercept + regress.slope * var_points, "r", label="fitted line"
+)
+plt.legend()
+plt.show()
 
 
 # bins = gs.standard_bins((lats, lons), max_dist=np.deg2rad(8), latlon=True)
@@ -272,28 +289,33 @@ gridy = fwf_ds.south_north.values
 
 ##################################################################
 ###################### Ordinary Kriging #########################
-# nlags = 15
-# variogram_model = "spherical"
+nlags = 15
+variogram_model = "spherical"
 
-# startTime = datetime.now()
-# krig = OrdinaryKriging(
-#     x=obs_gdf["Easting"],
-#     y=obs_gdf["Northing"],
-#     z=obs_gdf[f"{var_lower}_bias"],
-#     variogram_model=variogram_model,
-#     # enable_statistics=True,
-#     # verbose=True,
-#     nlags=nlags,
-# )
-# print(f"OK build time {datetime.now() - startTime}")
-# startTime = datetime.now()
-# z, ss = krig.execute("grid", gridx, gridy)
-# print(f"OK execution time {datetime.now() - startTime}")
+startTime = datetime.now()
+krig = OrdinaryKriging(
+    x=obs_gdf["Easting"],
+    y=obs_gdf["Northing"],
+    z=obs_gdf[f"{var_lower}_bias"],
+    variogram_model=variogram_model,
+    # enable_statistics=True,
+    # verbose=True,
+    nlags=nlags,
+)
+print(f"OK build time {datetime.now() - startTime}")
+startTime = datetime.now()
+z, ss = krig.execute("grid", gridx, gridy)
+print(f"OK execution time {datetime.now() - startTime}")
 
 
-# fwf_ds[f"{var}_bias_ok"] = (("south_north", "west_east"), z)
-# fwf_ds[f"{var}_bias_ok"].attrs['pyproj_srs'] = fwf_ds[var].attrs['pyproj_srs']
-# fwf_ds[f"{var}_bias_ok"].salem.quick_map(cmap='coolwarm',vmin = int(var_range[0]/2), vmax = int(var_range[-1]/2), extend = 'both')
+fwf_ds[f"{var}_bias_ok"] = (("south_north", "west_east"), z)
+fwf_ds[f"{var}_bias_ok"].attrs["pyproj_srs"] = fwf_ds[var].attrs["pyproj_srs"]
+fwf_ds[f"{var}_bias_ok"].salem.quick_map(
+    cmap="coolwarm",
+    vmin=int(var_range[0] / 2),
+    vmax=int(var_range[-1] / 2),
+    extend="both",
+)
 
 
 # fwf_ds[f"{var}_bias_ok_ok"] = fwf_ds[f"{var}_bias_ok_cov"] - fwf_ds[f"{var}_bias_ok"]
@@ -308,9 +330,9 @@ gridy = fwf_ds.south_north.values
 
 ##################################################################
 ###################### Universal Kriging #########################
-nlags = 15
-variogram_model = "spherical"
-startTime = datetime.now()
+# nlags = 15
+# variogram_model = "spherical"
+# startTime = datetime.now()
 krig = UniversalKriging(
     x=obs_gdf["Easting"],
     y=obs_gdf["Northing"],
@@ -323,21 +345,21 @@ krig = UniversalKriging(
     specified_drift=[obs_gdf["elev"]],
     nlags=nlags,
 )
-print(f"UK build time {datetime.now() - startTime}")
-startTime = datetime.now()
+# print(f"UK build time {datetime.now() - startTime}")
+# startTime = datetime.now()
 z, ss = krig.execute(
     "grid", gridx, gridy, specified_drift_arrays=[static_ds.HGT.values]
 )
-print(f"UK execution time {datetime.now() - startTime}")
+# print(f"UK execution time {datetime.now() - startTime}")
 
-fwf_ds[f"{var}_bias_uk"] = (("south_north", "west_east"), z)
-fwf_ds[f"{var}_bias_uk"].attrs["pyproj_srs"] = fwf_ds[var].attrs["pyproj_srs"]
-fwf_ds[f"{var}_bias_uk"].salem.quick_map(
-    cmap="coolwarm",
-    vmin=int(var_range[0] / 2),
-    vmax=int(var_range[-1] / 2),
-    extend="both",
-)
+# fwf_ds[f"{var}_bias_uk"] = (("south_north", "west_east"), z)
+# fwf_ds[f"{var}_bias_uk"].attrs["pyproj_srs"] = fwf_ds[var].attrs["pyproj_srs"]
+# fwf_ds[f"{var}_bias_uk"].salem.quick_map(
+#     cmap="coolwarm",
+#     vmin=int(var_range[0] / 2),
+#     vmax=int(var_range[-1] / 2),
+#     extend="both",
+# )
 
 # fwf_ds[f"{var}_bias_uk_ok"] = fwf_ds[f"{var}_bias_uk"] - fwf_ds[f"{var}_bias_ok"]
 # fwf_ds[f"{var}_bias_uk_ok"].attrs['pyproj_srs'] = fwf_ds[var].attrs['pyproj_srs']
@@ -347,7 +369,7 @@ fwf_ds[f"{var}_bias_uk"].salem.quick_map(
 ##################################################################
 ################## Space Averaged Dataset ########################
 
-# ds_wm = ds.copy()[[var_lower,f'{var_lower}_wrf05']]
+# ds_wm = ds.copy()[[var_lower,f'{var_lower}_wrf04']]
 
 # ds_wm = xr.open_dataset(
 #     str(data_dir) + f"/obs/observations-d02-20191231-20221231-old.nc",
@@ -357,7 +379,7 @@ fwf_ds[f"{var}_bias_uk"].salem.quick_map(
 
 # for i in range(len(ds_wm.time)):
 #     ds_i = ds_wm.isel(time = i).dropna(dim="wmo")
-#     # ds_i[f'{var_lower}_bias'] = (ds_i[var_lower] - ds_i[f'{var_lower}_wrf05']).mean(dim = 'wmo')
+#     # ds_i[f'{var_lower}_bias'] = (ds_i[var_lower] - ds_i[f'{var_lower}_wrf04']).mean(dim = 'wmo')
 #     # wmo_bias.append(float(ds_i[f'{var_lower}_bias'].values))
 #     wmo_count.append(len(ds_i.wmo))
 
@@ -380,7 +402,7 @@ fwf_ds[f"{var}_bias_uk"].salem.quick_map(
 # fig.show()
 
 
-# ds_wm[f'{var_lower}_bias'] = (ds_wm[var_lower] - ds_wm[f'{var_lower}_wrf05']).mean(dim = 'wmo')
+# ds_wm[f'{var_lower}_bias'] = (ds_wm[var_lower] - ds_wm[f'{var_lower}_wrf04']).mean(dim = 'wmo')
 
 ## drop all wxstation that are nulled values
 # var_bias_wm = ds_wm[f'{var_lower}_bias'].dropna(dim="time")

@@ -31,11 +31,12 @@ __email__ = "crodell@eoas.ubc.ca"
 wrf_model = "wrf4"
 domain = "d02"
 date_range = pd.date_range("2021-01-01", "2022-10-31")
-# date_range = pd.date_range("2021-01-06", "2021-01-10")
+# date_range = pd.date_range("2021-01-0", "2021-01-10")
 
 fwf_dir = "/Volumes/WFRT-Data02/FWF-WAN00CG/d02/"
-model_config = ["_wrf05", "_wrf06", "_wrf07", "_wrf08"]
-trail_name = "WRF05060708"
+model_config = ["_wrf03", "_wrf04", "_wrf05", "_wrf06", "_wrf07"]
+
+trail_name = "WRF" + "".join(model_config).replace("_wrf", "").upper()
 model_name = "fwf"
 
 # model_config = [ "_era505",  "_era506"]

@@ -29,7 +29,7 @@ __email__ = "crodell@eoas.ubc.ca"
 warnings.filterwarnings("ignore", category=RuntimeWarning)
 
 wrf_model = "wrf4"
-date_range = pd.date_range("2022-02-16", "2022-11-01")
+date_range = pd.date_range("2021-01-10", "2022-11-01")
 # date_range = pd.date_range("2021-01-01", "2021-01-10")
 # date_range = pd.date_range("2021-01-01", "2021-01-01")
 
@@ -59,13 +59,13 @@ for date in date_range:
         #     initialize=False,
         #     correctbias=False,
         #     forecast=False,
-        #     config="ERA505",
+        #     config="ERA504",
         # )
         # coeff.daily()
         # coeff.hourly()
 
         """######### run fwf day0  #############"""
-        print("######### run fwf wrf  #############")
+        # print("######### run fwf wrf  #############")
         fwf0_filein = f'/Volumes/Scratch/FWF-WAN00CG/{domain}/{date.strftime("%Y%m")}/fwf-hourly-d02-{date.strftime("%Y%m%d06")}.nc'
         coeff = FWF(
             fwf0_filein,
@@ -76,7 +76,7 @@ for date in date_range:
             initialize=False,
             correctbias=True,
             forecast=False,
-            config="WRF08",
+            config="WRF03",
         )
         coeff.daily()
         # coeff.hourly()

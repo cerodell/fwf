@@ -28,10 +28,10 @@ var_list = ["T", "TD"]
 krig_type = "uk"  ## uk or ok
 var_range = [-6, 6]
 # date_range = pd.date_range("2021-02-16", "2022-10-31")
-# date_range = pd.date_range("2021-01-01", "2022-10-31")
-date_range = pd.date_range("2022-02-17", "2022-02-17")
+date_range = pd.date_range("2021-02-10", "2022-10-31")
+# date_range = pd.date_range("2022-02-17", "2022-02-17")
 # date_range = pd.date_range("2022-02-18", "2022-11-01")
-trail_name = "WRF050607"
+trail_name = "WRF0405"
 
 nlags = 23
 variogram_model = "spherical"
@@ -76,15 +76,20 @@ for date in date_range:
         var_lower = cmaps[var]["name"].lower()
 
         ## make copy of original dataset and drop irrelevant variables
-        ds_tm = ds.copy()[[var_lower, f"{var_lower}_wrf05"]]
+        ds_tm = ds.copy()[[var_lower, f"{var_lower}_wrf04"]]
 
         ## slice dataset into seven day segments
         valid_data = date.strftime("%Y-%m-%d")
-        past_date = pd.to_datetime(str(date - np.timedelta64(6, "D"))).strftime(
-            "%Y-%m-%d"
-        )
+        if valid_data == "2022-02-17":
+            past_date = pd.to_datetime(str(date - np.timedelta64(7, "D"))).strftime(
+                "%Y-%m-%d"
+            )
+        else:
+            past_date = pd.to_datetime(str(date - np.timedelta64(6, "D"))).strftime(
+                "%Y-%m-%d"
+            )
         ds_tm[f"{var_lower}_bias"] = (
-            (ds_tm[f"{var_lower}_wrf05"] - ds_tm[var_lower])
+            (ds_tm[f"{var_lower}_wrf04"] - ds_tm[var_lower])
             .sel(time=slice(past_date, valid_data))
             .mean(dim="time")
         )

@@ -41,7 +41,7 @@ def bias_correct(ds, domain, config):
 
     print(f"Bias correcting forecast from kriged observations on {doi}")
 
-    if config == "WRF07":
+    if (config == "WRF07") or (config == "WRF03"):
         krig_type = "ok"
         print(f"Bias correcting with kring method {krig_type}")
     elif config == "WRF08":

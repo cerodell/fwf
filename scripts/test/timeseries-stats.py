@@ -12,7 +12,7 @@ import matplotlib.colors
 import matplotlib.pyplot as plt
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 import scipy.ndimage as ndimage
-from scipy.ndimage.filters import gaussian_filter
+from scipy.ndimage import gaussian_filter
 from pylab import *
 
 from context import data_dir, xr_dir, wrf_dir, tzone_dir
@@ -43,10 +43,11 @@ warnings.filterwarnings("ignore", category=FutureWarning)
 
 wrf_model = "wrf4"
 domain = "d02"
-# time_slice = slice("2022-04-01", "2022-10-31")
+time_slice = slice("2021-04-01", "2021-10-31")
 
-model_config = ["_wrf05", "_wrf06", "_wrf07", "_wrf08"]
-trail_name = "WRF05060708"
+# model_config = ["_wrf05", "_wrf06", "_wrf07", "_wrf08"]
+model_config = ["_wrf03", "_wrf04", "_wrf05", "_wrf07"]
+trail_name = "WRF0304050607"
 nc_file = "20210101-20221031.nc"
 
 # model_config = [ "_era505",  "_era506"]
@@ -259,7 +260,12 @@ fig = plt.figure(figsize=[10, 14])
 plotstats(fig, fwi_list)
 # fig.tight_layout()
 
-fig.savefig(str(save_dir) + f"/fwi-vars-{domain}-{start_date}-{stop_date}.png")
+# fig.savefig(str(save_dir) + f"/fwi-vars-{domain}-{start_date}-{stop_date}.png")
+fig.savefig(
+    str(save_dir) + f"/fwi-vars-{domain}-{start_date}-{stop_date}.pdf",
+    bbox_inches="tight",
+)
+
 plt.close()
 
 ##########################################################################
@@ -278,5 +284,10 @@ plotstats(fig, met_list)
 
 
 # fig.tight_layout()
-fig.savefig(str(save_dir) + f"/met-vars-{domain}-{start_date}-{stop_date}.png")
+# fig.savefig(str(save_dir) + f"/met-vars-{domain}-{start_date}-{stop_date}.png")
+fig.savefig(
+    str(save_dir) + f"/met-vars-{domain}-{start_date}-{stop_date}.pdf",
+    bbox_inches="tight",
+)
+
 plt.close()
