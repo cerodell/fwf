@@ -24,7 +24,7 @@ from scipy import stats
 from utils.krig import plotvariogram
 
 from datetime import datetime
-from context import data_dir
+from context import data_dir, root_dir
 
 startTime = datetime.now()
 
@@ -37,13 +37,14 @@ domain = "d02"
 var = "T"
 var_range = [-6, 6]
 date = pd.Timestamp("2021-02-01")
-# date = pd.Timestamp("2022-02-18")
+date = pd.Timestamp("2022-08-01")
 trail_name = "WRF0304050607"
 
 
 ##################################################################
 ##################### Open Data Files  ###########################
-krig_type = "uk"
+krig_type = "uk-TZD"
+krig_type = "ok-TZD"
 # date_range = pd.date_range("2021-01-01", "2022-10-31")
 # for date in date_range:
 test_ds = salem.open_xr_dataset(
@@ -53,8 +54,15 @@ fwf_ds = salem.open_xr_dataset(
     f"/Volumes/WFRT-Data02/FWF-WAN00CG/d02/WRF03/fwf/fwf-daily-d02-{date.strftime('%Y%m%d')}06.nc"
 )
 
+fig = plt.figure(figsize=(12, 6))
+ax = fig.add_subplot(1, 1, 1)
 test_ds[f"{var}_bias"].salem.quick_map(
-    cmap="coolwarm", vmin=int(-6), vmax=int(6), extend="both"
+    ax=ax, cmap="coolwarm", vmin=int(-3), vmax=int(3), extend="both"
+)
+fig.savefig(
+    str(data_dir) + f'/images/{krig_type}-{date.strftime("%Y%m%d")}.png',
+    dpi=300,
+    bbox_inches="tight",
 )
 
 
@@ -147,11 +155,12 @@ fig = px.scatter_mapbox(
     center={"lat": 58.0, "lon": -110.0},
     hover_data=[f"{var_lower}_bias", "elev"],
     mapbox_style="carto-positron",
-    range_color=var_range,
+    range_color=[-3, 3],
     zoom=1.5,
 )
 fig.update_layout(margin=dict(l=0, r=100, t=30, b=10))
 fig.show()
+fig.write_image(str(data_dir) + f'/images/obs-{date.strftime("%Y%m%d")}.png')
 
 
 ##################################################################
