@@ -9,7 +9,7 @@ import xarray as xr
 
 from pathlib import Path
 from datetime import datetime
-from utils.read_wrfout import readwrf
+from utils.wrf import readwrf
 from utils.era5 import config_era5
 from utils.compressor import compressor, file_size
 from context import data_dir

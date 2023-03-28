@@ -15,7 +15,7 @@ import scipy.ndimage as ndimage
 from scipy.ndimage.filters import gaussian_filter
 from pylab import *
 
-from context import data_dir, xr_dir, wrf_dir, tzone_dir
+from context import data_dir, xr_dir, wrf_dir, tzone_dir, root_dir
 from datetime import datetime, date, timedelta
 from sklearn.metrics import mean_squared_error, mean_absolute_error
 from sklearn.metrics import r2_score
@@ -37,7 +37,7 @@ date = pd.Timestamp(2021, 11, 1)
 
 intercomp_today_dir = date.strftime("%Y%m%d")
 
-with open(str(data_dir) + f"/json/fwf-attrs.json", "r") as fp:
+with open(str(root_dir) + f"/json/fwf-attrs.json", "r") as fp:
     var_dict = json.load(fp)
 
 ds = xr.open_zarr(

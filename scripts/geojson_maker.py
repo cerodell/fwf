@@ -43,11 +43,11 @@ forecast_date = forecast_date + "06"
 # forecast_date = pd.Timestamp(2021, 2, 9).strftime("%Y%m%d06")
 
 ### Open color map json
-with open(str(data_dir) + "/json/colormaps-dev.json") as f:
+with open(str(root_dir) + "/json/colormaps-dev.json") as f:
     cmaps = json.load(f)
 
 ### Open nested index json
-with open(str(data_dir) + "/json/nested-index.json") as f:
+with open(str(root_dir) + "/json/nested-index.json") as f:
     nested_index = json.load(f)
 
 

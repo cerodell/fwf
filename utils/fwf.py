@@ -17,11 +17,9 @@ from pathlib import Path
 
 # from netCDF4 import Dataset
 from datetime import datetime
-from utils.read_wrfout import readwrf
 from utils.bias_correct import bias_correct
-from utils.era5 import config_era5
 from utils.compressor import compressor, file_size
-from context import data_dir
+from context import data_dir, root_dir
 
 
 __author__ = "Christopher Rodell"
@@ -71,104 +69,54 @@ class FWF:
     """ ######################## Initialize FWI model #########################"""
     """########################################################################"""
 
-    def __init__(
-        self,
-        filein_dir,
-        domain,
-        iterator,
-        fbp_mode,
-        overwinter,
-        initialize,
-        correctbias,
-        forecast,
-        config,
-    ):
+    def __init__(self, int_ds, config):
         """
         Initialize Fire Weather Index Model
 
-
         """
 
-        ## TODO Pull all this out of the FWF class and allow uses to give only a dataset with the variables needed to solve FWI/FBP. It will make it more flexable.
-        ### Read then open WRF dataset
-        if filein_dir.endswith(".nc"):
-            if "era5" in filein_dir:
-                print("Updating Fuel Codes with ERA5")
-                # int_ds = config_era5(filein_dir)
-                self.save_dir = f"/Volumes/WFRT-Data02/FWF-WAN00CG/d02/{config}/era5/"
-                # save_time = pd.to_datetime(int_ds.Time.values[0]).strftime("%Y%m%d%H")
-                # self.era5_save_dir = (
-                #     f"/Volumes/WFRT-Data02/era5/fwf/fwf-hourly-{domain}-{save_time}.nc"
-                # )
-                # print(self.era5_save_dir)
-                # print(int_ds)
-                # int_ds.to_netcdf(self.era5_save_dir, mode="w")
-                self.era5_save_dir = filein_dir
-                int_ds = xr.open_dataset(filein_dir)
-                keep_vars = [
-                    "SNOWC",
-                    "SNOWH",
-                    "SNW",
-                    "T",
-                    "TD",
-                    "U10",
-                    "V10",
-                    "W",
-                    "WD",
-                    "r_o",
-                    "H",
-                    "Df",
-                    "r_w",
-                ]
-                int_ds = int_ds.drop(
-                    [var for var in list(int_ds) if var not in keep_vars]
-                )
-
-            else:
-                print("Re-run using nc file")
-                int_ds = xr.open_dataset(filein_dir)
-                keep_vars = [
-                    "SNOWC",
-                    "SNOWH",
-                    "SNW",
-                    "T",
-                    "TD",
-                    "U10",
-                    "V10",
-                    "W",
-                    "WD",
-                    "r_o",
-                    "H",
-                    "Df",
-                    "r_w",
-                    "dFS",
-                    "FS_days",
-                    "FS",
-                ]
-                int_ds = int_ds.drop(
-                    [var for var in list(int_ds) if var not in keep_vars]
-                )
-
-                # int_ds = int_ds.isel(time=slice(0, 24))
-                # print(int_ds)
-                # self.save_dir = "/Volumes/WFRT-Data02/FWF-WAN00CG/d02/ERA5WRF02/fwf/"
-                self.save_dir = f"/Volumes/WFRT-Data02/FWF-WAN00CG/d02/{config}/fwf/"
-
-        else:
-            print("New-run, use readwrf to get vars from nc files")
-            int_ds = readwrf(filein_dir, domain, wright=False)
-            self.save_dir = f"/Volumes/WFRT-Data02/FWF-WAN00CG/d02/{config}/fwf"
-        ###########################################################################################################
+        ############ Remove unwanted variables from int_ds ############
+        keep_vars = [
+            "SNOWC",
+            "SNOWH",
+            "SNW",
+            "T",
+            "TD",
+            "U10",
+            "V10",
+            "W",
+            "WD",
+            "r_o",
+            "H",
+            "Df",
+            "r_w",
+            "dFS",
+            "FS_days",
+            "FS",
+        ]
+        int_ds = int_ds.drop([var for var in list(int_ds) if var not in keep_vars])
 
         ############ Set up dataset and get attributes ################
         self.int_ds = int_ds
         self.attrs = int_ds.attrs
-        self.forecast = forecast
-        self.initialize = initialize
-        self.config = config
-        self.overwinter = overwinter
-        self.iterator = iterator
-        self.correctbias = correctbias
+        self.model = config["model"]
+        self.domain = config["domain"]
+        self.iterator = config["iterator"]
+        self.trail_name = config["trail_name"]
+        self.fbp_mode = config["fbp_mode"]
+        self.overwinter = config["overwinter"]
+        self.initialize = config["initialize"]
+        self.correctbias = config["correctbias"]
+        self.forecast = config["forecast"]
+        self.root_dir = config["root_dir"]
+
+        ## TODO this will need to change after creating newly configured data for eccc model
+        self.iterator_dir = f"/Volumes/WFRT-Ext24/fwf-data/{self.model}/{self.domain}/{self.trail_name}/{self.iterator}/"
+        self.filein_dir = f"{self.root_dir}/{self.model}/{self.domain}"
+        self.save_dir = Path(
+            f"/Volumes/WFRT-Ext24/fwf-data/{self.model}/{self.domain}/{self.trail_name}/fwf"
+        )
+        self.save_dir.mkdir(parents=True, exist_ok=True)
 
         ############ Mathematical Constants and UsefulArrays ################
         ### Math Constants
@@ -177,28 +125,13 @@ class FWF:
         self.P_initial = 6.0
         self.D_initial = 15.0
         self.snowfract = 0.6
-        self.dx = (float(self.int_ds.attrs["DX"]),)
-        self.dy = (float(self.int_ds.attrs["DY"]),)
         self.date = str(np.datetime_as_string(self.int_ds.Time.values[0], unit="D"))
 
         ### Shape of Domain make useful fill arrays
         shape = np.shape(self.int_ds.T[0, :, :])
         self.shape = shape
-        self.domain = domain
-        # if iterator == 'era5':
-        #     print('Getting ERA5 from old config ERA501')
-        #     self.iterator_dir = f"/Volumes/WFRT-Data02/FWF-WAN00CG/d02/ERA501/{iterator}/"
-        #     print(self.iterator_dir)
-        # else:
-        #     self.iterator_dir = f"/Volumes/WFRT-Data02/FWF-WAN00CG/d02/{config}/{iterator}/"
-        #     print(self.iterator_dir)
-        self.iterator_dir = f"/Volumes/WFRT-Data02/FWF-WAN00CG/d02/{config}/{iterator}/"
-
-        ## TODO remove this when operational
-        self.filein_dir = filein_dir.rsplit("/", 1)[0]
+        self.domain = config["domain"]
         print("Domain shape:  ", shape)
-
-        # self.e_full    = np.full(shape,e, dtype=float)
         self.zero_full = np.zeros(shape, dtype=float)
         self.ones_full = np.full(shape, 1, dtype=float)
 
@@ -216,39 +149,45 @@ class FWF:
         self.L_f = L_f
 
         ## Open Data Attributes for writing
-        with open(str(data_dir) + f"/json/fwf-attrs.json", "r") as fp:
+        with open(str(root_dir) + f"/json/fwf-attrs.json", "r") as fp:
             self.var_dict = json.load(fp)
 
         ## Open gridded static
         static_ds = xr.open_dataset(
-            str(data_dir) + f"/static/static-vars-wrf4-{domain}.nc"
+            str(data_dir) + f"/static/static-vars-{self.model.lower()}-{self.domain}.nc"
         )
 
         ## Print Over wintering status
         print(f"Overwintering {self.overwinter}")
 
         ## Define Static Variables for FPB
-        print(f"FBP Mode {fbp_mode}")
-        self.fbp_mode = fbp_mode
-        (
-            self.ELV,
-            self.LAT,
-            self.LON,
-            self.FUELS,
-            self.GS,
-            self.SAZ,
-            self.tzone,
-            self.PC,
-        ) = (
-            static_ds.HGT.values,
-            static_ds.XLAT.values,
-            static_ds.XLONG.values * -1,
-            static_ds.FUELS.values.astype(int),
-            static_ds.GS.values,
-            static_ds.SAZ.values,
-            static_ds.ZoneST.values,
-            static_ds.PC.values,
-        )
+        print(f"FBP Mode {self.fbp_mode}")
+        if self.fbp_mode == True:
+            (
+                self.ELV,
+                self.LAT,
+                self.LON,
+                self.FUELS,
+                self.GS,
+                self.SAZ,
+                self.tzone,
+                self.PC,
+            ) = (
+                static_ds.HGT.values,
+                static_ds.XLAT.values,
+                static_ds.XLONG.values * -1,
+                static_ds.FUELS.values.astype(int),
+                static_ds.GS.values,
+                static_ds.SAZ.values,
+                static_ds.ZoneST.values,
+                static_ds.PC.values,
+            )
+        elif self.fbp_mode == False:
+            self.tzone = static_ds.ZoneST.values
+        else:
+            raise ValueError(
+                f"Invalided fbp_mode option: {self.fbp_mode}. Only supports boolean inputs"
+            )
 
         ################################################################################
         ## TODO remove all this all, will be required for int_ds
@@ -728,13 +667,25 @@ class FWF:
             retrieve_time_np = time_array[0] - np.timedelta64(i, "D")
             retrieve_time = pd.to_datetime(retrieve_time_np).strftime("%Y%m%d%H")
             if self.iterator == "fwf":
-                int_file_dir = (
-                    str(self.filein_dir.rsplit("/", 1)[0])
-                    + f"/{pd.to_datetime(retrieve_time_np).strftime('%Y%m')}/fwf-{timestep}-{self.domain}-{retrieve_time}.nc"
-                )
+                if self.model == "wrf":
+                    # int_file_dir = (
+                    #     str(self.filein_dir.rsplit("/", 1)[0])
+                    #     + f"/{pd.to_datetime(retrieve_time_np).strftime('%Y%m')}/fwf-{timestep}-{self.domain}-{retrieve_time}.nc"
+                    # )
+                    int_file_dir = (
+                        str(self.filein_dir)
+                        + f"/{pd.to_datetime(retrieve_time_np).strftime('%Y%m')}/fwf-{timestep}-{self.domain}-{retrieve_time}.nc"
+                    )
+                elif self.model == "eccc":
+                    int_file_dir = (
+                        str(self.filein_dir)
+                        + f"/{pd.to_datetime(retrieve_time_np).strftime('%Y%m')}/fwf-{timestep}-{self.domain}-{retrieve_time}.nc"
+                    )
+                else:
+                    raise ValueError("Bad model input")
             elif self.iterator == "era5":
                 int_file_dir = (
-                    self.era5_save_dir.rsplit("/", 1)[0]
+                    str(self.era5_save_dir)
                     + f"/fwf-{timestep}-{self.domain}-{retrieve_time}.nc"
                 )
             else:
@@ -749,32 +700,29 @@ class FWF:
                 days_of_max.append(retrieve_time_np.astype("datetime64[D]"))
             except:
                 pass
-
         ## combine the dataset into one continuous dataarray
         cont_ds = xr.concat(
             previous_dss, dim="time", coords="minimal", compat="override"
         ).load()
-        # print(cont_ds)
         ## find all index of 00Z in the continuous dataarray based on the inital time
         time_array = cont_ds.Time.values
-        # print(time_array[0])
         int_time = int(pd.Timestamp(time_array[0]).hour)
         length = len(time_array) + 1
-        num_days = [i - 0 for i in range(1, length) if i % 24 == 0]
+        num_days = [i for i in range(1, length) if i % 24 == 0]
+        if int_time == 0:
+            num_days = [0] + num_days
+        else:
+            pass
         index = [
             i - int_time if 12 - int_time >= 0 else i + 24 - int_time for i in num_days
         ]
-        index = index[:-1]
         if (len(cont_ds.time) - index[-1]) < (24 + float(np.max(self.tzone))):
-            index = index[:-1]
+            if (len(cont_ds.time) - index[-1]) < (float(np.max(self.tzone))):
+                index = index[:-2]
+            else:
+                index = index[:-1]
         else:
             pass
-        if self.iterator == "fwf":
-            pass
-        elif self.iterator == "era5":
-            index = [0] + index
-        else:
-            raise ValueError("Bad iterator")
 
         print(f"index of 00Z times {index} with initial time {int_time}Z")
         ## loop every 00Z index and find daily max temps between local midnight to midnight using an array of utc offsets
@@ -801,7 +749,7 @@ class FWF:
 
         TMAX_da = xr.concat(da_j_list, dim="time")
 
-        ## apply a try condition for when datas in the past doesn't exist
+        ## apply a try condition for when data in the past doesn't exist
         ## TODO this is hacky, needs to be more robust for longer NWP forecast (only good for two day forecasts)
         try:
             TMAX_yesterday = (
@@ -1634,12 +1582,8 @@ class FWF:
         daily_ds = self.daily_ds
         # daily_ds = self.rechunk(daily_ds)
 
-        ## Define Static Variables
-        WD, dx, dy = (
-            hourly_ds.WD,
-            self.dx,
-            self.dy,
-        )
+        ## Define new wind direction varible
+        WD = (hourly_ds.WD,)
 
         zero_full3D, zero_full = (
             np.zeros(hourly_ds.F.shape, dtype=float),
@@ -2417,6 +2361,7 @@ class FWF:
         for var in hourly_ds.data_vars:
             hourly_ds[var] = hourly_ds[var].astype(dtype="float32")
             hourly_ds[var].attrs = self.var_dict[var]
+            hourly_ds[var].attrs["pyproj_srs"] = hourly_ds.attrs["pyproj_srs"]
 
         # ### Name file after initial time of wrf
         file_date = str(np.array(self.hourly_ds.Time[0], dtype="datetime64[h]"))
@@ -2440,7 +2385,7 @@ class FWF:
         print("Write Time: ", datetime.now() - writeTime)
         print(f"wrote working {make_dir}")
         if self.forecast == True:
-            command = f'cp -r {str(self.save_dir) + str("/fwf-hourly-") + self.domain + str(f"-{file_date}.nc")}  {str("/Volumes/WFRT-Data02/FWF-WAN00CG/d02/forecast/fwf-hourly-") + self.domain + str(f"-{file_date}.nc")}'
+            command = f'cp -r {str(self.save_dir) + str("/fwf-hourly-") + self.domain + str(f"-{file_date}.nc")}  {str(f"/Volumes/WFRT-Ext24/FWF-WAN00CG/{self.domain}/forecast/fwf-hourly-") + self.domain + str(f"-{file_date}.nc")}'
             os.system(command)
         else:
             pass
@@ -2468,6 +2413,7 @@ class FWF:
         for var in daily_ds.data_vars:
             daily_ds[var] = daily_ds[var].astype(dtype="float32")
             daily_ds[var].attrs = self.var_dict[var]
+            daily_ds[var].attrs["pyproj_srs"] = daily_ds.attrs["pyproj_srs"]
 
         # # ### Name file after initial time of wrf
         # try:
@@ -2502,16 +2448,16 @@ class FWF:
         self.daily_ds = daily_ds
         writeTime = datetime.now()
         print("Start Write ", datetime.now())
-        # daily_ds, encoding = compressor(daily_ds, self.var_dict)
-        # daily_ds.to_netcdf(make_dir, encoding=encoding, mode="w")
-        daily_ds.to_netcdf(make_dir, mode="w")
+        daily_ds, encoding = compressor(daily_ds, self.var_dict)
+        daily_ds.to_netcdf(make_dir, encoding=encoding, mode="w")
+        # daily_ds.to_netcdf(make_dir, mode="w")
         print("Write Time: ", datetime.now() - writeTime)
         print(f"wrote working {make_dir}")
 
         if self.forecast == True:
             forecast_dir = (
                 str(
-                    f"/Volumes/WFRT-Data02/FWF-WAN00CG/d02/{self.config}/forecast/fwf-daily-"
+                    f"/Volumes/WFRT-Ext24/FWF-WAN00CG/{self.domain}/{self.config}/forecast/fwf-daily-"
                 )
                 + self.domain
                 + str(f"-{file_date}.nc")

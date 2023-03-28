@@ -20,7 +20,7 @@ from sklearn.metrics import mean_squared_error, mean_absolute_error
 from pathlib import Path
 
 from datetime import datetime
-from context import data_dir
+from context import data_dir, root_dir
 import matplotlib
 
 import warnings
@@ -53,7 +53,7 @@ save_dir.mkdir(parents=True, exist_ok=True)
 
 #### Open Datafiles and modify based on inputs
 ## open fwf attribute json file, used for axis labels in plotting
-with open(str(data_dir) + f"/json/fwf-attrs.json", "r") as fp:
+with open(str(root_dir) + f"/json/fwf-attrs.json", "r") as fp:
     var_dict = json.load(fp)
 
 ## open intercomparsion data

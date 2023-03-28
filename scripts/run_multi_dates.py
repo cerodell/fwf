@@ -1,9 +1,7 @@
 #!/Users/crodell/miniconda3/envs/fwf/bin/python
 
 """
-Runs the FWF model for each model domain.
-Saves dataset as zarr file contains all fwi and associated met products
-
+Runs the FWF model for over user defined dates
 """
 
 import context
@@ -14,12 +12,15 @@ import xarray as xr
 from pathlib import Path
 
 from datetime import datetime, timedelta
+from utils.wrf import read_wrf
+from utils.eccc import read_eccc
 
 startTime = datetime.now()
 print("RUN STARTED AT: ", str(startTime))
 
 from utils.fwf import FWF
-from context import wrf_dir
+
+
 import warnings
 
 __author__ = "Christopher Rodell"
@@ -28,61 +29,37 @@ __email__ = "crodell@eoas.ubc.ca"
 # ignore RuntimeWarning
 warnings.filterwarnings("ignore", category=RuntimeWarning)
 
-wrf_model = "wrf4"
-date_range = pd.date_range("2021-01-10", "2022-11-01")
+# date_range = pd.date_range("2021-04-20", "2022-11-01")
 # date_range = pd.date_range("2021-01-01", "2021-01-10")
-# date_range = pd.date_range("2021-01-01", "2021-01-01")
+date_range = pd.date_range("2021-01-02", "2021-01-10")
 
-# date_range = pd.date_range("2020-01-10", "2022-10-31")
-# date_range = pd.date_range("2020-01-02", "2020-01-10")
-# date_range = pd.date_range("2020-01-01", "2020-01-01")
+config = dict(
+    model="eccc",
+    domain="rdps",
+    iterator="fwf",
+    trail_name="04",
+    fbp_mode=False,
+    overwinter=True,
+    initialize=False,
+    correctbias=False,
+    forecast=False,
+    root_dir="/Volumes/WFRT-Ext23/fwf-data",
+)
 
-
-# """######### get directory to yesterdays hourly/daily .nc files.  #############"""
 for date in date_range:
-
-    domains = ["d02"]
-    for domain in domains:
-        domain_startTime = datetime.now()
-        print(f"start of domain {domain}: ", str(domain_startTime))
-        # """######### run era5  #############"""
-        # print("######### run fwf era5  #############")
-        # era_filein = f'/Volumes/WFRT-Data02/era5/era5-{date.strftime("%Y%m%d%H")}.nc'
-        # era_filein = f'/Volumes/WFRT-Data02/era5/fwf/fwf-hourly-d02-{date.strftime("%Y%m%d%H")}.nc'
-
-        # coeff = FWF(
-        #     era_filein,
-        #     domain,
-        #     iterator="era5",
-        #     fbp_mode=False,
-        #     overwinter=True,
-        #     initialize=False,
-        #     correctbias=False,
-        #     forecast=False,
-        #     config="ERA504",
-        # )
-        # coeff.daily()
-        # coeff.hourly()
-
-        """######### run fwf day0  #############"""
-        # print("######### run fwf wrf  #############")
-        fwf0_filein = f'/Volumes/Scratch/FWF-WAN00CG/{domain}/{date.strftime("%Y%m")}/fwf-hourly-d02-{date.strftime("%Y%m%d06")}.nc'
-        coeff = FWF(
-            fwf0_filein,
-            domain,
-            iterator="fwf",
-            fbp_mode=False,
-            overwinter=True,
-            initialize=False,
-            correctbias=True,
-            forecast=False,
-            config="WRF03",
-        )
-        coeff.daily()
-        # coeff.hourly()
-
-        print(f"Domain {domain} run time: ", datetime.now() - domain_startTime)
-
+    date_startTime = datetime.now()
+    coeff = FWF(
+        # int_ds=read_wrf(f'{config["root_dir"]}/{config["model"]}/{config["domain"]}/{date.strftime("%Y%m")}/fwf-hourly-{config["domain"]}-{date.strftime("%Y%m%d06")}.nc',config["domain"]),
+        int_ds=xr.open_dataset(
+            f'/Volumes/WFRT-Ext23/fwf-data/{config["model"]}/{config["domain"]}/{date.strftime("%Y%m")}/fwf-hourly-{config["domain"]}-{date.strftime("%Y%m%d00")}.nc'
+        ),
+        config=config,
+    )
+    coeff.daily()
+    # coeff.hourly()
+    print(
+        f'Domain {date.strftime("%Y%m%d0")} run time: ', datetime.now() - date_startTime
+    )
 
 ### Timer
 print("Total Run Time: ", datetime.now() - startTime)

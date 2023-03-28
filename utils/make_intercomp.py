@@ -16,11 +16,11 @@ from utils.fwi import solve_ffmc, solve_isi, solve_fwi
 
 from context import data_dir, root_dir, fwf_dir
 
-fwf_dir = '/Volumes/Scratch/FWF-WAN00CG/d03/202112'
+fwf_dir = "/Volumes/Scratch/FWF-WAN00CG/d03/202112"
 
 # def daily_merge_ds(date_to_merge, domain, wrf_model):
 
-#     with open(str(data_dir) + f"/json/fwf-attrs.json", "r") as fp:
+#     with open(str(root_dir) + f"/json/fwf-attrs.json", "r") as fp:
 #         var_dict = json.load(fp)
 
 #     hourly_file_dir = str(fwf_dir) + str(f"/fwf-hourly-{domain}-{date_to_merge}.nc")
@@ -51,7 +51,7 @@ fwf_dir = '/Volumes/Scratch/FWF-WAN00CG/d03/202112'
 
 def daily_merge_ds(date_to_merge, domain, wrf_model):
 
-    with open(str(data_dir) + f"/json/fwf-attrs.json", "r") as fp:
+    with open(str(root_dir) + f"/json/fwf-attrs.json", "r") as fp:
         var_dict = json.load(fp)
 
     hourly_file_dir = str(fwf_dir) + str(f"/fwf-hourly-{domain}-{date_to_merge}.nc")

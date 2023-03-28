@@ -19,7 +19,7 @@ from datetime import datetime, date, timedelta
 from utils.make_intercomp import daily_merge_ds
 from utils.compressor import compressor, file_size
 
-from context import data_dir
+from context import data_dir, root_dir
 
 startTime = datetime.now()
 print("RUN STARTED AT: ", str(startTime))
@@ -33,8 +33,8 @@ domain = "d02"
 date_range = pd.date_range("2021-01-01", "2022-10-31")
 # date_range = pd.date_range("2021-01-0", "2021-01-10")
 
-fwf_dir = "/Volumes/WFRT-Data02/FWF-WAN00CG/d02/"
-model_config = ["_wrf03", "_wrf04", "_wrf05", "_wrf06", "_wrf07"]
+fwf_dir = f"/Volumes/WFRT-Ext24/FWF-WAN00CG/{domain}/"
+model_config = ["_wrf04"]
 
 trail_name = "WRF" + "".join(model_config).replace("_wrf", "").upper()
 model_name = "fwf"
@@ -79,16 +79,17 @@ else:
     raise ValueError(f"Invalid model name {model_name}")
 
 ## open modle config file with varible names and attibutes
-with open(str(data_dir) + "/json/colormaps-dev.json") as f:
+with open(str(root_dir) + "/json/colormaps-dev.json") as f:
     cmaps = json.load(f)
 
 ## Open Data Attributes for writing
-with open(str(data_dir) + f"/json/fwf-attrs.json", "r") as fp:
+with open(str(root_dir) + f"/json/fwf-attrs.json", "r") as fp:
     var_dict = json.load(fp)
 
 ## open master obs file and slice along date range of interest
-# ds_obs = xr.open_zarr(str(data_dir) + "/obs/observations-d02-20191231-20221231.zarr")
-ds_obs = xr.open_dataset(str(data_dir) + "/obs/observations-d02-20191231-20221231.nc")
+ds_obs = xr.open_dataset(
+    str(data_dir) + f"/obs/observations-{domain}-20191231-20221231.nc"
+)
 ds_obs = ds_obs.sel(
     time=slice(date_range[0].strftime("%Y-%m-%d"), date_range[-1].strftime("%Y-%m-%d"))
 )

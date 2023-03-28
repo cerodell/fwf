@@ -14,7 +14,7 @@ from wrf import ll_to_xy, xy_to_ll
 from datetime import datetime, date, timedelta
 from utils.make_intercomp import daily_merge_ds
 
-from context import data_dir
+from context import data_dir, root_dir
 
 startTime = datetime.now()
 print("RUN STARTED AT: ", str(startTime))
@@ -28,11 +28,11 @@ make_dir = Path(str(data_dir) + "/intercomp/")
 make_dir.mkdir(parents=True, exist_ok=True)
 
 ### Open nested grid json
-with open(str(data_dir) + "/json/nested-index.json") as f:
+with open(str(root_dir) + "/json/nested-index.json") as f:
     nested_index = json.load(f)
 
 ### Open color map json
-with open(str(data_dir) + "/json/colormaps-dev.json") as f:
+with open(str(root_dir) + "/json/colormaps-dev.json") as f:
     cmaps = json.load(f)
 
 ## Get All Stations CSV

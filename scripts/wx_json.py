@@ -42,7 +42,7 @@ def rechunk(ds):
 
 
 ## Open color map json
-with open(str(data_dir) + "/json/colormaps-dev.json") as f:
+with open(str(root_dir) + "/json/colormaps-dev.json") as f:
     cmaps = json.load(f)
 name_list = list(cmaps)
 

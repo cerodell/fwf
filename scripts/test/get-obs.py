@@ -8,7 +8,7 @@ from pathlib import Path
 from netCDF4 import Dataset
 from wrf import ll_to_xy, xy_to_ll
 
-from context import data_dir
+from context import data_dir, root_dir
 
 __author__ = "Christopher Rodell"
 __email__ = "crodell@eoas.ubc.ca"
@@ -29,11 +29,11 @@ ds = xr.open_zarr(
 
 
 ### Open nested grid json
-with open(str(data_dir) + "/json/nested-index.json") as f:
+with open(str(root_dir) + "/json/nested-index.json") as f:
     nested_index = json.load(f)
 
 ### Open color map json
-with open(str(data_dir) + "/json/colormaps-dev.json") as f:
+with open(str(root_dir) + "/json/colormaps-dev.json") as f:
     cmaps = json.load(f)
 
 ## Get All Stations CSV

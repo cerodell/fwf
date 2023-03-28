@@ -1,0 +1,215 @@
+{
+  "BUI": {
+    "description": "Build Up Index Hourly"
+  },
+  "CFB": {
+    "description": "Crown Fraction Burned",
+    "units": "Percent"
+  },
+  "D": {
+    "description": "DROUGHT CODE"
+  },
+  "dc": {
+    "description": "DROUGHT CODE"
+  },
+  "Df": {
+    "description": "FALL DROUGHT CODE"
+  },
+  "dcf": {
+    "description": "FALL DROUGHT CODE"
+  },
+  "DSR": {
+    "description": "DAILY SEVERITY RATING"
+  },
+  "F": {
+    "description": "FINE FUEL MOISTURE CODE"
+  },
+  "ffmc": {
+    "description": "FINE FUEL MOISTURE CODE"
+  },
+  "FMC": {
+    "description": "Foliar Moisture Content",
+    "units": "Percent"
+  },
+  "H": {
+    "description": "2m RELATIVE HUMIDITY",
+    "units": "Percent"
+  },
+  "rh": {
+    "description": "2m RELATIVE HUMIDITY",
+    "units": "Percent"
+  },
+  "QV": {
+    "description": "2m SPECIFIC HUMIDITY",
+    "units": "kg/kg"
+  },
+  "HFI": {
+    "description": "Head Fire Intensity",
+    "units": "kW m^{-1}"
+  },
+  "ISF": {
+    "description": "Initial Spread Index with zero wind with terrain",
+    "units": ""
+  },
+  "ISI": {
+    "description": "Initial Spread Index with wind and terrain",
+    "units": ""
+  },
+  "ISZ": {
+    "description": "Initial Spread Index with zero wind on level ground",
+    "units": ""
+  },
+  "P": {
+    "description": "DUFF MOISTURE CODE"
+  },
+  "dmc": {
+    "description": "DUFF MOISTURE CODE"
+  },
+  "R": {
+    "description": "INITIAL SPREAD INDEX"
+  },
+  "isi": {
+    "description": "INITIAL SPREAD INDEX"
+  },
+  "ROS": {
+    "description": "Rate of Spread",
+    "units": "m min^{-1}"
+  },
+  "RSF": {
+    "description": "Surface Rate of Spread with zero wind, terrain (upslope)",
+    "units": "m min^{-1}"
+  },
+  "RSZ": {
+    "description": "Surface Rate of Spread with zero wind on level terrain",
+    "units": "m min^{-1}"
+  },
+  "S": {
+    "description": "FIRE WEATHER INDEX"
+  },
+  "fwi": {
+    "description": "FIRE WEATHER INDEX"
+  },
+  "SFC": {
+    "description": "Surface Fuel Consumption",
+    "units": "kg m^{-2}"
+  },
+  "SNOWC": {
+    "description": "FLAG INDICATING SNOW COVERAGE (1 FOR SNOW COVER)",
+    "units": ""
+  },
+  "SNOWH": {
+    "description": "PHYSICAL SNOW DEPTH",
+    "units": "m"
+  },
+  "SNW": {
+    "description": "ACCUMULATED TOTAL GRID SCALE SNOW AND ICE",
+    "units": "cm"
+  },
+  "T": {
+    "description": "2m TEMP",
+    "units": "C"
+  },
+  "T_bias": {
+    "description": "2m TEMP BIAS",
+    "units": "C",
+    "wmo_count": ""
+  },
+  "T_kv": {
+    "description": "2m TEMP KRIGED VARIANCE",
+    "units": "C"
+  },
+  "TMAX": {
+    "description": "2m DAILY MAX TEMP",
+    "units": "C"
+  },
+  "temp": {
+    "description": "2m TEMP",
+    "units": "C"
+  },
+  "TD": {
+    "description": "2m DEW POINT TEMP",
+    "units": "C"
+  },
+  "TD_bias": {
+    "description": "2m DEW POINT TEMP BIAS",
+    "units": "C",
+    "wmo_count": ""
+  },
+  "TD_kv": {
+    "description": "2m DEW POINT TEMP KRIGED VARIANCE",
+    "units": "C"
+  },
+  "td": {
+    "description": "2m DEW POINT TEMP",
+    "units": "C"
+  },
+  "TFC": {
+    "description": "Total Fuel Consumption",
+    "units": "kg m^{-2}"
+  },
+  "U": {
+    "description": "BUILD UP INDEX"
+  },
+  "bui": {
+    "description": "BUILD UP INDEX"
+  },
+  "U10": {
+    "description": "U at 10 M",
+    "units": "m s^{-1}"
+  },
+  "V10": {
+    "description": "V at 10 M",
+    "units": "m s^{-1}"
+  },
+  "W": {
+    "description": "10m WIND SPEED",
+    "units": "km hr^{-1}"
+  },
+  "ws": {
+    "description": "10m WIND SPEED",
+    "units": "km hr^{-1}"
+  },
+  "WD": {
+    "description": "10m WIND DIRECTION",
+    "units": "degrees"
+  },
+  "wdir": {
+    "description": "10m WIND DIRECTION",
+    "units": "degrees"
+  },
+  "m_o": {
+    "description": "FINE FUEL MOISTURE CONTENT"
+  },
+  "r_o": {
+    "description": "24 HOUR ACCUMULATED PRECIPITATION",
+    "units": "mm"
+  },
+  "precip": {
+    "description": "24 HOUR ACCUMULATED PRECIPITATION",
+    "units": "mm"
+  },
+  "r_o_hourly": {
+    "description": "HOURLY PRECIPITATION TOTALS",
+    "units": "mm"
+  },
+  "r_o_tomorrow": {
+    "description": "ACCUMULATED TOTAL PRECIPITATION",
+    "units": "mm"
+  },
+  "r_w": {
+    "description": "WINTER ACCUMULATED TOTAL PRECIPITATION",
+    "units": "mm"
+  },
+  "dFS": {
+    "description": "DELTA FIRE SEASON MASK (0 or nan = no change of season), (1 = onset of summer), (-1 = onset of winter)",
+    "units": ""
+  },
+  "FS": {
+    "description": "FIRE SEASON MASK (0 = summer is active), (1 = winter is active)",
+    "units": ""
+  },
+  "FS_days": {
+    "description": "NUMBER OF DAYS A EITHER SUMMER OR WINTER ARE ONGOING",
+    "units": "day"
+  }
+}

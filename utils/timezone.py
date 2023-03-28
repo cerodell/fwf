@@ -30,16 +30,11 @@ __email__ = "crodell@eoas.ubc.ca"
 
 
 season = "ST"
-model = "wrf4"
-domain = "d02"
+model = "era5"
+domain = "earth"
 
 
-if model == "wrf4":
-    filein = str(data_dir) + f"/wrf/wrfout_{domain}_2021-01-14_00:00:00"
-elif model == "hrdps":
-    filein = str(data_dir) + "/eccc/hrdps_grid.nc"
-else:
-    raise ValueError(f"Invalid model option: {model}")
+filein = str(data_dir) + f"/{model}/{domain}-grid.nc"
 
 tzone_shp = str(tzone_dir) + "/timezones-with-oceans/combined-shapefile-with-oceans.shp"
 
@@ -47,23 +42,19 @@ tzone_shp = str(tzone_dir) + "/timezones-with-oceans/combined-shapefile-with-oce
 ds = salem.open_xr_dataset(filein)
 pyproj_srs = ds.attrs["pyproj_srs"]
 df = salem.read_shapefile(tzone_shp)
-df = df[df["tzid"].str.contains("America")]
-df = df[df["min_y"] > 10]
+# df = df[df["tzid"].str.contains("America")]
+# df = df[df["min_y"] > 14]
 
 
-if model == "wrf4":
-    var_array = ds.T2.isel(Time=0)
-    lats = var_array.XLAT.values
-    lons = var_array.XLONG.values
-elif model == "hrdps":
-    var_array = ds["2t"]
-    lats = var_array.lat.values
-    lons = var_array.lon.values
-else:
-    raise ValueError(f"Invalid model option: {model}")
-
-
+lats = ds.XLAT.values
+lons = ds.XLONG.values
 zero_full = np.zeros(lats.shape)
+
+ds["var"] = (("south_north", "west_east"), zero_full)
+var_array = ds["var"]
+var_array.attrs["pyproj_srs"] = pyproj_srs
+
+
 tzid = list(df["tzid"])
 if season == "DT":
     for tz in tzid:
@@ -88,9 +79,10 @@ if season == "DT":
             or tz == "America/Indiana/Vincennes"
             or tz == "America/Indiana/Winamac"
         ):
-            hours = abs(int(seconds // 3600))
+            hours = int(seconds // 3600) * -1
         else:
-            hours = abs(int(seconds // 3600)) - 1
+            # hours = abs(int(seconds // 3600)) - 1
+            hours = int(seconds // 3600) * -1
         dsr = var_array.salem.roi(shape=name)
         index = np.where(dsr == dsr)
         zero_full[index[0], index[1]] = hours
@@ -115,49 +107,36 @@ elif season == "ST":
         # ):
         #     hours = abs(int(seconds // 3600)) + 1
         # else:
-        hours = abs(int(seconds // 3600))
+        hours = int(seconds // 3600) * -1
         dsr = var_array.salem.roi(shape=name)
         index = np.where(dsr == dsr)
         zero_full[index[0], index[1]] = hours
 else:
     raise ValueError("ERROR: This is not a valid time of year")
 
-if model == "wrf4":
-    ds_zones = xr.DataArray(
-        zero_full.astype(int), name="Zone", dims=("south_north", "west_east")
-    )
-    T2 = ds.T2
-elif model == "hrdps":
-    ds_zones = xr.DataArray(zero_full.astype(int), name="Zone", dims=("y", "x"))
-    T2 = ds["2t"]
-else:
-    raise ValueError(f"Invalid model option: {model}")
 
-attrs = T2.attrs
-ds_zones.attrs = attrs
-ds_zones.attrs["description"] = "Time Zone Offsets From UTC"
-ds_zones.attrs["units"] = "hours"
-ds_zones = xr.merge([ds_zones, T2])
+ds_zones = xr.DataArray(
+    zero_full.astype(int), name="Zone", dims=("south_north", "west_east")
+)
 
-if model == "wrf4":
-    ds_zones = ds_zones.drop_vars("T2")
-    ds_zones = ds_zones.isel(Time=0)
-    fileout = str(tzone_dir) + f"/tzone_{model}_{domain}-{season}.nc"
-elif model == "hrdps":
-    ds_zones = ds_zones.drop_vars("2t")
-    fileout = str(tzone_dir) + f"/tzone_{model}-{season}.nc"
-else:
-    raise ValueError(f"Invalid model option: {model}")
+# attrs = T2.attrs
+# ds_zones.attrs = attrs
+# ds_zones.attrs["description"] = "Time Zone Offsets From UTC"
+# ds_zones.attrs["units"] = "hours"
+# ds_zones = xr.merge([ds_zones, T2])
+
 
 ds_zones = ds_zones.compute()
-# ds_zones.to_netcdf(
-#     fileout, mode="w"
+ds["ZoneST"] = (("south_north", "west_east"), ds_zones.values)
+ds["ZoneST"].attrs["pyproj_srs"] = pyproj_srs
+ds1 = ds.sel(west_east=slice(-170, -20), south_north=slice(88, 20))
+
+ds1["ZoneST"].salem.quick_map(cmap="coolwarm", vmin=-11, vmax=11)
+ds = ds.drop("var")
+# ds.to_netcdf(
+#     str(tzone_dir) + f"/tzone-{model}-{domain}-{season}.nc", mode="w"
 # )
 
-ds["Zone"] = (("y", "x"), ds_zones.Zone.values)
-
-ds["Zone"].attrs["pyproj_srs"] = pyproj_srs
-ds["Zone"].salem.quick_map()
 
 # ####################################
 # ## plot for santity check
@@ -242,7 +221,7 @@ ds["Zone"].salem.quick_map()
 # if model == "wrf3":
 #     levels = [3, 4, 5, 6, 7, 8, 9, 10]
 #     levels = [-10, -9, -8, -7, -6, -5, -4, -3]
-# elif model == "wrf4":
+# elif model == "wrf":
 #     levels = [3, 4, 5, 6, 7, 8, 9, 10]
 #     levels = [-10, -9, -8, -7, -6, -5, -4, -3]
 # else:
@@ -273,7 +252,7 @@ ds["Zone"].salem.quick_map()
 # if model == "wrf3":
 #     ax.set_xlim([-144, -55])
 #     ax.set_ylim([36, 70])
-# elif model == "wrf4":
+# elif model == "wrf":
 #     ax.set_xlim([-174, -29])
 #     ax.set_ylim([25, 80])
 # else:

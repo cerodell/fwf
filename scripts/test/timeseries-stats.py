@@ -15,7 +15,7 @@ import scipy.ndimage as ndimage
 from scipy.ndimage import gaussian_filter
 from pylab import *
 
-from context import data_dir, xr_dir, wrf_dir, tzone_dir
+from context import data_dir, xr_dir, wrf_dir, tzone_dir, root_dir
 from datetime import datetime, date, timedelta
 from sklearn.metrics import mean_squared_error, mean_absolute_error
 from sklearn.metrics import r2_score
@@ -42,12 +42,18 @@ warnings.filterwarnings("ignore", category=FutureWarning)
 
 
 wrf_model = "wrf4"
-domain = "d02"
-time_slice = slice("2021-04-01", "2021-10-31")
+domain = "d03"
+time_slice = slice("2021-05-01", "2022-10-31")
 
 # model_config = ["_wrf05", "_wrf06", "_wrf07", "_wrf08"]
-model_config = ["_wrf03", "_wrf04", "_wrf05", "_wrf07"]
-trail_name = "WRF0304050607"
+model_config = [
+    "_wrf03",
+    "_wrf04",
+    "_wrf04_d03",
+]
+# model_config = ["_wrf04"]
+
+trail_name = "WRF04"
 nc_file = "20210101-20221031.nc"
 
 # model_config = [ "_era505",  "_era506"]
@@ -60,18 +66,61 @@ save_dir = Path(str(data_dir) + f"/images/stats/{trail_name}/")
 save_dir.mkdir(parents=True, exist_ok=True)
 
 
-with open(str(data_dir) + f"/json/fwf-attrs.json", "r") as fp:
+with open(str(root_dir) + f"/json/fwf-attrs.json", "r") as fp:
     var_dict = json.load(fp)
 
 
-ds = xr.open_dataset(str(data_dir) + f"/intercomp/d02/{trail_name}/{nc_file}")
+ds_d03 = xr.open_dataset(str(data_dir) + f"/intercomp/d03/WRF04/{nc_file}")
+var_list = list(ds_d03)[18:]
+var_dic, keep_vars = {}, []
+for var in var_list:
+    var_dic.update({f"{var}_wrf04": f"{var}_wrf04_d03"})
+    keep_vars.append(f"{var}_wrf04_d03")
 
-try:
-    ds = ds.sel(time=time_slice)
-except:
-    pass
+ds_d03 = ds_d03.rename(var_dic)
+ds_d03 = ds_d03.drop([var for var in list(ds_d03) if var not in keep_vars])
 
-ds = ds.load()
+ds_d02 = xr.open_dataset(str(data_dir) + f"/intercomp/d02/WRF04/{nc_file}")
+ds_d02 = ds_d02.sel(wmo=ds_d03.wmo)
+
+
+date_range = pd.date_range("2021-01-01", "2022-10-31")
+ds_d02["Time"] = date_range
+td02 = ds_d02.Time.values
+td03 = ds_d03.Time.values
+
+ds_d02 = ds_d02.drop_duplicates("time")
+ds_d03 = ds_d03.drop_duplicates("time")
+
+for i in range(len(td02)):
+    date_range[i] == td02[i]
+    if date_range[i] != td02[i]:
+        print(f"d02 has wrong data at index {i}")
+    elif date_range[i] != td03[i]:
+        print(f"d023 has wrong data at index {i}")
+    else:
+        pass
+
+
+# def slice_time(ds):
+#     try:
+#         ds = ds.sel(time=time_slice)
+#     except:
+#         pass
+#     return ds
+# ds_d02 = slice_time(ds_d02)
+# ds_d03 = slice_time(ds_d03)
+
+
+# for var in var_list:
+#     ds_d02[f"{var}_wrf04_d03"] = ds_d03[f"{var}_wrf04"]
+
+
+ds = xr.merge([ds_d03, ds_d02], compat="override")
+ds.to_netcdf(str(data_dir) + f"/intercomp/d03/WRF04/d02d02WRF04")
+
+
+# ds = ds.load()
 # ds = ds.dropna(dim="wmo")
 
 
@@ -205,6 +254,7 @@ def plotstats(fig, var_list):
             ax.set_ylabel(fr"$({var_dict[var]['units']})$", fontsize=14)
         except:
             pass
+        print(var)
         var_obs = df_final[var].values
         ax.set_title(var_dict[var.lower()]["description"], fontsize=14)
         ax.tick_params(axis="x", rotation=45)

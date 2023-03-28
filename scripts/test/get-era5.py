@@ -7,8 +7,8 @@ from datetime import datetime
 
 
 c = cdsapi.Client()
-save_dir = "/Volumes/WFRT-Data02/era5/"
-date_range = pd.date_range("2022-09-30", "2022-10-01")
+save_dir = "/Volumes/WFRT-Ext23/era5/"
+date_range = pd.date_range("2019-12-31", "2019-12-31")
 
 for date in date_range:
     startTime = datetime.now()
@@ -54,12 +54,6 @@ for date in date_range:
                 "21:00",
                 "22:00",
                 "23:00",
-            ],
-            "area": [
-                90,
-                -179.5,
-                15,
-                -20,
             ],
         },
         save_dir + f'era5-{date.strftime("%Y%m%d00")}.nc',

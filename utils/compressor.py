@@ -1,6 +1,5 @@
 import context
 import os
-import json
 import numpy as np
 import pandas as pd
 import xarray as xr
@@ -40,9 +39,9 @@ def compressor(ds, var_dict):
     """
     this function comresses datasets
     """
-    ds = ds.load()
-    ds.attrs["TITLE"] = "FWF MODEL USING OUTPUT FROM WRF V4.2.1 MODEL"
-    comp = dict(zlib=True, complevel=9)
+    # ds = ds.load()
+    # ds.attrs["TITLE"] = "FWF MODEL USING OUTPUT FROM WRF V4.2.1 MODEL"
+    comp = dict(zlib=True, complevel=3)
     encoding = {var: comp for var in ds.data_vars}
     for var in ds.data_vars:
         ds[var].attrs = var_dict[var]

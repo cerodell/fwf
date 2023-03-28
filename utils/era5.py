@@ -1,27 +1,65 @@
 #!/Users/crodell/miniconda3/envs/fwf/bin/python
 
+"""
+Transforms ERA5 Data to the WRF domain and matches the variable naming convention used in the FWF class
+"""
 
 import context
-
+import json
 import salem
-import numpy as npdd
+import numpy as np
 import xarray as xr
 import geopandas as gpd
 import pandas as pd
 from datetime import datetime
+from pathlib import Path
 
-from context import data_dir
+from context import data_dir, root_dir
+from utils.diagnostic import solve_RH, solve_W_WD
 
 wrf_model = "wrf4"
 domain = "d02"
-# date_range = pd.date_range("2021-01-01", "2021-01-01")
 
-# doi = date_range[0]
+## open domain config file with variable names and attributes
+with open(str(root_dir) + "/json/config.json") as f:
+    config = json.load(f)
 
-# filein = f'/Volumes/WFRT-Data02/era5/era5-2021010100.nc'
+
+doi = pd.Timestamp("2020-01-01")
 
 
-def config_era5(filein):
+# def read_era5(doi, write=False):
+#     var_dict = econfig['era5']
+#     filein = f"/Volumes/WFRT-Ext23/era5/era5-"
+#     file_list = [f"{filein}{(doi + pd.Timedelta(days=i)).strftime('%Y%m%d00.nc')}" for i in range(-1,2)]
+#     ds = xr.open_mfdataset(file_list)
+#     ds = ds.rename(var_dict)
+#     return ds
+
+# ds1 = read_era5(doi, write=False)
+
+var_dict = config["era5"]
+filein = f"/Volumes/WFRT-Ext23/era5/era5-"
+file_list = [
+    f"{filein}{(doi + pd.Timedelta(days=i)).strftime('%Y%m%d00.nc')}"
+    for i in range(-1, 2)
+]
+ds = xr.open_mfdataset(file_list)
+ds = ds.rename(var_dict)
+
+
+domain_grid = salem.open_xr_dataset(str(data_dir) + f"/era5/earth-grid.nc")
+
+ds["XLAT"] = (("south_north", "west_east"), domain_grid["XLAT"].values)
+ds["XLONG"] = (("south_north", "west_east"), domain_grid["XLONG"].values)
+ds = ds.assign_coords({"Time": ("time", ds.time.values)})
+ds = ds.set_coords(["XLAT", "XLONG"])
+
+ds = solve_RH(ds)
+ds = solve_W_WD(ds)
+
+
+def transform_era5(filein):
     startTime = datetime.now()
     wrf_model = "wrf4"
     domain = "d02"
@@ -143,139 +181,3 @@ def config_era5(filein):
     # print(f'r_o MIN {float(era5_ds["r_o"].min())}')
 
     return era5_ds
-
-
-# ## Open gridded static
-# static_ds = xr.open_dataset(
-#     str(data_dir) + f"/static/static-vars-{wrf_model}-{domain}.nc"
-# )
-
-# ### Call on variables
-# tzone = static_ds.ZoneDT.values
-# shape = np.shape(era5_ds.T[0, :, :])
-# ## create I, J for quick indexing
-# I, J = np.ogrid[: shape[0], : shape[1]]
-
-# ## determine index for looping based on length of time array and initial time
-# time_array = era5_ds.Time.values
-# int_time = int(pd.Timestamp(time_array[0]).hour)
-# length = len(time_array) + 1
-# num_days = [i - 12 for i in range(1, length) if i % 24 == 0]
-# index = [
-#     i - int_time if 12 - int_time >= 0 else i + 24 - int_time for i in num_days
-# ]
-# print(f"index of times {index} with initial time {int_time}Z")
-
-# ## loop every 24 hours at noon local
-# files_ds = []
-# for i in index:
-#     print(i)
-#     ## loop each variable
-#     mean_da = []
-#     for var in era5_ds.data_vars:
-#         if var == "SNOWC":
-#             var_array = era5_ds[var].values
-#             noon = var_array[(i + tzone), I, J]
-#             day = np.array(era5_ds.Time[i + 1], dtype="datetime64[D]")
-#             var_da = xr.DataArray(
-#                 noon,
-#                 name=var,
-#                 dims=("south_north", "west_east"),
-#                 coords=era5_ds.isel(time=i).coords,
-#             )
-#             var_da["Time"] = day
-#             mean_da.append(var_da)
-#         else:
-#             print(var)
-#             var_array = era5_ds[var].values
-#             noon_minus = var_array[(i + tzone - 1), I, J]
-#             noon = var_array[(i + tzone), I, J]
-#             noon_pluse = var_array[(i + tzone + 1), I, J]
-#             noon_mean = (noon_minus + noon + noon_pluse) / 3
-#             day = np.array(era5_ds.Time[i + 1], dtype="datetime64[D]")
-#             var_da = xr.DataArray(
-#                 noon_mean,
-#                 name=var,
-#                 dims=("south_north", "west_east"),
-#                 coords=era5_ds.isel(time=i).coords,
-#             )
-#             var_da["Time"] = day
-#             mean_da.append(var_da)
-
-#     mean_ds = xr.merge(mean_da)
-#     files_ds.append(mean_ds)
-
-# daily_ds = xr.combine_nested(files_ds, "time")
-
-# ## create datarray for carry over rain, this will be added to the next days rain totals
-# ## NOTE: this is rain that fell from noon local until 24 hours past the model initial time ie 00Z, 06Z..
-# r_o_tomorrow_i = era5_ds.r_o.values[23] - daily_ds.r_o.values[0]
-# r_o_tomorrow = [r_o_tomorrow_i for i in range(len(num_days))]
-# r_o_tomorrow = np.stack(r_o_tomorrow)
-# r_o_tomorrow_da = xr.DataArray(
-#     r_o_tomorrow,
-#     name="r_o_tomorrow",
-#     dims=("time", "south_north", "west_east"),
-#     coords=daily_ds.coords,
-# )
-# r_o_tomorrow_da = xr.where(r_o_tomorrow_da > 1e-4, r_o_tomorrow_da, 0.0)
-
-# daily_ds["r_o_tomorrow"] = r_o_tomorrow_da
-
-# ## create daily 24 accumulated precipitation totals
-# x_prev = 0
-# for i, x_val in enumerate(daily_ds.r_o):
-#     daily_ds.r_o[i] -= x_prev
-#     x_prev = x_val
-
-# print("Daily ds done")
-
-
-# # era5_ds["SNOWC"] = fwf_d02_ds["SNOWC"]
-# # # era5_ds["SNW"] = fwf_d02_ds["SNW"]
-
-# # keep_vars = [
-# #     "SNOWC",
-# #     "SNOWH",
-# #     "SNW",
-# #     "T",
-# #     "TD",
-# #     "U10",
-# #     "V10",
-# #     "W",
-# #     "WD",
-# #     "r_o",
-# #     "H",
-# # ]
-# # era5_ds = era5_ds.drop([var for var in list(era5_ds) if var not in keep_vars])
-
-# # print(era5_ds)
-
-# # era5_ds = era5_ds.isel(time = 1)
-# # # era5_ds["tp"] = era5_ds["tp"]*1000
-
-# # wrfd02_ds = salem.open_wrf_dataset(str(data_dir) + f"/wrf/wrfout_d02_2021-01-14_00:00:00")
-# # print(wrfd02_ds)
-# # fwf_d02_ds = xr.open_dataset("/Volumes/Scratch/FWF-WAN00CG/d02/202107/fwf-hourly-d02-2021070106.nc")
-# # fwf_d02_ds = salem.open_xr_dataset("/Volumes/Scratch/FWF-WAN00CG/d02/202107/fwf-daily-d02-2021070106.nc")
-
-# # print(fwf_d02_ds)
-
-# # # fwf_d02_ds = salem.open_wrf_dataset("/Volumes/Scratch/FWF-WAN00CG/d02/202107/fwf-daily-d02-2021070106.nc")
-# # import matplotlib.pyplot as plt
-
-
-# # test = fwf_d02_ds.salem.transform(era5_ds, interp='spline')
-
-# # # test = xr.where(test.isnull(),1000, test )
-# # fig = plt.figure(figsize=(12, 6))
-# # ax = fig.add_subplot(1, 1, 1)
-# # ax.imshow(test.t2m.values[::-1])
-# # # fig_name = f'temp_wsp({int(da.W.mean())})_rh({int(da.H.mean())})_precip({int(da.r_o.mean())})'
-# # plt.savefig(f"test.png", dpi=250, bbox_inches="tight")
-
-
-# # # test.t2m.plot()
-# # # print(test)
-
-# # print(np.unique(test.t2m.isnull(), return_counts = True))
