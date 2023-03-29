@@ -19,6 +19,7 @@ from pathlib import Path
 from datetime import datetime
 from utils.bias_correct import bias_correct
 from utils.compressor import compressor, file_size
+from utils.era5 import read_era5
 from context import data_dir, root_dir
 
 
@@ -666,36 +667,23 @@ class FWF:
         for i in range(4, -1, -1):
             retrieve_time_np = time_array[0] - np.timedelta64(i, "D")
             retrieve_time = pd.to_datetime(retrieve_time_np).strftime("%Y%m%d%H")
-            if self.iterator == "fwf":
-                if self.model == "wrf":
-                    # int_file_dir = (
-                    #     str(self.filein_dir.rsplit("/", 1)[0])
-                    #     + f"/{pd.to_datetime(retrieve_time_np).strftime('%Y%m')}/fwf-{timestep}-{self.domain}-{retrieve_time}.nc"
-                    # )
+            try:
+                if (self.model == "wrf") or (self.model == "eccc"):
                     int_file_dir = (
                         str(self.filein_dir)
                         + f"/{pd.to_datetime(retrieve_time_np).strftime('%Y%m')}/fwf-{timestep}-{self.domain}-{retrieve_time}.nc"
                     )
-                elif self.model == "eccc":
-                    int_file_dir = (
-                        str(self.filein_dir)
-                        + f"/{pd.to_datetime(retrieve_time_np).strftime('%Y%m')}/fwf-{timestep}-{self.domain}-{retrieve_time}.nc"
+                    da = xr.open_dataset(int_file_dir)
+                elif self.model == "ecmwf":
+                    da = read_era5(
+                        pd.to_datetime(retrieve_time_np), self.model, self.domain
                     )
                 else:
                     raise ValueError("Bad model input")
-            elif self.iterator == "era5":
-                int_file_dir = (
-                    str(self.era5_save_dir)
-                    + f"/fwf-{timestep}-{self.domain}-{retrieve_time}.nc"
-                )
-            else:
-                raise ValueError("Bad iterator")
-
-            try:
                 if i == 0:
-                    da = xr.open_dataset(int_file_dir).chunk("auto").T
+                    da = da.chunk("auto").T
                 else:
-                    da = xr.open_dataset(int_file_dir).isel(time=tslice).chunk("auto").T
+                    da = da.isel(time=tslice).chunk("auto").T
                 previous_dss.append(da)
                 days_of_max.append(retrieve_time_np.astype("datetime64[D]"))
             except:
@@ -786,7 +774,7 @@ class FWF:
             nan_full = np.full(TMAXi.shape, np.nan)
             # FSi = xr.where(TMAXi < 5, 1, nan_full)
             # FSi = xr.where(TMAXi > 12, 0, FSi)
-            FSi = xr.where((TMAXi < 5) & (FS_days > 215), 1, nan_full)
+            FSi = xr.where((TMAXi < 5) & (FS_days > 30), 1, nan_full)
             FSi = xr.where((TMAXi > 12) & (FS_days > 30), 0, FSi)
 
             ## take dif of yesterdays FS mask minus intermediate FS mask
@@ -2135,7 +2123,7 @@ class FWF:
         Parameters
         ----------
             int_ds: DataSet
-                WRF dataset at 4/12-km spatial resolution and one hour tempolar resolution
+                WRF dataset at 4/12-km spatial resolution and one hour temporal resolution
 
         Returns
         -------
@@ -2148,6 +2136,8 @@ class FWF:
 
         ### Call on variables
         tzone = self.tzone
+        # correct for places on int dateline
+        tzone[tzone <= -12] *= -1
 
         ## create I, J for quick indexing
         I, J = np.ogrid[: self.shape[0], : self.shape[1]]
@@ -2170,35 +2160,17 @@ class FWF:
             ## loop each variable
             mean_da = []
             for var in int_ds.data_vars:
-                if var == "SNOWC":
-                    var_array = int_ds[var].values
-                    noon = var_array[(i + tzone), I, J]
-                    day = np.array(int_ds.Time[i + 1], dtype="datetime64[D]")
-                    var_da = xr.DataArray(
-                        noon,
-                        name=var,
-                        dims=("south_north", "west_east"),
-                        coords=int_ds.isel(time=i).coords,
-                    )
-                    var_da["Time"] = day
-                    mean_da.append(var_da)
-                    pass
-                else:
-                    var_array = int_ds[var].values
-                    noon_minus = var_array[(i + tzone - 1), I, J]
-                    noon = var_array[(i + tzone), I, J]
-                    noon_pluse = var_array[(i + tzone + 1), I, J]
-                    noon_mean = (noon_minus + noon + noon_pluse) / 3
-                    day = np.array(int_ds.Time[i + 1], dtype="datetime64[D]")
-                    var_da = xr.DataArray(
-                        noon_mean,
-                        name=var,
-                        dims=("south_north", "west_east"),
-                        coords=int_ds.isel(time=i).coords,
-                    )
-                    var_da["Time"] = day
-                    mean_da.append(var_da)
-
+                var_array = int_ds[var].values
+                noon = var_array[(i + tzone), I, J]
+                day = np.array(int_ds.Time[i + 1], dtype="datetime64[D]")
+                var_da = xr.DataArray(
+                    noon,
+                    name=var,
+                    dims=("south_north", "west_east"),
+                    coords=int_ds.isel(time=i).coords,
+                )
+                var_da["Time"] = day
+                mean_da.append(var_da)
             mean_ds = xr.merge(mean_da)
             files_ds.append(mean_ds)
 

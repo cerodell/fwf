@@ -4,6 +4,7 @@
 Defines Projection of ECCC Data and matches the variable naming convention used in the FWF class
 """
 
+import os
 import context
 import salem
 import json
@@ -22,14 +23,19 @@ with open(str(root_dir) + "/json/config.json") as f:
     config = json.load(f)
 
 
-def read_eccc(domain, doi, write=False):
-
-    filein = f"/Volumes/WFRT-Ext24/ECCC/{domain}/{doi.strftime('%Y%m')}/"
-    pathlist = sorted(Path(filein).glob(doi.strftime("%Y%m%d00*")))
-    fwf_ds = units_eccc(
-        xr.concat([open_eccc(path, domain) for path in pathlist], dim="time")
-    )
-
+def read_eccc(doi, model, domain):
+    filein = f'/Volumes/WFRT-Ext23/fwf-data/{model}/{domain}/{doi.strftime("%Y%m")}/fwf-hourly-{domain}-{doi.strftime("%Y%m%d00")}.nc'
+    if os.path.isfile(filein) == True:
+        fwf_ds = salem.open_xr_dataset(filein)
+    else:
+        print(
+            f'file: fwf-hourly-{domain}-{doi.strftime("%Y%m%d00")}.nc does not exist, creating from raw...'
+        )
+        filein = f"/Volumes/WFRT-Ext24/ECCC/{domain}/{doi.strftime('%Y%m')}/"
+        pathlist = sorted(Path(filein).glob(doi.strftime("%Y%m%d00*")))
+        fwf_ds = units_eccc(
+            xr.concat([open_eccc(path, domain) for path in pathlist], dim="time")
+        )
     return fwf_ds
 
 

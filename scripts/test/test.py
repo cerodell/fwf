@@ -38,6 +38,17 @@ __email__ = "crodell@eoas.ubc.ca"
 # ignore RuntimeWarning
 warnings.filterwarnings("ignore", category=RuntimeWarning)
 
+model = "eccc"
+domain = "rdps"
+
+ds = salem.open_xr_dataset(
+    f"/Volumes/WFRT-Ext24/fwf-data/{model}/{domain}/04/fwf/fwf-daily-{domain}-2021011000.nc"
+)
+
+fig = plt.figure(figsize=(12, 6))
+ax = fig.add_subplot(1, 1, 1)
+ds.isel(time=0)["FS_days"].salem.quick_map(ax=ax, cmap="coolwarm")
+
 
 from netCDF4 import Dataset
 from wrf import (

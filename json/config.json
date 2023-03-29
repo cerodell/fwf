@@ -1,7 +1,9 @@
 {
     "rdps": {
+      "dims":{
         "rlon1": "west_east",
-        "rlat1": "south_north",
+        "rlat1": "south_north"
+        },
         "UU": "U10",
         "VV": "V10",
         "TT": "T",
@@ -12,8 +14,10 @@
         "HR": "H"
       },
       "hrdps": {
+        "dims":{
         "rlon": "west_east",
-        "rlat": "south_north",
+        "rlat": "south_north"
+        },
         "UU": "U10",
         "VV": "V10",
         "TT": "T",
@@ -24,14 +28,16 @@
         "HR": "H"
       },
       "era5": {
+        "dims":{
         "longitude": "west_east",
-        "latitude": "south_north",
+        "latitude": "south_north"
+        },
         "u10": "U10",
         "v10": "V10",
         "t2m": "T",
         "d2m": "TD",
         "sd": "SNOWH",
-        "tp": "r_o"
+        "tp": "r_o_hourly"
       }
 
 }

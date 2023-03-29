@@ -16,47 +16,29 @@ from pathlib import Path
 
 from context import data_dir, root_dir
 from utils.diagnostic import solve_RH, solve_W_WD
-
-wrf_model = "wrf4"
-domain = "d02"
-
-## open domain config file with variable names and attributes
-with open(str(root_dir) + "/json/config.json") as f:
-    config = json.load(f)
+from utils.formate import formate
 
 
-doi = pd.Timestamp("2020-01-01")
+# ## open domain config file with variable names and attributes
+# with open(str(root_dir) + "/json/config.json") as f:
+#     config = json.load(f)
 
 
-# def read_era5(doi, write=False):
-#     var_dict = econfig['era5']
-#     filein = f"/Volumes/WFRT-Ext23/era5/era5-"
-#     file_list = [f"{filein}{(doi + pd.Timedelta(days=i)).strftime('%Y%m%d00.nc')}" for i in range(-1,2)]
-#     ds = xr.open_mfdataset(file_list)
-#     ds = ds.rename(var_dict)
-#     return ds
-
-# ds1 = read_era5(doi, write=False)
-
-var_dict = config["era5"]
-filein = f"/Volumes/WFRT-Ext23/era5/era5-"
-file_list = [
-    f"{filein}{(doi + pd.Timedelta(days=i)).strftime('%Y%m%d00.nc')}"
-    for i in range(-1, 2)
-]
-ds = xr.open_mfdataset(file_list)
-ds = ds.rename(var_dict)
-
-
-domain_grid = salem.open_xr_dataset(str(data_dir) + f"/era5/earth-grid.nc")
-
-ds["XLAT"] = (("south_north", "west_east"), domain_grid["XLAT"].values)
-ds["XLONG"] = (("south_north", "west_east"), domain_grid["XLONG"].values)
-ds = ds.assign_coords({"Time": ("time", ds.time.values)})
-ds = ds.set_coords(["XLAT", "XLONG"])
-
-ds = solve_RH(ds)
-ds = solve_W_WD(ds)
+def read_era5(doi, model, domain):
+    filein = f"/Volumes/WFRT-Ext23/era5/"
+    file_list = [
+        f"{filein}era5-{(doi + pd.Timedelta(days=i)).strftime('%Y%m%d00.nc')}"
+        for i in range(0, 2)
+    ]
+    ds = xr.open_mfdataset(file_list)
+    ds["t2m"] = ds["t2m"] - 273.15
+    ds["d2m"] = ds["d2m"] - 273.15
+    ds["tp"] = ds["tp"] * 1000
+    ds = formate(ds, model, domain)
+    ds["W"] = ds["W"] * 3.6
+    ds = ds.isel(time=slice(0, 36))
+    ds = ds.roll(west_east=int(len(ds["west_east"]) / 2))
+    return ds.unify_chunks()
 
 
 def transform_era5(filein):

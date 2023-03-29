@@ -24,7 +24,7 @@ __email__ = "crodell@eoas.ubc.ca"
 # ignore RuntimeWarning
 warnings.filterwarnings("ignore", category=RuntimeWarning)
 # date_range = pd.date_range("2021-04-20", "2022-11-01")
-date_range = pd.date_range("2021-01-01", "2023-01-01")
+date_range = pd.date_range("2022-04-05", "2023-01-01")
 
 # date_range = pd.date_range("2021-01-05", "2021-01-05")
 
@@ -58,7 +58,7 @@ def compressor(ds):
 
 
 for date in date_range:
-    int_ds = read_eccc(config["domain"], date)
+    int_ds = read_eccc(date, config["model"], config["domain"])
     # int_ds=int_ds.chunks('auto')
     writeTime = datetime.now()
     # int_ds.to_netcdf(f'/Volumes/WFRT-Ext23/fwf-data/{config["model"]}/{config["domain"]}/fwf-hourly-{config["domain"]}-{date.strftime("%Y%m%d00")}.nc', mode ='w')

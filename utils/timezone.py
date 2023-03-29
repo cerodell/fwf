@@ -30,8 +30,8 @@ __email__ = "crodell@eoas.ubc.ca"
 
 
 season = "ST"
-model = "era5"
-domain = "earth"
+model = "ecmwf"
+domain = "era5"
 
 
 filein = str(data_dir) + f"/{model}/{domain}-grid.nc"
@@ -108,6 +108,7 @@ elif season == "ST":
         #     hours = abs(int(seconds // 3600)) + 1
         # else:
         hours = int(seconds // 3600) * -1
+        # print(hours)
         dsr = var_array.salem.roi(shape=name)
         index = np.where(dsr == dsr)
         zero_full[index[0], index[1]] = hours
@@ -131,8 +132,8 @@ ds["ZoneST"] = (("south_north", "west_east"), ds_zones.values)
 ds["ZoneST"].attrs["pyproj_srs"] = pyproj_srs
 ds1 = ds.sel(west_east=slice(-170, -20), south_north=slice(88, 20))
 
-ds1["ZoneST"].salem.quick_map(cmap="coolwarm", vmin=-11, vmax=11)
-ds = ds.drop("var")
+ds["ZoneST"].salem.quick_map(cmap="coolwarm", vmin=-11, vmax=11)
+# ds = ds.drop("var")
 # ds.to_netcdf(
 #     str(tzone_dir) + f"/tzone-{model}-{domain}-{season}.nc", mode="w"
 # )

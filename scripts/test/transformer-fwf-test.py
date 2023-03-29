@@ -6,22 +6,49 @@ import xarray as xr
 import pandas as pd
 
 from datetime import datetime
+import matplotlib.pyplot as plt
 
 from utils.fwi import solve_ffmc
 
 from context import data_dir
 
-eccc_grid = salem.open_xr_dataset(str(data_dir) + "/eccc/hrdps_grid.nc")
+eccc_grid = salem.open_xr_dataset(str(data_dir) + "/eccc/rdps-grid.nc")
 
-era5_d02 = salem.open_xr_dataset(
-    "/Volumes/WFRT-Ext24/fwf-data/wrf/d02/ERA504/era5/fwf-daily-d02-2020123100.nc"
-)
-era5_eccc = eccc_grid.salem.transform(era5_d02, interp="spline")
+model = "ecmwf"
+domain = "era5"
 
-era5_eccc.to_netcdf(
-    "/Volumes/WFRT-Ext24/fwf-data/eccc/hrdps/04/fwf/fwf-daily-hrdps-2020123106.nc",
-    mode="w",
+era5_ds = salem.open_xr_dataset(
+    f"/Volumes/WFRT-Ext24/fwf-data/{model}/{domain}/04/fwf/fwf-daily-{domain}-2020010100.nc"
 )
+
+fig = plt.figure(figsize=(12, 6))
+ax = fig.add_subplot(1, 1, 1)
+era5_ds.isel(time=0)["TMAX"].salem.quick_map(ax=ax, cmap="coolwarm")
+
+
+era5_eccc = eccc_grid.salem.transform(era5_ds, ks=10)  # interp="spline")
+
+fig = plt.figure(figsize=(12, 6))
+ax = fig.add_subplot(1, 1, 1)
+era5_eccc.isel(time=0)["TMAX"].salem.quick_map(ax=ax, cmap="coolwarm")
+
+for var in era5_eccc:
+    era5_eccc[var] = era5_eccc[var].interpolate_na(dim="west_east")
+    era5_eccc[var] = era5_eccc[var].interpolate_na(dim="south_north")
+
+fig = plt.figure(figsize=(12, 6))
+ax = fig.add_subplot(1, 1, 1)
+era5_eccc.isel(time=0)["F"].salem.quick_map(ax=ax, cmap="coolwarm")
+
+
+test = era5_eccc.isel(time=0)["TMAX"].values
+
+np.unique(np.isnan(test), return_counts=True)
+
+# era5_eccc.to_netcdf(
+#     "/Volumes/WFRT-Ext24/fwf-data/eccc/hrdps/04/fwf/fwf-daily-hrdps-2020123106.nc",
+#     mode="w",
+# )
 
 
 startTime = datetime.now()
