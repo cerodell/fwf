@@ -12,8 +12,8 @@ import matplotlib.pyplot as plt
 from context import data_dir
 
 
-model = "era5"
-domain = "earth"
+model = "ecmwf"
+domain = "era5"
 
 
 if model == "wrf":
@@ -32,6 +32,7 @@ elif model == "eccc":
     proj = ds.attrs["pyproj_srs"]
 
     try:
+        ## This works for HRDPS
         lons = ds.lon.values
         lats = ds.lat.values
         nx, ny = ds_grib[var].attrs["GRIB_Nx"], ds_grib[var].attrs["GRIB_Ny"]
@@ -40,6 +41,7 @@ elif model == "eccc":
             ds_grib[var].attrs["GRIB_jDirectionIncrementInDegrees"],
         )
     except:
+        ## This works for RDPS
         lons = ds.lon_1.values
         lats = ds.lat_1.values
         nx, ny = lons.shape[1], lons.shape[0]

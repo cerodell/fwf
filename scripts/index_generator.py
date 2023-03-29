@@ -5,7 +5,6 @@ Creates an index.html (from template in static/html) file for each forecast.
 """
 import context
 import logging
-from shell import shell
 from pathlib import Path
 from datetime import datetime, date, timedelta
 

@@ -16,7 +16,6 @@ from netCDF4 import Dataset
 import matplotlib.pyplot as plt
 from wrf import ll_to_xy, xy_to_ll
 from datetime import datetime, date, timedelta
-from utils.make_intercomp import daily_merge_ds
 from utils.compressor import compressor, file_size
 
 from context import data_dir, root_dir
