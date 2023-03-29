@@ -20,7 +20,7 @@ from datetime import datetime
 from utils.bias_correct import bias_correct
 from utils.compressor import compressor, file_size
 from utils.era5 import read_era5
-from context import data_dir, root_dir
+from context import data_dir, json_dir
 
 
 __author__ = "Christopher Rodell"
@@ -102,21 +102,17 @@ class FWF:
         self.attrs = int_ds.attrs
         self.model = config["model"]
         self.domain = config["domain"]
-        self.iterator = config["iterator"]
         self.trail_name = config["trail_name"]
         self.fbp_mode = config["fbp_mode"]
         self.overwinter = config["overwinter"]
         self.initialize = config["initialize"]
         self.correctbias = config["correctbias"]
-        self.forecast = config["forecast"]
         self.root_dir = config["root_dir"]
 
-        ## TODO this will need to change after creating newly configured data for eccc model
-        self.iterator_dir = f"/Volumes/WFRT-Ext24/fwf-data/{self.model}/{self.domain}/{self.trail_name}/{self.iterator}/"
+        ## NOTE this will be adjusted when made operational
+        self.iterator_dir = f"/Volumes/WFRT-Ext24/fwf-data/{self.model}/{self.domain}/{self.trail_name}/fwf/"
         self.filein_dir = f"{self.root_dir}/{self.model}/{self.domain}"
-        self.save_dir = Path(
-            f"/Volumes/WFRT-Ext24/fwf-data/{self.model}/{self.domain}/{self.trail_name}/fwf"
-        )
+        self.save_dir = self.iterator_dir
         self.save_dir.mkdir(parents=True, exist_ok=True)
 
         ############ Mathematical Constants and UsefulArrays ################
@@ -150,7 +146,7 @@ class FWF:
         self.L_f = L_f
 
         ## Open Data Attributes for writing
-        with open(str(root_dir) + f"/json/fwf-attrs.json", "r") as fp:
+        with open(str(json_dir) + f"/json/fwf-attrs.json", "r") as fp:
             self.var_dict = json.load(fp)
 
         ## Open gridded static
@@ -187,7 +183,7 @@ class FWF:
             self.tzone = static_ds.ZoneST.values
         else:
             raise ValueError(
-                f"Invalided fbp_mode option: {self.fbp_mode}. Only supports boolean inputs"
+                f"Invalided fbp_mode option: {self.fbp_mode}. Only supports boolean inputs \n Please try with True or False :)"
             )
 
         ################################################################################
@@ -230,7 +226,10 @@ class FWF:
         elif self.correctbias == False:
             pass
         else:
-            raise ValueError("Invalid correctbias option, must be boolean")
+            raise ValueError(
+                f"Invalided correctbias option: {self.correctbias}. Only supports boolean inputs \n Please try with True or False :)"
+            )
+
         # print(self.daily_ds.H.values == test)
 
         ################################################################################
@@ -361,7 +360,7 @@ class FWF:
 
         else:
             raise ValueError(
-                f"ERROR: {timestep} is not a valid option for timestep, only hourly or daily are at this time"
+                f"ERROR: {timestep} is not a valid option for timestep, only hourly or daily are supported at this time. If you want sub-hourly let me know and I will try tyo add this feature :)"
             )
 
         if self.overwinter == True:
@@ -482,162 +481,10 @@ class FWF:
 
         else:
             raise ValueError(
-                "ERROR: Can Not Run FWF Model With initialize Option Provided"
+                f"Invalided initialize option: {initialize}. Only supports boolean inputs \n Please try with True or False :)"
             )
 
         return
-
-    """########################################################################"""
-    """ ####### Creat and fire season mask and based on tmax condition ########"""
-    """########################################################################"""
-
-    # def FS_mask(self, time_array, timestep):
-
-    #     FSy = self.FSy
-    #     r_w = self.r_w
-    #     XLAT = self.daily_ds.XLAT.values
-    #     XLONG = self.daily_ds.XLONG.values
-
-    #     ## define time slicing based on hourly or daily data
-    #     if timestep == "daily":
-    #         tslice = 0
-    #     elif timestep == "hourly":
-    #         tslice = slice(0, 24)
-    #     else:
-    #         raise ValueError(
-    #             f"Invalide timesept option of {timestep}, can only take daily or hourly"
-    #         )
-
-    #     ## loop and try and open datasets from today to four days in the past
-    #     previous_dss, days_of_max = [], []
-    #     for i in range(4, -1, -1):
-    #         retrieve_time_np = time_array[0] - np.timedelta64(i, "D")
-    #         retrieve_time = pd.to_datetime(retrieve_time_np).strftime("%Y%m%d06")
-    #         int_file_dir = (
-    #             str(self.filein_dir.rsplit("/", 1)[0])
-    #             + f"/{pd.to_datetime(retrieve_time_np).strftime('%Y%m')}/fwf-{timestep}-{self.domain}-{retrieve_time}.nc"
-    #         )
-    #         try:
-    #             if i == 0:
-    #                 da = xr.open_dataset(int_file_dir).chunk("auto").SNOWC
-    #             else:
-    #                 da = xr.open_dataset(int_file_dir).isel(time=tslice).chunk("auto").SNOWC
-    #             previous_dss.append(da)
-    #             days_of_max.append(retrieve_time_np.astype("datetime64[D]"))
-    #         except:
-    #             pass
-
-    #     ## combine the dataset into one continuous dataarray
-    #     cont_ds = xr.concat(previous_dss, dim="time").load()
-
-    #     ## find all index of 00Z in the continuous dataarray based on the inital time
-    #     time_array = cont_ds.Time.values
-    #     # print(time_array[0])
-    #     int_time = int(pd.Timestamp(time_array[0]).hour)
-    #     length = len(time_array) + 1
-    #     num_days = [i - 0 for i in range(1, length) if i % 24 == 0]
-    #     index = [
-    #         i - int_time if 12 - int_time >= 0 else i + 24 - int_time for i in num_days
-    #     ]
-    #     index = index[:-1]
-
-    #     if (len(cont_ds.time) - index[-1]) < (24 + float(np.max(self.tzone))):
-    #         index = index[:-1]
-    #     else:
-    #         pass
-
-    #     print(f"index of 00Z times {index} with initial time {int_time}Z")
-    #     ## loop every 00Z index and find daily max temps between local midnight to midnight using an array of utc offsets
-    #     da_j_list = []
-    #     for j in range(len(index)):
-    #         da_i_list = []
-    #         for i in range(index[j], index[j] + 24):
-    #             ind_a = xr.DataArray(i + self.tzone, dims=["south_north", "west_east"])
-    #             da_i = cont_ds.isel(time=ind_a)
-    #             da_i_list.append(da_i)
-    #         da_j = xr.concat(da_i_list, dim="time").max(dim="time")
-    #         da_j = da_j.assign_coords(
-    #             {
-    #                 "Time": days_of_max[j],
-    #                 "XLAT": (("south_north", "west_east"), XLAT),
-    #                 "XLONG": (("south_north", "west_east"), XLONG),
-    #             }
-    #         )
-    #         da_j_list.append(da_j)
-
-    #     SNOWC_da = xr.concat(da_j_list, dim="time")
-
-    #     ## apply a try condition for when datas in the past doesn't exist
-    #     ## TODO this is hacky, needs to be more robust for longer NWP forecast (only good for two day forecasts)
-    #     try:
-    #         SNOWC_yesterday = (
-    #             SNOWC_da.isel(time=slice(0, 3))
-    #             .max(dim="time")
-    #             .assign_coords({"Time": days_of_max[-2]})
-    #         )
-    #         SNOWC_today = (
-    #             SNOWC_da.isel(time=slice(1, 4))
-    #             .max(dim="time")
-    #             .assign_coords({"Time": days_of_max[-1]})
-    #         )
-    #         SNOWC = xr.concat([SNOWC_yesterday, SNOWC_today], dim="time")
-    #     except:
-    #         SNOWC = xr.concat(
-    #             [
-    #                 SNOWC_da.assign_coords(
-    #                     {"Time": days_of_max[0] - np.timedelta64(1, "D")}
-    #                 ),
-    #                 SNOWC_da.assign_coords({"Time": days_of_max[0]}),
-    #             ],
-    #             dim="time",
-    #         )
-    #     if len(self.daily_ds.time) == 1:
-    #         SNOWC = xr.concat([SNOWC_yesterday], dim="time")
-    #     else:
-    #         pass
-
-    #     ## apply fire season onset condtions and create binary mask
-    #     dFS_list, FS_list, r_w_list = [], [], []
-    #     for i in range(len(SNOWC)):
-    #         SNOWCi = SNOWC.isel(time=i)
-    #         nan_full = np.full(SNOWCi.shape, np.nan)
-    #         FSi = xr.where(SNOWCi > 0.6, 1, nan_full)
-    #         FSi = xr.where(SNOWCi <= 0.6, 0, FSi)
-
-    #         ## take dif of yesterdays FS mask minus intermediate FS mask
-    #         dFS = FSy - FSi
-    #         dFS = xr.DataArray(dFS, name="dFS", dims=("south_north", "west_east"))
-    #         dFS_list.append(dFS)
-
-    #         ## create todays FS binary mask
-    #         FS = xr.where(dFS == -1, 1, FSy)
-    #         FS = xr.where(dFS == 1, 0, FS)
-    #         FS = xr.DataArray(FS, name="FS", dims=("south_north", "west_east"))
-    #         FS_list.append(FS)
-
-    #         ## replace FSy with FS for next day's forecast
-    #         FSy = FS
-
-    #         ## accumualte preciptaiton on model grids that are in winter
-    #         r_w = r_w + self.daily_ds["r_o"].isel(time=i)
-
-    #         ## Apply dFS mask to zero out r_w if winter oneset occured
-    #         r_w = np.where(dFS == -1, 0, r_w)
-
-    #         ## create dataarray of winter accumulated preciptaiton
-    #         r_w = xr.DataArray(r_w, name="r_w", dims=("south_north", "west_east"))
-    #         r_w_list.append(r_w)
-
-    #     dFS = xr.concat(dFS_list, dim="time")
-    #     FS = xr.concat(FS_list, dim="time")
-    #     r_w = xr.concat(r_w_list, dim="time")
-
-    #     self.daily_ds["SNOWC"] = SNOWC
-    #     self.daily_ds["dFS"] = dFS
-    #     self.daily_ds["FS"] = FS
-    #     self.daily_ds["r_w"] = r_w
-
-    #     return
 
     """########################################################################"""
     """ ####### Creat and fire season mask and based on tmax condition ########"""
@@ -659,7 +506,7 @@ class FWF:
             tslice = slice(0, 24)
         else:
             raise ValueError(
-                f"Invalid timestep option of {timestep}, can only take daily or hourly"
+                f"ERROR: {timestep} is not a valid option for timestep, only hourly or daily are supported at this time. If you want sub-hourly let me know and I will try tyo add this feature :)"
             )
 
         ## loop and try and open datasets from today to four days in the past
@@ -1488,7 +1335,7 @@ class FWF:
                 B = xr.combine_nested([B_a, B_b], "time")
             else:
                 raise ValueError(
-                    "ERROR: Rodell was lazy and needs to rethink indexing of multi length wrf runs"
+                    "ERROR: Rodell was lazy and needs to rethink indexing of multi length nwp runs, he will bet better in the next version!"
                 )
         else:
             B = 0.1 * R * f_D
@@ -2349,18 +2196,13 @@ class FWF:
             + self.domain
             + str(f"-{file_date}.nc")
         )
-        Path(str(self.save_dir)).mkdir(parents=True, exist_ok=True)
         hourly_ds = self.prepare_ds(hourly_ds)
         writeTime = datetime.now()
         print("Start Write ", datetime.now())
         hourly_ds.to_netcdf(make_dir, mode="w")
         print("Write Time: ", datetime.now() - writeTime)
-        print(f"wrote working {make_dir}")
-        if self.forecast == True:
-            command = f'cp -r {str(self.save_dir) + str("/fwf-hourly-") + self.domain + str(f"-{file_date}.nc")}  {str(f"/Volumes/WFRT-Ext24/FWF-WAN00CG/{self.domain}/forecast/fwf-hourly-") + self.domain + str(f"-{file_date}.nc")}'
-            os.system(command)
-        else:
-            pass
+        print(f"Wrote working {make_dir}")
+
         return str(make_dir)
 
     """#######################################"""
@@ -2415,7 +2257,6 @@ class FWF:
             + self.domain
             + str(f"-{file_date}.nc")
         )
-        Path(str(self.save_dir)).mkdir(parents=True, exist_ok=True)
         daily_ds = self.prepare_ds(daily_ds)
         self.daily_ds = daily_ds
         writeTime = datetime.now()
@@ -2424,23 +2265,6 @@ class FWF:
         daily_ds.to_netcdf(make_dir, encoding=encoding, mode="w")
         # daily_ds.to_netcdf(make_dir, mode="w")
         print("Write Time: ", datetime.now() - writeTime)
-        print(f"wrote working {make_dir}")
+        print(f"Wrote working {make_dir}")
 
-        if self.forecast == True:
-            forecast_dir = (
-                str(
-                    f"/Volumes/WFRT-Ext24/FWF-WAN00CG/{self.domain}/{self.config}/forecast/fwf-daily-"
-                )
-                + self.domain
-                + str(f"-{file_date}.nc")
-            )
-            daily_ds, encoding = compressor(daily_ds, self.var_dict)
-            print(f"Start Write on daily: {forecast_dir}", datetime.now())
-            daily_ds.to_netcdf(forecast_dir, encoding=encoding, mode="w")
-            print(f"Write Time for daily {self.domain}: ", datetime.now() - writeTime)
-            print(
-                f"Compressed daily from {file_size(make_dir)} to {file_size(forecast_dir)}"
-            )
-        else:
-            pass
         return str(make_dir)

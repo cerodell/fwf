@@ -2,7 +2,7 @@
 define the path to important folders without having
  to install anything -- just do:
 
-import contenxt
+import context
 
 then the path for the data directory is
 

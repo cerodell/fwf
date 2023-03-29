@@ -30,20 +30,18 @@ __email__ = "crodell@eoas.ubc.ca"
 # ignore RuntimeWarning
 warnings.filterwarnings("ignore", category=RuntimeWarning)
 
-date_range = pd.date_range("2021-01-02", "2021-01-10")
+# date_range = pd.date_range("2021-01-02", "2021-01-10")
 # date_range = pd.date_range("2021-01-01", "2021-01-01")
-# date_range = pd.date_range("2020-01-01", "2020-01-01")
+date_range = pd.date_range("2020-01-01", "2020-01-01")
 
 config = dict(
     model="eccc",
     domain="rdps",
-    iterator="fwf",
     trail_name="04",
     fbp_mode=False,
     overwinter=True,
-    initialize=False,
+    initialize=True,
     correctbias=False,
-    forecast=False,
     root_dir="/Volumes/WFRT-Ext23/fwf-data",
 )
 
