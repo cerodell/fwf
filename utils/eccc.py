@@ -18,14 +18,10 @@ import geopandas as gpd
 from context import data_dir, root_dir
 
 
-## open domain config file with variable names and attributes
-with open(str(root_dir) + "/json/config.json") as f:
-    config = json.load(f)
-
-
 def read_eccc(doi, model, domain):
     filein = f'/Volumes/WFRT-Ext23/fwf-data/{model}/{domain}/{doi.strftime("%Y%m")}/fwf-hourly-{domain}-{doi.strftime("%Y%m%d00")}.nc'
     if os.path.isfile(filein) == True:
+        print(f'Found: fwf-hourly-{domain}-{doi.strftime("%Y%m%d00")}.nc')
         fwf_ds = salem.open_xr_dataset(filein)
     else:
         print(
@@ -65,7 +61,11 @@ def solve_RH(ds):
 
 
 def rename_vars(ds, domain):
-    var_dict = config[domain]
+    ## open domain rename file with variable names and attributes
+    with open(str(root_dir) + "/json/rename.json") as f:
+        rename = json.load(f)
+
+    var_dict = rename[domain]
     var_list = list(ds)
     for key in list(var_dict.keys()):
         # Check if the key is not in the list of valid keys
@@ -91,9 +91,12 @@ def rename_vars(ds, domain):
 
 
 def open_eccc(path, domain):
+    ## open domain rename file with variable names and attributes
+    with open(str(root_dir) + "/json/rename.json") as f:
+        rename = json.load(f)
     if domain == "rdps":
         ds = xr.open_dataset(path, chunks="auto").isel(height1=0, height2=0, sfctype=0)
-        ds = ds.rename(config[domain])
+        ds = ds.rename(rename[domain])
     elif domain == "hrdps":
         ds = xr.open_dataset(path, chunks="auto")
         dim_list = list(ds.dims)

@@ -19,15 +19,10 @@ from utils.diagnostic import solve_RH, solve_W_WD
 from utils.formate import formate
 
 
-# ## open domain config file with variable names and attributes
-# with open(str(root_dir) + "/json/config.json") as f:
-#     config = json.load(f)
-
-
 def read_era5(doi, model, domain):
-    filein = f"/Volumes/WFRT-Ext23/era5/"
+    filein = f"/Volumes/WFRT-Ext23/{model}/{domain}/"
     file_list = [
-        f"{filein}era5-{(doi + pd.Timedelta(days=i)).strftime('%Y%m%d00.nc')}"
+        f"{filein}{(doi + pd.Timedelta(days=i)).strftime('%Y%m')}/era5-{(doi + pd.Timedelta(days=i)).strftime('%Y%m%d00.nc')}"
         for i in range(0, 2)
     ]
     ds = xr.open_mfdataset(file_list)
@@ -155,11 +150,5 @@ def transform_era5(filein):
     era5_ds = era5_ds.drop([var for var in list(era5_ds) if var not in keep_vars])
 
     print(f"Time to config era5 to wrf domain {datetime.now() - startTime}")
-    # print(f'WIND MIN {float(era5_ds["W"].min())}')
-    # print(f'RH MIN {float(era5_ds["H"].min())}')
-    # print(f'RH MAX {float(era5_ds["H"].max())}')
-    # print(f'WD MIN {float(era5_ds["WD"].min())}')
-    # print(f'WD MAX {float(era5_ds["WD"].max())}')
-    # print(f'r_o MIN {float(era5_ds["r_o"].min())}')
 
     return era5_ds

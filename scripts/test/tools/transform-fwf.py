@@ -12,43 +12,50 @@ from utils.fwi import solve_ffmc
 
 from context import data_dir
 
-eccc_grid = salem.open_xr_dataset(str(data_dir) + "/eccc/rdps-grid.nc")
 
-model = "ecmwf"
-domain = "era5"
+model = "eccc"
+domain = "hrdps"
+doi = pd.Timestamp("2020-12-31")
+target_grid = salem.open_xr_dataset(str(data_dir) + f"/{model}/{domain}-grid.nc")
 
 era5_ds = salem.open_xr_dataset(
-    f"/Volumes/WFRT-Ext24/fwf-data/{model}/{domain}/04/fwf/fwf-daily-{domain}-2020010100.nc"
+    f"/Volumes/WFRT-Ext24/fwf-data/ecmwf/era5/01/fwf-daily-era5-{doi.strftime('%Y%m%d00')}.nc"
 )
 
 fig = plt.figure(figsize=(12, 6))
 ax = fig.add_subplot(1, 1, 1)
-era5_ds.isel(time=0)["TMAX"].salem.quick_map(ax=ax, cmap="coolwarm")
+era5_ds.isel(time=0)["FS"].salem.quick_map(ax=ax, cmap="coolwarm", vmin=0, vmax=1)
 
 
-era5_eccc = eccc_grid.salem.transform(era5_ds, ks=10)  # interp="spline")
+ds = target_grid.salem.transform(era5_ds, interp="spline")
+
 
 fig = plt.figure(figsize=(12, 6))
 ax = fig.add_subplot(1, 1, 1)
-era5_eccc.isel(time=0)["TMAX"].salem.quick_map(ax=ax, cmap="coolwarm")
+ds.isel(time=0)["FS"].salem.quick_map(ax=ax, cmap="coolwarm", vmin=0, vmax=1)
 
-for var in era5_eccc:
-    era5_eccc[var] = era5_eccc[var].interpolate_na(dim="west_east")
-    era5_eccc[var] = era5_eccc[var].interpolate_na(dim="south_north")
+if domain != "rdps":
+    ds.to_netcdf(
+        f"/Volumes/WFRT-Ext24/fwf-data/{model}/{domain}/01/fwf-daily-{domain}-{doi.strftime('%Y%m%d00')}.nc",
+        mode="w",
+    )
+else:
+    for var in ds:
+        ds[var] = ds[var].interpolate_na(dim="west_east")
+        ds[var] = ds[var].interpolate_na(dim="south_north")
 
-fig = plt.figure(figsize=(12, 6))
-ax = fig.add_subplot(1, 1, 1)
-era5_eccc.isel(time=0)["F"].salem.quick_map(ax=ax, cmap="coolwarm")
+    fig = plt.figure(figsize=(12, 6))
+    ax = fig.add_subplot(1, 1, 1)
+    ds.isel(time=0)["FS"].salem.quick_map(ax=ax, cmap="coolwarm")
 
+    test = ds.isel(time=0)["TMAX"].values
 
-test = era5_eccc.isel(time=0)["TMAX"].values
+    np.unique(np.isnan(test), return_counts=True)
 
-np.unique(np.isnan(test), return_counts=True)
-
-# era5_eccc.to_netcdf(
-#     "/Volumes/WFRT-Ext24/fwf-data/eccc/hrdps/04/fwf/fwf-daily-hrdps-2020123106.nc",
-#     mode="w",
-# )
+    ds.to_netcdf(
+        f"/Volumes/WFRT-Ext24/fwf-data/{model}/{domain}/01/fwf-daily-{domain}-{doi.strftime('%Y%m%d00')}.nc",
+        mode="w",
+    )
 
 
 startTime = datetime.now()

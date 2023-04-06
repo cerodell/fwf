@@ -27,24 +27,21 @@ __author__ = "Christopher Rodell"
 __email__ = "crodell@eoas.ubc.ca"
 
 #################### INPUTS ####################
-wrf_model = "wrf4"
-domain = "d02"
-date_range = pd.date_range("2021-01-01", "2022-10-31")
-# date_range = pd.date_range("2021-01-0", "2021-01-10")
 
-fwf_dir = f"/Volumes/WFRT-Ext24/FWF-WAN00CG/{domain}/"
-model_config = ["_wrf04"]
+config = {"wrf": ["d02", "d03"], "eccc": ["rdps", "hrdps"]}
 
-trail_name = "WRF" + "".join(model_config).replace("_wrf", "").upper()
-model_name = "fwf"
 
-# model_config = [ "_era505",  "_era506"]
-# trail_name = 'ERA50506'
-# model_name = 'era5'
+# model = 'wrf'
+# domain = 'd02'
+trail_name = "01"
+# doi = pd.Timestamp("2021-06-28")
+# date_range = pd.date_range("2021-01-01", "2022-10-31")
+date_range = pd.date_range("2021-01-01", "2022-12-31")
+fwf_dir = f"/Volumes/WFRT-Ext24/fwf-data/"
+
 ################## END INPUTS ##################
 
 
-## Define varible to remove from forecasts datasets
 var_list = [
     "TD",
     "Df",
@@ -65,17 +62,9 @@ var_list = [
     "D",
     "U",
 ]
-
-if model_name == "fwf":
-    time_formate = "%Y%m%d06"
-    drop_vars = ["DSR", "SNOWC", "r_o_hourly", "r_o_tomorrow"]
-    drop_vars2 = ["XLAT", "XLONG", "west_east", "south_north", "XTIME"]
-elif model_name == "era5":
-    time_formate = "%Y%m%d00"
-    drop_vars = ["DSR", "SNOWH", "r_o_hourly", "r_o_tomorrow"]
-    drop_vars2 = ["XLAT", "XLONG", "west_east", "south_north", "time"]
-else:
-    raise ValueError(f"Invalid model name {model_name}")
+drop_vars = ["DSR", "SNOWC", "r_o_hourly", "r_o_tomorrow", "SNOWH"]
+drop_cords = ["XLAT", "XLONG", "west_east", "south_north", "XTIME"]
+#################### Open static datasets ####################
 
 ## open modle config file with varible names and attibutes
 with open(str(root_dir) + "/json/colormaps-dev.json") as f:
@@ -86,14 +75,12 @@ with open(str(root_dir) + f"/json/fwf-attrs.json", "r") as fp:
     var_dict = json.load(fp)
 
 ## open master obs file and slice along date range of interest
-ds_obs = xr.open_dataset(
-    str(data_dir) + f"/obs/observations-{domain}-20191231-20221231.nc"
-)
+ds_obs = xr.open_dataset(str(data_dir) + f"/obs/observations-d02-20191231-20221231.nc")
 ds_obs = ds_obs.sel(
     time=slice(date_range[0].strftime("%Y-%m-%d"), date_range[-1].strftime("%Y-%m-%d"))
 )
 
-## convert lat lon cordniate in master obs to meter base x y as define by wrf polar stere projection
+## convert lat lon coordinate in master obs to meter base x y as define by wrf polar stere projection
 df = pd.DataFrame(
     data={
         "lons": ds_obs.lons.values,
@@ -101,52 +88,51 @@ df = pd.DataFrame(
         "wmo": ds_obs.wmo.values,
     }
 )
-gpm25 = gpd.GeoDataFrame(
-    df,
-    crs="EPSG:4326",
-    #  crs="+init=epsg:4326",
-    geometry=gpd.points_from_xy(df["lons"], df["lats"]),
-).to_crs(
-    "+proj=stere +lat_0=90 +lat_ts=53.25 +lon_0=-110 +x_0=0 +y_0=0 +R=6370000 +units=m +no_defs"
-)
-
-x = xr.DataArray(
-    np.array(gpm25.geometry.x),
-    dims="wmo",
-    coords=dict(wmo=gpm25.wmo.values),
-)
-y = xr.DataArray(
-    np.array(gpm25.geometry.y),
-    dims="wmo",
-    coords=dict(wmo=gpm25.wmo.values),
-)
+#######################################################################
 
 
-#################### Functions ####################
+############################### Functions #############################
 
 
-def read_fwf(doi, model):
+def get_locs(pyproj_srs):
+    gpm25 = gpd.GeoDataFrame(
+        df,
+        crs="EPSG:4326",
+        #  crs="+init=epsg:4326",
+        geometry=gpd.points_from_xy(df["lons"], df["lats"]),
+    ).to_crs(pyproj_srs)
+
+    x = xr.DataArray(
+        np.array(gpm25.geometry.x),
+        dims="wmo",
+        coords=dict(wmo=gpm25.wmo.values),
+    )
+    y = xr.DataArray(
+        np.array(gpm25.geometry.y),
+        dims="wmo",
+        coords=dict(wmo=gpm25.wmo.values),
+    )
+    return x, y
+
+
+def read_fwf(doi, model, domain):
     """
     opens datasets, index on day one forecast and drop variables not use for comparison
     """
+    if model == "wrf":
+        hour = "06"
+    else:
+        hour = "00"
     ds = salem.open_xr_dataset(
         fwf_dir
-        + f"/{model.strip('_').upper()}/{model_name}/fwf-daily-{domain}-{doi}.nc"
+        + f"{model}/{domain}/{trail_name}/fwf-daily-{domain}-{doi.strftime('%Y%m%d')}{hour}.nc"
     )
     ds = ds.isel(time=0).chunk(chunks="auto")
-    ds = ds.drop(drop_vars)
+    ds = ds.drop([var for var in list(ds) if var in drop_vars])
     return ds
 
 
-def interpolate(ds, x, y, method):
-    """
-    interpolates datasets to wxstation locations
-    """
-    ds = ds.interp(west_east=x, south_north=y, method=method)
-    return ds
-
-
-def rename(ds, model):
+def rename(ds, domain):
     """
     renames datasets to match master observation dataset
     """
@@ -154,7 +140,7 @@ def rename(ds, model):
         try:
             name_lower = cmaps[var]["name"].lower()
             # print(name_lower)
-            ds[name_lower + model] = ds[var]
+            ds[name_lower] = ds[var]
             ds = ds.drop([var])
         except:
             try:
@@ -166,8 +152,10 @@ def rename(ds, model):
             except:
                 pass
 
+    x, y = get_locs(ds.attrs["pyproj_srs"])
     ds = ds.interp(west_east=x, south_north=y, method="linear")
-    ds = ds.drop(drop_vars2)
+    ds = ds.drop([var for var in list(ds) if var in drop_cords])
+    ds = ds.expand_dims(dim={"domain": [domain]})
     return ds
 
 
@@ -182,6 +170,9 @@ def rechunk(ds):
     return ds
 
 
+# test_ds = rename(read_fwf(pd.Timestamp("2021-01-01"), "wrf", "d02"), "d02")
+# test_ds = test_ds.expand_dims(dim ={'time': [test_ds.Time.values]})
+
 ################# End Functions ####################
 
 loop = datetime.now()
@@ -189,13 +180,11 @@ loop = datetime.now()
 ds = xr.merge(
     [
         xr.concat(
-            [
-                rename(read_fwf(doi.strftime(time_formate), model), model)
-                for doi in date_range
-            ],
+            [rename(read_fwf(doi, model, domain), domain) for doi in date_range],
             dim="time",
-        )
-        for model in model_config
+        )  # .expand_dims(dim ={'domain': [domain]})
+        for model in config
+        for domain in config[model]
     ],
     compat="override",
 )
@@ -204,7 +193,7 @@ print("Loop Time: ", datetime.now() - loop)
 
 merge = datetime.now()
 ## merge the forecasted values at wx station with their observed values
-final_ds = xr.merge([ds, ds_obs])
+final_ds = xr.merge([ds, ds_obs.expand_dims(dim={"domain": ["obs"]})])
 for var in ["elev", "name", "prov", "id"]:
     final_ds[var] = final_ds[var].astype(str)
 
@@ -212,18 +201,18 @@ final_ds = rechunk(final_ds)
 final_ds = final_ds.compute()
 print("Merge Time: ", datetime.now() - merge)
 
-## make a file directory based on user inputs to save dataset
-make_dir = Path(str(data_dir) + f"/intercomp/{domain}/{trail_name}/")
+# make a file directory based on user inputs to save dataset
+make_dir = Path(str(data_dir) + f"/intercomp/{trail_name}/")
 make_dir.mkdir(parents=True, exist_ok=True)
 
 write = datetime.now()
 ## write final dataset as netcdf
-# final_ds, encoding = compressor(final_ds, var_dict)
+final_ds, encoding = compressor(final_ds, var_dict=None)
 final_ds.to_netcdf(
     str(make_dir)
     + f'/{date_range[0].strftime("%Y%m%d")}-{date_range[-1].strftime("%Y%m%d")}.nc',
     mode="w",
-    # encoding=encoding,
+    encoding=encoding,
 )
 print("Write Time: ", datetime.now() - write)
 

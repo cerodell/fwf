@@ -29,36 +29,39 @@ __email__ = "crodell@eoas.ubc.ca"
 
 # ignore RuntimeWarning
 warnings.filterwarnings("ignore", category=RuntimeWarning)
-
+#
 # date_range = pd.date_range("2021-01-02", "2021-01-10")
 # date_range = pd.date_range("2021-01-01", "2021-01-01")
-date_range = pd.date_range("2020-01-01", "2020-01-01")
+date_range = pd.date_range("2022-07-01", "2023-01-01")
 
 config = dict(
     model="eccc",
-    domain="rdps",
-    trail_name="04",
-    fbp_mode=False,
+    domain="hrdps",
+    trail_name="01",
+    initialize=False,
+    initialize_hffmc=False,
     overwinter=True,
-    initialize=True,
+    fbp_mode=False,
     correctbias=False,
-    root_dir="/Volumes/WFRT-Ext23/fwf-data",
 )
+
+if config["model"] == "eccc":
+    config["root_dir"] = "/Volumes/WFRT-Ext23/fwf-data"
+elif config["model"] == "wrf":
+    config["root_dir"] = "/Volumes/Scratch/fwf-data"
+else:
+    raise ValueError("YIKES! Sorry check your paths")
 
 
 for date in date_range:
     date_startTime = datetime.now()
+    config["doi"] = date
     coeff = FWF(
-        # int_ds=read_wrf(f'{config["root_dir"]}/{config["model"]}/{config["domain"]}/{date.strftime("%Y%m")}/fwf-hourly-{config["domain"]}-{date.strftime("%Y%m%d06")}.nc',config["domain"]),
-        int_ds=read_eccc(date, config["model"], config["domain"]),
-        # int_ds=read_era5(date,config["model"],config["domain"]),
         config=config,
     )
     coeff.daily()
     # coeff.hourly()
-    print(
-        f'Domain {date.strftime("%Y%m%d0")} run time: ', datetime.now() - date_startTime
-    )
+    print(f'{date.strftime("%Y%m%d")} run time: ', datetime.now() - date_startTime)
 
 ### Timer
 print("Total Run Time: ", datetime.now() - startTime)

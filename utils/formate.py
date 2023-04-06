@@ -12,9 +12,9 @@ from context import data_dir, root_dir
 
 
 def formate(ds, model, domain):
-    with open(str(root_dir) + "/json/config.json") as f:
-        config = json.load(f)
-    var_dict = config[domain]
+    with open(str(root_dir) + "/json/rename.json") as f:
+        rename = json.load(f)
+    var_dict = rename[domain]
     ds = ds.rename(var_dict["dims"])
 
     domain_grid = salem.open_xr_dataset(str(data_dir) + f"/{model}/{domain}-grid.nc")

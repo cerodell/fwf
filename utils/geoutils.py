@@ -16,6 +16,7 @@ import matplotlib.colors
 from datetime import datetime, date, timedelta
 
 from wrf import getvar
+from context import data_dir
 
 
 def mycontourf_to_geojson(cmaps, var, da, folderdate, domain, timestamp):
@@ -62,7 +63,7 @@ def mycontourf_to_geojson(cmaps, var, da, folderdate, domain, timestamp):
         cmaps[var]["sigma"],
     )
 
-    geojson_filepath = str(name + "-" + timestamp + "-" + domain)
+    geojson_filename = str(name + "-" + timestamp + "-" + domain)
     levels = cmaps[var]["levels"]
     Cnorm = matplotlib.colors.Normalize(vmin=vmin, vmax=vmax + 1)
     contourf = plt.contourf(
@@ -85,7 +86,7 @@ def mycontourf_to_geojson(cmaps, var, da, folderdate, domain, timestamp):
         fill_opacity=None,
         geojson_properties=None,
         unit="",
-        geojson_filepath=f"/bluesky/fireweather/fwf/data/geojson/{folderdate}/{geojson_filepath}.geojson",
+        geojson_filepath=str(data_dir) + f"/geojson/{geojson_filename}.geojson",
     )
 
     # print(
@@ -193,7 +194,6 @@ def colormaps(cmaps, var):
     cmap = cm.LinearColormap(colors, vmin=vmin, vmax=vmax, caption=name).to_step(levels)
     cmap.caption = cmaps[var]["title"]
     return cmap
-
 
 
 # def contourf_to_geojson(contourf, geojson_filepath=None, min_angle_deg=None,

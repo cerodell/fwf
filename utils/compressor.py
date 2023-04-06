@@ -6,7 +6,7 @@ import xarray as xr
 from pathlib import Path
 from netCDF4 import Dataset
 
-from context import data_dir, fwf_dir
+from context import data_dir
 from datetime import datetime, date, timedelta
 
 startTime = datetime.now()
@@ -43,7 +43,9 @@ def compressor(ds, var_dict):
     # ds.attrs["TITLE"] = "FWF MODEL USING OUTPUT FROM WRF V4.2.1 MODEL"
     comp = dict(zlib=True, complevel=3)
     encoding = {var: comp for var in ds.data_vars}
-    for var in ds.data_vars:
-        ds[var].attrs = var_dict[var]
-
+    if var_dict == None:
+        pass
+    else:
+        for var in ds.data_vars:
+            ds[var].attrs = var_dict[var]
     return ds, encoding

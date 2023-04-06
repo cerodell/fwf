@@ -5,8 +5,8 @@ echo "$(date) ---> make symlink to kml file"
 cd /bluesky/archive/fireweather/forecasts/current/data
 rm -r fire_locations.kml
 rm -r fire_outlines.kml
-ln -sv ../../../../forecasts/BSC06CA12-01/current/fire_locations.kml
-ln -sv ../../../../forecasts/BSC06CA12-01/current/fire_outlines.kml
+ln -sv ../../../../forecasts/BSC00CA12-01/$(date '+%Y%m%d08')/fire_locations.kml
+ln -sv ../../../../forecasts/BSC00CA12-01/$(date '+%Y%m%d08')/fire_outlines.kml
 echo "$(date) ---> symlink to kml files created"
 
 
