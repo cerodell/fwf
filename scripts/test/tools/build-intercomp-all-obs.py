@@ -28,19 +28,19 @@ __email__ = "crodell@eoas.ubc.ca"
 
 #################### INPUTS ####################
 
-config = {"wrf": ["d02", "d03"], "eccc": ["rdps", "hrdps"]}
+# config = {"wrf": ["d02", "d03"], "eccc": ["rdps", "hrdps"]}
+config = {"ecmwf": ["era5"]}
 
 
 # model = 'wrf'
 # domain = 'd02'
 trail_name = "01"
 # doi = pd.Timestamp("2021-06-28")
-# date_range = pd.date_range("2021-01-01", "2022-10-31")
-date_range = pd.date_range("2021-01-01", "2022-12-31")
+# date_range = pd.date_range("2021-01-01", "2021-01-10")
+date_range = pd.date_range("2020-01-01", "2022-12-31")
 fwf_dir = f"/Volumes/WFRT-Ext24/fwf-data/"
 
 ################## END INPUTS ##################
-
 
 var_list = [
     "TD",
@@ -63,7 +63,7 @@ var_list = [
     "U",
 ]
 drop_vars = ["DSR", "SNOWC", "r_o_hourly", "r_o_tomorrow", "SNOWH"]
-drop_cords = ["XLAT", "XLONG", "west_east", "south_north", "XTIME"]
+drop_cords = ["XLAT", "XLONG", "west_east", "south_north", "XTIME", "time"]
 #################### Open static datasets ####################
 
 ## open modle config file with varible names and attibutes
@@ -79,6 +79,8 @@ ds_obs = xr.open_dataset(str(data_dir) + f"/obs/observations-d02-20191231-202212
 ds_obs = ds_obs.sel(
     time=slice(date_range[0].strftime("%Y-%m-%d"), date_range[-1].strftime("%Y-%m-%d"))
 )
+
+test = ds_obs.isel(wmo=np.where(ds_obs.prov.values == "BC")[0])
 
 ## convert lat lon coordinate in master obs to meter base x y as define by wrf polar stere projection
 df = pd.DataFrame(
@@ -123,7 +125,7 @@ def read_fwf(doi, model, domain):
         hour = "06"
     else:
         hour = "00"
-    ds = salem.open_xr_dataset(
+    ds = xr.open_dataset(
         fwf_dir
         + f"{model}/{domain}/{trail_name}/fwf-daily-{domain}-{doi.strftime('%Y%m%d')}{hour}.nc"
     )
@@ -154,14 +156,14 @@ def rename(ds, domain):
 
     x, y = get_locs(ds.attrs["pyproj_srs"])
     ds = ds.interp(west_east=x, south_north=y, method="linear")
-    ds = ds.drop([var for var in list(ds) if var in drop_cords])
+    ds = ds.drop([var for var in list(ds.coords) if var in drop_cords])
     ds = ds.expand_dims(dim={"domain": [domain]})
     return ds
 
 
 def rechunk(ds):
     """
-    rechucks datasets and unifys them for better storage and use
+    rechucks datasets and unify them for better storage and use
     """
     ds = ds.chunk(chunks="auto")
     ds = ds.unify_chunks()
@@ -170,39 +172,48 @@ def rechunk(ds):
     return ds
 
 
-# test_ds = rename(read_fwf(pd.Timestamp("2021-01-01"), "wrf", "d02"), "d02")
-# test_ds = test_ds.expand_dims(dim ={'time': [test_ds.Time.values]})
-
 ################# End Functions ####################
-
-loop = datetime.now()
+# test =     [
+#         xr.concat(
+#             [rename(read_fwf(doi, model, domain), domain) for doi in date_range],
+#             dim="time",
+#         ).chunk('auto')
+#         for model in config
+#         for domain in config[model]
+#     ]
+# ds = xr.merge(test)
+loop_start = datetime.now()
 ## open and loop model_configs and date_range than concat and merge them into one dataset
 ds = xr.merge(
     [
         xr.concat(
             [rename(read_fwf(doi, model, domain), domain) for doi in date_range],
             dim="time",
-        )  # .expand_dims(dim ={'domain': [domain]})
+        ).chunk("auto")
         for model in config
         for domain in config[model]
-    ],
-    compat="override",
+    ]
 )
-ds = rechunk(ds)
-print("Loop Time: ", datetime.now() - loop)
+# ds = rechunk(ds)
+print("Loop Time: ", datetime.now() - loop_start)
+
+# compute_start = datetime.now()
+# ds = ds.compute()
+# print("Compute Time: ", datetime.now() - compute_start)
+
 
 merge = datetime.now()
 ## merge the forecasted values at wx station with their observed values
 final_ds = xr.merge([ds, ds_obs.expand_dims(dim={"domain": ["obs"]})])
 for var in ["elev", "name", "prov", "id"]:
     final_ds[var] = final_ds[var].astype(str)
-
-final_ds = rechunk(final_ds)
-final_ds = final_ds.compute()
+for var in list(ds):
+    final_ds[var] = final_ds[var].astype("float32")
+final_ds = final_ds.drop("time")
 print("Merge Time: ", datetime.now() - merge)
 
 # make a file directory based on user inputs to save dataset
-make_dir = Path(str(data_dir) + f"/intercomp/{trail_name}/")
+make_dir = Path(str(data_dir) + f"/intercomp/{trail_name}/era5/")
 make_dir.mkdir(parents=True, exist_ok=True)
 
 write = datetime.now()
@@ -216,6 +227,6 @@ final_ds.to_netcdf(
 )
 print("Write Time: ", datetime.now() - write)
 
-# print(final_ds.time.values)
-### Timer
-print("Total Run Time: ", datetime.now() - startTime)
+# # print(final_ds.time.values)
+# ### Timer
+# print("Total Run Time: ", datetime.now() - startTime)

@@ -24,6 +24,15 @@
   "F": {
     "description": "FINE FUEL MOISTURE CODE"
   },
+  "hF": {
+    "description": "HOURLY NOON FINE FUEL MOISTURE CODE"
+  },
+  "mF": {
+    "description": "MAX FINE FUEL MOISTURE CODE"
+  },
+  "mFt": {
+    "description": "TIME OF MAX FINE FUEL MOISTURE CODE"
+  },
   "ffmc": {
     "description": "FINE FUEL MOISTURE CODE"
   },
@@ -34,6 +43,12 @@
   "H": {
     "description": "2m RELATIVE HUMIDITY",
     "units": "Percent"
+  },
+  "mH": {
+    "description": "MIN 2m RELATIVE HUMIDITY"
+  },
+  "mHt": {
+    "description": "TIME OF MIN 2m RELATIVE HUMIDITY"
   },
   "rh": {
     "description": "2m RELATIVE HUMIDITY",
@@ -68,6 +83,15 @@
   "R": {
     "description": "INITIAL SPREAD INDEX"
   },
+  "hR": {
+    "description": "HOURLY NOON INITIAL SPREAD INDEX"
+  },
+  "mR": {
+    "description": "MAX INITIAL SPREAD INDEX"
+  },
+  "mRt": {
+    "description": "TIME OF MAX INITIAL SPREAD INDEX"
+  },
   "isi": {
     "description": "INITIAL SPREAD INDEX"
   },
@@ -85,6 +109,15 @@
   },
   "S": {
     "description": "FIRE WEATHER INDEX"
+  },
+  "hS": {
+    "description": "HOURLY NOON FIRE WEATHER INDEX"
+  },
+  "mS": {
+    "description": "MAX FIRE WEATHER INDEX"
+  },
+  "mSt": {
+    "description": "TIME OF MAX FIRE WEATHER INDEX"
   },
   "fwi": {
     "description": "FIRE WEATHER INDEX"
@@ -106,8 +139,14 @@
     "units": "cm"
   },
   "T": {
-    "description": "2m TEMP",
+    "description": "2m TEMPERATURE",
     "units": "C"
+  },
+  "mT": {
+    "description": "MAX 2m TEMPERATURE"
+  },
+  "mTt": {
+    "description": "TIME OF MAX 2m TEMPERATURE"
   },
   "T_bias": {
     "description": "2m TEMP BIAS",
@@ -164,6 +203,12 @@
   "W": {
     "description": "10m WIND SPEED",
     "units": "km hr^{-1}"
+  },
+  "mW": {
+    "description": "MAX 2m 10m WIND SPEED"
+  },
+  "mWt": {
+    "description": "TIME OF MAX 2m 10m WIND SPEED"
   },
   "ws": {
     "description": "10m WIND SPEED",

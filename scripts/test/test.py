@@ -11,31 +11,54 @@ import geopandas as gpd
 import matplotlib.pyplot as plt
 
 from datetime import datetime, timedelta
-from utils.wrf import read_wrf
+from utils.wrf_ import read_wrf
 from utils.eccc import read_eccc
 from netCDF4 import Dataset
 
 from context import data_dir
 
 
-model = "eccc"
-domain = "hrdps"
-doi = pd.Timestamp("2021-01-01T00")
+model = "wrf"
+domain = "d02"
+doi = pd.Timestamp("2021-08-01T06")
 
 
 grid_ds = xr.open_dataset(str(data_dir) + f"/{model}/{domain}-grid.nc")
 
 static_ds = xr.open_dataset(str(data_dir) + f"/static/static-vars-{model}-{domain}.nc")
-# landmask = static_ds['LAND']
+tzone = static_ds["ZoneST"].values
+landmask = static_ds["LAND"]
 
 ds = salem.open_xr_dataset(
     f"/Volumes/WFRT-Ext24/fwf-data/{model}/{domain}/01/fwf-daily-{domain}-{doi.strftime('%Y%m%d%H')}.nc"
 ).isel(time=0)
 
+ds["diff"] = ds["mS"] - ds["S"]
+print(f"Mean diff of FWI {float(ds['diff'].mean())}")
+print(f"Max diff of FWI {float(ds['diff'].max())}")
+print(f"Min diff of FWI {float(ds['diff'].min())}")
+ds["diff"].attrs = ds["T"].attrs
+ds["diff"].salem.quick_map(cmap="coolwarm", vmin=-15, vmax=15)
 # fig = plt.figure(figsize=(12, 6))
 # ax = fig.add_subplot(1, 1, 1)
-# ds['HFI'].isel(time = 24).salem.quick_map(ax=ax, cmap="coolwarm")
-# # condition_broadcast = xr.broadcast(landmask, ds['F'])[0]
+# ds['r_o'].salem.quick_map(ax=ax, cmap="coolwarm", vmin = 0, vmax =100)
+
+# for var in ds:
+#     print(var, np.unique(np.isnan(ds[var]), return_counts=True))
+
+
+for var in ds:
+    masked_array = ds[var].to_masked_array()
+    masked_array.mask = landmask
+    ds[var] = (("south_north", "west_east"), masked_array)
+    ds[var].attrs["pyproj_srs"] = ds.attrs["pyproj_srs"]
+
+ds["TEST"] = ds["mRt"] - 12
+ds["TEST"].attrs["pyproj_srs"] = ds.attrs["pyproj_srs"]
+fig = plt.figure(figsize=(12, 6))
+ax = fig.add_subplot(1, 1, 1)
+ds["TEST"].salem.quick_map(ax=ax, cmap="coolwarm", vmin=-12, vmax=12)
+# condition_broadcast = xr.broadcast(landmask, ds['F'])[0]
 
 
 ###################################################################################################

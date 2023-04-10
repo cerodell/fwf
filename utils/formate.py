@@ -17,7 +17,7 @@ def formate(ds, model, domain):
     var_dict = rename[domain]
     ds = ds.rename(var_dict["dims"])
 
-    domain_grid = salem.open_xr_dataset(str(data_dir) + f"/{model}/{domain}-grid.nc")
+    domain_grid = xr.open_dataset(str(data_dir) + f"/{model}/{domain}-grid.nc")
     ds["south_north"] = domain_grid["south_north"]
     ds["west_east"] = domain_grid["west_east"]
     ds["XLAT"] = (("south_north", "west_east"), domain_grid["XLAT"].values)

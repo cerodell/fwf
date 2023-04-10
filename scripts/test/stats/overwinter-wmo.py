@@ -19,7 +19,7 @@ from pylab import *
 import plotly.express as px
 
 
-from context import data_dir, xr_dir, wrf_dir
+from context import data_dir, root_dir
 from datetime import datetime, date, timedelta
 from sklearn.metrics import mean_squared_error, mean_absolute_error
 from sklearn.metrics import r2_score
@@ -37,46 +37,134 @@ from utils.fwi import (
 )
 
 matplotlib.rcParams.update({"font.size": 14})
+__author__ = "Christopher Rodell"
+__email__ = "crodell@eoas.ubc.ca"
 
-import warnings
+########################### INPUTS ###########################
 
-warnings.filterwarnings("ignore")
-warnings.filterwarnings("ignore", category=FutureWarning)
+config = {"wrf": ["hrdps", "d03"], "eccc": ["rdps", "hrdps"]}
+domains = ["hrdps", "d03", "rdps", "hrdps"]
+
+domains = ["era5"]
+# domain = 'wrf'
+# domain = 'hrdps'
+trail_name = "01"
+# doi = pd.Timestamp("2021-06-28")
+# date_range = pd.date_range("2021-01-01", "2022-10-31")
+date_range = pd.date_range("2021-01-01", "2022-12-31")
+fwf_dir = f"/Volumes/WFRT-Ext24/fwf-data/"
+
+######################### END INPUTS #########################
+
+#################### Open static datasets ####################
+
+with open(str(root_dir) + f"/json/fwf-attrs.json", "r") as fp:
+    var_dict = json.load(fp)
+
+# try:
+#     domains_ds = xr.open_dataset(str(data_dir) + f'/intercomp/{trail_name}/provs-20210101-20221231.nc')
+# except:
+ds = xr.open_dataset(
+    str(data_dir) + f"/intercomp/{trail_name}/20210101-20221231.nc",
+)  # chunks = 'auto')
+ds["time"] = ds["Time"]
+# rdps.sel(time =slice("2022-01-11", "2022-12-31")).isel(wmo = 100)['rh'].plot()
+
+# ds = ds.sel(time=slice("2021-04-01", "2022-10-31"))
+for var in ["elev", "name", "prov", "id", "domain"]:
+    ds[var] = ds[var].astype(str)
+# prov_unique, prov_counts = np.unique(ds.prov.values, return_counts=True)
+
+## get wmo stations that are with every domain
+idx = np.where(
+    (ds.prov == "BC")
+    | (ds.prov == "AB")
+    | (ds.prov == "SA")
+    | (ds.prov == "YT")
+    | (ds.prov == "NT")
+)[0]
+ds = ds.isel(wmo=idx)
+
+# %%
+# wmo = 1328
+ds_wmo = ds["dc"].mean(dim="wmo")
+
+# %%
+# ds_wmo = ds['dc'].isel(wmo=60)
+rain_obs = ds_wmo.sel(domain="obs").values
+rain_hrdps = ds_wmo.sel(domain="hrdps").values
+rain_rdps = ds_wmo.sel(domain="rdps").values
+rain_d02 = ds_wmo.sel(domain="d02").values
+rain_d03 = ds_wmo.sel(domain="d03").values
+
+Time = ds_wmo["Time"].values
+# rain_obs[np.isnan(rain_obs)] = rain_era5[np.isnan(rain_obs)]
+
+rain_hrdps = rain_hrdps[~np.isnan(rain_obs)]
+rain_rdps = rain_rdps[~np.isnan(rain_obs)]
+rain_d02 = rain_d02[~np.isnan(rain_obs)]
+rain_d03 = rain_d03[~np.isnan(rain_obs)]
+
+Time = Time[~np.isnan(rain_obs)]
+rain_obs = rain_obs[~np.isnan(rain_obs)]
 
 
-domain = "d02"
-test_case = "WRF05060708"
-date = pd.Timestamp(2022, 10, 31)
+# def sum_rain(array):
+#     r_w_list = []
+#     sum_rain = 0
+#     # print(ds)
+#     for i in range(len(array)):
+#         sum_rain +=array[i]
+#         r_w_list.append(sum_rain)
+#     return np.array(r_w_list)
+# rain_obs = sum_rain(rain_obs)
+# rain_hrdps = sum_rain(rain_hrdps)
+# rain_rdps = sum_rain(rain_rdps)
+# rain_d02 = sum_rain(rain_d02)
+# rain_d03 = sum_rain(rain_d03)
 
+# def accum_error(obs, fct):
+#     error = []
+#     sum_rain = 0
+#     mae = np.abs(fct - obs)
+#     # print(ds)
+#     for i in range(len(obs)):
+#         sum_rain +=mae[i]
+#         error.append(sum_rain)
+#     return np.array(error)
+# rain_hrdps = accum_error(rain_obs, rain_hrdps)
+# rain_rdps = accum_error(rain_obs, rain_rdps)
+# rain_d02 = accum_error(rain_obs, rain_d02)
+# rain_d03 = accum_error(rain_obs, rain_d03)
 
-intercomp_today_dir = date.strftime("%Y%m%d")
-
-
-# ds = xr.open_zarr(
-#     str(data_dir)
-#     + "/intercomp/"
-#     + f"final-intercomp-{domain}-{intercomp_today_dir}.zarr",
-# )
-
-fwf_ds = salem.open_xr_dataset(
-    f"/Volumes/WFRT-Data02/FWF-WAN00CG/d02/WRF05/fwf/fwf-daily-d02-{date.strftime('%Y%m%d')}06.nc"
+# wmo = 71255
+var = "precip"
+d = {
+    "obs": rain_obs,
+    "hrdps": rain_hrdps,
+    "rdps": rain_rdps,
+    "d02": rain_d02,
+    "d03": rain_d03,
+    "Time": Time,
+}
+df = pd.DataFrame(d)
+title_list = ["prov", "wmo", "lats", "lons"]
+# fig = px.line(df, x="time", y=[var, f"{var}_wrf05", f"{var}_wrf06", f"{var}_wrf07", f"{var}_wrf08"],title="  ".join([f'{i} = {str(ds_wmo[i].values)}' for i in title_list]),)
+fig = px.line(
+    df,
+    x="Time",
+    y=["obs", "hrdps", "d02", "d03"],
 )
-static_ds = xr.open_dataset((str(data_dir) + "/static/static-vars-wrf4-d02.nc"))
-tz = static_ds.ZoneDT.values.astype(float)
-tz[tz < 1] = np.NaN
-fwf_ds["TZ"] = (("south_north", "west_east"), tz)
-fwf_ds["TZ"].attrs["pyproj_srs"] = fwf_ds["T"].attrs["pyproj_srs"]
-fwf_ds["TZ"].plot(levels=np.arange(1, 12, 1))
-# fwf_ds["TZ"].salem.quick_map()
-plt.show()
+fig.show()
+# %%
 
 
-ds = xr.open_dataset(str(data_dir) + f"/intercomp/d02/{test_case}/20210101-20221031.nc")
-# ds = ds.sel(time=slice("2022-01-01", "2022-10-01"))
-# tmax = ds.tmax.sortby(ds.wmo)
+# ds_wmo = ds_wmo.sel(time=slice("2021-06-01", "2021-09-01"))
+# ds_wmo = ds_wmo.dropna(dim="wmo", how="any")
+# ds_wmo = ds_wmo.mean(dim="wmo")
+# df = ds_wmo.to_dataframe()
+# df = df.reset_index()
 
-
-wmo = 71255
 # wmo = 71163
 # wmo = 3258
 # wmo = 71354
@@ -103,57 +191,36 @@ wmo = 71255
 
 # test = ds.sel("tz"_correct = -7)
 
-index = np.isin(ds["prov"].values, "AB")
+# index = np.isin(ds["prov"].values, "AB")
 
-ds_wmo = ds.isel(wmo=index)
-ds_wmo.tz_correct.values
-provs = [
-    "YT",
-    "BC",
-    "AB",
-    "MB",
-    "NB",
-    "NE",
-    "NF",
-    "NS",
-    "NT",
-    "NU",
-    "SK",
-    "PE",
-    "QC",
-    "ON",
-]
-index = np.isin(ds["prov"].values, provs)
+# ds_wmo = ds.isel(wmo=index)
+# ds_wmo = ds_wmo.sel(time=slice("2021-06-01", "2021-09-01"))
+# ds_wmo = ds_wmo.dropna(dim="wmo", how="any")
+# ds_wmo = ds_wmo.mean(dim="wmo")
+# df = ds_wmo.to_dataframe()
+# df = df.reset_index()
 
-ds_wmo = ds.isel(wmo=index)
-ds_wmo = ds_wmo.sel(time=slice("2021-06-01", "2021-09-01"))
-ds_wmo = ds_wmo.dropna(dim="wmo", how="any")
-ds_wmo = ds_wmo.mean(dim="wmo")
-df = ds_wmo.to_dataframe()
-df = df.reset_index()
+# var = "ffmc"
+# title_list = ["prov", "wmo", "lats", "lons"]
+# # fig = px.line(df, x="time", y=[var, f"{var}_wrf05", f"{var}_wrf06", f"{var}_wrf07", f"{var}_wrf08"],title="  ".join([f'{i} = {str(ds_wmo[i].values)}' for i in title_list]),)
+# fig = px.line(
+#     df,
+#     x="time",
+#     y=[var, f"{var}_wrf05", f"{var}_wrf06", f"{var}_wrf07", f"{var}_wrf08"],
+# )
+# fig.show()
 
 
-var = "ffmc"
-title_list = ["prov", "wmo", "lats", "lons"]
-# fig = px.line(df, x="time", y=[var, f"{var}_wrf05", f"{var}_wrf06", f"{var}_wrf07", f"{var}_wrf08"],title="  ".join([f'{i} = {str(ds_wmo[i].values)}' for i in title_list]),)
-fig = px.line(
-    df,
-    x="time",
-    y=[var, f"{var}_wrf05", f"{var}_wrf06", f"{var}_wrf07", f"{var}_wrf08"],
-)
-fig.show()
+# # ds = ds.set_coords(("lats", "lons", "id", "name", "prov", "elev", ""tz"_correct"))
+# # ds['prov'] = ds['prov'].astype(str)
+# var = "fwi"
+# var_list = [var, f"{var}_wrf05", f"{var}_wrf06", f"{var}_wrf07", f"{var}_wrf08"]
+
+# # ds1 = ds.sel(time=slice("2021-06-01", "2021-09-01"))
+# # ds1 = ds1.copy()[var_list]
 
 
-# ds = ds.set_coords(("lats", "lons", "id", "name", "prov", "elev", ""tz"_correct"))
-# ds['prov'] = ds['prov'].astype(str)
-var = "fwi"
-var_list = [var, f"{var}_wrf05", f"{var}_wrf06", f"{var}_wrf07", f"{var}_wrf08"]
-
-# ds1 = ds.sel(time=slice("2021-06-01", "2021-09-01"))
-# ds1 = ds1.copy()[var_list]
-
-
-prov_list, counts = np.unique(ds["prov"], return_counts=True)
+# prov_list, counts = np.unique(ds["prov"], return_counts=True)
 # prov_list = prov_list[counts>2]
 # counts = counts[counts>2]
 
@@ -319,3 +386,5 @@ prov_list, counts = np.unique(ds["prov"], return_counts=True)
 # plt.scatter(ds_concat.D, ds_mow1.dc_wrf06[:-1])
 
 # plt.scatter(ds_concat.T, ds_mow1.temp_wrf06[:-1])
+
+# %%

@@ -22,7 +22,20 @@ def read_eccc(doi, model, domain):
     filein = f'/Volumes/WFRT-Ext23/fwf-data/{model}/{domain}/{doi.strftime("%Y%m")}/fwf-hourly-{domain}-{doi.strftime("%Y%m%d00")}.nc'
     if os.path.isfile(filein) == True:
         print(f'Found: fwf-hourly-{domain}-{doi.strftime("%Y%m%d00")}.nc')
-        fwf_ds = salem.open_xr_dataset(filein)
+        fwf_ds = salem.open_xr_dataset(filein)  # .isel(time =slice(0,25))
+        if np.mean(fwf_ds["H"].isel(time=0)) < 1:
+            print("changing RH from decimal to percentage")
+            fwf_ds["H"] = fwf_ds["H"] * 100
+            fwf_ds["H"] = xr.where(fwf_ds["H"] > 100, 100, fwf_ds["H"])
+        else:
+            pass
+        if domain == "rdps":
+            for var in ["r_o", "SNOWH"]:
+                fwf_ds[var] = fwf_ds[var].fillna(0)
+                # fwf_ds[var] = fwf_ds[var].interpolate_na(dim="west_east", fill_value="extrapolate")
+                # fwf_ds[var] = fwf_ds[var].interpolate_na(dim="south_north", fill_value="extrapolate")
+                # print(var, np.unique(np.isnan(fwf_ds[var]), return_counts=True))
+
     else:
         print(
             f'file: fwf-hourly-{domain}-{doi.strftime("%Y%m%d00")}.nc does not exist, creating from raw...'

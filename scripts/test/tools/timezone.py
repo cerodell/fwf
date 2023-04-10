@@ -20,7 +20,7 @@ import cartopy.crs as ccrs
 import cartopy.feature as cfeature
 
 from datetime import datetime, date, timedelta
-from context import data_dir, xr_dir, wrf_dir, tzone_dir
+from context import data_dir
 
 startTime = datetime.now()
 print("RUN STARTED AT: ", str(startTime))
@@ -36,7 +36,9 @@ domain = "era5"
 
 filein = str(data_dir) + f"/{model}/{domain}-grid.nc"
 
-tzone_shp = str(tzone_dir) + "/timezones-with-oceans/combined-shapefile-with-oceans.shp"
+tzone_shp = (
+    str(data_dir) + "/tzone/timezones-with-oceans/combined-shapefile-with-oceans.shp"
+)
 
 ## Open datasets
 ds = salem.open_xr_dataset(filein)
@@ -61,7 +63,7 @@ if season == "DT":
         print(tz)
         name = df.loc[df["tzid"] == tz]
         timezone = pytz.timezone(tz)
-        dt = datetime.utcnow()
+        # dt = datetime.utcnow()
         offset = timezone.utcoffset(dt)
         seconds = offset.total_seconds()
         if (
@@ -91,7 +93,16 @@ elif season == "ST":
         print(tz)
         name = df.loc[df["tzid"] == tz]
         timezone = pytz.timezone(tz)
-        dt = datetime.utcnow()
+        # dt = datetime.utcnow()
+        dt = datetime(
+            2023,
+            3,
+            9,
+            0,
+            53,
+            15,
+        )
+
         offset = timezone.utcoffset(dt)
         seconds = offset.total_seconds()
         # if (
@@ -128,15 +139,14 @@ ds_zones = xr.DataArray(
 
 
 ds_zones = ds_zones.compute()
+
 ds["ZoneST"] = (("south_north", "west_east"), ds_zones.values)
 ds["ZoneST"].attrs["pyproj_srs"] = pyproj_srs
 ds1 = ds.sel(west_east=slice(-170, -20), south_north=slice(88, 20))
 
-ds["ZoneST"].salem.quick_map(cmap="coolwarm", vmin=-11, vmax=11)
-# ds = ds.drop("var")
-# ds.to_netcdf(
-#     str(tzone_dir) + f"/tzone-{model}-{domain}-{season}.nc", mode="w"
-# )
+ds1["ZoneST"].salem.quick_map(cmap="coolwarm")
+ds = ds.drop("var")
+ds.to_netcdf(str(data_dir) + f"/tzone/tzone-{model}-{domain}-{season}.nc", mode="w")
 
 
 # ####################################

@@ -8,7 +8,7 @@ from datetime import datetime
 
 c = cdsapi.Client()
 save_dir = "/Volumes/WFRT-Ext23/ecmwf/era5/"
-date_range = pd.date_range("2020-12-31", "2020-12-31")
+date_range = pd.date_range("2022-12-31", "2023-01-01")
 
 for date in date_range:
     startTime = datetime.now()

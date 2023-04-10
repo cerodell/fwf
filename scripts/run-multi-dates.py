@@ -12,7 +12,7 @@ import xarray as xr
 from pathlib import Path
 
 from datetime import datetime, timedelta
-from utils.wrf import read_wrf
+from utils.wrf_ import read_wrf
 from utils.eccc import read_eccc
 from utils.era5 import read_era5
 
@@ -30,13 +30,13 @@ __email__ = "crodell@eoas.ubc.ca"
 # ignore RuntimeWarning
 warnings.filterwarnings("ignore", category=RuntimeWarning)
 #
-# date_range = pd.date_range("2021-01-02", "2021-01-10")
+date_range = pd.date_range("2021-02-01", "2022-12-31")
+# date_range = pd.date_range("2020-01-01", "2020-01-01")
 # date_range = pd.date_range("2021-01-01", "2021-01-01")
-date_range = pd.date_range("2022-07-01", "2023-01-01")
 
 config = dict(
-    model="eccc",
-    domain="hrdps",
+    model="wrf",
+    domain="d02",
     trail_name="01",
     initialize=False,
     initialize_hffmc=False,
@@ -47,6 +47,8 @@ config = dict(
 
 if config["model"] == "eccc":
     config["root_dir"] = "/Volumes/WFRT-Ext23/fwf-data"
+elif config["model"] == "ecmwf":
+    config["root_dir"] = "/Volumes/WFRT-Ext23/ecmwf/era5"
 elif config["model"] == "wrf":
     config["root_dir"] = "/Volumes/Scratch/fwf-data"
 else:
@@ -60,7 +62,7 @@ for date in date_range:
         config=config,
     )
     coeff.daily()
-    # coeff.hourly()
+    coeff.hourly()
     print(f'{date.strftime("%Y%m%d")} run time: ', datetime.now() - date_startTime)
 
 ### Timer

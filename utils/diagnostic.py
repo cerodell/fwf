@@ -26,7 +26,7 @@ def solve_TD(ds):
 
 def solve_RH(ds):
     """
-    Function to calculate relative humidity (RH) from dew point temperature (td) and temperature (t)
+    Function to calculate relative humidity (RH) from dew point temperature (C) and temperature (C)
     """
     ## Extract temperature and dew point temperature data from input dataset
     td = ds["TD"]

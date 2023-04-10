@@ -17,6 +17,25 @@ from pathlib import Path
 from context import data_dir, root_dir
 from utils.diagnostic import solve_RH, solve_W_WD
 from utils.formate import formate
+from utils.compressor import compressor
+
+
+def rewrite_era5(doi, model, domain):
+    filein = f"/Volumes/WFRT-Ext23/{model}/{domain}/{filein}{(doi).strftime('%Y%m')}/era5-{(doi).strftime('%Y%m%d00.nc')}"
+    ds = xr.open_dataset(filein)
+    ds["t2m"] = ds["t2m"] - 273.15
+    ds["d2m"] = ds["d2m"] - 273.15
+    ds["tp"] = ds["tp"] * 1000
+    ds = formate(ds, model, domain)
+    ds["W"] = ds["W"] * 3.6
+    ds = ds.roll(west_east=int(len(ds["west_east"]) / 2))
+    ds, encoding = compressor(ds, None)
+    ds.to_netcdf(
+        f"/Volumes/WFRT-Ext23/fwf-data/{model}/{domain}/{filein}{(doi).strftime('%Y%m')}/era5-{(doi).strftime('%Y%m%d00.nc')}",
+        encoding=encoding,
+        mode="w",
+    )
+    return
 
 
 def read_era5(doi, model, domain):
@@ -26,6 +45,11 @@ def read_era5(doi, model, domain):
         for i in range(0, 2)
     ]
     ds = xr.open_mfdataset(file_list)
+    # print(ds)
+    try:
+        ds = ds.isel(expver=0)
+    except:
+        pass
     ds["t2m"] = ds["t2m"] - 273.15
     ds["d2m"] = ds["d2m"] - 273.15
     ds["tp"] = ds["tp"] * 1000
@@ -33,6 +57,7 @@ def read_era5(doi, model, domain):
     ds["W"] = ds["W"] * 3.6
     ds = ds.isel(time=slice(0, 36))
     ds = ds.roll(west_east=int(len(ds["west_east"]) / 2))
+
     return ds.unify_chunks()
 
 
@@ -63,8 +88,6 @@ def transform_era5(filein):
     era5_ds["TD"] = era5_ds.d2m - 273.15
     era5_ds["r_o_hourly"] = era5_ds.tp * 1000
     # era5_ds['r_o_hourly'] = xr.where(era5_ds['r_o_hourly'] < 0, 0, era5_ds['r_o_hourly'])
-
-    # era5_ds["WD"] = 180 + ((180 / np.pi) * np.arctan2(era5_ds["u10"], era5_ds["v10"]))
     era5_ds["SNOWH"] = era5_ds["sd"]
     era5_ds["U10"] = era5_ds["u10"]
     era5_ds["V10"] = era5_ds["v10"]
@@ -127,11 +150,9 @@ def transform_era5(filein):
     era5_ds["H"] = RH
     if np.min(era5_ds.H) > 90:
         raise ValueError("ERROR: Check TD nonphysical RH values")
+    era5_ds = solve_RH(era5_ds)
 
-    W = np.sqrt(era5_ds["U10"].values ** 2 + era5_ds["V10"].values ** 2) * 3.6
-    W = xr.DataArray(W, name="W", dims=("time", "south_north", "west_east"))
-    era5_ds["W"] = W
-    era5_ds["WD"] = 180 + ((180 / np.pi) * np.arctan2(era5_ds["U10"], era5_ds["V10"]))
+    era5_ds = solve_W_WD(era5_ds)
 
     era5_ds.attrs = fwf_d02_ds.attrs
     keep_vars = [
