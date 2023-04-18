@@ -37,12 +37,7 @@ config = {"wrf": ["d02", "d03"], "eccc": ["rdps", "hrdps"]}
 domains = ["d02", "d03", "rdps", "hrdps"]
 
 domains = ["era5"]
-# domain = 'wrf'
-# domain = 'd02'
-trail_name = "01"
-# doi = pd.Timestamp("2021-06-28")
-# date_range = pd.date_range("2021-01-01", "2022-10-31")
-date_range = pd.date_range("2021-01-01", "2022-12-31")
+trail_name = "03"
 fwf_dir = f"/Volumes/WFRT-Ext24/fwf-data/"
 
 ######################### END INPUTS #########################
@@ -70,9 +65,15 @@ for var in ["elev", "name", "prov", "id", "domain"]:
 # prov_unique, prov_counts = np.unique(ds.prov.values, return_counts=True)
 
 ## get wmo stations that are with every domain
-# idx = np.where((ds.prov == 'BC') | (ds.prov == 'AB') | (ds.prov == 'SA') | (ds.prov == 'YT') | (ds.prov == 'NT'))[0]
-# prov_ds = ds.isel(wmo = idx)
-prov_ds = ds
+idx = np.where(
+    (ds.prov == "BC")
+    | (ds.prov == "AB")
+    | (ds.prov == "SA")
+    | (ds.prov == "YT")
+    | (ds.prov == "NT")
+)[0]
+prov_ds = ds.isel(wmo=idx)
+# prov_ds = ds
 # prov_ds.sel(domain = 'obs').isel(wmo = 100)['dc'].plot()
 # prov_ds.sel(domain = 'era5').isel(wmo = 100)['dc'].plot()
 
@@ -82,7 +83,7 @@ prov_ds = ds
 ######################## Set up plotting stuff ###########################
 
 ## define directory to save figures
-save_dir = Path(str(data_dir) + f"/images/stats/{trail_name}/")
+save_dir = Path(str(data_dir) + f"/images/stats/{trail_name}/era5")
 save_dir.mkdir(parents=True, exist_ok=True)
 
 date_range = pd.date_range(prov_ds.Time.values[0], prov_ds.Time.values[-1])
@@ -270,9 +271,7 @@ for i in range(length):
         prop={"size": 7},
     )
     fig.suptitle(var_dict[var.lower()]["description"], fontsize=18, y=1.2)
-    fig.savefig(
-        str(save_dir) + f"/era5/{var}-north-america.png", bbox_inches="tight", dpi=250
-    )
+    fig.savefig(str(save_dir) + f"/{var}.png", bbox_inches="tight", dpi=250)
 
 
 # %%

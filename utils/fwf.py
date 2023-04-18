@@ -612,8 +612,9 @@ class FWF:
             except:
                 pass
         ## combine the dataset into one continuous dataarray
-        cont_ds = xr.concat(
-            previous_dss, dim="time", coords="minimal", compat="override"
+        cont_ds = xr.combine_nested(
+            previous_dss,
+            concat_dim="time",
         ).load()
         ## find all index of 00Z in the continuous dataarray based on the inital time
         time_array = cont_ds.Time.values
@@ -648,7 +649,7 @@ class FWF:
                 except:
                     pass
                 da_i_list.append(da_i)
-            da_j = xr.concat(da_i_list, dim="time").max(dim="time")
+            da_j = xr.combine_nested(da_i_list, concat_dim="time").max(dim="time")
             da_j = da_j.assign_coords(
                 {
                     "Time": days_of_max[j],
@@ -658,7 +659,7 @@ class FWF:
             )
             da_j_list.append(da_j)
 
-        TMAX_da = xr.concat(da_j_list, dim="time")
+        TMAX_da = xr.combine_nested(da_j_list, concat_dim="time")
 
         ## apply a try condition for when data in the past doesn't exist
         ## TODO this is hacky, needs to be more robust for longer NWP forecast (only good for two day forecasts)
@@ -675,17 +676,17 @@ class FWF:
             )
             TMAX = xr.concat([TMAX_yesterday, TMAX_today], dim="time")
         except:
-            TMAX = xr.concat(
+            TMAX = xr.combine_nested(
                 [
                     TMAX_da.assign_coords(
                         {"Time": days_of_max[0] - np.timedelta64(1, "D")}
                     ),
                     TMAX_da.assign_coords({"Time": days_of_max[0]}),
                 ],
-                dim="time",
+                concat_dim="time",
             )
         if len(self.daily_ds.time) == 1:
-            TMAX = xr.concat([TMAX_yesterday], dim="time")
+            TMAX = xr.combine_nested([TMAX_yesterday], concat_dim="time")
         else:
             pass
 
@@ -695,10 +696,10 @@ class FWF:
             FS_days = FS_days + 1
             TMAXi = TMAX.isel(time=i)
             nan_full = np.full(TMAXi.shape, np.nan)
-            # FSi = xr.where(TMAXi < 5, 1, nan_full)
-            # FSi = xr.where(TMAXi > 12, 0, FSi)
-            FSi = xr.where((TMAXi < 5) & (FS_days > 30), 1, nan_full)
-            FSi = xr.where((TMAXi > 12) & (FS_days > 30), 0, FSi)
+            FSi = xr.where(TMAXi < 5, 1, nan_full)
+            FSi = xr.where(TMAXi > 12, 0, FSi)
+            # FSi = xr.where((TMAXi < 5) & (FS_days > 30), 1, nan_full)
+            # FSi = xr.where((TMAXi > 12) & (FS_days > 30), 0, FSi)
 
             ## take dif of yesterdays FS mask minus intermediate FS mask
             dFS = FSy - FSi
@@ -720,10 +721,10 @@ class FWF:
             ## replace FSy with FS for next day's forecast
             FSy = FS
 
-            ## accumualte preciptaiton on model grids that are in winter
+            ## accumulated precipitation on model grids that are in winter
             r_w = r_w + self.daily_ds["r_o"].isel(time=i)
 
-            ## Apply dFS mask to zero out r_w if winter oneset occured
+            ## Apply dFS mask to zero out r_w if winter onset occurred
             # r_w = np.where(dFS == -1, 0, r_w)
             r_w = np.where((dFS == -1) | (dFS == 1), 0, r_w)
 
@@ -731,10 +732,10 @@ class FWF:
             r_w = xr.DataArray(r_w, name="r_w", dims=("south_north", "west_east"))
             r_w_list.append(r_w)
 
-        dFS = xr.concat(dFS_list, dim="time")
-        FS = xr.concat(FS_list, dim="time")
-        FS_days = xr.concat(FS_days_list, dim="time")
-        r_w = xr.concat(r_w_list, dim="time")
+        dFS = xr.combine_nested(dFS_list, concat_dim="time")
+        FS = xr.combine_nested(FS_list, concat_dim="time")
+        FS_days = xr.combine_nested(FS_days_list, concat_dim="time")
+        r_w = xr.combine_nested(r_w_list, concat_dim="time")
 
         self.daily_ds["TMAX"] = TMAX
         self.daily_ds["dFS"] = dFS
@@ -2122,8 +2123,8 @@ class FWF:
         noon_ds = xr.combine_nested(files_ds, "time")
         if carryover_rain == True:
             ## create datarray for carry over rain, this will be added to the next days rain totals
-            ## NOTE: this is rain that fell from noon local until 24 hours past the model initial time ie 00Z, 06Z..
-            r_o_tomorrow_i = int_ds.r_o.values[23] - noon_ds.r_o.values[0]
+            ## NOTE: this is rain that fell from noon local until 23 hours past the model initial time ie 00Z, 06Z..
+            r_o_tomorrow_i = int_ds.r_o.values[22] - noon_ds.r_o.values[0]
             r_o_tomorrow = [r_o_tomorrow_i for i in range(len(num_days))]
             r_o_tomorrow = np.stack(r_o_tomorrow)
             r_o_tomorrow_da = xr.DataArray(
@@ -2200,7 +2201,9 @@ class FWF:
                         ds_yesterday = xr.open_dataset(int_file_dir).isel(
                             time=slice(index[0], 24)
                         )[var_list]
-                        ds_subset = xr.concat([ds_yesterday, ds_subset], dim="time")
+                        ds_subset = xr.combine_nested(
+                            [ds_yesterday, ds_subset], concat_dim="time"
+                        )
                         index = [24]
                 except:
                     pass
@@ -2236,38 +2239,36 @@ class FWF:
                     )
                 except:
                     pass
-                ds_i["mTime"] = (
-                    ("south_north", "west_east"),
-                    ds_i.Time.values.astype("datetime64[h]").astype(int) % 24,
-                )
+                # ds_i["mTime"] = (
+                #     ("south_north", "west_east"),
+                #     ds_i.Time.values.astype("datetime64[h]").astype(int) % 24,
+                # )
                 ds_i_list.append(ds_i.drop(["Time"]).chunk("auto"))
-            ds_j = xr.concat(
-                ds_i_list, dim="time", coords="minimal", compat="override"
-            ).load()
+            ds_j = xr.combine_nested(ds_i_list, concat_dim="time").load()
             mds_j = ds_j.max(dim="time")
             if "H" in var_list:
                 mds_j["H"] = ds_j["H"].min(dim="time")
             for var in var_list:
                 if var == "H":
-                    min_index = ds_j[var].argmin(dim="time")
-                    mVt = ds_j["mTime"].isel(time=min_index)
-                    mds_j["m" + var + "t"] = mVt
+                    # min_index = ds_j[var].argmin(dim="time")
+                    # mVt = ds_j["mTime"].isel(time=min_index)
+                    mds_j["m" + var + "t"] = ds_j[var].argmin(dim="time")
                     mds_j["m" + var + "t"].attrs = daily_ds[var].attrs
                     mds_j["m" + var + "t"].attrs["description"] = (
                         "TIME OF MIN " + daily_ds[var].attrs["description"]
                     )
                 else:
-                    max_index = ds_j[var].argmax(dim="time")
-                    mVt = ds_j["mTime"].isel(time=max_index)
-                    mds_j["m" + var + "t"] = mVt
+                    # max_index = ds_j[var].argmax(dim="time")
+                    # mVt = ds_j["mTime"].isel(time=max_index)
+                    mds_j["m" + var + "t"] = ds_j[var].argmax(dim="time")
                     mds_j["m" + var + "t"].attrs = daily_ds[var].attrs
                     mds_j["m" + var + "t"].attrs["description"] = (
                         "TIME OF MAX " + daily_ds[var].attrs["description"]
                     )
             try:
-                mds_j = mds_j.drop(["mTime", "XTIME"])
+                mds_j = mds_j.drop(["XTIME"])
             except:
-                mds_j = mds_j.drop(["mTime"])
+                pass
 
             mds_j = mds_j.assign_coords(
                 {
@@ -2278,7 +2279,7 @@ class FWF:
             )
             ds_j_list.append(mds_j)
 
-        max_ds = xr.concat(ds_j_list, dim="time")
+        max_ds = xr.combine_nested(ds_j_list, concat_dim="time")
         var_dict = {var_list[i]: "m" + var_list[i] for i in range(len(var_list))}
         max_ds = max_ds.rename(var_dict)
         for var in var_list:
@@ -2291,7 +2292,7 @@ class FWF:
         else:
             max_ds_fake = max_ds
             max_ds_fake["time"] = ("time", [1])
-            max_ds = xr.concat([max_ds, max_ds_fake], dim="time")
+            max_ds = xr.combine_nested([max_ds, max_ds_fake], concat_dim="time")
             max_ds = max_ds.assign_coords(
                 {
                     "Time": (
@@ -2492,11 +2493,12 @@ class FWF:
         )
         writeTime = datetime.now()
         print("Start Write ", datetime.now())
-        keep_vars = ["F", "R", "S", "T", "W", "H"]
-        hourly_ds = hourly_ds.drop(
-            [var for var in list(hourly_ds) if var not in keep_vars]
-        )
-        list(hourly_ds)
+        keep_vars = ["F", "R", "S", "T", "W", "H", "r_o"]
+        # hourly_ds = hourly_ds.drop(
+        #     [var for var in list(hourly_ds) if var not in keep_vars]
+        # )
+        hourly_ds = hourly_ds[keep_vars]
+        # print(list(hourly_ds))
         hourly_ds, encoding = compressor(hourly_ds, self.var_dict)
         hourly_ds.to_netcdf(make_dir, encoding=encoding, mode="w")
         print("Write Time: ", datetime.now() - writeTime)
@@ -2547,7 +2549,7 @@ class FWF:
 
         daily_ds = self.prepare_ds(daily_ds)
         self.daily_ds = daily_ds
-        # print("Daily nc initialized at :", file_date)
+        print("Daily nc initialized at :", file_date)
 
         # # ## Write and save DataArray (.nc) file
         # make_dir = Path(

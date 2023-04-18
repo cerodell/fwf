@@ -123,10 +123,11 @@ for j in range(len(index)):
             )
         except:
             pass
-        ds_i["mTime"] = (
-            ("south_north", "west_east"),
-            ds_i.Time.values.astype("datetime64[h]").astype(int) % 24,
-        )
+        ## make array of UTC values
+        # ds_i["mTime"] = (
+        #     ("south_north", "west_east"),
+        #     ds_i.Time.values.astype("datetime64[h]").astype(int) % 24,
+        # )
         ds_i_list.append(ds_i.drop(["Time"]).chunk("auto"))
     ds_j = xr.concat(ds_i_list, dim="time", coords="minimal", compat="override").load()
     mds_j = ds_j.max(dim="time")
@@ -136,8 +137,8 @@ for j in range(len(index)):
         if var == "H":
             min_index = ds_j[var].argmin(dim="time")
             # mVt =  ds_j['mTime'][dict(time=min_index)]
-            mVt = ds_j["mTime"].isel(time=min_index)
-            mds_j["m" + var + "t"] = mVt
+            # mVt = ds_j["mTime"].isel(time=min_index)
+            mds_j["m" + var + "t"] = min_index
             mds_j["m" + var + "t"].attrs = daily_ds[var].attrs
             mds_j["m" + var + "t"].attrs["description"] = (
                 "TIME OF MIN " + daily_ds[var].attrs["description"]
@@ -145,16 +146,16 @@ for j in range(len(index)):
         else:
             max_index = ds_j[var].argmax(dim="time")
             # print(max_index.values[:4,:4])
-            mVt = ds_j["mTime"].isel(time=max_index)
-            mds_j["m" + var + "t"] = mVt
+            # mVt = ds_j["mTime"].isel(time=max_index)
+            mds_j["m" + var + "t"] = max_index
             mds_j["m" + var + "t"].attrs = daily_ds[var].attrs
             mds_j["m" + var + "t"].attrs["description"] = (
                 "TIME OF MAX " + daily_ds[var].attrs["description"]
             )
     try:
-        mds_j = mds_j.drop(["mTime", "XTIME"])
+        mds_j = mds_j.drop(["XTIME"])
     except:
-        mds_j = mds_j.drop(["mTime"])
+        pass
 
     mds_j = mds_j.assign_coords(
         {
@@ -164,6 +165,14 @@ for j in range(len(index)):
         }
     )
     ds_j_list.append(mds_j)
+
+new = mds_j["m" + var + "t"]
+
+old = mds_j["m" + var + "t"]
+
+
+mds_j["blah"] = old - new
+mds_j["blah"].attrs = static_ds.attrs
 
 # max_ds = xr.concat(ds_j_list, dim="time")
 # var_dict = {var_list[i]: 'm'+var_list[i] for i in range(len(var_list))}

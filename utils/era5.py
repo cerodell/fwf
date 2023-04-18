@@ -21,8 +21,12 @@ from utils.compressor import compressor
 
 
 def rewrite_era5(doi, model, domain):
-    filein = f"/Volumes/WFRT-Ext23/{model}/{domain}/{filein}{(doi).strftime('%Y%m')}/era5-{(doi).strftime('%Y%m%d00.nc')}"
+    filein = f"/Volumes/WFRT-Ext23/{model}/{domain}/{(doi).strftime('%Y%m')}/era5-{(doi).strftime('%Y%m%d00.nc')}"
     ds = xr.open_dataset(filein)
+    try:
+        ds = ds.isel(expver=0)
+    except:
+        pass
     ds["t2m"] = ds["t2m"] - 273.15
     ds["d2m"] = ds["d2m"] - 273.15
     ds["tp"] = ds["tp"] * 1000
@@ -30,12 +34,16 @@ def rewrite_era5(doi, model, domain):
     ds["W"] = ds["W"] * 3.6
     ds = ds.roll(west_east=int(len(ds["west_east"]) / 2))
     ds, encoding = compressor(ds, None)
+    make_dir = Path(
+        f"/Volumes/WFRT-Ext24/fwf-data/{model}/{domain}/{(doi).strftime('%Y%m')}"
+    )
+    make_dir.mkdir(parents=True, exist_ok=True)
     ds.to_netcdf(
-        f"/Volumes/WFRT-Ext23/fwf-data/{model}/{domain}/{filein}{(doi).strftime('%Y%m')}/era5-{(doi).strftime('%Y%m%d00.nc')}",
+        str(make_dir) + f"/fwf-era5-{(doi).strftime('%Y%m%d00.nc')}",
         encoding=encoding,
         mode="w",
     )
-    return
+    return ds
 
 
 def read_era5(doi, model, domain):

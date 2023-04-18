@@ -14,12 +14,13 @@ from context import data_dir
 
 
 model = "wrf"
-domain = "d02"
+domain = "d03"
 doi = pd.Timestamp("2020-12-31")
+trial_name = "02"
 target_grid = salem.open_xr_dataset(str(data_dir) + f"/{model}/{domain}-grid.nc")
 
 era5_ds = salem.open_xr_dataset(
-    f"/Volumes/WFRT-Ext24/fwf-data/ecmwf/era5/01/fwf-daily-era5-{doi.strftime('%Y%m%d00')}.nc"
+    f"/Volumes/WFRT-Ext24/fwf-data/ecmwf/era5/{trial_name}/fwf-daily-era5-{doi.strftime('%Y%m%d00')}.nc"
 )
 
 fig = plt.figure(figsize=(12, 6))
@@ -36,7 +37,7 @@ ds.isel(time=0)["D"].salem.quick_map(ax=ax, cmap="coolwarm")
 
 if domain != "rdps":
     ds.to_netcdf(
-        f"/Volumes/WFRT-Ext24/fwf-data/{model}/{domain}/01/fwf-daily-{domain}-{doi.strftime('%Y%m%d00')}.nc",
+        f"/Volumes/WFRT-Ext24/fwf-data/{model}/{domain}/{trial_name}/fwf-daily-{domain}-{doi.strftime('%Y%m%d00')}.nc",
         mode="w",
     )
 else:
@@ -53,7 +54,7 @@ else:
     np.unique(np.isnan(test), return_counts=True)
 
     ds.to_netcdf(
-        f"/Volumes/WFRT-Ext24/fwf-data/{model}/{domain}/01/fwf-daily-{domain}-{doi.strftime('%Y%m%d00')}.nc",
+        f"/Volumes/WFRT-Ext24/fwf-data/{model}/{domain}/{trial_name}/fwf-daily-{domain}-{doi.strftime('%Y%m%d00')}.nc",
         mode="w",
     )
 

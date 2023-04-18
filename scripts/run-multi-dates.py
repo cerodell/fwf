@@ -30,17 +30,17 @@ __email__ = "crodell@eoas.ubc.ca"
 # ignore RuntimeWarning
 warnings.filterwarnings("ignore", category=RuntimeWarning)
 #
-date_range = pd.date_range("2021-02-01", "2022-12-31")
-# date_range = pd.date_range("2020-01-01", "2020-01-01")
-# date_range = pd.date_range("2021-01-01", "2021-01-01")
+date_range = pd.date_range("2021-01-05", "2023-01-01")
+# date_range = pd.date_range("2021-01-02", "2021-01-05")
+# date_range = pd.date_range("2020-01-02", "2020-01-10")
 
 config = dict(
     model="wrf",
     domain="d02",
-    trail_name="01",
+    trail_name="02",
     initialize=False,
     initialize_hffmc=False,
-    overwinter=True,
+    overwinter=False,
     fbp_mode=False,
     correctbias=False,
 )

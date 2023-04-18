@@ -30,12 +30,13 @@ __email__ = "crodell@eoas.ubc.ca"
 
 # config = {"wrf": ["d02", "d03"], "eccc": ["rdps", "hrdps"]}
 config = {"ecmwf": ["era5"]}
+# config = {"wrf": ["d02", "d03"]}
 
 
 # model = 'wrf'
 # domain = 'd02'
-trail_name = "01"
-# doi = pd.Timestamp("2021-06-28")
+trail_name = "03"
+
 # date_range = pd.date_range("2021-01-01", "2021-01-10")
 date_range = pd.date_range("2020-01-01", "2022-12-31")
 fwf_dir = f"/Volumes/WFRT-Ext24/fwf-data/"
@@ -61,6 +62,21 @@ var_list = [
     "H",
     "D",
     "U",
+    # 'mF',
+    # 'mR',
+    # 'mS',
+    # 'hF',
+    # 'hR',
+    # 'hS',
+    # 'mT',
+    # 'mW',
+    # 'mH',
+    # 'mFt',
+    # 'mRt',
+    # 'mSt',
+    # 'mTt',
+    # 'mWt',
+    # 'mHt',
 ]
 drop_vars = ["DSR", "SNOWC", "r_o_hourly", "r_o_tomorrow", "SNOWH"]
 drop_cords = ["XLAT", "XLONG", "west_east", "south_north", "XTIME", "time"]
@@ -80,7 +96,14 @@ ds_obs = ds_obs.sel(
     time=slice(date_range[0].strftime("%Y-%m-%d"), date_range[-1].strftime("%Y-%m-%d"))
 )
 
-test = ds_obs.isel(wmo=np.where(ds_obs.prov.values == "BC")[0])
+idx = np.where(
+    (ds_obs.prov == "BC")
+    | (ds_obs.prov == "AB")
+    | (ds_obs.prov == "SA")
+    | (ds_obs.prov == "YT")
+    | (ds_obs.prov == "NT")
+)[0]
+ds_obs = ds_obs.isel(wmo=idx)
 
 ## convert lat lon coordinate in master obs to meter base x y as define by wrf polar stere projection
 df = pd.DataFrame(
@@ -95,42 +118,61 @@ df = pd.DataFrame(
 
 ############################### Functions #############################
 
+# pyproj_srs = '+proj=stere +lat_0=90 +lat_ts=53.25 +lon_0=-110 +x_0=0 +y_0=0 +R=6370000 +units=m +no_defs'
+pyproj_srs = "+proj=longlat +datum=WGS84 +no_defs"
+gpm25 = gpd.GeoDataFrame(
+    df,
+    crs="EPSG:4326",
+    #  crs="+init=epsg:4326",
+    geometry=gpd.points_from_xy(df["lons"], df["lats"]),
+).to_crs(pyproj_srs)
 
-def get_locs(pyproj_srs):
-    gpm25 = gpd.GeoDataFrame(
-        df,
-        crs="EPSG:4326",
-        #  crs="+init=epsg:4326",
-        geometry=gpd.points_from_xy(df["lons"], df["lats"]),
-    ).to_crs(pyproj_srs)
+x = xr.DataArray(
+    np.array(gpm25.geometry.x),
+    dims="wmo",
+    coords=dict(wmo=gpm25.wmo.values),
+)
+y = xr.DataArray(
+    np.array(gpm25.geometry.y),
+    dims="wmo",
+    coords=dict(wmo=gpm25.wmo.values),
+)
 
-    x = xr.DataArray(
-        np.array(gpm25.geometry.x),
-        dims="wmo",
-        coords=dict(wmo=gpm25.wmo.values),
-    )
-    y = xr.DataArray(
-        np.array(gpm25.geometry.y),
-        dims="wmo",
-        coords=dict(wmo=gpm25.wmo.values),
-    )
-    return x, y
+# def get_locs(pyproj_srs):
+# gpm25 = gpd.GeoDataFrame(
+#     df,
+#     crs="EPSG:4326",
+#     #  crs="+init=epsg:4326",
+#     geometry=gpd.points_from_xy(df["lons"], df["lats"]),
+# ).to_crs(pyproj_srs)
+
+# x = xr.DataArray(
+#     np.array(gpm25.geometry.x),
+#     dims="wmo",
+#     coords=dict(wmo=gpm25.wmo.values),
+# )
+# y = xr.DataArray(
+#     np.array(gpm25.geometry.y),
+#     dims="wmo",
+#     coords=dict(wmo=gpm25.wmo.values),
+# )
+# return x, y
 
 
 def read_fwf(doi, model, domain):
     """
     opens datasets, index on day one forecast and drop variables not use for comparison
     """
-    if model == "wrf":
-        hour = "06"
-    else:
-        hour = "00"
-    ds = xr.open_dataset(
-        fwf_dir
-        + f"{model}/{domain}/{trail_name}/fwf-daily-{domain}-{doi.strftime('%Y%m%d')}{hour}.nc"
+    hour = "00"
+    ds = (
+        xr.open_dataset(
+            fwf_dir
+            + f"{model}/{domain}/{trail_name}/fwf-daily-{domain}-{doi.strftime('%Y%m%d')}{hour}.nc"
+        )
+        .isel(time=0)
+        .chunk(chunks="auto")[var_list]
     )
-    ds = ds.isel(time=0).chunk(chunks="auto")
-    ds = ds.drop([var for var in list(ds) if var in drop_vars])
+    # print(ds.attrs["pyproj_srs"])
     return ds
 
 
@@ -154,7 +196,14 @@ def rename(ds, domain):
             except:
                 pass
 
-    x, y = get_locs(ds.attrs["pyproj_srs"])
+    # x, y = get_locs(ds.attrs["pyproj_srs"])
+    ds = ds.interp(west_east=x, south_north=y, method="linear")
+    ds = ds.drop([var for var in list(ds.coords) if var in drop_cords])
+    ds = ds.expand_dims(dim={"domain": [domain]})
+    return ds
+
+
+def interp(ds, domain):
     ds = ds.interp(west_east=x, south_north=y, method="linear")
     ds = ds.drop([var for var in list(ds.coords) if var in drop_cords])
     ds = ds.expand_dims(dim={"domain": [domain]})
@@ -173,29 +222,33 @@ def rechunk(ds):
 
 
 ################# End Functions ####################
-# test =     [
-#         xr.concat(
-#             [rename(read_fwf(doi, model, domain), domain) for doi in date_range],
-#             dim="time",
-#         ).chunk('auto')
-#         for model in config
-#         for domain in config[model]
-#     ]
-# ds = xr.merge(test)
 loop_start = datetime.now()
-## open and loop model_configs and date_range than concat and merge them into one dataset
-ds = xr.merge(
+ds = xr.combine_by_coords(
     [
-        xr.concat(
+        xr.combine_nested(
             [rename(read_fwf(doi, model, domain), domain) for doi in date_range],
-            dim="time",
+            concat_dim="time",
         ).chunk("auto")
         for model in config
         for domain in config[model]
     ]
 )
-# ds = rechunk(ds)
 print("Loop Time: ", datetime.now() - loop_start)
+
+# loop_start = datetime.now()
+# ## open and loop model_configs and date_range than concat and merge them into one dataset
+# ds = xr.combine_by_coords(
+#     [
+#         interp(xr.combine_nested(
+#             [rename(read_fwf(doi, model, domain), domain) for doi in date_range],
+#             concat_dim="time",
+#         ).chunk('auto'), domain)
+#         for model in config
+#         for domain in config[model]
+#     ]
+# )
+# # ds = rechunk(ds)
+# print("Loop Time: ", datetime.now() - loop_start)
 
 # compute_start = datetime.now()
 # ds = ds.compute()
@@ -204,7 +257,7 @@ print("Loop Time: ", datetime.now() - loop_start)
 
 merge = datetime.now()
 ## merge the forecasted values at wx station with their observed values
-final_ds = xr.merge([ds, ds_obs.expand_dims(dim={"domain": ["obs"]})])
+final_ds = xr.combine_by_coords([ds, ds_obs.expand_dims(dim={"domain": ["obs"]})])
 for var in ["elev", "name", "prov", "id"]:
     final_ds[var] = final_ds[var].astype(str)
 for var in list(ds):

@@ -29,6 +29,7 @@ static_ds = xr.open_dataset(str(data_dir) + f"/static/static-vars-{model}-{domai
 tzone = static_ds["ZoneST"].values
 landmask = static_ds["LAND"]
 
+
 ds = salem.open_xr_dataset(
     f"/Volumes/WFRT-Ext24/fwf-data/{model}/{domain}/01/fwf-daily-{domain}-{doi.strftime('%Y%m%d%H')}.nc"
 ).isel(time=0)
