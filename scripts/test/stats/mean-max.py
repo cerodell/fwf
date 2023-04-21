@@ -22,7 +22,8 @@ from context import data_dir, root_dir
 startTime = datetime.now()
 print("RUN STARTED AT: ", str(startTime))
 model = "wrf"
-domain = "d03"
+domain = "d02"
+trial_name = "02"
 doi = pd.Timestamp("2021-02-02T06")
 var_list = ["mFt", "mRt", "mSt", "mTt", "mWt", "mHt"]
 
@@ -37,13 +38,16 @@ tzone = static_ds["ZoneST"].values
 wrf_ds = salem.open_xr_dataset(
     str(data_dir) + f"/wrf/wrfout_{domain}_2021-01-14_00:00:00"
 ).isel(Time=0)
-masked_arr = np.ma.masked_where(wrf_ds["LANDMASK"] == 0, wrf_ds["LANDMASK"])
+# masked_arr = np.ma.masked_where(wrf_ds["LANDMASK"] == 0, wrf_ds["LANDMASK"])
+masked_arr = np.ma.masked_where(static_ds["LAND"] == 1, static_ds["LAND"])
 
 
 try:
-    mean_ds = salem.open_xr_dataset(str(data_dir) + f"/wrf/mean-daily-{domain}.nc")
+    mean_ds = salem.open_xr_dataset(
+        str(data_dir) + f"/wrf/mean-daily-{domain}-{trial_name}.nc"
+    )
 except:
-    filein_dir = f"/Volumes/WFRT-Ext24/fwf-data/{model}/{domain}/01"
+    filein_dir = f"/Volumes/WFRT-Ext24/fwf-data/{model}/{domain}/{trial_name}"
     openTime = datetime.now()
     ds = xr.concat(
         [
@@ -65,7 +69,9 @@ except:
         mean_ds[var].attrs["pyproj_srs"] = ds.attrs["pyproj_srs"]
 
     print("Mean Time: ", datetime.now() - meanTime)
-    mean_ds.to_netcdf(str(data_dir) + f"/wrf/mean-dail-{domain}y.nc", mode="w")
+    mean_ds.to_netcdf(
+        str(data_dir) + f"/wrf/mean-daily-{domain}-{trial_name}.nc", mode="w"
+    )
 
 
 for var in var_list:
@@ -83,7 +89,14 @@ for var in var_list:
     fig = plt.figure(figsize=(12, 6))
     ax = fig.add_subplot(1, 1, 1)
     mean_ds[var].salem.quick_map(
-        ax=ax, cmap="coolwarm", vmin=-12, vmax=12, oceans=True, lakes=True
+        ax=ax,
+        cmap="coolwarm",
+        vmin=-12,
+        vmax=12,
+        oceans=True,
+        lakes=True,
+        states=True,
+        prov=True,
     )
     ax.set_title(
         f"Average hour offset from noon for {ext} {var_name.upper()} \n during the 2021 Fire Season (April 1 - Nov 1) \n Mean: {round(float(mean_ds[var].mean()),2)}hrs,  Min: {round(float(mean_ds[var].min()),2)}hrs,  Max: {round(float(mean_ds[var].max()),2)}hrs"
@@ -91,7 +104,7 @@ for var in var_list:
 
     plt.savefig(
         str(data_dir)
-        + f"/images/spatial/{var_name.lower()}-{domain}-mean-occurrence-of-max.png",
+        + f"/images/spatial/{trial_name}/{var_name.lower()}-{domain}-mean-occurrence-of-max.png",
         dpi=250,
         bbox_inches="tight",
     )

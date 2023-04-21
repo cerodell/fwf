@@ -54,16 +54,16 @@ index = [i - int_time if 12 - int_time >= 0 else i + 24 - int_time for i in num_
 print(f"index of 12Z times {index} with initial time {int_time}Z")
 
 
-xr_startTime = datetime.now()
-xr_list = []
-for i in index:
-    ds_i = int_ds.isel(time=tzone + i)
-    ds_i = ds_i.drop(["Time", "time"])
-    ds_i = ds_i.expand_dims({"time": i})
-    xr_list.append(ds_i)
-    # ds_i = ds_i.assign_coords({"Time": ("time", np.array(int_ds.Time[i + 1], dtype="datetime64[D]"))})
-daily_xr = xr.combine_nested(xr_list, "time")
-print("xarray indexing time: ", datetime.now() - xr_startTime)
+# xr_startTime = datetime.now()
+# xr_list = []
+# for i in index:
+#     ds_i = int_ds.isel(time=tzone + i)
+#     ds_i = ds_i.drop(["Time", "time"])
+#     ds_i = ds_i.expand_dims({"time": i})
+#     xr_list.append(ds_i)
+#     # ds_i = ds_i.assign_coords({"Time": ("time", np.array(int_ds.Time[i + 1], dtype="datetime64[D]"))})
+# daily_xr = xr.combine_nested(xr_list, "time")
+# print("xarray indexing time: ", datetime.now() - xr_startTime)
 
 
 np_startTime = datetime.now()
