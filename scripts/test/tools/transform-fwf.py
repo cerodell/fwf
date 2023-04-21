@@ -13,8 +13,8 @@ from utils.fwi import solve_ffmc
 from context import data_dir
 
 
-model = "wrf"
-domain = "d03"
+model = "eccc"
+domain = "hrdps"
 doi = pd.Timestamp("2020-12-31")
 trial_name = "02"
 target_grid = salem.open_xr_dataset(str(data_dir) + f"/{model}/{domain}-grid.nc")
@@ -47,9 +47,9 @@ else:
 
     fig = plt.figure(figsize=(12, 6))
     ax = fig.add_subplot(1, 1, 1)
-    ds.isel(time=0)["TMAX"].salem.quick_map(ax=ax, cmap="coolwarm")
+    ds.isel(time=0)["D"].salem.quick_map(ax=ax, cmap="coolwarm")
 
-    test = ds.isel(time=0)["TMAX"].values
+    test = ds.isel(time=0)["D"].values
 
     np.unique(np.isnan(test), return_counts=True)
 

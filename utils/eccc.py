@@ -32,8 +32,15 @@ def read_eccc(doi, model, domain):
         if domain == "rdps":
             for var in ["r_o", "SNOWH"]:
                 fwf_ds[var] = fwf_ds[var].fillna(0)
-                # fwf_ds[var] = fwf_ds[var].interpolate_na(dim="west_east", fill_value="extrapolate")
-                # fwf_ds[var] = fwf_ds[var].interpolate_na(dim="south_north", fill_value="extrapolate")
+        elif domain == "hrdps":
+            for var in ["TD", "H"]:
+                # fwf_ds[var] = fwf_ds[var].fillna(0)
+                fwf_ds[var] = fwf_ds[var].interpolate_na(
+                    dim="west_east", fill_value="extrapolate"
+                )
+                fwf_ds[var] = fwf_ds[var].interpolate_na(
+                    dim="south_north", fill_value="extrapolate"
+                )
                 # print(var, np.unique(np.isnan(fwf_ds[var]), return_counts=True))
 
     else:
