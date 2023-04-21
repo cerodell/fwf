@@ -18,22 +18,30 @@ from netCDF4 import Dataset
 from context import data_dir
 
 
-model = "wrf"
-domain = "d02"
-doi = pd.Timestamp("2021-08-01T06")
+model = "eccc"
+domain = "hrdps"
+doi = pd.Timestamp("2021-01-03T00")
 
 
 grid_ds = xr.open_dataset(str(data_dir) + f"/{model}/{domain}-grid.nc")
 
-static_ds = xr.open_dataset(str(data_dir) + f"/static/static-vars-{model}-{domain}.nc")
-tzone = static_ds["ZoneST"].values
-landmask = static_ds["LAND"]
+# static_ds = xr.open_dataset(str(data_dir) + f"/static/static-vars-{model}-{domain}.nc")
+# tzone = static_ds["ZoneST"].values
+# landmask = static_ds["LAND"]
 
 
 ds = salem.open_xr_dataset(
-    f"/Volumes/WFRT-Ext24/fwf-data/{model}/{domain}/01/fwf-daily-{domain}-{doi.strftime('%Y%m%d%H')}.nc"
-).isel(time=0)
+    f"/Volumes/WFRT-Ext23/fwf-data/{model}/{domain}/{doi.strftime('%Y%m')}/fwf-hourly-{domain}-{doi.strftime('%Y%m%d%H')}.nc"
+)
 
+for var in ds:
+    print(var)
+    print(np.unique(np.isnan(ds[var]), return_counts=True))
+
+for var in ds:
+    print(var)
+    ds[var] = ds[var].interpolate_na(dim="west_east", fill_value="extrapolate")
+    ds[var] = ds[var].interpolate_na(dim="south_north", fill_value="extrapolate")
 ds["diff"] = ds["mS"] - ds["S"]
 print(f"Mean diff of FWI {float(ds['diff'].mean())}")
 print(f"Max diff of FWI {float(ds['diff'].max())}")

@@ -2250,16 +2250,12 @@ class FWF:
                 mds_j["H"] = ds_j["H"].min(dim="time")
             for var in var_list:
                 if var == "H":
-                    # min_index = ds_j[var].argmin(dim="time")
-                    # mVt = ds_j["mTime"].isel(time=min_index)
                     mds_j["m" + var + "t"] = ds_j[var].argmin(dim="time")
                     mds_j["m" + var + "t"].attrs = daily_ds[var].attrs
                     mds_j["m" + var + "t"].attrs["description"] = (
                         "TIME OF MIN " + daily_ds[var].attrs["description"]
                     )
                 else:
-                    # max_index = ds_j[var].argmax(dim="time")
-                    # mVt = ds_j["mTime"].isel(time=max_index)
                     mds_j["m" + var + "t"] = ds_j[var].argmax(dim="time")
                     mds_j["m" + var + "t"].attrs = daily_ds[var].attrs
                     mds_j["m" + var + "t"].attrs["description"] = (

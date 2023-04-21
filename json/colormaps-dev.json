@@ -137,6 +137,14 @@
              "sigma": 0.9
 
           },
+   "mW" : {
+            "name"  : "mws",
+            "title": "Max Wind Spped (km/hr)"
+         },
+   "mWt" : {
+      "name"  : "mwst",
+      "title": "Hour of Max Wind Spped (km/hr)"
+         },
  "WD"  : {
              "colors18": ["#FFFFFF", "#BBBBBB", "#646464", "#1563D3", "#2883F1", "#50A5F5", "#97D3FB", "#0CA10D", "#37D33C", "#97F58D", "#B5FBAB", "#FFE978", "#FFC03D", "#FFA100", "#FF3300", "#C10000", "#960007","#643C32"],
              "vmax"  : 80,
@@ -159,6 +167,14 @@
              "sigma": 0.4
 
           },
+   "mT" : {
+            "name"  : "mtemp",
+            "title": "Max Temperature 2m (C)"
+         },
+   "mTt" : {
+      "name"  : "mtempt",
+      "title": "Hour of Max Temperature 2m (C)"
+         },
   "TD"  : {
            "colors47": ["#00ffff", "#06e6ed", "#0bcddb", "#10b5ca", "#159eb9","#1b86a8","#206f97","#255987","#2a4276","#2f2a65" , "#360a4e" , "#560b69", "#7b0c88", "#a30ca8" , "#ce0bdc" ,"#af05e3" ,"#8904e1"  ,"#5d04d8" ,"#1c0dcf" ,"#1b34d7" ,"#2460e2" , "#348ced", "#44b1f6", "#51cbfa", "#80e0f7", "#a0eaf7", "#00ef7c", "#00e452", "#00c848", "#10b87a", "#297b5d", "#007229", "#3ca12c", "#79d030", "#b5ff33", "#d8f7a1", "#fff600", "#f8df0b", "#fdca0c", "#fcac05", "#f88d00", "#ff6600", "#fc4f00","#ff0100","#f31a00", "#f31861", "#f316c2"],
            "vmax"  : 36,
@@ -179,6 +195,14 @@
              "sigma": 0.4
 
           },
+"mH" : {
+            "name"  : "mrh",
+            "title": "Min Relative Humidity 2m (%)"
+         },
+"mHt" : {
+      "name"  : "mrht",
+      "title": "Hour of MinRelative Humidity 2m (%)"
+         },
  "r_o"  : {
              "colors18": ["#ffffff", "#a9a5a5", "#6e6e6e", "#b3f9a9", "#79f572", "#50f150", "#1fb51e", "#0ca10d", "#1563d3", "#54a8f5", "#b4f1fb", "#ffe978", "#ffa100", "#ff3300", "#a50000", "#b58d83", "#9886ba","#8d008d"],
              "vmax"  : 140,

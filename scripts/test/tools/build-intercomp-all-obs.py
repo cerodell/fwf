@@ -29,54 +29,51 @@ __email__ = "crodell@eoas.ubc.ca"
 #################### INPUTS ####################
 
 # config = {"wrf": ["d02", "d03"], "eccc": ["rdps", "hrdps"]}
-config = {"ecmwf": ["era5"]}
-# config = {"wrf": ["d02", "d03"]}
+# config = {"ecmwf": ["era5"]}
+config = {"wrf": ["d02", "d03"]}
 
-
-# model = 'wrf'
-# domain = 'd02'
-trail_name = "03"
-
-# date_range = pd.date_range("2021-01-01", "2021-01-10")
-date_range = pd.date_range("2020-01-01", "2022-12-31")
+trail_name = "02"
+model_save = "wrf_day2"
+# date_range = pd.date_range("2021-04-01", "2021-11-01")
+date_range = pd.date_range("2021-01-01", "2022-12-31")
 fwf_dir = f"/Volumes/WFRT-Ext24/fwf-data/"
 
 ################## END INPUTS ##################
 
 var_list = [
     "TD",
-    "Df",
     "S",
-    "TMAX",
-    "FS_days",
     "T",
-    "dFS",
     "WD",
     "W",
-    "r_w",
     "P",
     "F",
     "r_o",
-    "FS",
     "R",
     "H",
     "D",
     "U",
-    # 'mF',
-    # 'mR',
-    # 'mS',
-    # 'hF',
-    # 'hR',
-    # 'hS',
-    # 'mT',
-    # 'mW',
-    # 'mH',
-    # 'mFt',
-    # 'mRt',
-    # 'mSt',
-    # 'mTt',
-    # 'mWt',
-    # 'mHt',
+    # "FS",
+    # "r_w",
+    # "Df",
+    # "TMAX",
+    # "FS_days",
+    # "dFS",
+    "mF",
+    "mR",
+    "mS",
+    "hF",
+    "hR",
+    "hS",
+    "mT",
+    "mW",
+    "mH",
+    "mFt",
+    "mRt",
+    "mSt",
+    "mTt",
+    "mWt",
+    "mHt",
 ]
 drop_vars = ["DSR", "SNOWC", "r_o_hourly", "r_o_tomorrow", "SNOWH"]
 drop_cords = ["XLAT", "XLONG", "west_east", "south_north", "XTIME", "time"]
@@ -95,15 +92,21 @@ ds_obs = xr.open_dataset(str(data_dir) + f"/obs/observations-d02-20191231-202212
 ds_obs = ds_obs.sel(
     time=slice(date_range[0].strftime("%Y-%m-%d"), date_range[-1].strftime("%Y-%m-%d"))
 )
+ds_obs_d03 = xr.open_dataset(
+    str(data_dir) + f"/obs/observations-d03-20191231-20221231.nc"
+)
+ds_obs_d03 = ds_obs_d03.sel(
+    time=slice(date_range[0].strftime("%Y-%m-%d"), date_range[-1].strftime("%Y-%m-%d"))
+)
 
-idx = np.where(
-    (ds_obs.prov == "BC")
-    | (ds_obs.prov == "AB")
-    | (ds_obs.prov == "SA")
-    | (ds_obs.prov == "YT")
-    | (ds_obs.prov == "NT")
-)[0]
-ds_obs = ds_obs.isel(wmo=idx)
+# idx = np.where(
+#     (ds_obs.prov == "BC")
+#     | (ds_obs.prov == "AB")
+#     | (ds_obs.prov == "SA")
+#     | (ds_obs.prov == "YT")
+#     | (ds_obs.prov == "NT")
+# )[0]
+ds_obs = ds_obs.sel(wmo=ds_obs_d03.wmo)
 
 ## convert lat lon coordinate in master obs to meter base x y as define by wrf polar stere projection
 df = pd.DataFrame(
@@ -118,8 +121,12 @@ df = pd.DataFrame(
 
 ############################### Functions #############################
 
-# pyproj_srs = '+proj=stere +lat_0=90 +lat_ts=53.25 +lon_0=-110 +x_0=0 +y_0=0 +R=6370000 +units=m +no_defs'
-pyproj_srs = "+proj=longlat +datum=WGS84 +no_defs"
+
+pyproj_srs = xr.open_dataset(str(data_dir) + f"/static/static-vars-wrf-d02.nc").attrs[
+    "pyproj_srs"
+]
+print(pyproj_srs)
+# pyproj_srs = "+proj=longlat +datum=WGS84 +no_defs"
 gpm25 = gpd.GeoDataFrame(
     df,
     crs="EPSG:4326",
@@ -163,16 +170,28 @@ def read_fwf(doi, model, domain):
     """
     opens datasets, index on day one forecast and drop variables not use for comparison
     """
-    hour = "00"
-    ds = (
-        xr.open_dataset(
-            fwf_dir
-            + f"{model}/{domain}/{trail_name}/fwf-daily-{domain}-{doi.strftime('%Y%m%d')}{hour}.nc"
+    hour = "06"
+    try:
+        ds = (
+            xr.open_dataset(
+                fwf_dir
+                + f"{model}/{domain}/{trail_name}/fwf-daily-{domain}-{(doi- np.timedelta64(1, 'D')).strftime('%Y%m%d')}{hour}.nc"
+            )
+            .isel(time=1)
+            .chunk(chunks="auto")[var_list]
         )
-        .isel(time=0)
-        .chunk(chunks="auto")[var_list]
-    )
-    # print(ds.attrs["pyproj_srs"])
+    except:
+        ds = (
+            xr.open_dataset(
+                fwf_dir
+                + f"{model}/{domain}/{trail_name}/fwf-daily-{domain}-{doi.strftime('%Y%m%d')}{hour}.nc"
+            )
+            .isel(time=0)
+            .chunk(chunks="auto")[var_list]
+        )
+        print(
+            f"Could not find day 2 forecast for date {doi.strftime('%Y%m%d')}, using day one instead"
+        )
     return ds
 
 
@@ -222,6 +241,9 @@ def rechunk(ds):
 
 
 ################# End Functions ####################
+
+######################################################################################################
+############################### Use with single model/projection.  ###################################
 loop_start = datetime.now()
 ds = xr.combine_by_coords(
     [
@@ -234,7 +256,9 @@ ds = xr.combine_by_coords(
     ]
 )
 print("Loop Time: ", datetime.now() - loop_start)
-
+print(ds)
+######################################################################################################
+############### Use when combine multiple models with different projections ##########################
 # loop_start = datetime.now()
 # ## open and loop model_configs and date_range than concat and merge them into one dataset
 # ds = xr.combine_by_coords(
@@ -254,6 +278,8 @@ print("Loop Time: ", datetime.now() - loop_start)
 # ds = ds.compute()
 # print("Compute Time: ", datetime.now() - compute_start)
 
+######################################################################################################
+############################### Use when merging with master obs.  ###################################
 
 merge = datetime.now()
 ## merge the forecasted values at wx station with their observed values
@@ -266,8 +292,32 @@ final_ds = final_ds.drop("time")
 print("Merge Time: ", datetime.now() - merge)
 
 # make a file directory based on user inputs to save dataset
-make_dir = Path(str(data_dir) + f"/intercomp/{trail_name}/era5/")
+make_dir = Path(str(data_dir) + f"/intercomp/{trail_name}/{model_save}/")
 make_dir.mkdir(parents=True, exist_ok=True)
+
+######################################################################################################
+################### Use when merging with previously compiled model/obs.  ############################
+
+# merge = datetime.now()
+# ## merge the forecasted values at wx station with their observed values
+# final_ds = xr.combine_nested([ds, ds_obs], concat_dim = 'domain')
+# for var in ["elev", "name", "prov", "id"]:
+#     final_ds[var] = final_ds[var].astype(str)
+# for var in list(ds):
+#     final_ds[var] = final_ds[var].astype("float32")
+# try:
+#     final_ds = final_ds.drop("time")
+# except:
+#     pass
+# print("Merge Time: ", datetime.now() - merge)
+
+# # make a file directory based on user inputs to save dataset
+# make_dir = Path(str(data_dir) + f"/intercomp/{trail_name}/{model_save}/")
+# make_dir.mkdir(parents=True, exist_ok=True)
+
+# print(final_ds)
+######################################################################################################
+##################################### Write to netcdf  ###############################################
 
 write = datetime.now()
 ## write final dataset as netcdf
@@ -280,6 +330,7 @@ final_ds.to_netcdf(
 )
 print("Write Time: ", datetime.now() - write)
 
-# # print(final_ds.time.values)
-# ### Timer
-# print("Total Run Time: ", datetime.now() - startTime)
+######################################################################################################
+####################################        Timer            #########################################
+### Timer
+print("Total Run Time: ", datetime.now() - startTime)
