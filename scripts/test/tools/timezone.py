@@ -30,8 +30,8 @@ __email__ = "crodell@eoas.ubc.ca"
 
 
 season = "ST"
-model = "ecmwf"
-domain = "era5"
+model = "wrf"
+domain = "d03"
 
 
 filein = str(data_dir) + f"/{model}/{domain}-grid.nc"
@@ -44,8 +44,8 @@ tzone_shp = (
 ds = salem.open_xr_dataset(filein)
 pyproj_srs = ds.attrs["pyproj_srs"]
 df = salem.read_shapefile(tzone_shp)
-# df = df[df["tzid"].str.contains("America")]
-# df = df[df["min_y"] > 14]
+df = df[df["tzid"].str.contains("America")]
+df = df[df["min_y"] > 14]
 
 
 lats = ds.XLAT.values
@@ -118,7 +118,10 @@ elif season == "ST":
         # ):
         #     hours = abs(int(seconds // 3600)) + 1
         # else:
-        hours = int(seconds // 3600) * -1
+        if tz == "America/Whitehorse" or tz == "America/Dawson":
+            hours = abs(int(seconds // 3600)) + 1
+        else:
+            hours = int(seconds // 3600) * -1
         # print(hours)
         dsr = var_array.salem.roi(shape=name)
         index = np.where(dsr == dsr)
@@ -142,9 +145,9 @@ ds_zones = ds_zones.compute()
 
 ds["ZoneST"] = (("south_north", "west_east"), ds_zones.values)
 ds["ZoneST"].attrs["pyproj_srs"] = pyproj_srs
-ds1 = ds.sel(west_east=slice(-170, -20), south_north=slice(88, 20))
+# ds1 = ds.sel(west_east=slice(-170, -20), south_north=slice(88, 20))
 
-ds1["ZoneST"].salem.quick_map(cmap="coolwarm")
+ds["ZoneST"].salem.quick_map(cmap="coolwarm")
 ds = ds.drop("var")
 ds.to_netcdf(str(data_dir) + f"/tzone/tzone-{model}-{domain}-{season}.nc", mode="w")
 

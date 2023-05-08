@@ -30,34 +30,28 @@ model = "wrf"
 trail_name = "02"
 
 ### Open Station Data
-# wx_ds = xr.open_dataset(str(data_dir) + f'/obs/observations-d03-20191231-20221231.nc')
-wx_ds = xr.open_dataset(
-    str(data_dir) + f"/intercomp/{trail_name}/{model}/d02d03-20210401-20221101-null.nc"
-)
-bad_wx = [3153, 3167, 3266, 3289]
+wx_ds = xr.open_dataset(str(data_dir) + f"/obs/observations-all-20191231-20221231.nc")
+bad_wx = [3153, 3167, 3266, 3289, 71977, 71948, 71985, 721571]
 for wx in bad_wx:
     wx_ds = wx_ds.drop_sel(wmo=wx)
 
 
 ### Open WRF d02 domain
-filein = str(data_dir) + f"/wrf/wrfout_d02_2021-01-14_00:00:00"
-wrf_d02 = xr.open_dataset(filein)
+wrf_d02 = xr.open_dataset(str(data_dir) + f"/static/static-vars-wrf-d02.nc")
 
 ### Open WRF d03 domain
-filein = str(data_dir) + f"/wrf/wrfout_d03_2021-01-14_00:00:00"
-wrf_d03 = xr.open_dataset(filein)
+wrf_d03 = xr.open_dataset(str(data_dir) + f"/static/static-vars-wrf-d03.nc")
 
+### Open ECCC RDPS domain
+eccc_rdps = xr.open_dataset(str(data_dir) + f"/static/static-vars-eccc-rdps.nc")
+
+### Open ECCC HRDPS domain
+eccc_hrdps = xr.open_dataset(str(data_dir) + f"/static/static-vars-eccc-hrdps.nc")
 
 ## set plot title and save dir/name
 Plot_Title = "Model Domains in Mercator Projection"
 save_file = "/images/paper/study-map.png"
 save_dir = str(data_dir) + save_file
-
-
-# Get the cartopy mapping object
-ncfile = Dataset(str(data_dir) + f"/wrf/wrfout_d02_2021-01-14_00:00:00")
-slp = getvar(ncfile, "slp")
-cart_proj = get_cartopy(slp)
 
 
 ## bring in state/prov boundaries
@@ -69,9 +63,10 @@ states_provinces = cfeature.NaturalEarthFeature(
 )
 
 # get the data at the latest time step
-ds = salem.open_wrf_dataset(
-    str(data_dir) + f"/wrf/wrfout_d01_2023-04-20_00:00:00"
-).isel(time=-1)
+ds = salem.open_xr_dataset(
+    "/Volumes/WFRT-Ext24/fwf-data/eccc/rdps/02/fwf-daily-rdps-2020123100.nc"
+    # str(data_dir) + f"/static/static-vars-eccc-rdps.nc"
+)
 
 
 ## convert lat lon coordinate in master obs to meter base x y as define by wrf polar stere projection
@@ -102,13 +97,13 @@ fig, ax = plt.subplots(figsize=[14, 10])
 
 # plot the salem map background, make countries in grey
 smap = ds.salem.get_map(countries=False)
-smap.set_shapefile(countries=True, lw=0.4)
-smap.set_shapefile(
-    oceans=True,
-)
-smap.set_shapefile(
-    lakes=True,
-)
+smap.set_shapefile(countries=True, lw=0.6)
+# smap.set_shapefile(
+#     oceans=True,
+# )
+# smap.set_shapefile(
+#     lakes=True,
+# )
 smap.set_shapefile(states=True, lw=0.4)
 smap.set_shapefile(prov=True, lw=0.4)
 
@@ -128,7 +123,7 @@ ax.scatter(
 
 ## get d03 lats and lon
 linewidth = 2.6
-lons, lats = np.array(wrf_d03.XLONG)[0], np.array(wrf_d03.XLAT)[0]
+lons, lats = np.array(wrf_d03.XLONG), np.array(wrf_d03.XLAT)
 xx, yy = transform_locs(lons[0], lats[0])
 ax.plot(xx, yy, color="tab:green", linewidth=linewidth, zorder=8, alpha=1)
 xx, yy = transform_locs(lons[-1].T, lats[-1].T)
@@ -146,13 +141,13 @@ ax.plot(
     linewidth=linewidth,
     zorder=8,
     alpha=1,
-    label="4 km Domain",
+    label="WRF 4 km",
 )
 
 
 ## get d02 lats and lon
 linewidth = 2.6
-lons, lats = np.array(wrf_d02.XLONG)[0], np.array(wrf_d02.XLAT)[0]
+lons, lats = np.array(wrf_d02.XLONG), np.array(wrf_d02.XLAT)
 xx, yy = transform_locs(lons[0], lats[0])
 ax.plot(xx, yy, color="tab:red", linewidth=linewidth, zorder=8, alpha=1)
 xx, yy = transform_locs(lons[-1].T, lats[-1].T)
@@ -170,13 +165,59 @@ ax.plot(
     linewidth=linewidth,
     zorder=8,
     alpha=1,
-    label="12 km Domain",
+    label="WRF 12 km",
 )
+## get HRDPS lats and lon
+linewidth = 2.6
+lons, lats = np.array(eccc_hrdps.XLONG), np.array(eccc_hrdps.XLAT)
+xx, yy = transform_locs(lons[0], lats[0])
+ax.plot(xx, yy, color="tab:orange", linewidth=linewidth, zorder=8, alpha=1)
+xx, yy = transform_locs(lons[-1].T, lats[-1].T)
+ax.plot(xx, yy, color="tab:orange", linewidth=linewidth, zorder=8, alpha=1)
+xx, yy = transform_locs(lons[:, 0], lats[:, 0])
+ax.plot(xx, yy, color="tab:orange", linewidth=linewidth, zorder=8, alpha=1)
+xx, yy = transform_locs(
+    lons[:, -1].T,
+    lats[:, -1].T,
+)
+ax.plot(
+    xx,
+    yy,
+    color="tab:orange",
+    linewidth=linewidth,
+    zorder=8,
+    alpha=1,
+    label="HRDPS 2.5 km",
+)
+
+## get RDPS lats and lon
+linewidth = 3.2
+lons, lats = np.array(eccc_rdps.XLONG), np.array(eccc_rdps.XLAT)
+xx, yy = transform_locs(lons[3], lats[3])
+ax.plot(xx, yy, color="tab:blue", linewidth=linewidth, zorder=8, alpha=1)
+xx, yy = transform_locs(lons[-3].T, lats[-3].T)
+ax.plot(xx, yy, color="tab:blue", linewidth=linewidth, zorder=8, alpha=1)
+xx, yy = transform_locs(lons[:, 3], lats[:, 3])
+ax.plot(xx, yy, color="tab:blue", linewidth=linewidth, zorder=8, alpha=1)
+xx, yy = transform_locs(
+    lons[:, -6].T,
+    lats[:, -6].T,
+)
+ax.plot(
+    xx,
+    yy,
+    color="tab:blue",
+    linewidth=linewidth,
+    zorder=8,
+    alpha=1,
+    label="RDPS 10 km",
+)
+
 
 ## add legend
 ax.legend(
     loc="upper center",
-    bbox_to_anchor=(0.5, 1.0),
+    bbox_to_anchor=(0.5, 1.05),
     ncol=5,
     fancybox=True,
     shadow=True,

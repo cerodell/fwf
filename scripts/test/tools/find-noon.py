@@ -15,8 +15,8 @@ __author__ = "Christopher Rodell"
 __email__ = "crodell@eoas.ubc.ca"
 
 
-model = "ecmwf"
-domain = "era5"
+model = "eccc"
+domain = "rdps"
 
 # %%
 ### Call on variables

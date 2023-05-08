@@ -21,13 +21,14 @@ from context import data_dir, root_dir
 
 startTime = datetime.now()
 print("RUN STARTED AT: ", str(startTime))
-model = "wrf"
-domain = "d02"
+model = "eccc"
+domain = "rdps"
 trial_name = "02"
 doi = pd.Timestamp("2021-02-02T06")
 var_list = ["mFt", "mRt", "mSt", "mTt", "mWt", "mHt"]
 
-date_range = pd.date_range("2021-04-01", "2021-11-01")
+date_range_2021 = pd.date_range("2021-04-01", "2021-11-01")
+date_range_2022 = pd.date_range("2022-04-01", "2022-11-01")
 
 
 with open(str(root_dir) + "/json/colormaps-dev.json") as f:
@@ -35,40 +36,49 @@ with open(str(root_dir) + "/json/colormaps-dev.json") as f:
 
 static_ds = xr.open_dataset(str(data_dir) + f"/static/static-vars-{model}-{domain}.nc")
 tzone = static_ds["ZoneST"].values
-wrf_ds = salem.open_xr_dataset(
-    str(data_dir) + f"/wrf/wrfout_{domain}_2021-01-14_00:00:00"
-).isel(Time=0)
-# masked_arr = np.ma.masked_where(wrf_ds["LANDMASK"] == 0, wrf_ds["LANDMASK"])
 masked_arr = np.ma.masked_where(static_ds["LAND"] == 1, static_ds["LAND"])
 
 
 try:
     mean_ds = salem.open_xr_dataset(
-        str(data_dir) + f"/wrf/mean-daily-{domain}-{trial_name}.nc"
+        str(data_dir) + f"/{model}/mean-daily-{domain}-{trial_name}-.nc"
     )
 except:
     filein_dir = f"/Volumes/WFRT-Ext24/fwf-data/{model}/{domain}/{trial_name}"
     openTime = datetime.now()
-    ds = xr.concat(
+    ds_2021 = xr.combine_nested(
         [
             salem.open_xr_dataset(
                 filein_dir + f"/fwf-daily-{domain}-{doi.strftime('%Y%m%d06')}.nc",
             )[var_list]
             .isel(time=0)
             .chunk("auto")
-            for doi in date_range
+            for doi in date_range_2021
         ],
-        dim="time",
+        concat_dim="time",
+    )
+    ds_2022 = xr.combine_nested(
+        [
+            salem.open_xr_dataset(
+                filein_dir + f"/fwf-daily-{domain}-{doi.strftime('%Y%m%d06')}.nc",
+            )[var_list]
+            .isel(time=0)
+            .chunk("auto")
+            for doi in date_range_2022
+        ],
+        concat_dim="time",
     )
     print("Open Time: ", datetime.now() - openTime)
 
+    ds = xr.combine_nested([ds_2021, ds_2022], concat_dim="time")
+
     meanTime = datetime.now()
     mean_ds = ds.mean(dim="time")  # .to_dataset()
-    mean_ds.attrs = ds.attrs
+    mean_ds.attrs = static_ds.attrs
     for var in mean_ds:
-        mean_ds[var].attrs["pyproj_srs"] = ds.attrs["pyproj_srs"]
-
+        mean_ds[var].attrs["pyproj_srs"] = static_ds.attrs["pyproj_srs"]
     print("Mean Time: ", datetime.now() - meanTime)
+
     mean_ds.to_netcdf(
         str(data_dir) + f"/wrf/mean-daily-{domain}-{trial_name}.nc", mode="w"
     )
@@ -99,7 +109,7 @@ for var in var_list:
         prov=True,
     )
     ax.set_title(
-        f"Average hour offset from noon for {ext} {var_name.upper()} \n during the 2021 Fire Season (April 1 - Nov 1) \n Mean: {round(float(mean_ds[var].mean()),2)}hrs,  Min: {round(float(mean_ds[var].min()),2)}hrs,  Max: {round(float(mean_ds[var].max()),2)}hrs"
+        f"Average hour offset from noon local for {ext} {var_name.upper()} \n during the 2021/2022 Fire Seasons (April 1 - Oct 31) \n Mean: {round(float(mean_ds[var].mean()),2)}hrs,  Min: {round(float(mean_ds[var].min()),2)}hrs,  Max: {round(float(mean_ds[var].max()),2)}hrs"
     )
 
     plt.savefig(
