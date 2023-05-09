@@ -28,7 +28,7 @@ from matplotlib.offsetbox import AnchoredText
 wrf_model = "wrf4"
 day_of = "_day1"
 domain = "d03"
-# date = pd.Timestamp("today")
+date = pd.Timestamp("today")
 date = pd.Timestamp(2021, 8, 30)
 
 intercomp_today_dir = date.strftime("%Y%m%d")
