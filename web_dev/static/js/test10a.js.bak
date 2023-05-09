@@ -1,0 +1,421 @@
+// This is my prototyping
+
+var esri_streets = L.tileLayer.provider('Esri.WorldStreetMap'),
+    esri_natgeo = L.tileLayer.provider('Esri.NatGeoWorldMap'),
+    esri_topo = L.tileLayer.provider('Esri.WorldTopoMap'),
+    esri_imagery = L.tileLayer.provider('Esri.WorldImagery');
+
+var map = L.map('mapID', {
+    center: [55.0, -98.5],
+    zoom: 4,
+    layers: [esri_natgeo],
+    fullscreenControl: true,
+    timeDimension: true,
+    timeDimensionOptions: {
+        timeInterval: "2019-04-03T09:00:00Z/2019-04-05T10:00:00Z",
+        period: "PT1H",
+        //currentTime: "2019-04-05T01:00:00Z",
+        currentTime: Date.parse("2019-04-05T01:00:00Z"),
+    },
+    timeDimensionControl: true,
+    timeDimensionControlOptions: {
+        autoPlay: true,
+        playerOptions: {
+            loop: true,
+            buffer: 10,
+            transitionTime: 2000,
+            minSpeed: 0.5,
+            maxSpeed: 5,
+            speedStep: 0.5,
+            timeZones: ["UTC", "Local"],
+        },
+    },
+});
+
+// Fires layer
+var firesLayer = omnivore.kml('2019040309/fire_outlines_all.kml')
+    .on('ready', function() {
+        this.setStyle({color: "#FF8000"})
+    }).addTo(map);
+
+// Hotspots layer
+var hotspotsLayer = omnivore.kml('2019040309/fire_locations.kml').addTo(map);
+
+// Marker clustering - NOT WORKING
+//var markers = L.markerClusterGroup();
+//markers.addLayer(L.marker(hotspotsLayer));
+//markers.addLayer(L.marker(omnivore.kml('2019040309/fire_locations.kml')));
+//map.addLayer(markers);
+
+// Legend layer
+var testLegend = L.control({position: "bottomleft"});
+testLegend.onAdd = function(map) {
+    var src = "2019040309/images/hourly/Bi-color2hrColorBar/colorbar_hourly.png";
+    var div = L.DomUtil.create('div', 'info legend leaflet-touch leaflet-bar');
+    div.style.width = '400px';
+    div.style.height = '50px';
+    div.style['background-image'] = 'url(' + src + ')';
+    return div;
+}
+testLegend.addTo(map);
+
+// Layer controls
+var baseLayers = {
+    "Atlas": esri_natgeo,
+    "Topographic": esri_topo,
+    "Imagery": esri_imagery,
+    "Streets": esri_streets,
+}
+var overlays = {
+    "Modelled fires (SmartFire)": firesLayer,
+    "Satellite hotspots (CWFIS)": hotspotsLayer,
+};
+L.control.layers(baseLayers, overlays).addTo(map);
+
+// Smoke forecast layer
+var smokeImage01 = '2019040309/images/hourly/Bi-color2hrColorBar/hourly_201904050100.png',
+    smokeImageBounds = [[40.0, -144.5], [70.0, -52.5]];
+L.imageOverlay(smokeImage01, smokeImageBounds).addTo(map);
+
+// Add more smoke layers here ...
+
+
+
+// This is the end of my prototyping
+
+
+///
+///  Per http://apps.socib.es/Leaflet.TimeDimension/examples/example10.html
+///
+
+L.TimeDimension.Layer.ImageOverlay = L.TimeDimension.Layer.extend({
+
+    initialize: function(layer, options) {
+        L.TimeDimension.Layer.prototype.initialize.call(this, layer, options);
+        this._layers = {};
+        this._defaultTime = 0;
+        this._timeCacheBackward = this.options.cacheBackward || this.options.cache || 0;
+        this._timeCacheForward = this.options.cacheForward || this.options.cache || 0;
+        this._getUrlFunction = this.options.getUrlFunction;
+
+        this._baseLayer.on('load', (function() {
+            this._baseLayer.setLoaded(true);
+            this.fire('timeload', {
+                time: this._defaultTime
+            });
+        }).bind(this));
+    },
+
+    eachLayer: function(method, context) {
+        for (var prop in this._layers) {
+            if (this._layers.hasOwnProperty(prop)) {
+                method.call(context, this._layers[prop]);
+            }
+        }
+        return L.TimeDimension.Layer.prototype.eachLayer.call(this, method, context);
+    },
+
+    _onNewTimeLoading: function(ev) {
+        var layer = this._getLayerForTime(ev.time);
+        if (!this._map.hasLayer(layer)) {
+            this._map.addLayer(layer);
+        }
+    },
+
+    isReady: function(time) {
+        var layer = this._getLayerForTime(time);
+        return layer.isLoaded();
+    },
+
+    _update: function() {
+        if (!this._map)
+            return;
+        var time = map.timeDimension.getCurrentTime();
+        var layer = this._getLayerForTime(time);
+        if (this._currentLayer == null) {
+            this._currentLayer = layer;
+        }
+        if (!this._map.hasLayer(layer)) {
+            this._map.addLayer(layer);
+        } else {
+            this._showLayer(layer, time);
+        }
+    },
+
+    _showLayer: function(layer, time) {
+        if (this._currentLayer && this._currentLayer !== layer) {
+            this._currentLayer.hide();
+            this._map.removeLayer(this._currentLayer);
+        }
+        layer.show();
+        if (this._currentLayer && this._currentLayer === layer) {
+            return;
+        }
+        this._currentLayer = layer;
+        // Cache management
+        var times = this._getLoadedTimes();
+        var strTime = String(time);
+        var index = times.indexOf(strTime);
+        var remove = [];
+        // remove times before current time
+        if (this._timeCacheBackward > -1) {
+            var objectsToRemove = index - this._timeCacheBackward;
+            if (objectsToRemove > 0) {
+                remove = times.splice(0, objectsToRemove);
+                this._removeLayers(remove);
+            }
+        }
+        if (this._timeCacheForward > -1) {
+            index = times.indexOf(strTime);
+            var objectsToRemove = times.length - index - this._timeCacheForward - 1;
+            if (objectsToRemove > 0) {
+                remove = times.splice(index + this._timeCacheForward + 1, objectsToRemove);
+                this._removeLayers(remove);
+            }
+        }
+    },
+
+    _getLayerForTime: function(time) {
+        if (time == 0 || time == this._defaultTime) {
+            return this._baseLayer;
+        }
+        if (this._layers.hasOwnProperty(time)) {
+            return this._layers[time];
+        }
+        var url = this._getUrlFunction(this._baseLayer.getURL(), time);
+        imageBounds = this._baseLayer._bounds;
+
+        var newLayer = L.imageOverlay(url, imageBounds, this._baseLayer.options);
+        this._layers[time] = newLayer;
+        newLayer.on('load', (function(layer, time) {
+            layer.setLoaded(true);
+            if (map.timeDimension && time == map.timeDimension.getCurrentTime() && !map.timeDimension.isLoading()) {
+                this._showLayer(layer, time);
+            }
+            this.fire('timeload', {
+                time: time
+            });
+        }).bind(this, newLayer, time));
+
+        // Hack to hide the layer when added to the map.
+        // It will be shown when timeload event is fired from the map (after all layers are loaded)
+        newLayer.onAdd = (function(map) {
+            Object.getPrototypeOf(this).onAdd.call(this, map);
+            this.hide();
+        }).bind(newLayer);
+        return newLayer;
+    },
+
+    _getLoadedTimes: function() {
+        var result = [];
+        for (var prop in this._layers) {
+            if (this._layers.hasOwnProperty(prop)) {
+                result.push(prop);
+            }
+        }
+        return result.sort();
+    },
+
+    _removeLayers: function(times) {
+        for (var i = 0, l = times.length; i < l; i++) {
+            this._map.removeLayer(this._layers[times[i]]);
+            delete this._layers[times[i]];
+        }
+    },
+
+});
+
+L.timeDimension.layer.imageOverlay = function(layer, options) {
+    return new L.TimeDimension.Layer.ImageOverlay(layer, options);
+};
+
+L.ImageOverlay.include({
+    _visible: true,
+    _loaded: false,
+
+    _originalUpdate: L.imageOverlay.prototype._update,
+
+    _update: function() {
+        if (!this._visible && this._loaded) {
+            return;
+        }
+        this._originalUpdate();
+    },
+
+    setLoaded: function(loaded) {
+        this._loaded = loaded;
+    },
+
+    isLoaded: function() {
+        return this._loaded;
+    },
+
+    hide: function() {
+        this._visible = false;
+        if (this._image && this._image.style)
+            this._image.style.display = 'none';
+    },
+
+    show: function() {
+        this._visible = true;
+        if (this._image && this._image.style)
+            this._image.style.display = 'block';
+    },
+
+    getURL: function() {
+        return this._url;
+    },
+
+});
+
+var map2 = L.map('mapID2', {
+    zoom: 4,
+    center: [55.0, -98.5],
+    layers: [esri_natgeo],
+    timeDimension: true,
+    timeDimensionOptions: {
+        //timeInterval: "2014-01-01/2014-12-31",
+        timeInterval: "2019-04-03T09:00:00Z/2019-04-05T10:00:00Z",
+        period: "PT1H",
+        //validTimeRange: "06:00/15:00",
+        //currentTime: Date.parse("2014-08-01T12:00:00Z")
+        currentTime: Date.parse("2019-04-03T09:00:00Z")
+    },
+    timeDimensionControl: true,
+    timeDimensionControlOptions: {
+        autoPlay: true,
+        playerOptions: {
+            buffer: 10,
+            transitionTime: 500,
+            loop: true,
+        }
+    },
+});
+
+L.control.layers(baseLayers, overlays).addTo(map2);
+testLegend.addTo(map2);
+
+// Add image layer
+//var imageUrl = 'http://www.socib.es/users/mobims/imageArchive/clm/sirena/clm/c04/2014/01/11/clm_s_04_2014-01-01-12-00.png',
+//    imageBounds = [
+//        [38.69, 1.1675],
+//        [38.71, 1.1325]
+//    ];
+var imageUrl = '2019040309/images/hourly/Bi-color2hrColorBar/hourly_201904030900.png',
+    imageBounds = [
+        [40.0, -144.5],
+        [70.0, -52.5]
+    ];
+
+var imageLayer = L.imageOverlay(imageUrl, imageBounds, {
+    opacity: 0.5
+});
+
+Date.prototype.format = function (mask, utc) {
+    return dateFormat(this, mask, utc);
+};
+
+//var getSirenaImageUrl = function(baseUrl, time) {
+//    var beginUrl = baseUrl.substring(0, baseUrl.lastIndexOf("/") - 10);
+//    beginUrl = beginUrl + new Date(time).format('yyyy/mm/dd');
+//    var strTime = new Date(time).format('yyyy-mm-dd-HH-MM');
+//    var initFileUrl = baseUrl.substring(baseUrl.lastIndexOf("/"), baseUrl.length - 20);
+//    url = beginUrl + initFileUrl + strTime + '.png';
+//   return url;
+//};
+var getForecastImageUrl = function(baseUrl, time) {
+    var beginUrl = baseUrl.substring(0, baseUrl.lastIndexOf("/"));
+    var initFileUrl = baseUrl.substring(baseUrl.lastIndexOf("/"), baseUrl.length - 16);
+    var strTime = new Date(time).format('yyyymmddHHMM');
+    url = beginUrl + initFileUrl + strTime + '.png';
+    return url;
+};
+
+var testImageTimeLayer = L.timeDimension.layer.imageOverlay(imageLayer, {
+    //getUrlFunction: getSirenaImageUrl
+    getUrlFunction: getForecastImageUrl
+});
+testImageTimeLayer.addTo(map2);
+
+// Create wind chart
+//$.getJSON('js/example10-data.json', function(data) {
+//    // Create the chart
+//    $('#chart').highcharts('StockChart', {
+//        rangeSelector: {
+//            selected: 2
+//        },
+//        title: {
+//            text: 'Wind average at Cala Millor'
+//        },
+//
+//        tooltip: {
+//            formatter: function() {
+//                var s = '<b>' + Highcharts.dateFormat('%A %b %e, %Y', this.x) + '</b>';
+//                $.each(this.points, function(i, point) {
+//                   s += '<br/><strong>Wind</strong>: ' + point.y.toFixed(2) + ' m/s';
+//                });
+//                return s;
+//            },
+//            shared: true
+//        },
+//        series: [{
+//            name: 'WIND',
+//            data: data,
+//        }],
+//        plotOptions: {
+//            series: {
+//                cursor: 'pointer',
+//                point: {
+//                    events: {
+//                        click: function(event) {
+//                            var day = new Date(event.point.x);
+//                            day.setUTCHours(12, 0, 0);
+//                            map2.timeDimension.setCurrentTime(day.getTime());
+//                        }
+//                    }
+//                }
+//            }
+//        }
+//    });
+//});
+
+
+// basic custom control
+//var controlContainer = $("#mapcontrol");
+//map2.timeDimension.on('timeload', function(data) {
+//    var date = new Date(map2.timeDimension.getCurrentTime());
+//    controlContainer.find('span.date').html(date.format("dd/mm/yyyy", true));
+//    controlContainer.find('span.time').html(date.format("HH:MM", true));
+//    if (data.time == map2.timeDimension.getCurrentTime()) {
+//        $('#mapID2').removeClass('map-loading');
+//    }
+//});
+//map2.timeDimension.on('timeloading', function(data) {
+//    if (data.time == map2.timeDimension.getCurrentTime()) {
+//        $('#mapID2').addClass('map-loading');
+//    }
+//});
+//controlContainer.find('.btn-prev').click(function() {
+//    map2.timeDimension.previousTime();
+//});
+//controlContainer.find('.btn-next').click(function() {
+//    map2.timeDimension.nextTime();
+//});
+//var player = new L.TimeDimension.Player({}, map2.timeDimension);
+//controlContainer.find('.btn-play').click(function() {
+//    var btn = $(this);
+//    if (player.isPlaying()) {
+//        btn.removeClass("btn-pause");
+//        btn.addClass("btn-play");
+//        btn.html("Play");
+//        player.stop();
+//    } else {
+//        btn.removeClass("btn-play");
+//        btn.addClass("btn-pause");
+//        btn.html("Pause");
+//        player.start();
+//    }
+//});
+
+//map.timeDimension.setCurrentTime(new Date(2014, 0, 1, 13, 00).getTime());
+map2.timeDimension.setCurrentTime(new Date(2019, 0, 1, 13, 00).getTime());

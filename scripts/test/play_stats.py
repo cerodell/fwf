@@ -15,18 +15,22 @@ import scipy.ndimage as ndimage
 from scipy.ndimage.filters import gaussian_filter
 from pylab import *
 
-from context import data_dir, xr_dir, wrf_dir, tzone_dir, fwf_zarr_dir
+from context import data_dir, xr_dir, wrf_dir, tzone_dir  # , fwf_zarr_dir
 from datetime import datetime, date, timedelta
 from sklearn.metrics import mean_squared_error
 
 wrf_model = "wrf4"
 domain = "d02"
 date = pd.Timestamp("today")
-date = pd.Timestamp(2021, 3, 17)
+date = pd.Timestamp(2022, 12, 7)
 intercomp_today_dir = date.strftime("%Y%m%d")
 
 ds = xr.open_zarr(
-    str(data_dir) + "/intercomp/" + f"intercomp-{domain}-{intercomp_today_dir}.zarr",
+    # str(data_dir) + "/intercomp/" + f"intercomp-{domain}-{intercomp_today_dir}.zarr",
+    # str(data_dir) + "/intercomp/" + f"intercomp-d02-20220215-copy.zarr"
+    str(data_dir)
+    + "/obs/"
+    + f"observations-d02-20191231-20221231.zarr"
 )
 if domain == "d02":
     res = "12 km"

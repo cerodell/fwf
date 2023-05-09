@@ -191,7 +191,8 @@
       "minzoom": 0,
       "filter": ["all", ["!=", "intermittent", ""], ["!=", "brunnel", ""]],
       "layout": {"visibility": "visible"},
-      "paint": {"fill-color": "rgba(66, 119, 147, 1)"}
+      "paint": {"fill-color": "rgba(66, 119, 147, 1)"},
+      "z-index": 6
     },
     {
       "id": "water_intermittent",

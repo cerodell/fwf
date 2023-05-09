@@ -84,35 +84,38 @@ def readwrf(filein, domain, wright):
     for path in pathlist:
         path_in_str = str(path)
         print(path_in_str)
-        wrf_file = Dataset(path_in_str, "r")
+        try:
+            wrf_file = Dataset(path_in_str, "r")
 
-        T = getvar(wrf_file, "T2", meta=True) - 273.15
-        TD = getvar(wrf_file, "td2", meta=True, units="degC")
-        # H = getvar(wrf_file, "rh2", meta=True)
+            T = getvar(wrf_file, "T2", meta=True) - 273.15
+            TD = getvar(wrf_file, "td2", meta=True, units="degC")
+            # H = getvar(wrf_file, "rh2", meta=True)
 
-        wsp_wdir = g_uvmet.get_uvmet10_wspd_wdir(wrf_file, units="km h-1")
-        wsp_array = np.array(wsp_wdir[0])
-        wdir_array = np.array(wsp_wdir[1])
-        W = xr.DataArray(wsp_array, name="W", dims=("south_north", "west_east"))
-        WD = xr.DataArray(wdir_array, name="WD", dims=("south_north", "west_east"))
-        U10 = getvar(wrf_file, "U10", meta=True)
-        V10 = getvar(wrf_file, "V10", meta=True)
+            wsp_wdir = g_uvmet.get_uvmet10_wspd_wdir(wrf_file, units="km h-1")
+            wsp_array = np.array(wsp_wdir[0])
+            wdir_array = np.array(wsp_wdir[1])
+            W = xr.DataArray(wsp_array, name="W", dims=("south_north", "west_east"))
+            WD = xr.DataArray(wdir_array, name="WD", dims=("south_north", "west_east"))
+            U10 = getvar(wrf_file, "U10", meta=True)
+            V10 = getvar(wrf_file, "V10", meta=True)
 
-        ##varied parameterization scheme to forecast rain..note this is a sum of rain from the starts of the model run
-        rain_c = getvar(wrf_file, "RAINC", meta=True)
-        rain_sh = getvar(wrf_file, "RAINSH", meta=True)
-        rain_nc = getvar(wrf_file, "RAINNC", meta=True)
-        r_o_i = rain_c + rain_sh + rain_nc
-        r_o = xr.DataArray(r_o_i, name="r_o", dims=("south_north", "west_east"))
+            ##varied parameterization scheme to forecast rain..note this is a sum of rain from the starts of the model run
+            rain_c = getvar(wrf_file, "RAINC", meta=True)
+            rain_sh = getvar(wrf_file, "RAINSH", meta=True)
+            rain_nc = getvar(wrf_file, "RAINNC", meta=True)
+            r_o_i = rain_c + rain_sh + rain_nc
+            r_o = xr.DataArray(r_o_i, name="r_o", dims=("south_north", "west_east"))
 
-        SNW = getvar(wrf_file, "SNOWNC", meta=True)
-        SNOWC = getvar(wrf_file, "SNOWC", meta=True)
-        SNOWH = getvar(wrf_file, "SNOWH", meta=True)
+            SNW = getvar(wrf_file, "SNOWNC", meta=True)
+            SNOWC = getvar(wrf_file, "SNOWC", meta=True)
+            SNOWH = getvar(wrf_file, "SNOWH", meta=True)
 
-        # var_list = [T, TD, H, W, WD, r_o, SNW, SNOWC, SNOWH, U10, V10]
-        var_list = [T, TD, W, WD, r_o, SNW, SNOWC, SNOWH, U10, V10]
-        ds = xr.merge(var_list)
-        ds_list.append(ds)
+            # var_list = [T, TD, H, W, WD, r_o, SNW, SNOWC, SNOWH, U10, V10]
+            var_list = [T, TD, W, WD, r_o, SNW, SNOWC, SNOWH, U10, V10]
+            ds = xr.merge(var_list)
+            ds_list.append(ds)
+        except:
+            print(f"can not open: {path_in_str}")
 
     ### Combine xarray and rename to match van wangers defs
     wrf_ds = xr.combine_nested(ds_list, "time")

@@ -29,7 +29,7 @@ __email__ = "crodell@eoas.ubc.ca"
 warnings.filterwarnings("ignore", category=RuntimeWarning)
 
 wrf_model = "wrf4"
-date_range = pd.date_range("2021-06-20", "2021-06-22")
+date_range = pd.date_range("2022-05-18", "2022-05-18")
 
 # """######### get directory to yesterdays hourly/daily .zarr files.  #############"""
 for date in date_range:
@@ -40,8 +40,8 @@ for date in date_range:
         print(f"start of domain {domain}: ", str(domain_startTime))
         # """######### get directory to todays wrf_out .nc files.  #############"""
 
-        # wrf_file_dir = str(wrf_dir) + f"/{forecast_date}/"
-        wrf_file_dir = f"/bluesky/archive/fireweather/data/fwf-hourly-{domain}-{forecast_date[:-2]}06.nc"
+        wrf_file_dir = str(wrf_dir) + f"/{forecast_date}/"
+        # wrf_file_dir = f"/bluesky/archive/fireweather/data/fwf-hourly-{domain}-{forecast_date[:-2]}06.nc"
         # wrf_file_dir = str(gog_dir) + f"/wrfout-{domain}-{forecast_date[:-2]}06.zarr"
         print(wrf_file_dir)
 

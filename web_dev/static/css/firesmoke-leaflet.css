@@ -1,0 +1,54 @@
+/*
+html, body {
+    height: 100vh;
+    width: 100vw;
+}
+
+#main {
+    min-height: 100%;
+    overflow: hidden;
+}
+
+#mapID {
+    margin-bottom: -9999px;
+    padding-bottom: 9999px;
+}
+*/
+
+html, body, .container-fluid, #mapID {
+    height: 100%;
+    min-height: 100%;
+    width: 100%;
+    margin: 0;
+}
+
+#nav {
+    height: 51px;
+    position: absolute;
+    top: 10;
+    left: 60;
+    z-index: 500;
+}
+
+#mapID {
+    box-sizing: border-box;
+    padding-top: 51px;
+    height: calc(100% - 51px);
+}
+
+html, body {
+    height: 100%;
+    min-height: 100%;
+    width: 100%;
+    min-width: 100%;
+}
+
+#mapID {
+    position: fixed;
+    top: 51px;
+    left: 0px;
+    height: 100%;
+    min-height: 100%;
+    width: 100%;
+    min-width: 100%;
+}

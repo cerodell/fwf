@@ -65,7 +65,6 @@ for domain in ["d02", "d03"]:
     daily_ds = xr.open_dataset(daily_file_dir)
     hourly_ds = hourly_ds.load()
     daily_ds = daily_ds.load()
-
     y1, y2, x1, x2 = (
         nested_index["y1_" + domain],
         nested_index["y2_" + domain],
@@ -153,6 +152,7 @@ for domain in ["d02", "d03"]:
                     cmaps, var, ds[var], folderdate, domain, timestamp
                 )
     except:
+        ds = daily_ds.isel(time=0)
         timestamp = np.array(ds.Time.dt.strftime("%Y%m%d%H")).tolist()
         timestamp = timestamp[:-2]
         for var in daily_vars:

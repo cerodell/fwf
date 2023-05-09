@@ -29,7 +29,7 @@ wrf_model = "wrf4"
 day_of = "_day1"
 domain = "d03"
 # date = pd.Timestamp("today")
-date = pd.Timestamp(2021, 6, 21)
+date = pd.Timestamp(2021, 8, 30)
 
 intercomp_today_dir = date.strftime("%Y%m%d")
 
@@ -203,10 +203,17 @@ for i in range(length):
     var_obs = df_final[var].values
     var_model = df_final[var + day_of].values
     try:
+        print(var.upper())
         ax.set_ylabel(fr"$({var_dict[var]['units']})$", fontsize=8)
+        ax.set_title(var_dict[var.upper()]["description"], fontsize=10)
     except:
         pass
-    ax.set_title(var_dict[var.lower()]["description"], fontsize=10)
+
+    if var == "rh":
+        ax.set_title(var_dict["H"]["description"], fontsize=10)
+    else:
+        pass
+
     ax.plot(df_final.index, var_obs, label="Observation", zorder=2, color=colors[0])
     ax.plot(df_final.index, var_model, label="Forecast", zorder=2, color=colors[3])
     ax.yaxis.grid(linewidth=0.4, linestyle="--")

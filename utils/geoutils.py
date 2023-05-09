@@ -15,7 +15,7 @@ import matplotlib.colors
 
 from datetime import datetime, date, timedelta
 
-from wrf import getvar
+from wrf import getvar, smooth2d
 
 
 def mycontourf_to_geojson(cmaps, var, da, folderdate, domain, timestamp):
@@ -68,7 +68,8 @@ def mycontourf_to_geojson(cmaps, var, da, folderdate, domain, timestamp):
     contourf = plt.contourf(
         da.XLONG.values,
         da.XLAT.values,
-        ndimage.gaussian_filter(da.values, sigma=sigma),
+        # ndimage.gaussian_filter(da.values, sigma=sigma),
+        smooth2d(da.values, 1, cenweight=2),
         levels=levels,
         linestyles="None",
         norm=Cnorm,

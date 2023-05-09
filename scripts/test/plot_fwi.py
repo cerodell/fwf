@@ -6,6 +6,7 @@ import xarray as xr
 from pathlib import Path
 from netCDF4 import Dataset
 
+from wrf import smooth2d
 import cartopy.crs as ccrs
 import cartopy.feature as cfeature
 import matplotlib.colors
@@ -17,11 +18,10 @@ from context import data_dir
 
 from datetime import datetime, date, timedelta
 
-
-domain = "d02"
+domain = "d03"
 wrf_model = "wrf4"
-forecast_date = "2021062006"
-file, var, index = "daily", "D", 0
+forecast_date = "2021092606"
+file, var, index = "hourly", "T", 18
 
 
 # ds = xr.open_dataset(
@@ -43,7 +43,7 @@ with open(str(data_dir) + "/json/colormaps-dev.json") as f:
 vmin, vmax = cmaps[var]["vmin"], cmaps[var]["vmax"]
 name, colors, sigma = (
     str(cmaps[var]["name"]),
-    cmaps[var]["colors18"],
+    cmaps[var]["colors47"],
     cmaps[var]["sigma"],
 )
 
@@ -52,8 +52,10 @@ lngs = ds.XLONG.values
 lats = ds.XLAT.values
 
 fillarray = ds[var].values
-fillarray = np.round(fillarray, 0)
-fillarray = ndimage.gaussian_filter(fillarray, sigma=sigma)
+fillarray = smooth2d(fillarray, 1, cenweight=1)
+
+# fillarray = np.round(fillarray, 0)
+# fillarray = ndimage.gaussian_filter(fillarray, sigma=sigma)
 
 
 ## bring in state/prov boundaries
@@ -123,7 +125,7 @@ plt.colorbar(contourf, cax=ax_cb)
 ## tighten up fig
 # plt.tight_layout()
 # plt.show()
-save_file = f"/images/{var}-{wrf_model}-{domain}-{forecast_date}.png"
+save_file = f"/images/{var}-{wrf_model}-{domain}-{forecast_date}-smoth.png"
 save_dir = str(data_dir) + save_file
 
 fig.savefig(save_dir, dpi=240)

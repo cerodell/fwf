@@ -305,6 +305,8 @@ for ztu in unique:
         var_name = cmaps[var]["name"].upper()
         fc_array = wx_daily_ds[var].values.astype("float64")
         fc_array = np.round(fc_array, decimals=2)
+        where_are_NaNs = np.isnan(fc_array)
+        fc_array[where_are_NaNs] = 1.0
         fc_array = fc_array.tolist()
         dict_var.update({var_name.lower() + "_fc": str(fc_array)})
 

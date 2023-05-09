@@ -16,7 +16,7 @@ from datetime import datetime, date, timedelta
 startTime = datetime.now()
 
 domains = ["d02", "d03"]
-date_range = pd.date_range("2021-05-01", "2021-06-22")
+date_range = pd.date_range("2022-05-10", "2022-05-10")
 make_dir = Path(f"/bluesky/archive/fireweather/data/")
 
 

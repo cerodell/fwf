@@ -46,7 +46,7 @@ stations_df_og = stations_df_og.drop(
     columns=["tmm", "ua", "the_geom", "h_bul", "s_bul", "hly", "syn"]
 )
 
-date_range = pd.date_range("2021-05-01", "2021-06-21")
+date_range = pd.date_range("2022-05-18", "2022-05-18")
 domains = ["d02", "d03"]
 # """######### get directory to yesterdays hourly/daily .zarr files.  #############"""
 def rechunk(ds):

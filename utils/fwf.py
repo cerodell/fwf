@@ -187,7 +187,7 @@ class FWF:
         self.F_initial = 85.0
         self.P_initial = 6.0
         self.D_initial = 15.0
-        self.snowfract = 0.8
+        self.snowfract = 0.6
         self.dx = (float(wrf_ds.attrs["DX"]),)
         self.dy = (float(wrf_ds.attrs["DY"]),)
         self.date = str(np.datetime_as_string(wrf_ds.Time.values[0], unit="D"))
@@ -735,7 +735,7 @@ class FWF:
         P = P_r + K
         # Hold P to P_initial if snow cover is more than 50%
         P = xr.where(SNOWC > self.snowfract, self.P_initial, P)
-        P = xr.where(P < 0, 1.0, P)
+        P = xr.where(P < 1.0, 1.0, P)
 
         self.P = P
         return P
@@ -836,7 +836,7 @@ class FWF:
         D = D_r + V * 0.5
         # Hold D to D_initial if snow cover is more than 50%
         D = xr.where(SNOWC > self.snowfract, self.D_initial, D)
-        D = xr.where(D < 0, 1.0, D)
+        D = xr.where(D < 1.0, 1.0, D)
 
         self.D = D
         return D
@@ -919,7 +919,7 @@ class FWF:
         """
 
         ### Call on initial conditions
-        P, D = daily_ds.P, daily_ds.D
+        P, D, SNOWC = daily_ds.P, daily_ds.D, daily_ds.SNOWC
         zero_full = self.zero_full
 
         ########################################################################
@@ -933,6 +933,7 @@ class FWF:
         )
 
         U = U_low + U_high
+        U = xr.where(SNOWC > self.snowfract, 0.1, U)
         U = xr.where(U < 0, 0.0, U)
         U = xr.DataArray(U, name="U", dims=("time", "south_north", "west_east"))
 
