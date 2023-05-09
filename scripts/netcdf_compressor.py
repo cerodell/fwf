@@ -10,7 +10,7 @@ import xarray as xr
 from pathlib import Path
 from netCDF4 import Dataset
 
-from context import data_dir, fwf_dir
+from context import data_dir, fwf_dir, root_dir
 from datetime import datetime, date, timedelta
 
 startTime = datetime.now()
@@ -53,7 +53,7 @@ def compressor(ds, var_dict):
     return ds, encoding
 
 
-with open(str(data_dir) + f"/json/fwf-attrs.json", "r") as fp:
+with open(str(root_dir) + f"/json/fwf-attrs.json", "r") as fp:
     var_dict = json.load(fp)
 
 for domain in domains:

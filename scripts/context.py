@@ -18,18 +18,13 @@ this_dir = path.parent  # this folder
 notebooks_dir = this_dir
 root_dir = notebooks_dir.parents[0]
 data_dir = root_dir / Path("data")
+json_dir = root_dir / Path("json")
+
 tzone_dir = root_dir / Path("data/tzone/")
-xr_dir = root_dir / Path("data/xr/")
-nc_dir = root_dir / Path("data/nc/")
 html_dir = root_dir / Path("fwf-web/static/html/")
 ops_dir = Path("/bluesky/archive/fireweather/forecasts/")
 
-# fwf_zarr_dir = Path("/Volumes/cer/fireweather/data/FWF-WAN00CG-01/")
-# fwf_zarr_dir = root_dir / Path("data/FWF-WAN00CG-01/")
-fwf_dir = root_dir / Path("data/FWF-WAN00CG-01/")
 
-
-# wrf_dir = Path("/Volumes/cer/fireweather/data/WAN00CG-01/")
 wrf_dir = Path("/bluesky/working/wrf2arl/WAN00CG-01/")
 
 

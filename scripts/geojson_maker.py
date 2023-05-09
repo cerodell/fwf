@@ -36,18 +36,18 @@ warnings.filterwarnings("ignore", message="invalid value encountered in true_div
 ### make folder for json files on webapge
 forecast_date = pd.Timestamp("today").strftime("%Y%m%d")
 make_dir = Path(f"/bluesky/archive/fireweather/forecasts/{forecast_date}00/data/map")
-make_dir.mkdir(parents=True, exist_ok=True)
+# make_dir.mkdir(parents=True, exist_ok=True)
 
 ## redefine forecast ate to get file with spin up
 forecast_date = forecast_date + "06"
 # forecast_date = pd.Timestamp(2021, 2, 9).strftime("%Y%m%d06")
 
 ### Open color map json
-with open(str(data_dir) + "/json/colormaps-dev.json") as f:
+with open(str(root_dir) + "/json/colormaps-dev.json") as f:
     cmaps = json.load(f)
 
 ### Open nested index json
-with open(str(data_dir) + "/json/nested-index.json") as f:
+with open(str(root_dir) + "/json/nested-index.json") as f:
     nested_index = json.load(f)
 
 

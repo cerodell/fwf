@@ -15,7 +15,12 @@ import matplotlib.colors
 
 from datetime import datetime, date, timedelta
 
+<<<<<<< HEAD
 from wrf import getvar, smooth2d
+=======
+from wrf import getvar
+from context import data_dir
+>>>>>>> 4fec3ad82ce600f3a83dbac11c39365cf12d3f2d
 
 
 def mycontourf_to_geojson(cmaps, var, da, folderdate, domain, timestamp):
@@ -62,7 +67,7 @@ def mycontourf_to_geojson(cmaps, var, da, folderdate, domain, timestamp):
         cmaps[var]["sigma"],
     )
 
-    geojson_filepath = str(name + "-" + timestamp + "-" + domain)
+    geojson_filename = str(name + "-" + timestamp + "-" + domain)
     levels = cmaps[var]["levels"]
     Cnorm = matplotlib.colors.Normalize(vmin=vmin, vmax=vmax + 1)
     contourf = plt.contourf(
@@ -86,7 +91,7 @@ def mycontourf_to_geojson(cmaps, var, da, folderdate, domain, timestamp):
         fill_opacity=None,
         geojson_properties=None,
         unit="",
-        geojson_filepath=f"/bluesky/fireweather/fwf/data/geojson/{folderdate}/{geojson_filepath}.geojson",
+        geojson_filepath=str(data_dir) + f"/geojson/{geojson_filename}.geojson",
     )
 
     # print(
@@ -194,3 +199,34 @@ def colormaps(cmaps, var):
     cmap = cm.LinearColormap(colors, vmin=vmin, vmax=vmax, caption=name).to_step(levels)
     cmap.caption = cmaps[var]["title"]
     return cmap
+
+
+# def contourf_to_geojson(contourf, geojson_filepath=None, min_angle_deg=None,
+#                         ndigits=5, unit='', stroke_width=1, fill_opacity=.9, fill_opacity_range=None,
+#                         geojson_properties=None, strdump=False, serialize=True):
+#     """Transform matplotlib.contourf to geojson with MultiPolygons."""
+#     if fill_opacity_range:
+#         variable_opacity = True
+#         min_opacity, max_opacity = fill_opacity_range
+#         opacity_increment = (max_opacity - min_opacity) / len(contourf.levels)
+#         fill_opacity = min_opacity
+#     else:
+#         variable_opacity = False
+#     polygon_features = []
+#     contourf_levels = get_contourf_levels(contourf.levels, contourf.extend)
+#     for coll, level in zip(contourf.collections, contourf_levels):
+#         color = coll.get_facecolor()
+#         muli = MP(coll, min_angle_deg, ndigits)
+#         polygon = muli.mpoly()
+#         fcolor = rgb2hex(color[0])
+#         if polygon.coordinates:
+#             properties = set_contourf_properties(stroke_width, fcolor, fill_opacity, level, unit)
+#             if geojson_properties:
+#                 properties.update(geojson_properties)
+#             feature = Feature(geometry=polygon, properties=properties)
+#             polygon_features.append(feature)
+#             # print(len(polygon.coordinates))
+#             if variable_opacity:
+#                 fill_opacity += opacity_increment
+#     feature_collection = FeatureCollection(polygon_features)
+#     return _render_feature_collection(feature_collection, geojson_filepath, strdump, serialize)

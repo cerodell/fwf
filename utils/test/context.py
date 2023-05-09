@@ -2,7 +2,7 @@
 define the path to important folders without having
  to install anything -- just do:
 
-import contenxt
+import context
 
 then the path for the data directory is
 
@@ -22,7 +22,7 @@ tzone_dir = root_dir / Path("data/tzone/")
 xr_dir = Path("/bluesky/archive/fireweather/")
 
 # fwf_zarr_dir = Path("/Volumes/cer/fireweather/data/FWF-WAN00CG-01/")
-fwf_zarr_dir = root_dir / Path("data/FWF-WAN00CG-01/")
+fwf_dir = root_dir / Path("data/FWF-WAN00CG-01/")
 
 # wrf_dir = Path("/Volumes/cer/fireweather/data/WAN00CG-01/")
 wrf_dir = Path("/bluesky/working/wrf2arl/WAN00CG-01/")
