@@ -24,8 +24,18 @@ __email__ = "crodell@eoas.ubc.ca"
 """########################################################################"""
 
 
+<<<<<<< HEAD
 def solve_ffmc(ds, F):
     W, T, H, r_o = (ds.W, ds.T, ds.H, ds.r_o)
+=======
+def solve_ffmc(ds):
+    W, T, H, r_o = (ds.W, ds.T, ds.H, ds.r_o)
+    try:
+      F = ds.F
+    except:
+      print('Initalizing FFMC')
+      F = np.full(W.shape, 85, dtype=float)
+>>>>>>> 3c28d48b1a2763dfffb98e341c9180cd3ec5be1d
 
     # #Eq. 1
     m_o = 147.2 * (101 - F) / (59.5 + F)
@@ -79,7 +89,11 @@ def solve_ffmc(ds, F):
     )
 
     ########################################################################
+<<<<<<< HEAD
     ### (4b)  Log wet for hourly computation, log to base 10 (k_w)
+=======
+    ### (4b)  Log wettfor hourly computation, log to base 10 (k_w)
+>>>>>>> 3c28d48b1a2763dfffb98e341c9180cd3ec5be1d
     k_w = k_b * 0.581 * np.exp(0.0365 * T)
 
     ########################################################################
@@ -94,14 +108,23 @@ def solve_ffmc(ds, F):
     ### (5c) combwet, neutral moisture codes
     m = xr.where(m_o > E_d, m_d, m_w)
     m = xr.where((E_d >= m_o) & (m_o >= E_w), m_o, m)
+<<<<<<< HEAD
     # m_o = xr.DataArray(m, name="m_o", dims=("temp", "wind", "rh", "precip"))
 
     # ds["m_o"] = m_o
+=======
+    m_o = xr.DataArray(m, name="m_o", dims=("temp", "wind", "rh", "precip"))
+    ds["m_o"] = m_o
+>>>>>>> 3c28d48b1a2763dfffb98e341c9180cd3ec5be1d
 
     ########################################################################
     ### (6) Solve for FFMC
     F = (59.5 * (250 - m)) / (147.2 + m)  ## Van 1985
+<<<<<<< HEAD
     # F = xr.DataArray(F, name="F", dims=("temp", "wind", "rh", "precip"))
+=======
+    F = xr.DataArray(F, name="F", dims=("temp", "wind", "rh", "precip"))
+>>>>>>> 3c28d48b1a2763dfffb98e341c9180cd3ec5be1d
     ds["F"] = F
 
     return ds
@@ -171,7 +194,11 @@ def solve_dmc(ds, P, L_e):
     ### (17) Duff moisture
     P = P_r + K
 
+<<<<<<< HEAD
     # P = xr.DataArray(P, name="P", dims=("temp", "wind", "rh", "precip"))
+=======
+    P = xr.DataArray(P, name="P", dims=("temp", "wind", "rh", "precip"))
+>>>>>>> 3c28d48b1a2763dfffb98e341c9180cd3ec5be1d
     ds["P"] = P
 
     return ds
@@ -194,8 +221,11 @@ def solve_dc(ds, D, L_f):
         L_f,
     )
 
+<<<<<<< HEAD
     T = np.where(T < (-2.8), -2.8, T)
 
+=======
+>>>>>>> 3c28d48b1a2763dfffb98e341c9180cd3ec5be1d
     ########################################################################
     ### (18) Solve for the effective rain (r_d)
     r_d = 0.83 * r_o - 1.27
@@ -211,8 +241,13 @@ def solve_dc(ds, D, L_f):
     ########################################################################
     ### (21) Solve for DC after rain (D_r)
     ## Alteration to Eq. 21 (Lawson 2008)
+<<<<<<< HEAD
     D_r = D_o - 400 * np.log(1 + 3.937 * r_d / Q_o)
     # D_r = 400 * np.log(800 / Q_r)
+=======
+    # D_r = D_o - 400 * np.log(1 + 3.937 * r_d / Q_o)
+    D_r = 400 * np.log(800 / Q_r)
+>>>>>>> 3c28d48b1a2763dfffb98e341c9180cd3ec5be1d
     D_r = xr.where(D_r < 0, 0.0, D_r)
     D_r = xr.where(r_o <= 2.8, D_o, D_r)
 
@@ -225,7 +260,11 @@ def solve_dc(ds, D, L_f):
     ########################################################################
     ## Alteration to Eq. 23 (Lawson 2008)
     D = D_r + V * 0.5
+<<<<<<< HEAD
     # D = xr.DataArray(D, name="D", dims=("temp", "wind", "rh", "precip"))
+=======
+    D = xr.DataArray(D, name="D", dims=("temp", "wind", "rh", "precip"))
+>>>>>>> 3c28d48b1a2763dfffb98e341c9180cd3ec5be1d
     ds["D"] = D
 
     return ds
@@ -238,9 +277,13 @@ def solve_dc(ds, D, L_f):
 
 def solve_isi(ds, fbp=False):
     ### Call on initial conditions
+<<<<<<< HEAD
     W, F = ds.W, ds.F
 
     m_o = 147.2 * (101 - F) / (59.5 + F)
+=======
+    W, m_o = ds.W, ds.m_o
+>>>>>>> 3c28d48b1a2763dfffb98e341c9180cd3ec5be1d
 
     ########################################################################
     ### (24) Solve for wind function (f_W) with condition for fbp
@@ -257,7 +300,11 @@ def solve_isi(ds, fbp=False):
     ########################################################################
     ### (26) Solve for initial spread index (R)
     R = 0.208 * f_W * f_F
+<<<<<<< HEAD
     # R = xr.DataArray(R, name="R", dims=("temp", "wind", "rh", "precip"))
+=======
+    R = xr.DataArray(R, name="R", dims=("temp", "wind", "rh", "precip"))
+>>>>>>> 3c28d48b1a2763dfffb98e341c9180cd3ec5be1d
     ds["R"] = R
 
     return ds
@@ -285,7 +332,11 @@ def solve_bui(ds):
     )
 
     U = U_low + U_high
+<<<<<<< HEAD
     # U = xr.DataArray(U, name="U", dims=("temp", "wind", "rh", "precip"))
+=======
+    U = xr.DataArray(U, name="U", dims=("temp", "wind", "rh", "precip"))
+>>>>>>> 3c28d48b1a2763dfffb98e341c9180cd3ec5be1d
     ds["U"] = U
 
     return ds
@@ -317,13 +368,21 @@ def solve_fwi(ds):
     ########################################################################
     ### (30) Solve FWI
     S = xr.where(B <= 1, B, np.exp(2.72 * np.power((0.434 * np.log(B)), 0.647)))
+<<<<<<< HEAD
     # S = xr.DataArray(S, name="S", dims=("temp", "wind", "rh", "precip"))
+=======
+    S = xr.DataArray(S, name="S", dims=("temp", "wind", "rh", "precip"))
+>>>>>>> 3c28d48b1a2763dfffb98e341c9180cd3ec5be1d
     ds["S"] = S
 
     ########################################################################
     ### (31) Solve for daily severity rating (DSR)
     DSR = 0.0272 * np.power(S, 1.77)
+<<<<<<< HEAD
     # DSR = xr.DataArray(DSR, name="DSR", dims=("temp", "wind", "rh", "precip"))
+=======
+    DSR = xr.DataArray(DSR, name="DSR", dims=("temp", "wind", "rh", "precip"))
+>>>>>>> 3c28d48b1a2763dfffb98e341c9180cd3ec5be1d
     ds["DSR"] = DSR
 
     return ds

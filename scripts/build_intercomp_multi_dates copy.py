@@ -43,13 +43,12 @@ stations_df_og = stations_df_og.drop(
     columns=["tmm", "ua", "the_geom", "h_bul", "s_bul", "hly", "syn"]
 )
 
-<<<<<<< HEAD
-date_range = pd.date_range("2022-05-18", "2022-05-18")
-domains = ["d02", "d03"]
-=======
-date_range = pd.date_range("2021-12-01", "2021-12-31")
-domains = ["d03"]
->>>>>>> 3c28d48b1a2763dfffb98e341c9180cd3ec5be1d
+# filein_obs = "https://cwfis.cfs.nrcan.gc.ca/downloads/fwi_obs/cwfis_fwi2020sopEC.csv"
+# obs_df = pd.read_csv(filein_obs, sep=",", skiprows=0)
+
+
+date_range = pd.date_range("2021-08-10", "2021-08-10")
+domains = ["d02"]
 # """######### get directory to yesterdays hourly/daily .zarr files.  #############"""
 def rechunk(ds):
     ds = ds.chunk(chunks="auto")
@@ -114,28 +113,34 @@ for date in date_range:
         stations_df = stations_df.drop(
             stations_df.index[np.where(stations_df["y"] < y1 - 1)]
         )
-
+        ## index obs dateframe to get date of interest
+        # obs_df_on_date = obs_df[
+        #     obs_df["rep_date"] == date.strftime("%Y-%m-%d 12:00:00")
+        # ]
         wmo_df = stations_df
         final_df = wmo_df.merge(obs_df, on="wmo", how="left")
+        ## merge with stations data information
+        # final_df = wmo_df.merge(obs_df_on_date, on="wmo", how="left")
         final_df = final_df.replace("NULL", np.nan)
         final_df = final_df.replace(" NULL", np.nan)
         final_df = final_df.replace("  NULL", np.nan)
         final_df = final_df.drop_duplicates(subset=["wmo"], keep="last")
+        ## convert to float 32 for smaller storage
         final_df = final_df.astype(
             {
-                "TEMP": "float32",
-                "TD": "float32",
-                "RH": "float32",
-                "WS": "float32",
-                "WDIR": "float32",
-                "PRECIP": "float32",
-                "FFMC": "float32",
-                "DMC": "float32",
-                "DC": "float32",
-                "BUI": "float32",
-                "ISI": "float32",
-                "FWI": "float32",
-                "DSR": "float32",
+                "temp": "float32",
+                "td": "float32",
+                "rh": "float32",
+                "ws": "float32",
+                "wdir": "float32",
+                "precip": "float32",
+                "ffmc": "float32",
+                "dmc": "float32",
+                "dc": "float32",
+                "bui": "float32",
+                "isi": "float32",
+                "fwi": "float32",
+                "dsr": "float32",
             }
         )
 
@@ -189,8 +194,8 @@ for date in date_range:
             day = np.array(day1_ds.Time, dtype="datetime64[D]")
 
         xr_list = []
-        final_df.columns = [x.lower() for x in final_df.columns]
         for var in final_var_list:
+            var = var.lower()
             var_array = np.array(final_df[var], dtype="float32")
             x = np.stack((final_df[var].values, final_df[var].values))
             xr_var = xr.DataArray(

@@ -18,7 +18,19 @@ this_dir = path.parent  # this folder
 notebooks_dir = this_dir
 root_dir = notebooks_dir.parents[1]
 data_dir = root_dir / Path("data")
+<<<<<<< HEAD
 json_dir = root_dir / Path("json")
+=======
+tzone_dir = root_dir / Path("data/tzone/")
+xr_dir = root_dir / Path("data/xr/")
+nc_dir = root_dir / Path("data/nc/")
+fwf_zarr_dir = Path("/Volumes/cer/fireweather/data/FWF-WAN00CP-04/")
+gog_dir = Path("/Users/rodell/Google Drive/Shared drives/")
+wrf_dir = Path("/Volumes/cer/fireweather/data/WAN00CP-04/")
+vol_dir = Path("/Volumes/cer/fireweather/data/")
+
+# wrf_dir = Path("/bluesky/working/wrf2arl/WAN00CG-01/")
+>>>>>>> 3c28d48b1a2763dfffb98e341c9180cd3ec5be1d
 
 sys.path.insert(0, str(root_dir))
 sep = "*" * 30

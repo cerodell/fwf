@@ -77,6 +77,31 @@ class FWF:
         Initialize Fire Weather Index Model
 
         """
+<<<<<<< HEAD
+=======
+        ### Read then open WRF dataset
+        if wrf_file_dir.endswith(".nc"):
+            print("Re-run using nc file")
+            wrf_ds = xr.open_dataset(wrf_file_dir)
+            keep_vars = [
+                "SNOWC",
+                "SNOWH",
+                "SNW",
+                "T",
+                "TD",
+                "U10",
+                "V10",
+                "W",
+                "WD",
+                "r_o",
+                "H",
+            ]
+            wrf_ds = wrf_ds.drop([var for var in list(wrf_ds) if var not in keep_vars])
+
+        else:
+            print("New-run, use readwrf to get vars from nc files")
+            wrf_ds = readwrf(wrf_file_dir, domain, wright=False)
+>>>>>>> 3c28d48b1a2763dfffb98e341c9180cd3ec5be1d
 
         self.int_ds = read_dataset(config)
 

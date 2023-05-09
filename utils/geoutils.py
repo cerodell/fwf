@@ -201,6 +201,10 @@ def colormaps(cmaps, var):
     return cmap
 
 
+<<<<<<< HEAD
+=======
+
+>>>>>>> 3c28d48b1a2763dfffb98e341c9180cd3ec5be1d
 # def contourf_to_geojson(contourf, geojson_filepath=None, min_angle_deg=None,
 #                         ndigits=5, unit='', stroke_width=1, fill_opacity=.9, fill_opacity_range=None,
 #                         geojson_properties=None, strdump=False, serialize=True):
@@ -229,4 +233,8 @@ def colormaps(cmaps, var):
 #             if variable_opacity:
 #                 fill_opacity += opacity_increment
 #     feature_collection = FeatureCollection(polygon_features)
+<<<<<<< HEAD
 #     return _render_feature_collection(feature_collection, geojson_filepath, strdump, serialize)
+=======
+#     return _render_feature_collection(feature_collection, geojson_filepath, strdump, serialize)
+>>>>>>> 3c28d48b1a2763dfffb98e341c9180cd3ec5be1d

@@ -1,5 +1,6 @@
 import context
 <<<<<<< HEAD
+<<<<<<< HEAD
 import json
 import bson
 =======
@@ -7,20 +8,31 @@ import salem
 import json
 import math
 >>>>>>> 4fec3ad82ce600f3a83dbac11c39365cf12d3f2d
+=======
+import json
+>>>>>>> 3c28d48b1a2763dfffb98e341c9180cd3ec5be1d
 import numpy as np
 import pandas as pd
 import xarray as xr
 from pathlib import Path
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> 3c28d48b1a2763dfffb98e341c9180cd3ec5be1d
 from netCDF4 import Dataset
 from datetime import datetime
 import string
 
+<<<<<<< HEAD
 from context import data_dir, xr_dir, wrf_dir, fwf_dir, tzone_dir
+=======
+from context import data_dir
+>>>>>>> 3c28d48b1a2763dfffb98e341c9180cd3ec5be1d
 from datetime import datetime, date, timedelta
 
 startTime = datetime.now()
 
+<<<<<<< HEAD
 
 filein_obs = "/bluesky/fireweather/fwf/data/obs/cwfis_canusfwi2020s.csv"
 obs_df = pd.read_csv(filein_obs, sep=",", skiprows=0)
@@ -566,3 +578,14 @@ grid_ds.to_netcdf(str(data_dir) + f"/static/static-vars-{model}-{domain}-test.nc
 #     )
 # print("readwrf run time: ", datetime.now() - startTime)
 >>>>>>> 4fec3ad82ce600f3a83dbac11c39365cf12d3f2d
+=======
+fwf_dir = '/Volumes/Scratch/FWF-WAN00CG/d02/202101/'
+
+wrf_model = "wrf4"
+domain = 'd02'
+forecast_date = '2021010106'
+
+loopTime = datetime.now()
+hourly_file_dir = str(fwf_dir) + str(f"/fwf-hourly-{domain}-{forecast_date}.nc")
+hourly_ds = xr.open_dataset(hourly_file_dir)
+>>>>>>> 3c28d48b1a2763dfffb98e341c9180cd3ec5be1d
