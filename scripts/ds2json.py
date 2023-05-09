@@ -114,35 +114,29 @@ for domain in domains:
     else:
         pass
 
-    ## remove some unwanted variables from dataset
-    hourly_var_list = list(hourly_ds)
-    remove = [
-        "SNOWC",
-        "SNOWH",
-        "U10",
-        "V10",
-        "m_o",
-        "r_o_hourly",
-        "FMC",
-        "ISI",
-    ]
-    hourly_var_list = list(set(hourly_var_list) - set(remove))
+    ## define variables for ploting from houlry dataset
+    hourly_var_list =  [
+        'TD',
+        'HFI',
+        'R',
+        'ROS',
+        'H',
+        'F',
+        'W',
+        'TFC',
+        'SFC',
+        'WD',
+        'SNW',
+        'S',
+        'DSR',
+        'T',
+        'CFB',
+        'r_o'
+        ]
 
-    ## remove some unwanted variables from dataset
-    daily_var_list = list(daily_ds)
-    remove = [
-        "SNOWC",
-        "F",
-        "H",
-        "T",
-        "R",
-        "W",
-        "WD",
-        "r_o",
-        "r_o_hourly",
-        "r_o_tomorrow",
-    ]
-    daily_var_list = list(set(daily_var_list) - set(remove))
+    ## define variables for ploting from daily dataset
+    daily_var_list =  ['TD', 'U', 'D', 'P', 'DSR', 'S']
+
 
     ## get array of lats and longs remove bad boundary conditions and flatten
     xlat = daily_ds.XLAT.values[y1:-y2, x1:-x2]
