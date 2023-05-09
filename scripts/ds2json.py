@@ -15,10 +15,9 @@ import xarray as xr
 from pathlib import Path
 from netCDF4 import Dataset
 from datetime import datetime
-from utils.make_intercomp import daily_merge_ds
 import string
 
-from context import data_dir, root_dir, wrf_dir, fwf_dir, tzone_dir
+from context import data_dir, root_dir
 from datetime import datetime, date, timedelta
 
 startTime = datetime.now()
@@ -34,7 +33,6 @@ from wrf import getvar, g_uvmet, geo_bounds
 __author__ = "Christopher Rodell"
 __email__ = "crodell@eoas.ubc.ca"
 
-wrf_model = "wrf4"
 ### make folder for json files on webapge
 forecast_date = pd.Timestamp("today").strftime("%Y%m%d")
 make_dir = Path(f"/bluesky/archive/fireweather/forecasts/{forecast_date}00/data/plot")
@@ -62,21 +60,21 @@ def rechunk(ds):
 
 
 ## loop both domains
-domains = ["d02", "d03"]
+domains = ["d02"]
 for domain in domains:
     ## Get Path to most recent FWI forecast and open
     print(f"Starting to make jsons for {domain}")
     loopTime = datetime.now()
-    hourly_file_dir = str(fwf_dir) + str(f"/fwf-hourly-{domain}-{forecast_date}.nc")
-    daily_file_dir = str(fwf_dir) + str(f"/fwf-daily-{domain}-{forecast_date}.nc")
+    hourly_file_dir = str(data_dir) + str(f"/fwf-data/fwf-hourly-{domain}-{forecast_date}.nc")
+    daily_file_dir = str(data_dir) + str(f"/fwf-data/fwf-daily-{domain}-{forecast_date}.nc")
 
     static_ds = xr.open_dataset(
-        str(data_dir) + f"/static/static-vars-{wrf_model}-{domain}.nc"
+        str(data_dir) + f"/static/static-vars-wrf-{domain}.nc"
     )
 
     ### Open datasets
     hourly_ds = xr.open_dataset(hourly_file_dir)
-    daily_ds = daily_merge_ds(forecast_date, domain, wrf_model)
+    daily_ds = xr.open_dataset(daily_file_dir)
 
     ## Round all var is the dataset
     hourly_ds = hourly_ds.round(2)

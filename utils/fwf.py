@@ -77,31 +77,6 @@ class FWF:
         Initialize Fire Weather Index Model
 
         """
-<<<<<<< HEAD
-=======
-        ### Read then open WRF dataset
-        if wrf_file_dir.endswith(".nc"):
-            print("Re-run using nc file")
-            wrf_ds = xr.open_dataset(wrf_file_dir)
-            keep_vars = [
-                "SNOWC",
-                "SNOWH",
-                "SNW",
-                "T",
-                "TD",
-                "U10",
-                "V10",
-                "W",
-                "WD",
-                "r_o",
-                "H",
-            ]
-            wrf_ds = wrf_ds.drop([var for var in list(wrf_ds) if var not in keep_vars])
-
-        else:
-            print("New-run, use readwrf to get vars from nc files")
-            wrf_ds = readwrf(wrf_file_dir, domain, wright=False)
->>>>>>> 3c28d48b1a2763dfffb98e341c9180cd3ec5be1d
 
         self.int_ds = read_dataset(config)
 
@@ -109,17 +84,15 @@ class FWF:
         self.attrs = self.int_ds.attrs
         self.model = config["model"]
         self.domain = config["domain"]
-        self.trail_name = config["trail_name"]
         self.fbp_mode = config["fbp_mode"]
         self.overwinter = config["overwinter"]
         self.initialize = config["initialize"]
         self.correctbias = config["correctbias"]
-        self.root_dir = config["root_dir"]
         self.initialize_hffmc = config["initialize_hffmc"]
 
         ## NOTE this will be adjusted when made operational
-        self.iterator_dir = f"/Volumes/WFRT-Ext24/fwf-data/{self.model}/{self.domain}/{self.trail_name}/"
-        self.filein_dir = f"{self.root_dir}/{self.model}/{self.domain}"
+        self.iterator_dir = str(data_dir) + f'/fwf-data/'
+        # self.filein_dir = f"{self.root_dir}/{self.model}/{self.domain}"
         self.save_dir = Path(self.iterator_dir)
         self.save_dir.mkdir(parents=True, exist_ok=True)
 
@@ -130,13 +103,7 @@ class FWF:
         self.P_initial = 6.0
         self.D_initial = 15.0
         self.snowfract = 0.6
-<<<<<<< HEAD
-        self.dx = (float(wrf_ds.attrs["DX"]),)
-        self.dy = (float(wrf_ds.attrs["DY"]),)
-        self.date = str(np.datetime_as_string(wrf_ds.Time.values[0], unit="D"))
-=======
         self.date = str(np.datetime_as_string(self.int_ds.Time.values[0], unit="D"))
->>>>>>> 4fec3ad82ce600f3a83dbac11c39365cf12d3f2d
 
         ### Shape of Domain make useful fill arrays
         shape = np.shape(self.int_ds.T[0, :, :])
@@ -624,7 +591,7 @@ class FWF:
             try:
                 if (self.model == "wrf") or (self.model == "eccc"):
                     int_file_dir = (
-                        str(self.filein_dir)
+                        str(self.iterator_dir)
                         + f"/{pd.to_datetime(retrieve_time_np).strftime('%Y%m')}/fwf-{timestep}-{self.domain}-{retrieve_time}.nc"
                     )
                     da = xr.open_dataset(int_file_dir)
@@ -1152,17 +1119,11 @@ class FWF:
         ########################################################################
         ### (17) Duff moisture
         P = P_r + K
-<<<<<<< HEAD
-        # Hold P to P_initial if snow cover is more than 50%
-        P = xr.where(SNOWC > self.snowfract, self.P_initial, P)
-        P = xr.where(P < 1.0, 1.0, P)
-=======
 
         ########################################################################
         ## constrain P to default start up and convert to dataarray
         P = np.where(P < self.P_initial, self.P_initial, P)
         P = xr.DataArray(P, name="P", dims=("south_north", "west_east"))
->>>>>>> 4fec3ad82ce600f3a83dbac11c39365cf12d3f2d
 
         self.P = P
         return P
@@ -1260,17 +1221,11 @@ class FWF:
         ########################################################################
         ## Alteration to Eq. 23 (Lawson 2008)
         D = D_r + V * 0.5
-<<<<<<< HEAD
-        # Hold D to D_initial if snow cover is more than 50%
-        D = xr.where(SNOWC > self.snowfract, self.D_initial, D)
-        D = xr.where(D < 1.0, 1.0, D)
-=======
 
         ########################################################################
         ## constrain P to default start up and convert to dataarray
         D = np.where(D < self.D_initial, self.D_initial, D)
         D = xr.DataArray(D, name="D", dims=("south_north", "west_east"))
->>>>>>> 4fec3ad82ce600f3a83dbac11c39365cf12d3f2d
 
         self.D = D
         if self.overwinter == True:
@@ -1391,7 +1346,7 @@ class FWF:
         """
 
         ### Call on initial conditions
-        P, D, SNOWC = daily_ds.P, daily_ds.D, daily_ds.SNOWC
+        P, D = daily_ds.P, daily_ds.D
         zero_full = self.zero_full
 
         ########################################################################
@@ -1405,12 +1360,7 @@ class FWF:
         )
 
         U = U_low + U_high
-<<<<<<< HEAD
-        U = xr.where(SNOWC > self.snowfract, 0.1, U)
-        U = xr.where(U < 0, 0.0, U)
-=======
         U = np.where(U < 0, 1.0, U)
->>>>>>> 4fec3ad82ce600f3a83dbac11c39365cf12d3f2d
         U = xr.DataArray(U, name="U", dims=("time", "south_north", "west_east"))
 
         return U
@@ -1568,7 +1518,6 @@ class FWF:
         ## Reorient to Wind Azimuth (WAZ)
         WAZ = WD + np.pi
         WAZ = np.where(WAZ > 2 * np.pi, WAZ - 2 * np.pi, WAZ)
-        print("WAZ", type(WAZ))
         ###################    Foliar Moisture Content:  #######################
         ########################################################################
         ## Solve Normalized latitude (degrees) with terrain data (3)
@@ -2537,12 +2486,9 @@ class FWF:
         )
         writeTime = datetime.now()
         print("Start Write ", datetime.now())
-        keep_vars = ["F", "R", "S", "T", "W", "H", "r_o"]
-        # hourly_ds = hourly_ds.drop(
-        #     [var for var in list(hourly_ds) if var not in keep_vars]
-        # )
-        hourly_ds = hourly_ds[keep_vars]
-        # print(list(hourly_ds))
+        # keep_vars = ["F", "R", "S", "T", "W", "H", "r_o"]
+        # hourly_ds = hourly_ds[keep_vars]
+        print(list(hourly_ds))
         hourly_ds, encoding = compressor(hourly_ds, self.var_dict)
         hourly_ds.to_netcdf(make_dir, encoding=encoding, mode="w")
         print("Write Time: ", datetime.now() - writeTime)

@@ -1,7 +1,6 @@
 #!/bluesky/fireweather/miniconda3/envs/fwf/bin/python
 
 """
-/bluesky/bsf-ops/modules/HYSPLIT/v7/
 Creates geojson files for each fwf forecast prodcut. Used as intermediate step for dispaly on leaflet map.
 NOTE: The geojson file get post processed to topojson for use on leaflet.
       The node_module geo2topo in topojson-server handles convertion
@@ -22,7 +21,7 @@ from datetime import datetime, date, timedelta
 
 startTime = datetime.now()
 
-from context import data_dir, xr_dir, wrf_dir, root_dir, fwf_dir
+from context import data_dir, root_dir
 
 __author__ = "Christopher Rodell"
 __email__ = "crodell@eoas.ubc.ca"
@@ -57,9 +56,9 @@ def rechunk(ds):
     return ds
 
 
-for domain in ["d02", "d03"]:
-    hourly_file_dir = str(fwf_dir) + str(f"/fwf-hourly-{domain}-{forecast_date}.nc")
-    daily_file_dir = str(fwf_dir) + str(f"/fwf-daily-{domain}-{forecast_date}.nc")
+for domain in ["d02"]:
+    hourly_file_dir = str(data_dir) + str(f"/fwf-data/fwf-hourly-{domain}-{forecast_date}.nc")
+    daily_file_dir = str(data_dir) + str(f"/fwf-data/fwf-daily-{domain}-{forecast_date}.nc")
 
     hourly_ds = xr.open_dataset(hourly_file_dir)
     daily_ds = xr.open_dataset(daily_file_dir)

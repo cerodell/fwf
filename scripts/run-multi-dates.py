@@ -45,15 +45,6 @@ config = dict(
     correctbias=False,
 )
 
-if config["model"] == "eccc":
-    config["root_dir"] = "/Volumes/WFRT-Ext23/fwf-data"
-elif config["model"] == "ecmwf":
-    config["root_dir"] = "/Volumes/WFRT-Ext23/ecmwf/era5"
-elif config["model"] == "wrf":
-    config["root_dir"] = "/Volumes/Scratch/fwf-data"
-else:
-    raise ValueError("YIKES! Sorry check your paths")
-
 
 for date in date_range:
     date_startTime = datetime.now()

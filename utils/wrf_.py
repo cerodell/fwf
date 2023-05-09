@@ -8,7 +8,7 @@ import xarray as xr
 from pathlib import Path
 from netCDF4 import Dataset
 from datetime import datetime
-from context import data_dir
+from context import data_dir, wrf_dir
 
 from wrf import (
     getvar,
@@ -72,13 +72,13 @@ def read_wrf(doi, model, domain):
         - True: do not write wrfout to zarr
 
     """
-    filein = f'/Volumes/Scratch/fwf-data/{model}/{domain}/{doi.strftime("%Y%m")}/fwf-hourly-{domain}-{doi.strftime("%Y%m%d06")}.nc'
+    filein = str(data_dir) + f'/fwf-data/fwf-hourly-{domain}-{doi.strftime("%Y%m%d06")}.nc'
     if os.path.isfile(filein) == True:
-        grid_ds = salem.open_xr_dataset(str(data_dir) + f"/wrf/{domain}-grid.nc")
-        fwf_ds = salem.open_xr_dataset(filein)
+        grid_ds = salem.open_xr_dataset(str(data_dir) + f"/static/static-vars-wrf-{domain}.nc")
+        fwf_ds = xr.open_dataset(filein)
         fwf_ds.attrs["pyproj_srs"] = grid_ds.attrs["pyproj_srs"]
     else:
-        filein = str(data_dir) + f'/{doi.strftime("%Y%m%d00")}/'
+        filein = str(wrf_dir) + f'/{doi.strftime("%Y%m%d00")}/'
         omp_set_num_threads(8)
         print(f"read files with {omp_get_max_threads()} threads")
         startTime = datetime.now()
@@ -146,7 +146,7 @@ def read_wrf(doi, model, domain):
             fwf_ds.attrs[nc_attr] = repr(wrf_file.getncattr(nc_attr))
 
         print(list(fwf_ds))
-        grid_ds = salem.open_xr_dataset(str(data_dir) + f"/wrf/{domain}-grid.nc")
+        grid_ds = salem.open_xr_dataset(str(data_dir) + f"/static/static-vars-wrf-{domain}.nc")
         fwf_ds.attrs["pyproj_srs"] = grid_ds.attrs["pyproj_srs"]
         print("readwrf run time: ", datetime.now() - startTime)
 
