@@ -3,9 +3,6 @@
 """
 Create a json file  contains XX number of days of wmo weather station observations
 along with fwf/met model output for comaprison. USed to make plots on website
-
-gzip -k wx-zone-5-2021021506.json
-
 """
 
 import context
@@ -42,14 +39,14 @@ name_list = list(cmaps)
 
 
 forecast_date = pd.Timestamp("today").strftime("%Y%m%d00")
-# forecast_date = pd.Timestamp(2021, 5, 3).strftime("%Y%m%d00")
+forecast_date = pd.Timestamp(2023, 5, 9).strftime("%Y%m%d00")
 
 make_dir = Path(f"/bluesky/archive/fireweather/forecasts/{forecast_date}/data/")
 make_dir.mkdir(parents=True, exist_ok=True)
 
 
 date = pd.Timestamp("today")
-# date = pd.Timestamp(2021, 5, 3)
+date = pd.Timestamp(2023, 5, 9)
 forecast_date = date.strftime("%Y%m%d06")
 obs_date = (date - np.timedelta64(1, "D")).strftime("%Y%m%d")
 obs_date_int = (date - np.timedelta64(14, "D")).strftime("%Y%m%d")
