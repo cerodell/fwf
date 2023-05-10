@@ -1,12 +1,12 @@
-echo "$(date) ---> start fwf model"
-### Run fwf model
-/bluesky/fireweather/fwf/scripts/run.py
-echo "$(date) ---> fwf model done"
+# echo "$(date) ---> start fwf model"
+# ### Run fwf model
+# /bluesky/fireweather/fwf/scripts/run.py
+# echo "$(date) ---> fwf model done"
 
-echo "$(date) ---> start geojson maker for leaflet map"
-### Create geojson files for display on leaflet
-/bluesky/fireweather/fwf/scripts/geojson_maker.py
-echo "$(date) ---> geojson maker done"
+# echo "$(date) ---> start geojson maker for leaflet map"
+# ### Create geojson files for display on leaflet
+# /bluesky/fireweather/fwf/scripts/geojson_maker.py
+# echo "$(date) ---> geojson maker done"
 
 echo "$(date) ---> start ds2json for plotly line plts"
 ### Create json file for plotly line plots

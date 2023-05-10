@@ -212,10 +212,12 @@ for domain in ["d02", "d03"]:
             final_df[name_upper + "_day2"] = a
         else:
             # print('day2_ds is a ds')
-            var_columns = day2_ds[var].values[:, south_north, west_east]
-            var_columns = np.array(var_columns, dtype="float32")
+            # var_columns = day2_ds[var].values[:, south_north, west_east]
+            # var_columns = np.array(var_columns, dtype="float32")
+            var_columns = day2_ds[var].values.astype("float32")
             try:
-                final_df[name_upper + "_day2"] = var_columns[1, :]
+                # final_df[name_upper + "_day2"] = var_columns[1, :]
+                final_df[name_upper + "_day2"] = var_columns
             except:
                 a = np.empty(len(south_north))
                 a[:] = np.nan

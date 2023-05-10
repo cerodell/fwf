@@ -56,7 +56,7 @@ def rechunk(ds):
     return ds
 
 
-for domain in ["d02"]:
+for domain in ["d02", "d03"]:
     hourly_file_dir = str(data_dir) + str(f"/fwf-data/fwf-hourly-{domain}-{forecast_date}.nc")
     daily_file_dir = str(data_dir) + str(f"/fwf-data/fwf-daily-{domain}-{forecast_date}.nc")
 

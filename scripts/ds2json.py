@@ -60,7 +60,7 @@ def rechunk(ds):
 
 
 ## loop both domains
-domains = ["d02"]
+domains = ["d02", "d03"]
 for domain in domains:
     ## Get Path to most recent FWI forecast and open
     print(f"Starting to make jsons for {domain}")
