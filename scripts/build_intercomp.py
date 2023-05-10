@@ -14,13 +14,13 @@ import requests
 import numpy as np
 import pandas as pd
 import xarray as xr
+import geopandas as gpd
 from glob import glob
 from pathlib import Path
 from netCDF4 import Dataset
 import matplotlib.pyplot as plt
 from wrf import ll_to_xy, xy_to_ll
 from datetime import datetime, date, timedelta
-from utils.make_intercomp import daily_merge_ds
 
 from context import data_dir, root_dir, tzone_dir
 
@@ -51,11 +51,11 @@ stations_df_og = stations_df_og.drop(
     columns=["tmm", "ua", "the_geom", "h_bul", "s_bul", "hly", "syn"]
 )
 
-date = pd.Timestamp("today")
+doi = pd.Timestamp("today")
 # date = pd.Timestamp(2021, 12, 16)
-day1_obs_date = date - np.timedelta64(1, "D")
+day1_obs_date = doi - np.timedelta64(1, "D")
 day1_obs_date = day1_obs_date.strftime("%Y%m%d06")
-day2_obs_date = date - np.timedelta64(2, "D")
+day2_obs_date = doi - np.timedelta64(2, "D")
 day2_obs_date = day2_obs_date.strftime("%Y%m%d06")
 
 
@@ -66,14 +66,42 @@ def rechunk(ds):
         ds[var].encoding = {}
     return ds
 
+def get_locs(pyproj_srs, df_obs):
+    df = pd.DataFrame(
+        data={
+            "lons": df_obs.lon.values,
+            "lats": df_obs.lat.values,
+            "wmo": df_obs.wmo.values,
+        }
+    )
+    gpm25 = gpd.GeoDataFrame(
+        df,
+        crs="EPSG:4326",
+        #  crs="+init=epsg:4326",
+        geometry=gpd.points_from_xy(df["lons"], df["lats"]),
+    ).to_crs(pyproj_srs)
+
+    x = xr.DataArray(
+        np.array(gpm25.geometry.x),
+        dims="wmo",
+        coords=dict(wmo=gpm25.wmo.values),
+    )
+    y = xr.DataArray(
+        np.array(gpm25.geometry.y),
+        dims="wmo",
+        coords=dict(wmo=gpm25.wmo.values),
+    )
+    return x, y
+
 
 for domain in ["d02", "d03"]:
     stations_df = stations_df_og
 
-    day1_ds = daily_merge_ds(day1_obs_date, domain, wrf_model)
-    # day1_ds = daily_merge_ds(day2_obs_date, domain, wrf_model)
-
-    day2_ds = daily_merge_ds(day2_obs_date, domain, wrf_model)
+    day1_ds = xr.open_dataset(str(data_dir) + f"/fwf-data/fwf-daily-{domain}-{day1_obs_date}.nc").isel(time = 0)
+    try:
+        day2_ds = xr.open_dataset(str(data_dir) + f"/fwf-data/fwf-daily-{domain}-{day2_obs_date}.nc").isel(time = 1)
+    except:
+         day2_ds = None
 
     ### Get a wrf file
     wrf_filein = "/wrf/"
@@ -142,15 +170,38 @@ for domain in ["d02", "d03"]:
     )
 
     south_north, west_east = final_df["y"].values, final_df["x"].values
-    var_list = list(day1_ds)
-    remove = ["r_o_tomorrow", "SNOWC"]
-    var_list = list(set(var_list) - set(remove))
+    west_east, south_north = get_locs(day1_ds.attrs['pyproj_srs'], final_df)
+    # var_list = list(day1_ds)
+    # remove = ["r_o_tomorrow", "SNOWC", ""]
+    # var_list = list(set(var_list) - set(remove))
+    var_list =   [
+        'r_o',
+        'DSR',
+        'R',
+        'D',
+        'WD',
+        'T',
+        'F',
+        'TD',
+        'U',
+        'S',
+        'H',
+        'W',
+        'P'
+        ]
+    day1_ds = day1_ds[var_list].interp(west_east=west_east, south_north=south_north, method="linear")
+    try:
+        day2_ds = day2_ds[var_list].interp(west_east=west_east, south_north=south_north, method="linear")
+    except:
+        pass
     final_var_list = []
     for var in var_list:
         name_upper = cmaps[var]["name"].upper()
-        var_columns = day1_ds[var].values[:, south_north, west_east]
-        var_columns = np.array(var_columns, dtype="float32")
-        final_df[name_upper + "_day1"] = var_columns[0, :]
+        # var_columns = day1_ds[var].values[:, south_north, west_east]
+        var_columns = day1_ds[var].values.astype("float32")
+
+        # var_columns = np.array(var_columns, dtype="float32")
+        final_df[name_upper + "_day1"] = var_columns#[0, :]
         # final_df[name_upper + "_day1"] = var_columns[1, :]
 
         if day2_ds is None:

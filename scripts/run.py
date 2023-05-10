@@ -33,7 +33,7 @@ make_dir = Path(f'/bluesky/archive/fireweather/forecasts/{doi.strftime("%Y%m%d00
 make_dir.mkdir(parents=True, exist_ok=True)
 
 
-domains = ["d02"]
+domains = ["d03"]
 for domain in domains:
     domain_startTime = datetime.now()
     print(f"start of domain {domain}: ", str(domain_startTime))
