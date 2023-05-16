@@ -189,7 +189,7 @@ function formatPlotDate(e, t, r) {
                       return e.json();
                   })
                   .then(function (e) {
-                      r.addLayer(L.vectorGrid.slicer(e, { minZoom: 2, maxZoom: 18, rendererFactory: L.canvas.tile, vectorTileLayerStyles: { wsp: geo_json_styler_wsp } }).setZIndex(700));
+                      r.addLayer(L.vectorGrid.slicer(e, { minZoom: 2, maxZoom: 18, rendererFactory: L.canvas.tile, vectorTileLayerStyles: { wsp: geo_json_styler_wsp } }).setZIndex(500));
                   }),
           "temp" == this._thisVar &&
               fetch(t, { cache: "default" })
@@ -197,7 +197,7 @@ function formatPlotDate(e, t, r) {
                       return e.json();
                   })
                   .then(function (e) {
-                      r.addLayer(L.vectorGrid.slicer(e, { minZoom: 2, maxZoom: 18, rendererFactory: L.canvas.tile, vectorTileLayerStyles: { temp: geo_json_styler_temp } }).setZIndex(700));
+                      r.addLayer(L.vectorGrid.slicer(e, { minZoom: 2, maxZoom: 18, rendererFactory: L.canvas.tile, vectorTileLayerStyles: { temp: geo_json_styler_temp } }).setZIndex(500));
                   }),
           "rh" == this._thisVar &&
               fetch(t, { cache: "default" })
@@ -205,7 +205,7 @@ function formatPlotDate(e, t, r) {
                       return e.json();
                   })
                   .then(function (e) {
-                      r.addLayer(L.vectorGrid.slicer(e, { minZoom: 2, maxZoom: 18, rendererFactory: L.canvas.tile, vectorTileLayerStyles: { rh: geo_json_styler_rh } }).setZIndex(700));
+                      r.addLayer(L.vectorGrid.slicer(e, { minZoom: 2, maxZoom: 18, rendererFactory: L.canvas.tile, vectorTileLayerStyles: { rh: geo_json_styler_rh } }).setZIndex(500));
                   }),
           "qpf" == this._thisVar &&
               fetch(t, { cache: "default" })
@@ -213,7 +213,7 @@ function formatPlotDate(e, t, r) {
                       return e.json();
                   })
                   .then(function (e) {
-                      r.addLayer(L.vectorGrid.slicer(e, { minZoom: 2, maxZoom: 18, rendererFactory: L.canvas.tile, vectorTileLayerStyles: { qpf: geo_json_styler_qpf } }).setZIndex(700));
+                      r.addLayer(L.vectorGrid.slicer(e, { minZoom: 2, maxZoom: 18, rendererFactory: L.canvas.tile, vectorTileLayerStyles: { qpf: geo_json_styler_qpf } }).setZIndex(500));
                   }),
           "qpf_3h" == this._thisVar &&
               fetch(t, { cache: "default" })
@@ -221,7 +221,7 @@ function formatPlotDate(e, t, r) {
                       return e.json();
                   })
                   .then(function (e) {
-                      r.addLayer(L.vectorGrid.slicer(e, { minZoom: 2, maxZoom: 18, rendererFactory: L.canvas.tile, vectorTileLayerStyles: { qpf: geo_json_styler_qpf } }).setZIndex(700));
+                      r.addLayer(L.vectorGrid.slicer(e, { minZoom: 2, maxZoom: 18, rendererFactory: L.canvas.tile, vectorTileLayerStyles: { qpf: geo_json_styler_qpf } }).setZIndex(500));
                   }),
           "snw" == this._thisVar &&
               fetch(t, { cache: "default" })
@@ -229,8 +229,29 @@ function formatPlotDate(e, t, r) {
                       return e.json();
                   })
                   .then(function (e) {
-                      r.addLayer(L.vectorGrid.slicer(e, { minZoom: 2, maxZoom: 18, rendererFactory: L.canvas.tile, vectorTileLayerStyles: { snw: geo_json_styler_snw } }).setZIndex(700));
+                      r.addLayer(L.vectorGrid.slicer(e, { minZoom: 2, maxZoom: 18, rendererFactory: L.canvas.tile, vectorTileLayerStyles: { snw: geo_json_styler_snw } }).setZIndex(500));
                   }),
+            "wd" == this._thisVar &&
+            fetch(t, { cache: "default" })
+                .then(function (e) {
+                    return e.json();
+                })
+                .then(function (e) {
+                    r.addLayer(L.velocityLayer({
+                        displayValues: true,
+                        displayOptions: {
+                          velocityType: "Wind",
+                          position: "bottomleft",
+                          emptyString: "No wind data",
+                          speedUnit: "k/h",
+                          angleConvention: "meteo",
+
+                        },
+                        data: e,
+                        maxVelocity: 15,
+                        colorScale:["#kkk"]
+                      }));
+                }),
           (this._layers[e] = r),
           r
       );

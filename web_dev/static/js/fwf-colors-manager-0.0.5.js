@@ -606,10 +606,10 @@ map.on("overlayremove", function (t) {
     t.layer == waqiLayer
 }),
 map.on("overlayadd", function (t) {
-    t.layer == velocityLayer.setZIndex(700)
+    t.layer == geo_json_wd.setZIndex(700)
 }),
 map.on("overlayremove", function (t) {
-    t.layer == velocityLayer.remove(map)
+    t.layer == geo_json_wd.remove(map)
 }),
   map.on("overlayadd", function (t) {
       t.layer == ffmcTimeLayer && color_map_ffmc.addTo(map);

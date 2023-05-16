@@ -15,6 +15,8 @@ var ffmc_topo_file = "data/map/ffmc-merge-2020011106.josn",
     qpf_topo_file = "data/map/precip-merge-2020011106.json",
     qpf_3h_topo_file = "data/map/precip_3h-merge-2020011106.json",
     snw_topo_file = "data/map/snw-merge-2020011106.json",
+    wd_topo_file = "data/map/wd-2020011106.json",
+
     firesLayer = omnivore.kml("data/fire_outlines.kml").on("ready", function() {
         this.setStyle({
             color: "#654321",
@@ -48,44 +50,30 @@ var  WAQI_URL    =  "https://tiles.waqi.info/tiles/usepa-pm25/{z}/{x}/{y}.png?to
 var  WAQI_ATTR  =  'Air  Quality  Tiles  &copy;  <a  href="http://waqi.info">waqi.info</a>';
 var  waqiLayer  =  L.tileLayer(WAQI_URL, {bounds: northAmericaBounds, attribution:  WAQI_ATTR});
 
-var velocityLayer = L.layerGroup();
-console.log(velocityLayer)
-fetch("data/wind.json", { cache: "default" })
-    .then(function (e) {
-        return e.json();
-    })
-    .then(function (e) {
-        console.log('WIND JSON!!!')
-        console.log(e)
-        velocityLayer.addLayer(L.velocityLayer({
-            displayValues: true,
-            displayOptions: {
-              velocityType: "Wind",
-              position: "bottomleft",
-              emptyString: "No wind data"
-            },
-            data: e,
-            maxVelocity: 15,
-            colorScale:["#kkk"]
-          }))
-        // console.log(velocityLayer)
-        });
-        // console.log('MAP');
-        // console.log(gl);
-// $.getJSON("data/wind.json", function(data) {
-//     L.velocityLayer({
-//       displayValues: true,
-//       displayOptions: {
-//         velocityType: "Global Wind",
-//         position: "bottomleft",
-//         emptyString: "No wind data"
-//       },
-//       data: data,
-//       maxVelocity: 15
-//     });
+// var velocityLayer = L.layerGroup();
 
-//     layerControl.addOverlay(velocityLayer, "Wind - Global");
-//   });
+// fetch("data/map/wd-"+dateTimeFileName(new Date(UTCTimeMap))+".json", { cache: "default" })
+//     .then(function (e) {
+//         return e.json();
+//     })
+//     .then(function (e) {
+//         // console.log('WIND JSON!!!')
+//         console.log('WIND  ' + "data/map/wd-"+dateTimeFileName(new Date(UTCTimeMap))+".json")
+//         console.log(e)
+//         velocityLayer.addLayer(L.velocityLayer({
+//             displayValues: true,
+//             displayOptions: {
+//               velocityType: "Wind",
+//               position: "bottomleft",
+//               emptyString: "No wind data"
+//             },
+//             data: e,
+//             maxVelocity: 15,
+//             colorScale:["#kkk"]
+//           }))
+//         });
+
+
 
 
 
@@ -108,6 +96,8 @@ var fires = L.layerGroup([hotspotsMarkers, firesLayer])
     geo_json_qpf = L.layerGroup(),
     geo_json_qpf_3h = L.layerGroup(),
     geo_json_snw = L.layerGroup(),
+    geo_json_wd = L.layerGroup(),
+
     ffmcTimeLayer = L.timeDimension.layer.layerGroup(geo_json_ffmc, {
         getUrlFunction: getHourlyForecast,
         getFileDir: ffmc_topo_file,
@@ -194,6 +184,11 @@ var dmcTimeLayer = L.timeDimension.layer.layerGroup(geo_json_dmc, {
         getFileDir: snw_topo_file,
         getVar: "snw"
     }),
+    wdTimeLayer = L.timeDimension.layer.layerGroup(geo_json_wd, {
+        getUrlFunction: getHourlyForecast,
+        getFileDir: wd_topo_file,
+        getVar: "wd"
+    }),
     baseLayers = {
         Topography: gl
     },
@@ -277,7 +272,7 @@ var dmcTimeLayer = L.timeDimension.layer.layerGroup(geo_json_dmc, {
         },
         {
             label: " Wind Direction",
-            layer: velocityLayer,
+            layer: wdTimeLayer,
             // radioGroup: "bc"
         }
     ]

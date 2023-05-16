@@ -56,7 +56,6 @@ def mycontourf_to_geojson(cmaps, var, da, folderdate, domain, timestamp):
     """
 
     vmin, vmax = cmaps[var]["vmin"], cmaps[var]["vmax"]
-    print(var)
     name, colors, sigma = (
         str(cmaps[var]["name"]),
         cmaps[var]["colors"],

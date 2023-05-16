@@ -34,7 +34,7 @@ warnings.filterwarnings("ignore", message="invalid value encountered in true_div
 
 ### make folder for json files on webapge
 forecast_date = pd.Timestamp("today").strftime("%Y%m%d")
-make_dir = Path(f"/bluesky/archive/fireweather/forecasts/{forecast_date}00/data/map")
+make_dir = Path(f"/bluesky/fireweather/fwf/web_dev/data/map")
 make_dir.mkdir(parents=True, exist_ok=True)
 
 ## redefine forecast ate to get file with spin up

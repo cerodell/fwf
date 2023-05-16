@@ -1,12 +1,17 @@
-# echo "$(date) ---> start fwf model"
-# ### Run fwf model
-# /bluesky/fireweather/fwf/scripts/run.py
-# echo "$(date) ---> fwf model done"
+echo "$(date) ---> start fwf model"
+### Run fwf model
+/bluesky/fireweather/fwf/scripts/run.py
+echo "$(date) ---> fwf model done"
 
-# echo "$(date) ---> start geojson maker for leaflet map"
-# ### Create geojson files for display on leaflet
-# /bluesky/fireweather/fwf/scripts/geojson_maker.py
-# echo "$(date) ---> geojson maker done"
+echo "$(date) ---> start geojson maker for leaflet map"
+### Create geojson files for display on leaflet
+/bluesky/fireweather/fwf/scripts/geojson_maker.py
+echo "$(date) ---> geojson maker done"
+
+echo "$(date) ---> start wind json maker for leaflet map"
+### Create geojson files for display on leaflet
+/bluesky/fireweather/fwf/scripts/wind.py
+echo "$(date) --->  wind json maker done"
 
 echo "$(date) ---> start ds2json for plotly line plts"
 ### Create json file for plotly line plots
@@ -46,13 +51,18 @@ cd /bluesky/archive/fireweather/forecasts/
 ln -fnsv $(date '+%Y%m%d00') current
 echo "$(date) ---> new symlink created"
 
-echo "$(date) ---> make symlink to kml file"
+echo "$(date) ---> remove kml file"
 cd /bluesky/archive/fireweather/forecasts/current/data
-ln -sv ../../../../forecasts/BSC18CA12-01/current/fire_locations.kml
-ln -sv ../../../../forecasts/BSC18CA12-01/current/fire_outlines.kml
-echo "$(date) ---> symlink to kml files created"
+rm -r fire_locations.kml
+rm -r fire_outlines.kml
+
+echo "$(date) ---> cp new kml file"
+cd /bluesky/archive/forecasts/BSC00CA12-01/current
+cp -r fire_locations.kml /bluesky/archive/fireweather/forecasts/current/data/
+cp -r fire_outlines.kml /bluesky/archive/fireweather/forecasts/current/data/
 
 
+cp -r ../../../../forecasts/BSC18CA12-01/current/fire_locations.kml
 echo "$(date) ---> start nc compressor"
 ### Compress netcdf fiels and write to forecast dir
 /bluesky/fireweather/fwf/scripts/netcdf_compressor.py

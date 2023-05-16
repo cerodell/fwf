@@ -10,7 +10,7 @@ import xarray as xr
 from pathlib import Path
 from netCDF4 import Dataset
 
-from context import data_dir, fwf_dir, root_dir
+from context import data_dir, root_dir
 from datetime import datetime, date, timedelta
 
 startTime = datetime.now()
@@ -59,7 +59,7 @@ with open(str(root_dir) + f"/json/fwf-attrs.json", "r") as fp:
 for domain in domains:
 
     working_daily_dir = (
-        str(fwf_dir) + str("/fwf-daily-") + domain + str(f"-{forecast_date}.nc")
+        str(data_dir) + str("/fwf-data/fwf-daily-") + domain + str(f"-{forecast_date}.nc")
     )
     daily_ds = xr.open_dataset(working_daily_dir)
 
@@ -76,7 +76,7 @@ for domain in domains:
     )
 
     working_hourly_dir = (
-        str(fwf_dir) + str("/fwf-hourly-") + domain + str(f"-{forecast_date}.nc")
+        str(data_dir) + str("/fwf-data/fwf-hourly-") + domain + str(f"-{forecast_date}.nc")
     )
     hourly_ds = xr.open_dataset(working_hourly_dir)
 

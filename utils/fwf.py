@@ -134,7 +134,6 @@ class FWF:
         static_ds = xr.open_dataset(
             str(data_dir) + f"/static/static-vars-{self.model.lower()}-{self.domain}.nc"
         )
-
         ## Print Over wintering status
         print(f"Overwintering {self.overwinter}")
 
@@ -189,6 +188,8 @@ class FWF:
         #     self.int_ds[var].attrs['pyproj_srs'] = self.int_ds.attrs['pyproj_srs']
         # print("Mask: ", datetime.now() - maskTime)
 
+        self.int_ds['south_north'] = static_ds['south_north']
+        self.int_ds['west_east'] = static_ds['west_east']
         self.hourly_ds = self.int_ds
 
         ### Solve for hourly rain totals in mm....will be used in ffmc calculation
@@ -2471,8 +2472,9 @@ class FWF:
             daily_ds[var].attrs["pyproj_srs"] = daily_ds.attrs["pyproj_srs"]
         writeTime = datetime.now()
         print("Start Write ", datetime.now())
-        daily_ds, encoding = compressor(daily_ds, self.var_dict)
-        daily_ds.to_netcdf(make_dir, encoding=encoding, mode="w")
+        # daily_ds, encoding = compressor(daily_ds, self.var_dict)
+        # daily_ds.to_netcdf(make_dir, encoding=encoding, mode="w")
+        daily_ds.to_netcdf(make_dir, mode="w")
         print("Write Time: ", datetime.now() - writeTime)
         print(f"Wrote working {make_dir}")
         #############################################################################################
@@ -2488,9 +2490,9 @@ class FWF:
         print("Start Write ", datetime.now())
         # keep_vars = ["F", "R", "S", "T", "W", "H", "r_o"]
         # hourly_ds = hourly_ds[keep_vars]
-        print(list(hourly_ds))
-        hourly_ds, encoding = compressor(hourly_ds, self.var_dict)
-        hourly_ds.to_netcdf(make_dir, encoding=encoding, mode="w")
+        # hourly_ds, encoding = compressor(hourly_ds, self.var_dict)
+        # hourly_ds.to_netcdf(make_dir, encoding=encoding, mode="w")
+        hourly_ds.to_netcdf(make_dir, mode="w")
         print("Write Time: ", datetime.now() - writeTime)
         print(f"Wrote working {make_dir}")
         return

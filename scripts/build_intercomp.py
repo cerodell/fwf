@@ -5,12 +5,12 @@ Builds a dataset of wrfout/fwf model versus all wmo weather station
 observations within model domain. Writes Dataset as zarr with attribute of of wmo.
 
 """
-
+# %%
 import context
 import io
 import json
 import requests
-
+import salem
 import numpy as np
 import pandas as pd
 import xarray as xr
@@ -52,7 +52,7 @@ stations_df_og = stations_df_og.drop(
 )
 
 doi = pd.Timestamp("today")
-# date = pd.Timestamp(2021, 12, 16)
+# doi = pd.Timestamp(2023, 5, 14)
 day1_obs_date = doi - np.timedelta64(1, "D")
 day1_obs_date = day1_obs_date.strftime("%Y%m%d06")
 day2_obs_date = doi - np.timedelta64(2, "D")
@@ -97,7 +97,7 @@ def get_locs(pyproj_srs, df_obs):
 for domain in ["d02", "d03"]:
     stations_df = stations_df_og
 
-    day1_ds = xr.open_dataset(str(data_dir) + f"/fwf-data/fwf-daily-{domain}-{day1_obs_date}.nc").isel(time = 0)
+    day1_ds = salem.open_xr_dataset(str(data_dir) + f"/fwf-data/fwf-daily-{domain}-{day1_obs_date}.nc").isel(time = 0)
     try:
         day2_ds = xr.open_dataset(str(data_dir) + f"/fwf-data/fwf-daily-{domain}-{day2_obs_date}.nc").isel(time = 1)
     except:
@@ -169,7 +169,7 @@ for domain in ["d02", "d03"]:
         }
     )
 
-    south_north, west_east = final_df["y"].values, final_df["x"].values
+    # south_north, west_east = final_df["y"].values, final_df["x"].values
     west_east, south_north = get_locs(day1_ds.attrs['pyproj_srs'], final_df)
     # var_list = list(day1_ds)
     # remove = ["r_o_tomorrow", "SNOWC", ""]
@@ -305,7 +305,7 @@ for domain in ["d02", "d03"]:
         final_ds = xr.combine_nested(
             [intercomp_yesterday_ds, intercomp_today_ds], "time"
         )
-
+        print(np.unique(np.isnan(final_ds['TEMP_day1']), return_counts = True))
         final_ds = rechunk(final_ds)
         final_ds.to_zarr(
             str(data_dir)
@@ -322,6 +322,7 @@ for domain in ["d02", "d03"]:
     else:
         final_ds = intercomp_today_ds
         final_ds = rechunk(final_ds)
+        print(np.unique(np.isnan(final_ds['TEMP_day1']), return_counts = True))
         final_ds.to_zarr(
             str(data_dir)
             + "/intercomp/"
@@ -338,3 +339,5 @@ for domain in ["d02", "d03"]:
 
 ### Timer
 print("Total Run Time: ", datetime.now() - startTime)
+
+# %%

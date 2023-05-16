@@ -40,7 +40,7 @@ name_list = list(cmaps)
 forecast_date = pd.Timestamp("today").strftime("%Y%m%d00")
 # forecast_date = pd.Timestamp(2023, 5, 9).strftime("%Y%m%d00")
 
-make_dir = Path(f"/bluesky/archive/fireweather/forecasts/{forecast_date}/data/")
+make_dir = Path(f"/bluesky/fireweather/fwf/web_dev/data/")
 make_dir.mkdir(parents=True, exist_ok=True)
 
 

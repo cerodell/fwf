@@ -37,7 +37,7 @@ __email__ = "crodell@eoas.ubc.ca"
 forecast_date = pd.Timestamp("today").strftime("%Y%m%d")
 # forecast_date = pd.Timestamp(2023, 5, 9).strftime("%Y%m%d")
 
-make_dir = Path(f"/bluesky/archive/fireweather/forecasts/{forecast_date}00/data/plot")
+make_dir = Path(f"/bluesky/fireweather/fwf/web_dev/data/plot")
 make_dir.mkdir(parents=True, exist_ok=True)
 
 ## redefine forecast ate to get file with spin up

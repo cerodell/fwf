@@ -21,11 +21,11 @@
     <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.4.1/dist/MarkerCluster.css">
     <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.4.1/dist/MarkerCluster.Default.css">
     <link rel="stylesheet" href="/static/css/fwf-popup-0.0.2.min.css" />
-    <link rel="stylesheet" href="static/css/fwf-easy-button.css" />
-    <link rel="stylesheet" href="static/css/fwf-leaflet-velocity.css" />
+    <link rel="stylesheet" href="static/css/fwf-easy-button.css" />  check
+    <link rel="stylesheet" href="static/css/fwf-leaflet-velocity.css" />check
 
-    <script src="static/js/fwf-easy-button.js"></script>
-    <script src="static/js/fwf-leaflet-velocity.js"></script>
+    <script src="static/js/fwf-easy-button.js"></script>check
+    <script src="static/js/fwf-leaflet-velocity.js"></script>check
 
 
     <script src="https://unpkg.com/geojson-vt@3.2.0/geojson-vt.js"></script>
@@ -51,13 +51,13 @@
     <script src='https://api.tiles.mapbox.com/mapbox.js/plugins/leaflet-omnivore/v0.3.1/leaflet-omnivore.min.js'></script>
     <script src="/static/js/fwf-moment.min.js"></script>
     <script src="/static/js/fwf-moment-timezone-with-data.min.js"></script>
-    <script src="static/js/fwf-time-layer-group-0.0.5.js"></script>
+    <script src="static/js/fwf-time-layer-group-0.0.5.min.js"></script> check
     <button id="remove-layers-btn">Remove Layers</button>
 
 
 
     <script>
-        var timeInterval = "2021-11-08T06:00:00Z/2021-11-10T12:00:00Z"
+        var timeInterval = "2023-05-15T06:00:00Z/2023-05-17T12:00:00Z"
         let tinital = timeInterval.slice(0,20)
         var endtime = timeInterval.slice(21,)
 
@@ -138,53 +138,27 @@
 
         }
 
-        var gl=L.tileLayer('https://stamen-tiles-{s}.a.ssl.fastly.net/toner/{z}/{x}/{y}{r}.png', {
-            maxZoom: 18,
-            attribution: 'Map tiles by <a href="https://stamen.com/">Stamen Design</a>, ' +
-                '<a href="https://creativecommons.org/licenses/by/3.0/">CC BY 3.0</a> &mdash; ' +
-                'Map data © <a href="https://www.openstreetmap.org/">OpenStreetMap</a> contributors'
-            // style:"topo.json"
-        }).addTo(map);
-        gl.myAttribute = "basemap";
+        // var gl=L.tileLayer('https://stamen-tiles-{s}.a.ssl.fastly.net/toner/{z}/{x}/{y}{r}.png', {
+        //     maxZoom: 18,
+        //     attribution: 'Map tiles by <a href="https://stamen.com/">Stamen Design</a>, ' +
+        //         '<a href="https://creativecommons.org/licenses/by/3.0/">CC BY 3.0</a> &mdash; ' +
+        //         'Map data © <a href="https://www.openstreetmap.org/">OpenStreetMap</a> contributors'
+        //     // style:"topo.json"
+        // }).addTo(map);
+        // gl.myAttribute = "basemap";
 
+         var json_fwf  = 'data/plot/fwf-gk-2023051506-d03.json';
+         var wxstations = 'data/wx-zone-X-20230514.json';
+         var wx_keys = 'data/wx-keys-20230514.json';
 
-        var json_fwf  = 'data/plot/fwf-gk-2021110806-d03.json';
-        var wxstations = 'data/wx-zone-X-20211107.json';
-        var wx_keys = 'data/wx-keys-20211107.json';
-
-
-        // // Get the current date and time in UTC format
-        // var currentDate = new Date();
-        // var currentYear = currentDate.getUTCFullYear();
-        // var currentMonth = ("0" + (currentDate.getUTCMonth() + 1)).slice(-2);
-        // var currentDay = ("0" + currentDate.getUTCDate()).slice(-2);
-        // var currentHour = ("0" + currentDate.getUTCHours()).slice(-2);
-        // var currentMinute = ("0" + currentDate.getUTCMinutes()).slice(-2);
-
-        // Replace the placeholders in the lightning data tile URL with the formatted date and time string
-        // var tileUrl = `https://hpfx.collab.science.gc.ca/${currentYear}${currentMonth}${currentDay}/WXO-DD/lightning/${currentYear}${currentMonth}${currentDay}T${currentHour}${currentMinute}Z_MSC_Lightning_2.5km.tif`;
-
-
-    //     var lightningLayer = L.tileLayer(
-    //         'https://hpfx.collab.science.gc.ca/20230331/WXO-DD/lightning/20230330T2350Z_MSC_Lightning_2.5km.tif',        {
-    //     subdomains: "abcd",
-    //     attribution: "Data source: Meteorological Service of Canada",
-    //     minZoom: 5,
-    //     maxZoom: 10,
-    //     tms: true,
-    //     bounds: [[-90, -180], [90, 180]],
-    //     }
-    // ).addTo(map).setZIndex(700);
-
-    // console.log(lightningLayer);
 
 
     </script>
-    <!-- <script src="static/js/fwf-basemaps-0.0.3.min.js"></script> -->
-    <script src="static/js/fwf-wxstations-0.0.6.js"></script>
-    <script src="static/js/fwf-make-tree-0.0.6.min.js"></script>
-    <script src="static/js/fwf-layer-controler-0.0.5.js"></script>
-    <script src="static/js/fwf-colors-manager-0.0.5.js"></script>
+    <script src="static/js/fwf-basemaps-0.0.3.min.js"></script>check
+    <script src="/static/js/fwf-wxstations-0.0.5.min.js"></script>
+    <script src="/static/js/fwf-make-tree-0.0.6.min.js"></script>
+    <script src="static/js/fwf-layer-controler-0.0.5.min.js"></script> check
+    <script src="static/js/fwf-colors-manager-0.0.5.min.js"></script>check
 
 
 
@@ -216,5 +190,6 @@
         ga('send', 'pageview');
     </script>
     <!-- end Google Analytics -->
+
   </body>
 </html>
