@@ -66,11 +66,10 @@ __email__ = "crodell@eoas.ubc.ca"
 
 ########################### INPUTS ###########################
 
-config = {"wrf": ["d02", "d03"], "eccc": ["rdps", "hrdps"]}
-
-model = "nwp"
-# domains = ["d02", "d03"]
-domains = ["d02", "d03", "rdps", "hrdps"]
+model = "wrf_day2"
+domains = ["d02", "d03"]
+# model = "nwp"
+# domains = ["d02", "d03", "rdps", "hrdps"]
 trail_name = "02"
 fwf_dir = f"/Volumes/WFRT-Ext24/fwf-data/"
 
@@ -81,16 +80,14 @@ fwf_dir = f"/Volumes/WFRT-Ext24/fwf-data/"
 with open(str(root_dir) + f"/json/fwf-attrs.json", "r") as fp:
     var_dict = json.load(fp)
 
-wx_ds = xr.open_dataset(str(data_dir) + f"/obs/observations-all-20191231-20221231.nc")
-# wx_ds = wx_ds.drop_sel(wmo=2275)
 
 try:
     prov_ds = xr.open_dataset(
-        str(data_dir) + f"/intercomp/{trail_name}/{model}/20210401-20221101-null.nc"
+        str(data_dir) + f"/intercomp/{trail_name}/{model}/d03-20210401-20221101-null.nc"
     )
 except:
     ds = xr.open_dataset(
-        str(data_dir) + f"/intercomp/{trail_name}/{model}/20210101-20221231.nc",
+        str(data_dir) + f"/intercomp/{trail_name}/{model}/d03-20210101-20221231.nc",
     )
     ## make time dim sliceable with datetime
     ds["time"] = ds["Time"]
@@ -113,7 +110,8 @@ except:
     for var in ["elev", "name", "prov", "id", "domain"]:
         prov_ds[var] = prov_ds[var].astype(str)
     prov_ds.to_netcdf(
-        str(data_dir) + f"/intercomp/{trail_name}/{model}/20210401-20221101-null.nc",
+        str(data_dir)
+        + f"/intercomp/{trail_name}/{model}/d03-20210401-20221101-null.nc",
         mode="w",
     )
 

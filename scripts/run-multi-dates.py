@@ -29,10 +29,12 @@ __email__ = "crodell@eoas.ubc.ca"
 
 # ignore RuntimeWarning
 warnings.filterwarnings("ignore", category=RuntimeWarning)
+warnings.filterwarnings("ignore", category=UserWarning)
+2022051606
 #  0:01:47.
-date_range = pd.date_range("2021-01-02", "2022-12-31")
-# date_range = pd.date_range("2021-01-02", "2021-01-05")
-# date_range = pd.date_range("2021-01-01", "2021-01-01")
+date_range = pd.date_range("2021-01-02", "2023-05-31")
+# date_range = pd.date_range("2023-05-08", "2023-05-08")
+# date_range = pd.date_range("2021-01-02", "2021-01-02")
 
 config = dict(
     model="wrf",
@@ -50,7 +52,10 @@ if config["model"] == "eccc":
 elif config["model"] == "ecmwf":
     config["root_dir"] = "/Volumes/WFRT-Ext23/ecmwf/era5"
 elif config["model"] == "wrf":
-    config["root_dir"] = "/Volumes/Scratch/fwf-data"
+    if int(date_range[0].strftime("%Y")) >= 2023:
+        config["root_dir"] = "/Volumes/WFRT-Ext22/fwf-data"
+    else:
+        config["root_dir"] = "/Volumes/Scratch/fwf-data"
 else:
     raise ValueError("YIKES! Sorry check your paths")
 

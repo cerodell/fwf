@@ -53,12 +53,11 @@ with open(str(root_dir) + f"/json/fwf-attrs.json", "r") as fp:
 
 try:
     prov_ds = xr.open_dataset(
-        str(data_dir)
-        + f"/intercomp/{trail_name}/{model}/d03-domain-20210401-20221101-null.nc"
+        str(data_dir) + f"/intercomp/{trail_name}/{model}/d03-20210401-20221101-null.nc"
     )
 except:
     ds = xr.open_dataset(
-        str(data_dir) + f"/intercomp/{trail_name}/{model}/20210101-20221231.nc",
+        str(data_dir) + f"/intercomp/{trail_name}/{model}/d03-20210101-20221231.nc",
     )
     ## make time dim sliceable with datetime
     ds["time"] = ds["Time"]
@@ -66,8 +65,12 @@ except:
     ## index between fire season
     ds = ds.sel(time=slice("2021-04-01", "2022-10-31"))
     ## drop a bad weather station
-    ds = ds.drop_sel(wmo=2275)
-
+    bad_wx = [2275, 3153, 3167, 3266, 3289]
+    for wx in bad_wx:
+        try:
+            ds = ds.drop_sel(wmo=wx)
+        except:
+            pass
     ## get wmo stations that are with every domain
     # idx = np.where(
     #     (ds.prov == "BC")
@@ -99,14 +102,14 @@ except:
         prov_ds[var] = prov_ds[var].astype(str)
     prov_ds.to_netcdf(
         str(data_dir)
-        + f"/intercomp/{trail_name}/{model}/d03-domain-20210401-20221101-null.nc",
+        + f"/intercomp/{trail_name}/{model}/d03-20210401-20221101-null.nc",
         mode="w",
     )
 
 
-bad_wx = [3153, 3167, 3266, 3289]
-for wx in bad_wx:
-    prov_ds = prov_ds.drop_sel(wmo=wx)
+# bad_wx = [3153, 3167, 3266, 3289]
+# for wx in bad_wx:
+#     prov_ds = prov_ds.drop_sel(wmo=wx)
 
 ######################## Set up plotting stuff ###########################
 

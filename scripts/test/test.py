@@ -18,21 +18,43 @@ from netCDF4 import Dataset
 from context import data_dir
 
 
-model = "eccc"
-domain = "hrdps"
-doi = pd.Timestamp("2021-01-03T00")
+model = "wrf"
+domain = "d02"
+doi = pd.Timestamp("2022-05-30T06")
 
 
-grid_ds = xr.open_dataset(str(data_dir) + f"/{model}/{domain}-grid.nc")
+# grid_ds = xr.open_dataset(str(data_dir) + f"/{model}/{domain}-grid.nc")
 
 # static_ds = xr.open_dataset(str(data_dir) + f"/static/static-vars-{model}-{domain}.nc")
 # tzone = static_ds["ZoneST"].values
 # landmask = static_ds["LAND"]
 
 
-ds = salem.open_xr_dataset(
-    f"/Volumes/WFRT-Ext23/fwf-data/{model}/{domain}/{doi.strftime('%Y%m')}/fwf-hourly-{domain}-{doi.strftime('%Y%m%d%H')}.nc"
-)
+ds_01 = salem.open_xr_dataset(
+    f"/Volumes/WFRT-Ext24/fwf-data/{model}/{domain}/01/fwf-daily-{domain}-{doi.strftime('%Y%m%d%H')}.nc"
+).isel(time=0)
+
+ds_02 = salem.open_xr_dataset(
+    f"/Volumes/WFRT-Ext24/fwf-data/{model}/{domain}/02/fwf-daily-{domain}-{doi.strftime('%Y%m%d%H')}.nc"
+).isel(time=0)
+
+fig = plt.figure(figsize=(12, 6))
+ax = fig.add_subplot(1, 1, 1)
+ds_01["D"].salem.quick_map(ax=ax, vmin=0, vmax=425)
+
+fig = plt.figure(figsize=(12, 6))
+ax = fig.add_subplot(1, 1, 1)
+ds_02["D"].salem.quick_map(ax=ax, vmin=0, vmax=425)
+
+
+ds_02["diff"] = ds_01["D"] - ds_02["D"]
+print(f"Mean diff of FWI {float(ds_02['diff'].mean())}")
+print(f"Max diff of FWI {float(ds_02['diff'].max())}")
+print(f"Min diff of FWI {float(ds_02['diff'].min())}")
+ds_02["diff"].attrs = ds_02["T"].attrs
+fig = plt.figure(figsize=(12, 6))
+ax = fig.add_subplot(1, 1, 1)
+ds_02["diff"].salem.quick_map(cmap="coolwarm", ax=ax, vmin=-200, vmax=200)
 
 for var in ds:
     print(var)

@@ -27,7 +27,7 @@ print(f"Start Time: {startTime}")
 ##################### Define Inputs   ###########################
 domain = "d02"
 var_list = ["T", "TD"]
-krig_type = "uk"  ## uk or ok
+krig_type = "ok"  ## uk or ok
 var_range = [-6, 6]
 date_range = pd.date_range("2021-04-04", "2022-10-31")
 # date_range = pd.date_range("2022-09-17", "2022-10-31")

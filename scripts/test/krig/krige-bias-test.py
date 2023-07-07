@@ -47,30 +47,30 @@ krig_type = "uk"
 ##################### Open Data Files  ###########################
 
 # date_range = pd.date_range("2022-07-15", "2022-07-20")
-# for date in date_range:
-test_ds = salem.open_xr_dataset(
-    f'/Volumes/WFRT-Ext24/fwf-data/{model}/{domain}/krig-bias-{krig_type}/fwf-krig-{domain}-{date.strftime("%Y%m%d")}.nc'
-)
-# fwf_ds = salem.open_xr_dataset(
-#     f"/Volumes/WFRT-Ext24/fwf-data/{model}/{domain}/{trail_name}/fwf-daily-{domain}-{date.strftime('%Y%m%d')}06.nc"
+# # for date in date_range:
+# test_ds = salem.open_xr_dataset(
+#     f'/Volumes/WFRT-Ext24/fwf-data/{model}/{domain}/krig-bias-{krig_type}/fwf-krig-{domain}-{date.strftime("%Y%m%d")}.nc'
 # )
-fig = plt.figure(figsize=(12, 8))
-ax = fig.add_subplot(1, 1, 1)
-test_ds[f"{var}_bias"].salem.quick_map(
-    ax=ax,
-    cmap="coolwarm",
-    vmin=int(-3),
-    vmax=int(3),
-    extend="both",
-    prov=True,
-    states=True,
-)
+# # fwf_ds = salem.open_xr_dataset(
+# #     f"/Volumes/WFRT-Ext24/fwf-data/{model}/{domain}/{trail_name}/fwf-daily-{domain}-{date.strftime('%Y%m%d')}06.nc"
+# # )
+# fig = plt.figure(figsize=(12, 8))
+# ax = fig.add_subplot(1, 1, 1)
+# test_ds[f"{var}_bias"].salem.quick_map(
+#     ax=ax,
+#     cmap="coolwarm",
+#     vmin=int(-3),
+#     vmax=int(3),
+#     extend="both",
+#     prov=True,
+#     states=True,
+# )
 
-fig.savefig(
-    str(data_dir) + f'/images/{krig_type}-{date.strftime("%Y%m%d")}.png',
-    dpi=300,
-    bbox_inches="tight",
-)
+# fig.savefig(
+#     str(data_dir) + f'/images/{krig_type}-{date.strftime("%Y%m%d")}.png',
+#     dpi=300,
+#     bbox_inches="tight",
+# )
 
 # fig.savefig(
 #     str(data_dir) + f'/images/{krig_type}-{date.strftime("%Y%m%d")}.png',
@@ -88,13 +88,45 @@ fig.savefig(
 # test[test<1] = 99
 
 ds = xr.open_dataset(
-    str(data_dir) + f"/intercomp/{trail_name}/nwp/20210101-20221231.nc",
+    str(data_dir) + f"/obs/observations-d02-20191231-20230521.nc",
     # chunks = 'auto'
 )
-ds["time"] = ds["Time"]
+# ds["time"] = ds["Time"]
 
 for cord in ["elev", "name", "prov", "id"]:
     ds[cord] = ds[cord].astype(str)
+
+
+df_wmo = {
+    "wmo": ds.wmo.values,
+    "lats": ds.lats.values,
+    "lons": ds.lons.values,
+    "elev": ds.elev.values.astype(float),
+    "name": ds.name.values,
+    "tz_correct": ds.tz_correct.values,
+}
+df_wmo = pd.DataFrame(df_wmo)
+
+print(f"{len(df_wmo)} number of observations")
+fig = px.scatter_mapbox(
+    df_wmo,
+    lat="lats",
+    lon="lons",
+    color="elev",
+    # size=f"{var_lower}_bias_abs",
+    color_continuous_scale="ylgnbu_r",
+    hover_name="wmo",
+    center={"lat": 58.0, "lon": -110.0},
+    hover_data=["elev"],
+    mapbox_style="carto-positron",
+    # range_color=[-3, 3],
+    zoom=1,
+    # labels={"colorbar": '2m Temperature Bias'}
+)
+fig.layout.coloraxis.colorbar.title = "2m T Bias"
+fig.update_layout(margin=dict(l=0, r=100, t=30, b=10))
+fig.show()
+
 
 ds = ds.chunk("auto")
 ## open modle config file with varible names and attibutes

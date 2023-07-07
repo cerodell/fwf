@@ -29,16 +29,16 @@ __email__ = "crodell@eoas.ubc.ca"
 #################### INPUTS ####################
 
 # config = {"ecmwf": ["era5"]}
-# config = {"wrf": ["d02", "d03"]}
-config = {"eccc": ["hrdps", "rdps"], "wrf": ["d02", "d03"]}
+config = {"wrf": ["d02", "d03"]}
+# config = {"eccc": ["hrdps", "rdps"], "wrf": ["d02", "d03"]}
 
 
 trail_name = "02"
 # model_save = list(config.keys())[0]
 # domain_save = config[model_save][0]
-model_save = "nwp"
-domain_save = "all"
-lead_time = 1
+model_save = "wrf_day2"
+domain_save = "d03"
+lead_time = 2
 
 # date_range = pd.date_range("2021-01-01", "2021-01-10")
 date_range = pd.date_range("2021-01-01", "2022-12-31")
@@ -98,7 +98,9 @@ with open(str(root_dir) + f"/json/fwf-attrs.json", "r") as fp:
     var_dict = json.load(fp)
 
 ## open master obs file and slice along date range of interest
-ds_obs = xr.open_dataset(str(data_dir) + f"/obs/observations-all-20191231-20221231.nc")
+ds_obs = xr.open_dataset(
+    str(data_dir) + f"/obs/observations-{domain_save}-20191231-20230531.nc"
+)
 ds_obs = ds_obs.sel(
     time=slice(date_range[0].strftime("%Y-%m-%d"), date_range[-1].strftime("%Y-%m-%d"))
 )
@@ -180,6 +182,7 @@ def read_fwf(doi, model, domain, lead_time):
     """
     opens datasets, index on day one forecast and drop variables not use for comparison
     """
+    print(doi.strftime("%Y%m%d"))
     if model == "wrf":
         hour = "06"
     else:

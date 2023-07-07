@@ -104,6 +104,7 @@ class FWF:
         self.F_initial = 85.0
         self.P_initial = 6.0
         self.D_initial = 15.0
+        self.U_initial = 6.0
         self.snowfract = 0.6
         self.date = str(np.datetime_as_string(self.int_ds.Time.values[0], unit="D"))
 
@@ -400,6 +401,15 @@ class FWF:
             D = xr.DataArray(D, name="D", dims=("south_north", "west_east"))
             self.D = D
 
+            # """ #####################     Build Up Index (BUI)       ########################### """
+            BUI = previous_daily_ds["U"].isel(time=0)
+            # BUI['time'] = BUI['Time']
+            try:
+                self.BUI = BUI.drop(["time"])
+                # self.BUI= BUI.drop(['time'])
+            except:
+                self.BUI = BUI
+
             if self.overwinter == True:
                 # """ #####################    Fall Drought Code (DC)       ########################### """
                 ### Get last time step of Df that coincides with the
@@ -510,6 +520,19 @@ class FWF:
             D_o_full = np.full(shape, D_o, dtype=float)
             D = xr.DataArray(D_o_full, name="D", dims=("south_north", "west_east"))
             self.D = D
+
+            # """ #####################     Drought Code (DC)       ########################### """
+            U_o = self.U_initial
+            U_o_full = np.full(shape, U_o, dtype=float)
+            BUI = xr.DataArray(U_o_full, name="U", dims=("south_north", "west_east"))
+            BUI = BUI.assign_coords(
+                {
+                    "Time": pd.Timestamp(int_time[0]),
+                    "time": pd.Timestamp(int_time[0]),
+                }
+            )
+            self.BUI = BUI
+
             if self.overwinter == True:
                 # """ #####################    Fall Drought Code (DC)       ########################### """
                 print(f"{initialize}: Initialize DCf on date {int_time}, with 15s")
@@ -1412,21 +1435,41 @@ class FWF:
 
         ########################################################################
         if hourly == True:
-            index = [i for i in range(1, len(R) + 1) if i % 24 == 0]
-            if len(index) == 1:
-                ### (29a) Solve FWI intermediate form  for day 1(B_a)
-                B = 0.1 * R[:] * f_D[0]
-            elif len(index) == 2:
-                # print("fwi index", index[0])
-                B_a = 0.1 * R[: index[0]] * f_D[0]
-                ### (29b) Solve FWI intermediate form for day 2 (B_b)
-                B_b = 0.1 * R[index[0] :] * f_D[1]
-                ### (29c) COmbine FWI intermediate (B)
-                B = xr.combine_nested([B_a, B_b], "time")
-            else:
-                raise ValueError(
-                    "ERROR: Rodell was lazy and needs to rethink indexing of multi length nwp runs, he will bet better in the next version!"
-                )
+            daily_ds_i = self.daily_ds["U"]
+            daily_ds_i = daily_ds_i.drop(["XTIME"])
+            daily_ds_i = xr.combine_nested([self.BUI, daily_ds_i], "time")
+            daily_ds_i["time"] = daily_ds_i["Time"] + np.timedelta64(18, "h")
+
+            # Convert daily data to hourly intervals
+            hourly_dates = self.hourly_ds.Time.values
+            daily_dsH = daily_ds_i.resample(time="1H").interpolate("linear")
+
+            # Extrapolate forward in time
+            daily_dsH = daily_dsH.reindex(time=hourly_dates)
+            # Forward fill the extrapolated values
+            U = daily_dsH.ffill(dim="time")
+            U = U.transpose("time", "south_north", "west_east")
+            f_D = np.where(
+                U > 80,
+                1000 / (25 + 108.64 * np.exp(-0.023 * U)),
+                (0.626 * np.power(U, 0.809)) + 2,
+            )
+            B = 0.1 * R * f_D
+            # index = [i for i in range(1, len(R) + 1) if i % 24 == 0]
+            # if len(index) == 1:
+            #     ### (29a) Solve FWI intermediate form  for day 1(B_a)
+            #     B = 0.1 * R[:] * f_D[0]
+            # elif len(index) == 2:
+            #     # print("fwi index", index[0])
+            #     B_a = 0.1 * R[: index[0]] * f_D[0]
+            #     ### (29b) Solve FWI intermediate form for day 2 (B_b)
+            #     B_b = 0.1 * R[index[0] :] * f_D[1]
+            #     ### (29c) COmbine FWI intermediate (B)
+            #     B = xr.combine_nested([B_a, B_b], "time")
+            # else:
+            #     raise ValueError(
+            #         "ERROR: Rodell was lazy and needs to rethink indexing of multi length nwp runs, he will bet better in the next version!"
+            #     )
         else:
             B = 0.1 * R * f_D
 
@@ -2494,7 +2537,7 @@ class FWF:
         #     [var for var in list(hourly_ds) if var not in keep_vars]
         # )
         hourly_ds = hourly_ds[keep_vars]
-        # print(list(hourly_ds))
+        print(list(hourly_ds))
         hourly_ds, encoding = compressor(hourly_ds, self.var_dict)
         hourly_ds.to_netcdf(make_dir, encoding=encoding, mode="w")
         print("Write Time: ", datetime.now() - writeTime)

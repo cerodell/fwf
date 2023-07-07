@@ -24,8 +24,11 @@ __email__ = "crodell@eoas.ubc.ca"
 
 ########################### INPUTS ###########################
 
-model = "nwp"
-domains = ["d02", "d03", "rdps", "hrdps"]
+# model = "nwp"
+# domains = ["d02", "d03", "rdps", "hrdps"]
+
+model = "wrf"
+domains = ["d02", "d03"]
 trail_name = "02"
 fwf_dir = f"/Volumes/WFRT-Ext24/fwf-data/"
 
@@ -37,7 +40,7 @@ save_dir.mkdir(parents=True, exist_ok=True)
 ############ Open static datasets and prepare ################
 
 prov_ds = xr.open_dataset(
-    str(data_dir) + f"/intercomp/{trail_name}/{model}/20210401-20221101-null.nc"
+    str(data_dir) + f"/intercomp/{trail_name}/{model}/d03-20210401-20221101-null.nc"
 )
 all_obs_ds = prov_ds.sel(domain="obs")
 domains_ds = [prov_ds.sel(domain=domain) for domain in domains]
@@ -119,8 +122,9 @@ for i in range(length):
     obs_flat = np.delete(obs_flat, idx)
     wx_station, wx_count = np.unique(np.delete(wx_station, idx), return_counts=True)
     print(var)
+    print(len(wx_count))
     # print(list(wx_station[np.where(wx_count < 30)[0]]))
-    # print(len(list(wx_station[np.where(wx_count < 30)[0]])))
+    print(len(list(wx_station[np.where(wx_count < 30)[0]])))
     print("=============================================")
     dfs = []
     for j in range(len(domains)):
