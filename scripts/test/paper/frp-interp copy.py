@@ -32,81 +32,210 @@ __email__ = "crodell@eoas.ubc.ca"
 save_fig = True
 domain = "d02"
 filein = f"/Volumes/WFRT-Ext24/fwf-data/wrf/{domain}/02/"
-
 # # define case study name and bounding box of fire
+# domain = "d03"
 # case_study = 'sparks_lake'
 # min_lat = 50.9
 # max_lat = 51.2
 # min_lon = -121.0
 # max_lon = -120.7
 # date_range = pd.date_range("2021-06-29", "2021-07-29", freq='H')
-# doi = pd.to_datetime('2021-07-01')
+### doi = pd.to_datetime('2021-07-01')
+### https://go.nasa.gov/3PKadBi
+### https://earthobservatory.nasa.gov/images/148530/blazes-rage-in-british-columbia
 
+# domain = "d03"
+# case_study = 'mckay_creek'
+# min_lat = 50.76
+# max_lat = 51.22
+# min_lon = -122.24
+# max_lon = -121.74
+# date_range = pd.date_range("2021-06-29", "2021-07-08", freq='H')
+### doi = pd.to_datetime('2021-07-01')
+### https://go.nasa.gov/3PKadBi
+### https://earthobservatory.nasa.gov/images/148530/blazes-rage-in-british-columbia
 
+# domain = "d03"
+# case_study = 'lytton_creek'
+# min_lat = 50.12
+# max_lat = 50.51
+# min_lon = -121.70
+# max_lon = -121.12
+# date_range = pd.date_range("2021-06-29", "2021-07-29", freq='H')
+### doi = pd.to_datetime('2021-07-01')
+### https://go.nasa.gov/3PKadBi
+### https://earthobservatory.nasa.gov/images/148530/blazes-rage-in-british-columbia
+
+# domain = "d02"
 # case_study = 'double_creek'
 # min_lat = 45.2
 # max_lat = 45.8
 # min_lon = -117.00
 # max_lon = -116.33
-# date_range = pd.date_range("2022-08-29", "2022-09-15", freq='H')
-# # date_range = pd.date_range("2021-06-29", "2021-07-01", freq='H')
-# doi = pd.to_datetime('2022-09-09')
+# date_range = pd.date_range("2022-09-01", "2022-09-11", freq='H')
+# date_range = pd.date_range("2021-06-29", "2021-07-01", freq='H')
+## doi = pd.to_datetime('2022-09-09')
 ## https://inciweb.nwcg.gov/incident-information/orwwf-double-creek-fire
+# https://go.nasa.gov/3pyiH3N
+## use near real time data
 
+# domain = "d03"
 # case_study = 'kimiwan_complex'
 # min_lat = 55.655
 # max_lat = 56.33
 # min_lon = -117.22
 # max_lon = -116.05
 # date_range = pd.date_range("2023-05-05", "2023-05-25", freq='H')
-# doi = pd.to_datetime('2023-05-18')
+## doi = pd.to_datetime('2023-05-18')
 
+# domain = "d03"
 # case_study = 'wildcat'
 # min_lat = 53.01
 # max_lat = 53.46
 # min_lon = -102.83
 # max_lon = -102.13
-# date_range = pd.date_range("2021-07-25", "2021-08-04", freq='H')
+# date_range = pd.date_range("2021-07-22", "2021-08-02", freq='H')
 # doi = pd.to_datetime('2021-08-01')
+### https://go.nasa.gov/43dHisf
 
-
+# domain = "d03"
 # case_study = 'munson_creek'
 # min_lat = 64.864
 # max_lat = 65.195
 # min_lon = -146.266
 # max_lon = -145.513
-# date_range = pd.date_range("2021-06-30", "2021-07-30", freq='H')
-# doi = pd.to_datetime('2021-07-13')
+# date_range = pd.date_range("2021-06-30", "2021-07-06", freq='H')
+## doi = pd.to_datetime('2021-07-13')
+### https://go.nasa.gov/3rhYwaP
 
+# domain = "d02"
 # case_study = 'six_rivers'
 # min_lat = 40.75
 # max_lat = 41.04
 # min_lon = -123.76
 # max_lon = -123.46
 # date_range = pd.date_range("2022-08-06", "2022-08-16", freq='H')
-# doi = pd.to_datetime('2022-08-14')
+## doi = pd.to_datetime('2022-08-14')
 ### https://inciweb.nwcg.gov/incident-information/casrf-six-rivers-lightning-complex
+### https://go.nasa.gov/3JNd20x
 
-
+# domain = "d03"
 # case_study = 'cutoff_creek'
 # min_lat = 53.45
 # max_lat = 53.83
 # min_lon = -124.94
 # max_lon = -124.41
 # date_range = pd.date_range("2021-07-04", "2021-07-15", freq='H')
-# doi = pd.to_datetime('2021-07-14')
+### doi = pd.to_datetime('2021-07-14')
 ### https://web.archive.org/web/20210706223626/http://bcfireinfo.for.gov.bc.ca/hprScripts/WildfireNews/OneFire.asp?ID=827
+### https://go.nasa.gov/3JGirGQ
 
+# domain = "d02"
+# case_study = 'marshall_fire'
+# min_lat = 39.9
+# max_lat = 40.01
+# min_lon = -105.26
+# max_lon = -105.13
+# date_range = pd.date_range("2021-12-29", "2022-01-01")
+## https://go.nasa.gov/3r7t2E3
 
-# # define case study name and bounding box of fire
+domain = "d02"
 case_study = "mb_096"
 min_lat = 52.21
 max_lat = 52.76
 min_lon = -96.57
 max_lon = -95.81
-date_range = pd.date_range("2021-07-02", "2021-07-16")
-doi = pd.to_datetime("2021-07-10")
+date_range = pd.date_range("2021-07-02", "2021-08-02")
 ### https://www.gov.mb.ca/conservation_fire/Fire-Status/2021/EA-096-firestatus.html
+### https://go.nasa.gov/44p7zoM
+
+# domain = "d02"
+# case_study = 'eastland_complex'
+# min_lat = 31.87
+# max_lat = 32.5
+# min_lon = -99.25
+# max_lon = -98.48
+# date_range = pd.date_range("2022-03-14", "2022-03-23")
+### https://go.nasa.gov/44yl4Cl
+
+# domain = "d02"
+# case_study = 'mbea_112'
+# min_lat = 50.21
+# max_lat = 51.53
+# min_lon = -95.32
+# max_lon = -94.12
+# date_range = pd.date_range("2021-07-01", "2021-08-01")
+### https://go.nasa.gov/3JOeKim
+
+# domain = "d02"
+# case_study = 'mosquito_fire'
+# min_lat = 38.8
+# max_lat = 39.31
+# min_lon = -120.95
+# max_lon = -120.39
+# date_range = pd.date_range("2022-09-07", "2022-09-16")
+### https://go.nasa.gov/3O3Lc2M
+
+# domain = "d03"
+# case_study = 'nwt_gsl'
+# min_lat = 61.67
+# max_lat = 62.46
+# min_lon = -115.81
+# max_lon = -114.78
+# date_range = pd.date_range("2022-06-18", "2022-07-18")
+### https://go.nasa.gov/3XMQ0Ne
+
+# domain = "d03"
+# case_study = 'int_bc'
+# min_lat = 48.52
+# max_lat = 52.65
+# min_lon = -122.43
+# max_lon = -116.08
+# date_range = pd.date_range("2021-06-29", "2021-07-29")
+
+
+# domain = "d03"
+# case_study = "moose_fire"
+# min_lat = 45.12
+# max_lat = 45.53
+# min_lon = -114.39
+# max_lon = -113.87
+# date_range = pd.date_range("2022-07-18", "2022-08-07")
+## https://inciweb.nwcg.gov/incident-information/idscf-moose-fire
+## https://go.nasa.gov/43ezsPd
+
+
+# domain = "d02"
+# case_study = "wildcat_fire"
+# min_lat = 41.50
+# max_lat = 41.79
+# min_lon = -115.42
+# max_lon = -115.05
+# date_range = pd.date_range("2022-07-13", "2022-07-16")
+### https://inciweb.nwcg.gov/incident-information/idscf-moose-fire
+### https://go.nasa.gov/3NyIIHW
+
+
+# domain = "d02"
+# case_study = "mckinney_fire"
+# min_lat = 41.60
+# max_lat = 42.0
+# min_lon = -123.1
+# max_lon = -122.5
+# date_range = pd.date_range("2022-07-30", "2022-08-08")
+### https://inciweb.nwcg.gov/incident-information/caknf-mckinney-fire
+### https://go.nasa.gov/43gDhDA
+
+
+# domain = "d03"
+# case_study = "bolt_creek_fire"
+# min_lat = 47.58
+# max_lat = 47.96
+# min_lon = -121.63
+# max_lon = -121.11
+# date_range = pd.date_range("2022-09-09", "2022-09-14")
+### https://inciweb.nwcg.gov/incident-information/wanws-bolt-creek-fire
+### https://go.nasa.gov/3XG8qiw
 
 ################## END INPUTS ####################
 

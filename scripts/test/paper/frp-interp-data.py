@@ -12,6 +12,7 @@ from pathlib import Path
 import plotly.express as px
 from plotly.subplots import make_subplots
 import plotly.graph_objects as go
+from sklearn.neighbors import KDTree
 
 import cartopy.crs as ccrs
 import matplotlib.colors
@@ -32,165 +33,55 @@ __email__ = "crodell@eoas.ubc.ca"
 
 ## define model domain and path to fwf data
 save_fig = True
-domain = "d02"
-filein = f"/Volumes/WFRT-Ext24/fwf-data/wrf/{domain}/02/"
+case_study = "oil_springs_fire"
+print(case_study)
 
-# # define case study name and bounding box of fire
-# case_study = 'sparks_lake'
-# min_lat = 50.9
-# max_lat = 51.2
-# min_lon = -121.0
-# max_lon = -120.7
-# date_range = pd.date_range("2021-06-29", "2021-07-29", freq='H')
-### doi = pd.to_datetime('2021-07-01')
-### https://go.nasa.gov/3PKadBi
-### https://earthobservatory.nasa.gov/images/148530/blazes-rage-in-british-columbia
-
-# case_study = 'mckay_creek'
-# min_lat = 50.76
-# max_lat = 51.22
-# min_lon = -122.24
-# max_lon = -121.74
-# date_range = pd.date_range("2021-06-29", "2021-07-08", freq='H')
-### doi = pd.to_datetime('2021-07-01')
-### https://go.nasa.gov/3PKadBi
-### https://earthobservatory.nasa.gov/images/148530/blazes-rage-in-british-columbia
-
-# case_study = 'lytton_creek'
-# min_lat = 50.12
-# max_lat = 50.51
-# min_lon = -121.70
-# max_lon = -121.12
-# date_range = pd.date_range("2021-06-29", "2021-07-29", freq='H')
-### doi = pd.to_datetime('2021-07-01')
-### https://go.nasa.gov/3PKadBi
-### https://earthobservatory.nasa.gov/images/148530/blazes-rage-in-british-columbia
-
-
-# case_study = 'double_creek'
-# min_lat = 45.2
-# max_lat = 45.8
-# min_lon = -117.00
-# max_lon = -116.33
-# date_range = pd.date_range("2022-09-01", "2022-09-11", freq='H')
-# date_range = pd.date_range("2021-06-29", "2021-07-01", freq='H')
-## doi = pd.to_datetime('2022-09-09')
-## https://inciweb.nwcg.gov/incident-information/orwwf-double-creek-fire
-# https://go.nasa.gov/3pyiH3N
-## use near real time data
-
-# case_study = 'kimiwan_complex'
-# min_lat = 55.655
-# max_lat = 56.33
-# min_lon = -117.22
-# max_lon = -116.05
-# date_range = pd.date_range("2023-05-05", "2023-05-25", freq='H')
-## doi = pd.to_datetime('2023-05-18')
-
-# case_study = 'wildcat'
-# min_lat = 53.01
-# max_lat = 53.46
-# min_lon = -102.83
-# max_lon = -102.13
-# date_range = pd.date_range("2021-07-22", "2021-08-02", freq='H')
-# doi = pd.to_datetime('2021-08-01')
-### https://go.nasa.gov/43dHisf
-
-# case_study = 'munson_creek'
-# min_lat = 64.864
-# max_lat = 65.195
-# min_lon = -146.266
-# max_lon = -145.513
-# date_range = pd.date_range("2021-06-30", "2021-07-06", freq='H')
-## doi = pd.to_datetime('2021-07-13')
-### https://go.nasa.gov/3rhYwaP
-
-# case_study = 'six_rivers'
-# min_lat = 40.75
-# max_lat = 41.04
-# min_lon = -123.76
-# max_lon = -123.46
-# date_range = pd.date_range("2022-08-06", "2022-08-16", freq='H')
-## doi = pd.to_datetime('2022-08-14')
-### https://inciweb.nwcg.gov/incident-information/casrf-six-rivers-lightning-complex
-### https://go.nasa.gov/3JNd20x
-
-# case_study = 'cutoff_creek'
-# min_lat = 53.45
-# max_lat = 53.83
-# min_lon = -124.94
-# max_lon = -124.41
-# date_range = pd.date_range("2021-07-04", "2021-07-15", freq='H')
-### doi = pd.to_datetime('2021-07-14')
-### https://web.archive.org/web/20210706223626/http://bcfireinfo.for.gov.bc.ca/hprScripts/WildfireNews/OneFire.asp?ID=827
-### https://go.nasa.gov/3JGirGQ
-
-# case_study = 'marshall_fire'
-# min_lat = 39.9
-# max_lat = 40.01
-# min_lon = -105.26
-# max_lon = -105.13
-# date_range = pd.date_range("2021-12-29", "2022-01-01")
-## https://go.nasa.gov/3r7t2E3
-
-case_study = "mb_096"
-min_lat = 52.21
-max_lat = 52.76
-min_lon = -96.57
-max_lon = -95.81
-date_range = pd.date_range("2021-07-02", "2021-08-02")
-### doi = pd.to_datetime('2021-07-10')
-### https://www.gov.mb.ca/conservation_fire/Fire-Status/2021/EA-096-firestatus.html
-### https://go.nasa.gov/44p7zoM
-
-# case_study = 'eastland_complex'
-# min_lat = 31.87
-# max_lat = 32.5
-# min_lon = -99.25
-# max_lon = -98.48
-# date_range = pd.date_range("2022-03-14", "2022-03-23")
-### https://go.nasa.gov/44yl4Cl
-
-
-# case_study = 'mbea_112'
-# min_lat = 50.21
-# max_lat = 51.53
-# min_lon = -95.32
-# max_lon = -94.12
-# date_range = pd.date_range("2021-07-01", "2021-08-01")
-### https://go.nasa.gov/3JOeKim
-
-# case_study = 'mosquito_fire'
-# min_lat = 38.8
-# max_lat = 39.31
-# min_lon = -120.95
-# max_lon = -120.39
-# date_range = pd.date_range("2022-09-07", "2022-09-16")
-### https://go.nasa.gov/3O3Lc2M
-
-# case_study = 'nwt_gsl'
-# min_lat = 61.67
-# max_lat = 62.46
-# min_lon = -115.81
-# max_lon = -114.78
-# date_range = pd.date_range("2022-06-18", "2022-07-18")
-### https://go.nasa.gov/3XMQ0Ne
-
-# case_study = 'int_bc'
-# min_lat = 48.52
-# max_lat = 52.65
-# min_lon = -122.43
-# max_lon = -116.08
-# date_range = pd.date_range("2021-06-29", "2021-07-29")
 ################## END INPUTS ####################
 
 #################### OPEN FILES ####################
-## open FRP data
-df = pd.read_csv(
-    str(data_dir) + f"/frp/DL_FIRE_SV-C2_361604/fire_archive_SV-C2_361604.csv"
+
+## open case study json file
+with open(str(root_dir) + f"/json/fire-cases.json", "r") as fp:
+    case_dict = json.load(fp)
+
+case_info = case_dict[case_study]
+domain = case_info["domain"]
+date_range = pd.date_range(
+    case_info["date_range"][0], case_info["date_range"][1], freq="H"
 )
-## drop low confidences satellite detections, keep ing only nominal and high detects
-df = df[df["confidence"].isin(["n", "h"])]
+filein = f"/Volumes/WFRT-Ext24/fwf-data/wrf/{domain}/02/"
+
+# modis_df = pd.read_csv(str(data_dir) + f"/frp/DL_FIRE_M-C61_361602/fire_archive_M-C61_361602.csv")
+# modis_df = modis_df[modis_df['confidence'] > 80]
+# modis_df['frp'] = modis_df['frp'].where(modis_df['daynight'] == 'D', -338.41 + (1.09* modis_df['frp']))
+# modis_df['frp'] = modis_df['frp'].where(modis_df['daynight'] == 'N', 179.46 + (0.78* modis_df['frp']))
+# modis_df['frp'] = (modis_df['frp'] - modis_df['frp'].min()) / (modis_df['frp'].max() - modis_df['frp'].min())
+
+
+viirs_j1_df = pd.read_csv(
+    str(data_dir) + f"/frp/DL_FIRE_J1V-C2_361603/fire_nrt_J1V-C2_361603.csv"
+)
+viirs_j1_df = viirs_j1_df[viirs_j1_df["confidence"].isin(["n", "h"])]
+# viirs_j1_df['frp'] = (viirs_j1_df['frp'] - viirs_j1_df['frp'].min()) / (viirs_j1_df['frp'].max() - viirs_j1_df['frp'].min())
+if date_range[0] >= pd.Timestamp("2022-09-01"):
+    viirs_su_df = pd.read_csv(
+        str(data_dir) + f"/frp/DL_FIRE_SV-C2_361604/fire_nrt_SV-C2_361604.csv"
+    )
+else:
+    viirs_su_df = pd.read_csv(
+        str(data_dir) + f"/frp/DL_FIRE_SV-C2_361604/fire_archive_SV-C2_361604.csv"
+    )
+viirs_su_df = viirs_su_df[viirs_su_df["confidence"].isin(["n", "h"])]
+# viirs_su_df['frp'] = (viirs_su_df['frp'] - viirs_su_df['frp'].min()) / (viirs_su_df['frp'].max() - viirs_su_df['frp'].min())
+
+df = pd.concat([viirs_j1_df, viirs_su_df])
+
+## open FRP data
+# df = pd.read_csv(
+#     str(data_dir) + f"/frp/DL_FIRE_SV-C2_361604/fire_archive_SV-C2_361604.csv"
+# )
+# drop low confidences satellite detections, keep ing only nominal and high detects
+# df = df[df["confidence"].isin(["n", "h"])]
 
 ## open static data of wrf/FWF model
 static_ds = salem.open_xr_dataset(
@@ -200,7 +91,7 @@ pyproj_srs = static_ds.attrs["pyproj_srs"]
 
 ##
 ncfile = Dataset(str(data_dir) + f"/wrf/wrfout_{domain}_2021-01-14_00:00:00")
-
+wrf_ds = xr.open_dataset(str(data_dir) + f"/wrf/wrfout_{domain}_2021-01-14_00:00:00")
 ## Open Fuels Data and subset
 fc_df = pd.read_csv(str(data_dir) + "/fbp/fuel_converter.csv")
 fc_df = fc_df.drop_duplicates(subset=["CFFDRS"])
@@ -292,10 +183,10 @@ df = df.loc[(df["DateTime"] >= date_range[0]) & (df["DateTime"] <= date_range[-1
 
 ## Filter the DataFrame based on the bounding box of fire
 df = df[
-    (df["latitude"] >= min_lat)
-    & (df["latitude"] <= max_lat)
-    & (df["longitude"] >= min_lon)
-    & (df["longitude"] <= max_lon)
+    (df["latitude"] >= case_info["min_lat"])
+    & (df["latitude"] <= case_info["max_lat"])
+    & (df["longitude"] >= case_info["min_lon"])
+    & (df["longitude"] <= case_info["max_lon"])
 ]
 
 ## set DateTime as dataframe index
@@ -345,8 +236,8 @@ ds_map = static_ds.sel(
 ## find UTC of set to localtime based on ~center of Fire
 df_center = pd.DataFrame(
     {
-        "latitude": [np.mean([min_lat, min_lat])],
-        "longitude": [np.mean([min_lon, min_lon])],
+        "latitude": [np.mean([case_info["min_lat"], case_info["max_lat"]])],
+        "longitude": [np.mean([case_info["min_lon"], case_info["max_lon"]])],
     }
 )
 center_x, center_y = get_locs(pyproj_srs, df_center)
@@ -354,6 +245,11 @@ utc_offset = static_ds["ZoneDT"].interp(
     west_east=center_x, south_north=center_y, method="nearest"
 )
 
+XLATr, XLONGr = static_ds.XLAT.values.ravel(), static_ds.XLONG.values.ravel()
+fwf_locs = pd.DataFrame({"lats": XLATr, "longs": XLONGr})
+## build kdtree
+fwf_tree = KDTree(fwf_locs)
+print("Fire KDTree built")
 
 ##################################### END MODS ####################################
 
@@ -368,6 +264,7 @@ expected_range = pd.date_range(times[0], times[-1])
 
 hFWII, dFWII = [], []
 ## loop time for each over pass
+obs_size = []
 for j in range(len(expected_range)):
     # time = pd.to_datetime(times[j])
     time = expected_range[j]
@@ -388,103 +285,38 @@ for j in range(len(expected_range)):
         pass
 
     lat, lon = df_day["latitude"], df_day["longitude"]
+    inds = []
+
+    for loc in df_day.itertuples(index=True, name="Pandas"):
+        ## arange wx station lat and long in a formate to query the kdtree
+        single_loc = np.array([loc.latitude, loc.longitude]).reshape(1, -1)
+        ## query the kdtree retuning the distacne of nearest neighbor and index
+        dist, ind = fwf_tree.query(single_loc, k=1)
+        ## set condition to pass on fire farther than 0.1 degrees
+        if dist > 0.1:
+            pass
+        else:
+            inds.append(int(ind))
+
+    hds_locs = hds_time.stack(locs=["south_north", "west_east"])
+    dds_locs = dds_time.stack(locs=["south_north", "west_east"])
+    hds_locs = hds_locs.isel(locs=inds).mean("locs")
+    dds_locs = dds_locs.isel(locs=inds).mean("locs")
+
     ## find the the nearest mode grid(s) for each hot spot and store the frp data for those grids
     ## when the interp funtion is applied, the x and y dataarrays have the frp data stored as coordinates.
-    x, y = get_locs(pyproj_srs, df_day)
-    hds_locs = hds_time.interp(west_east=x, south_north=y, method="nearest").mean("loc")
-    dds_locs = dds_time.interp(west_east=x, south_north=y, method="nearest").mean("loc")
+    # x, y = get_locs(pyproj_srs, df_day)
+    # hds_locs = hds_time.interp(west_east=x, south_north=y, method="nearest").mean("loc")
+    # dds_locs = dds_time.interp(west_east=x, south_north=y, method="nearest").mean("loc")
 
     # x, y = ll_to_xy(ncfile, lat, lon)
     # array_tuple = np.stack([x, y], axis=1)
     # unique_pairs = np.unique(array_tuple, axis=0)
     # hds_locs = hds_time.isel(west_east=unique_pairs[:,0], south_north=unique_pairs[:,1]).mean(['west_east', 'south_north'])
     # dds_locs = dds_time.isel(west_east=unique_pairs[:,0], south_north=unique_pairs[:,1]).mean(['west_east', 'south_north'])
-
+    obs_size.append(len(inds))
     hFWII.append(hds_locs)
     dFWII.append(dds_locs)
-
-
-# ## find unique times of the VIIRS overpasses
-# frp = df.groupby('DateTime')['frp']
-# times = list(frp.groups)
-# hFWI, hIFWI, dFWI, dIFWI  = [], [], [], []
-# ## loop time for each over pass
-# for j in range(len(times)):
-#     time = times[j]
-#     print(time)
-#     ## index on unique time
-#     df_time =df.loc[time]
-#     if str(type(df_time)) == "<class 'pandas.core.series.Series'>":
-#         df_time = pd.DataFrame([df_time])
-#     ## get fwf model data at nearst hour of VIRRS overpass
-#     hds_time = hds.sel(time = time.round('H').strftime('%Y%m%dT%H'))
-#     dds_time = dds.sel(time = time.strftime('%Y%m%dT'))
-
-#     if j == 0:
-#         hds_fire_i = hds.sel(time = time.round('H').strftime('%Y%m%dT%H'))
-#         dds_fire_i = dds_resampled.sel(time = time.round('H').strftime('%Y%m%dT%H'))
-#     else:
-#         hds_fire_i = hds.sel(time =slice(times[j-1].round('H').strftime('%Y%m%dT%H'), times[j].round('H').strftime('%Y%m%dT%H')))
-#         dds_fire_i = dds_resampled.sel(time =slice(times[j-1].round('H').strftime('%Y%m%dT%H'), times[j].round('H').strftime('%Y%m%dT%H')))
-
-
-#     ## find the the nearest mode grid(s) for each hot spot and store the frp data for those grids
-#     ## when the interp funtion is applied, the x and y dataarrays have the frp data stored as coordinates.
-#     x, y = get_locs(pyproj_srs, df_time)
-#     hds_locs = hds_time.interp(west_east=x, south_north=y, method="nearest")
-#     dds_locs = dds_time.interp(west_east=x, south_north=y, method="nearest")
-
-#     hds_fire_i = hds_fire_i.sel(south_north = slice(y.min()-buff, y.max()+buff), west_east = slice(x.min()-buff, x.max()+buff)).mean(dim =['south_north', 'west_east'])
-#     x, y = get_locs(pyproj_srs, df[df.index.date == time.date()])
-#     dds_fire_i = dds_fire_i.sel(south_north = slice(y.min()-buff, y.max()+buff), west_east = slice(x.min()-buff, x.max()+buff)).mean(dim =['south_north', 'west_east'])
-
-#     # Create a tuple of the lat lon of the wrf grids hotpsot are located
-#     array_tuple = np.stack([hds_locs['XLAT'], hds_locs['XLONG']], axis=1)
-#     darray_tuple = np.stack([dds_locs['XLAT'], dds_locs['XLONG']], axis=1)
-
-#     # Find the unique pairs so we dont duplicate the process
-#     unique_pairs = np.unique(array_tuple, axis=0)
-#     h_grid_cell, d_grid_cell = [], []
-#     ## loop unique wrf grids and average the FRP values that land within one grid
-#     ## store this in a new list to merge after all locations sampled
-#     for i in range(len(unique_pairs)):
-#         index = np.where(array_tuple == unique_pairs[i])
-#         hds_loc_cell = hds_locs.isel(loc = index[0])
-#         hds_loc_cell = hds_loc_cell.assign(FRP=hds_loc_cell['frp'])
-#         hds_loc_cell = hds_loc_cell.mean(dim = 'loc')
-#         h_grid_cell.append(hds_loc_cell)
-
-#         dds_loc_cell = dds_locs.isel(loc = index[0])
-#         dds_loc_cell = dds_loc_cell.assign(FRP=dds_loc_cell['frp'])
-#         dds_loc_cell = dds_loc_cell.mean(dim = 'loc')
-#         dds_loc_cell['Time'] = hds_loc_cell['Time']
-#         dds_loc_cell['time'] = dds_loc_cell['Time']
-#         d_grid_cell.append(dds_loc_cell)
-
-#     ## combine all FWI/FRP from a single sat overpass (one time) into a dataset
-#     hds_cell = xr.combine_nested(h_grid_cell, "time")
-#     dds_cell = xr.combine_nested(d_grid_cell, "time")
-#     hFWI.append(hds_cell.mean())
-#     dFWI.append(dds_cell.mean())
-
-#     hIFWI.append(hds_fire_i)
-#     dIFWI.append(dds_fire_i)
-
-## combine all FWI/FRP from a fire into a single dataset
-# hourly_ds = xr.combine_nested(hFWI, "time")
-# hourly_ds = hourly_ds.groupby('Time').mean(dim='time')
-# hourly_ds = hourly_ds.expand_dims(dim={"method": ['hourly']})
-
-# daily_ds = xr.combine_nested(dFWI, "time")
-# daily_ds = daily_ds.groupby('Time').mean(dim='time')
-# daily_ds = daily_ds.expand_dims(dim={"method": ['daily']})
-# on_obs_ds = xr.combine_nested([daily_ds, hourly_ds], "method")
-
-# on_obs_ds['S'].attrs = {'name': 'Fire Weather Index'}
-# on_obs_ds['F'].attrs = {'name': 'Fine Fuel Moisture Code'}
-# on_obs_ds['FRP'].attrs = {'name': 'Fire Radiative Power'}
-# on_obs_ds.attrs = {'utc_offset': str(utc_offset)}
-# on_obs_ds = on_obs_ds.drop_vars('XTIME')
 
 
 hds_fire_final = xr.combine_nested(hFWII, "time")
@@ -499,6 +331,7 @@ hds_fire_final["Time"] = hds_fire_final["Time"] - np.timedelta64(int(utc_offset)
 
 dds_fire_final = xr.combine_nested(dFWII, "time")
 dds_fire_final = dds_fire_final.groupby("Time").mean(dim="time")
+# test = dds_fire_final.resample(Time="1H").nearest()
 dds_fire_final = dds_fire_final.sel(
     Time=slice(hds_fire_final.Time[0], hds_fire_final.Time[-1])
 )
@@ -537,7 +370,7 @@ interp_grid_ds.to_netcdf(
 #     # color_continuous_scale="Viridis",
 #     hover_name="frp",
 #   # center={"lat": 58.0, "lon": -110.0},
-#     center={"lat": (max_lat+min_lat)/2, "lon": (max_lon+min_lon)/2},
+#     center={"lat": (case_info['max_lat']+case_info['min_lat'])/2, "lon": (case_info['max_lon']+case_info['max_lon'])/2},
 #     hover_data=["daynight", "acq_date", "acq_time", "instrument"],
 #     mapbox_style="carto-positron",
 #     zoom=8,
@@ -606,6 +439,12 @@ if save_fig == True:
 # ################# Plot Hot spots on WRF Grid ###################
 ## TODO colorize based on time of overpass
 
+
+############################################
+# TASK 1.1
+# Read map
+import matplotlib.image as mpimg
+
 # Filter rows based on the target datetime
 # df_sample = df[df.index.date == doi.date()]
 df_sample = df
@@ -625,18 +464,102 @@ sc = ax.scatter(
     df_sample["latitude"],
     zorder=9,
     c=mdates.date2num(df_sample.index.values),
+    alpha=0.5,
 )
-cbar = plt.colorbar(sc, ax=ax, pad=0.008)
+
+cbar = plt.colorbar(sc, ax=ax, pad=0.008, alpha=1)
 loc = mdates.AutoDateLocator()
 cbar.ax.yaxis.set_major_locator(loc)
 cbar.ax.yaxis.set_major_formatter(mdates.ConciseDateFormatter(loc))
-ax.set_title(f"Fire Radiative Power {case_study.replace('_',' ')}", fontsize=14)
+ax.set_title(f"Fire Hot Spots {case_study.replace('_',' ')}", fontsize=14)
 cbar.set_label("Datetime", rotation=270, fontsize=14, labelpad=20)
 ax.set_xlabel("Longitude", fontsize=16)
 ax.set_ylabel("Latitude", fontsize=16)
+if case_study == "mb_096":
+    img = mpimg.imread(str(data_dir) + f"/frp/mb_096_true.jpeg")
+    ax.imshow(
+        img,
+        extent=[
+            case_info["min_lon"],
+            case_info["max_lon"],
+            case_info["min_lat"],
+            case_info["max_lat"],
+        ],
+    )
+else:
+    pass
 if save_fig == True:
     plt.savefig(str(save_dir) + f"/map-frp.png", dpi=250, bbox_inches="tight")
+
 # ############## End hotspot on wrf grid plot ###################
+
+
+# ################# Plot FRP on WRF Grid ###################
+
+# Filter rows based on the target datetime
+doi = expected_range[np.argmax(obs_size)]
+df_sample = df[df.index.date == doi.date()]
+
+inds = []
+for loc in df_sample.itertuples(index=True, name="Pandas"):
+    ## arange wx station lat and long in a formate to query the kdtree
+    single_loc = np.array([loc.latitude, loc.longitude]).reshape(1, -1)
+    ## query the kdtree retuning the distacne of nearest neighbor and index
+    dist, ind = fwf_tree.query(single_loc, k=1)
+    ## set condition to pass on fire farther than 0.1 degrees
+    if dist > 0.1:
+        pass
+    else:
+        inds.append(int(ind))
+
+static_i = static_ds.stack(locs=["south_north", "west_east"])
+static_i = static_i.isel(locs=inds)
+XLONG1 = static_i.XLONG.values
+XLAT1 = static_i.XLAT.values
+
+fig = plt.figure(figsize=(8, 8))
+ax = fig.add_subplot(1, 1, 1)
+XLONG = ds_map["XLONG"].values
+XLAT = ds_map["XLAT"].values
+test = np.isin(XLAT, XLAT1).astype(int)
+test = test.astype(float)
+ax.pcolormesh(
+    XLONG,
+    XLAT,
+    test,
+    zorder=1,
+    cmap=matplotlib.colors.ListedColormap(["green", "red"]),
+    alpha=0.5,
+)
+sc = ax.scatter(
+    df_sample["longitude"],
+    df_sample["latitude"],
+    zorder=9,
+    c=df_sample["frp"],
+    cmap="inferno",
+)
+cbar = plt.colorbar(sc, ax=ax, pad=0.008)
+ax.set_title(
+    f"Fire Radiative Power {case_study.replace('_',' ')} \n {doi.strftime('%d %b %Y')}",
+    fontsize=14,
+)
+cbar.set_label("FRP (MW)", rotation=270, fontsize=14, labelpad=20)
+ax.set_xlabel("Longitude", fontsize=16)
+ax.set_ylabel("Latitude", fontsize=16)
+# if case_study == 'mb_096':
+#     img = mpimg.imread(str(data_dir) + f'/frp/mb_096_true.jpeg')
+#     ax.imshow(img,extent=[case_info['min_lon'],case_info['max_lon'], case_info['min_lat'],case_info['max_lat']])
+# else:
+#     pass
+if save_fig == True:
+    plt.savefig(
+        str(save_dir) + f"/map-frp-{doi.strftime('%Y%m%d')}.png",
+        dpi=250,
+        bbox_inches="tight",
+    )
+
+
+# ############## End FRP on wrf grid plot ###################
 
 hfwi = hds_fire_final["S"].values[0]
 hfrp = dds_fire_final["FRP"].values[0]

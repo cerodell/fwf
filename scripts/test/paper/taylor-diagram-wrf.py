@@ -63,16 +63,16 @@ for var in var_list:
     else:
         name = "max"
 
-    wrf_d03_noon = f"WRF 4km Noon               {get_mbe(day1_df, 'd03-noon')},             {get_mbe(day2_df, 'd03-noon')}"
-    wrf_d02_noon = f"WRF 12km Noon             {get_mbe(day1_df, 'd02-noon')},             {get_mbe(day2_df, 'd02-noon')}"
+    wrf_d03_noon = f"WRF 4km Daily               {get_mbe(day1_df, 'd03-noon')},             {get_mbe(day2_df, 'd03-noon')}"
+    wrf_d02_noon = f"WRF 12km Daily             {get_mbe(day1_df, 'd02-noon')},             {get_mbe(day2_df, 'd02-noon')}"
     try:
         wrf_d03_max = f"WRF 4km {name.capitalize()}                 {get_mbe(day1_df, f'd03-{name}')},             {get_mbe(day2_df, f'd03-{name}')}"
         wrf_d02_max = f"WRF 12km {name.capitalize()}               {get_mbe(day1_df, f'd02-{name}')},             {get_mbe(day2_df, f'd02-{name}')}"
     except:
         pass
     try:
-        wrf_d03_hourly = f"WRF 4km Hourly             {get_mbe(day1_df, 'd03-hourly')},             {get_mbe(day2_df, 'd03-hourly')}"
-        wrf_d02_hourly = f"WRF 12km Hourly           {get_mbe(day1_df, 'd02-hourly')},             {get_mbe(day2_df, 'd02-hourly')}"
+        wrf_d03_hourly = f"WRF 4km Noon               {get_mbe(day1_df, 'd03-hourly')},             {get_mbe(day2_df, 'd03-hourly')}"
+        wrf_d02_hourly = f"WRF 12km Noon             {get_mbe(day1_df, 'd02-hourly')},             {get_mbe(day2_df, 'd02-hourly')}"
     except:
         pass
     # ## DATA ####################################################################### #
@@ -161,16 +161,16 @@ for var in var_list:
     try:
         EXTREMS = {
             wrf_d03_max: {
-                "marker": "v",
+                "marker": "D",
                 "color_edge": "#ff4f33",
                 "color_face": "#ee5138",
-                "markersize": 9,
+                "markersize": 7,
             },
             wrf_d02_max: {
-                "marker": "v",
+                "marker": "D",
                 "color_edge": "#0050ff",
                 "color_face": "#3e5da7",
-                "markersize": 9,
+                "markersize": 7,
             },
         }
         MARKERS.update(EXTREMS)
@@ -367,6 +367,12 @@ for var in var_list:
         # avoid some overlapping
         plt.tight_layout()
 
+        # # Write plot to file
+        plt.savefig(
+            str(save_dir) + f"/{var}.png",
+            facecolor="w",
+            bbox_inches="tight",
+        )
         # # Write plot to file
         plt.savefig(
             str(save_dir) + f"/{var}.pdf",

@@ -32,7 +32,7 @@ var_list = [
     "wdir",
     "rh",
 ]
-# var_list = ['fwi']
+var_list = ["fwi"]
 for var in var_list:
     day1_df = pd.read_csv(str(data_dir) + f"/intercomp/02/nwp/{var}-stats.csv")
     day1_df["domain"] = day1_df["domain"].str.strip()
@@ -63,10 +63,10 @@ for var in var_list:
     else:
         name = "max"
 
-    wrf_d03_noon = f"WRF 4km Noon               {get_mbe(day1_df, 'd03-noon')},             {get_mbe(day2_df, 'd03-noon')}"
-    wrf_d02_noon = f"WRF 12km Noon             {get_mbe(day1_df, 'd02-noon')},             {get_mbe(day2_df, 'd02-noon')}"
-    hrdps_noon = f"HRDPS 2.5km Noon        {get_mbe(day1_df, 'hrdps-noon')},              {get_mbe(day2_df, 'hrdps-noon')}"
-    rdps_noon = f"RDPS 10km Noon             {get_mbe(day1_df, 'rdps-noon')},              {get_mbe(day2_df, 'rdps-noon')}"
+    wrf_d03_noon = f"WRF 4km Daily              {get_mbe(day1_df, 'd03-noon')},             {get_mbe(day2_df, 'd03-noon')}"
+    wrf_d02_noon = f"WRF 12km Daily            {get_mbe(day1_df, 'd02-noon')},             {get_mbe(day2_df, 'd02-noon')}"
+    hrdps_noon = f"HRDPS 2.5km Daily       {get_mbe(day1_df, 'hrdps-noon')},              {get_mbe(day2_df, 'hrdps-noon')}"
+    rdps_noon = f"RDPS 10km Daily            {get_mbe(day1_df, 'rdps-noon')},              {get_mbe(day2_df, 'rdps-noon')}"
     try:
         wrf_d03_max = f"WRF 4km {name.capitalize()}                 {get_mbe(day1_df, f'd03-{name}')},             {get_mbe(day2_df, f'd03-{name}')}"
         wrf_d02_max = f"WRF 12km {name.capitalize()}               {get_mbe(day1_df, f'd02-{name}')},             {get_mbe(day2_df, f'd02-{name}')}"
@@ -174,30 +174,40 @@ for var in var_list:
             "color_edge": "#000000",
             "color_face": "#000000",
             "markersize": 9,
+            "alpha": 0.1,
+            "zorder": 10,
         },
         wrf_d03_noon: {
             "marker": "o",
             "color_edge": "#000000",
             "color_face": "#777777",
             "markersize": 9,
+            "alpha": 0.1,
+            "zorder": 10,
         },
         wrf_d02_noon: {
             "marker": "o",
             "color_edge": "#AA0000",
             "color_face": "#DD3333",
             "markersize": 9,
+            "alpha": 0.1,
+            "zorder": 10,
         },
         hrdps_noon: {
             "marker": "o",
             "color_edge": "#00AA00",
             "color_face": "#33DD33",
             "markersize": 9,
+            "alpha": 0.1,
+            "zorder": 10,
         },
         rdps_noon: {
             "marker": "o",
             "color_edge": "#0000AA",
             "color_face": "#3333DD",
             "markersize": 9,
+            "alpha": 0.1,
+            "zorder": 10,
         },
     }
     try:
@@ -207,24 +217,32 @@ for var in var_list:
                 "color_edge": "#000000",
                 "color_face": "#777777",
                 "markersize": 9,
+                "alpha": 0.1,
+                "zorder": 1,
             },
             wrf_d02_max: {
                 "marker": "v",
                 "color_edge": "#AA0000",
                 "color_face": "#DD3333",
                 "markersize": 9,
+                "alpha": 0.1,
+                "zorder": 1,
             },
             hrdps_max: {
                 "marker": "v",
                 "color_edge": "#00AA00",
                 "color_face": "#33DD33",
                 "markersize": 9,
+                "alpha": 0.1,
+                "zorder": 1,
             },
             rdps_max: {
                 "marker": "v",
                 "color_edge": "#0000AA",
                 "color_face": "#3333DD",
                 "markersize": 9,
+                "alpha": 0.1,
+                "zorder": 1,
             },
         }
         MARKERS.update(EXTREMS)
@@ -237,24 +255,32 @@ for var in var_list:
                 "color_edge": "#000000",
                 "color_face": "#777777",
                 "markersize": 9,
+                "alpha": 1,
+                "zorder": 1,
             },
             wrf_d02_hourly: {
                 "marker": "s",
                 "color_edge": "#AA0000",
                 "color_face": "#DD3333",
                 "markersize": 9,
+                "alpha": 1,
+                "zorder": 1,
             },
             hrdps_hourly: {
                 "marker": "s",
                 "color_edge": "#00AA00",
                 "color_face": "#33DD33",
                 "markersize": 9,
+                "alpha": 1,
+                "zorder": 1,
             },
             rdps_hourly: {
                 "marker": "s",
                 "color_edge": "#0000AA",
                 "color_face": "#3333DD",
                 "markersize": 9,
+                "alpha": 1,
+                "zorder": 1,
             },
         }
         MARKERS.update(HOURLIES)
@@ -321,13 +347,14 @@ for var in var_list:
                 markersymbol=MARKERS[obs_name]["marker"],
                 styleOBS=":",
                 colOBS=MARKERS[obs_name]["color_edge"],
-                alpha=1.0,
+                # alpha=MARKERS[obs_name]["alpha"],
+                # alpha=1.0,
                 titleSTD="off",
                 titleRMS="on",
                 showlabelsRMS="on",
-                # tickSTD = range(0,25,5),
-                # axismax = 20,
-                # tickRMS = [6,12,18],
+                tickSTD=range(0, 25, 5),
+                axismax=20,
+                tickRMS=[6, 12, 18],
                 colRMS=STYLES_RMS["color"],
                 #   tickRMSangle = 115,
                 styleRMS=STYLES_RMS["linestyle"],
@@ -368,7 +395,8 @@ for var in var_list:
                         "edge": marker["color_edge"],
                     },
                     markersize=marker["markersize"],
-                    alpha=1.0,
+                    # alpha=marker["alpha"],
+                    alpha=1,
                     overlay="on",
                     styleCOR="-",
                     styleSTD="-",
@@ -423,6 +451,8 @@ for var in var_list:
                 markeredgecolor=marker_desc["color_edge"],
                 linestyle="None",
                 label=marker_label,
+                # alpha=marker_desc["alpha"],
+                alpha=1,
             )
             legend_handles.append(marker)
             del marker_label, marker_desc, marker
@@ -435,6 +465,6 @@ for var in var_list:
 
         # # Write plot to file
         plt.savefig(
-            str(save_dir) + f"/{var}.png", dpi=150, facecolor="w", bbox_inches="tight"
+            str(save_dir) + f"/{var}.png", dpi=250, facecolor="w", bbox_inches="tight"
         )
         del MARKERS, SUBPLOTS_DATA, LEGEND_SUBPLOT

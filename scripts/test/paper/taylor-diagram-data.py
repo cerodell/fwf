@@ -39,9 +39,35 @@ save_dir.mkdir(parents=True, exist_ok=True)
 
 ############ Open static datasets and prepare ################
 
-prov_ds = xr.open_dataset(
-    str(data_dir) + f"/intercomp/{trail_name}/{model}/d03-20210401-20221101-null.nc"
-)
+
+try:
+    ds = xr.open_dataset(
+        str(data_dir) + f"/intercomp/{trail_name}/{model}/d03-20210101-20221231.nc",
+    )
+except:
+    ds = xr.open_dataset(
+        str(data_dir) + f"/intercomp/{trail_name}/{model}/20210101-20221231.nc",
+    )
+
+## make time dim sliceable with datetime
+ds["time"] = ds["Time"]
+ds_2021 = ds.sel(time=slice("2021-05-01", "2021-09-30"))
+ds_2022 = ds.sel(time=slice("2022-05-01", "2022-09-30"))
+null_ds = ds.sel(time=slice("2021-10-01", "2022-04-30"))
+null_array = np.full(null_ds["temp"].shape, np.nan)
+for var in null_ds:
+    null_ds[var] = (("time", "domain", "wmo"), null_array)
+
+ds_2021 = ds_2021.drop("Time")
+ds_2022 = ds_2022.drop("Time")
+null_ds = null_ds.drop("Time")
+
+prov_ds = xr.combine_nested([ds_2021, null_ds, ds_2022], concat_dim="time")
+for var in ["elev", "name", "prov", "id", "domain"]:
+    prov_ds[var] = prov_ds[var].astype(str)
+
+wmo_idx = np.loadtxt(str(data_dir) + "/intercomp/02/wx_station.txt").astype(int)
+prov_ds = prov_ds.sel(wmo=wmo_idx)
 all_obs_ds = prov_ds.sel(domain="obs")
 domains_ds = [prov_ds.sel(domain=domain) for domain in domains]
 
@@ -57,8 +83,8 @@ def solve_stats(j, idx, var, obs_ds, obs_flat, obs_flat_null, name):
     fct_flat = np.delete(fct_flat, idx)
 
     if var == "precip":
-        fct_flat = fct_flat[obs_flat > 0.0]
-        obs_flat = obs_flat[obs_flat > 0.0]
+        fct_flat = fct_flat[obs_flat > 0.1]
+        obs_flat = obs_flat[obs_flat > 0.1]
     else:
         pass
 

@@ -30,7 +30,8 @@ import matplotlib
 from pathlib import Path
 
 matplotlib.rcParams.update({"font.size": 14})
-
+plt.rc("font", family="sans-serif")
+plt.rc("text", usetex=True)
 
 import matplotlib.pyplot as plt
 
@@ -68,6 +69,13 @@ __email__ = "crodell@eoas.ubc.ca"
 
 model = "wrf_day2"
 domains = ["d02", "d03"]
+
+# model = "ecmwf"
+# domains = ["era5"]
+
+# model = "nwp"
+# domains = ["d02", "d03", "rdps", "hrdps"]
+
 # model = "nwp"
 # domains = ["d02", "d03", "rdps", "hrdps"]
 trail_name = "02"
@@ -80,41 +88,58 @@ fwf_dir = f"/Volumes/WFRT-Ext24/fwf-data/"
 with open(str(root_dir) + f"/json/fwf-attrs.json", "r") as fp:
     var_dict = json.load(fp)
 
-
 try:
-    prov_ds = xr.open_dataset(
-        str(data_dir) + f"/intercomp/{trail_name}/{model}/d03-20210401-20221101-null.nc"
-    )
-except:
     ds = xr.open_dataset(
         str(data_dir) + f"/intercomp/{trail_name}/{model}/d03-20210101-20221231.nc",
     )
-    ## make time dim sliceable with datetime
-    ds["time"] = ds["Time"]
-
-    ## index between fire season
-    ds = ds.sel(time=slice("2021-04-01", "2022-10-31"))
-
-    ds_2021 = ds.sel(time=slice("2021-04-01", "2021-10-31"))
-    ds_2022 = ds.sel(time=slice("2022-04-01", "2022-10-31"))
-    null_ds = ds.sel(time=slice("2021-11-01", "2022-03-31"))
-    null_array = np.full(null_ds["temp"].shape, np.nan)
-    for var in null_ds:
-        null_ds[var] = (("time", "domain", "wmo"), null_array)
-
-    ds_2021 = ds_2021.drop("Time")
-    ds_2022 = ds_2022.drop("Time")
-    null_ds = null_ds.drop("Time")
-
-    prov_ds = xr.combine_nested([ds_2021, null_ds, ds_2022], concat_dim="time")
-    for var in ["elev", "name", "prov", "id", "domain"]:
-        prov_ds[var] = prov_ds[var].astype(str)
-    prov_ds.to_netcdf(
-        str(data_dir)
-        + f"/intercomp/{trail_name}/{model}/d03-20210401-20221101-null.nc",
-        mode="w",
+except:
+    ds = xr.open_dataset(
+        str(data_dir) + f"/intercomp/{trail_name}/{model}/20210101-20221231.nc",
     )
+## make time dim sliceable with datetime
+ds["time"] = ds["Time"]
 
+
+ds_2021 = ds.sel(time=slice("2021-05-01", "2021-09-30"))
+ds_2022 = ds.sel(time=slice("2022-05-01", "2022-09-30"))
+null_ds = ds.sel(time=slice("2021-10-01", "2022-04-30"))
+null_array = np.full(null_ds["temp"].shape, np.nan)
+for var in null_ds:
+    null_ds[var] = (("time", "domain", "wmo"), null_array)
+
+ds_2021 = ds_2021.drop("Time")
+ds_2022 = ds_2022.drop("Time")
+null_ds = null_ds.drop("Time")
+
+prov_ds = xr.combine_nested([ds_2021, null_ds, ds_2022], concat_dim="time")
+for var in ["elev", "name", "prov", "id", "domain"]:
+    prov_ds[var] = prov_ds[var].astype(str)
+
+bad_wx = [
+    2275,
+    3153,
+    3167,
+    3266,
+    3289,
+    71977,
+    71948,
+    71985,
+    721571,
+    5529,
+    70194,
+    2276,
+    712020,
+    71141,
+    712037,
+    714213,
+]
+for wx in bad_wx:
+    try:
+        prov_ds = prov_ds.drop_sel(wmo=wx)
+    except:
+        pass
+
+# prov_ds = prov_ds.sel(time=slice("2021-01-02", "2021-12-31"))
 
 ######################## Set up plotting stuff ###########################
 
@@ -127,7 +152,7 @@ time = np.array(prov_ds.time.dt.strftime("%Y-%m-%d"), dtype="<U10")
 start_time = datetime.strptime(str(time[0]), "%Y-%m-%d").strftime("%Y%m%d")
 end_time = datetime.strptime(str(time[-1]), "%Y-%m-%d").strftime("%Y%m%d")
 colors = plt.rcParams["axes.prop_cycle"].by_key()["color"]
-
+colors = ["tab:green", "tab:orange"]
 all_obs_ds = prov_ds.sel(domain="obs")
 domains_ds = [prov_ds.sel(domain=domain) for domain in domains]
 
@@ -164,6 +189,8 @@ def fct_plot(
         dom_name = "HRDPS 2.5km"
     elif domain == "rdps":
         dom_name = "RDPS 10km"
+    elif domain == "era5":
+        dom_name = "ERA5 30km"
     else:
         pass
     # colors = colors
@@ -180,8 +207,8 @@ def fct_plot(
     fct_flat = np.delete(fct_flat, idx)
 
     if var == "precip":
-        fct_flat = fct_flat[obs_flat > 0.0]
-        obs_flat = obs_flat[obs_flat > 0.0]
+        fct_flat = fct_flat[obs_flat > 0.1]
+        obs_flat = obs_flat[obs_flat > 0.1]
     else:
         pass
     # print(np.unique(obs_ds.isnull(), return_counts=True))
@@ -216,7 +243,7 @@ def fct_plot(
         label=dom_name,  # + "-" + name,
         zorder=10,
         color=colors[j + i],
-        lw=0.8,
+        lw=1.2,
         ls=ls,
         # alpha = 0.8
     )
@@ -226,7 +253,7 @@ def fct_plot(
         label=dom_name,  # + "-" + name,
         zorder=10,
         color=colors[j + i],
-        lw=0.8,
+        lw=1.2,
         ls=ls,
         # alpha = 0.8
     )
@@ -266,6 +293,7 @@ for i in range(length):
     stats_text = ""
     obs_ds = all_obs_ds[var]
     obs_mean = obs_ds.mean(dim="wmo")  # .dropna(dim = 'time')
+    # obs_mean = obs_ds.sel(wmo = 71673)  # .dropna(dim = 'time')
     t_mesh = np.arange(0, len((obs_ds.time)))
     ww, tt = np.meshgrid(obs_ds.wmo.values, t_mesh)
     obs_flat_null = obs_ds.values.ravel()
@@ -277,11 +305,22 @@ for i in range(length):
     obs_flat = np.delete(obs_flat, idx)
     wx_station, wx_count = np.unique(np.delete(wx_station, idx), return_counts=True)
     print(var)
+    print(len(wx_count))
     print(list(wx_station[np.where(wx_count < 30)[0]]))
     print(len(list(wx_station[np.where(wx_count < 30)[0]])))
+    np.savetxt(
+        str(data_dir) + "/intercomp/02/wx_station.txt",
+        wx_station.astype(int),
+        delimiter=",",
+    )
     print("=============================================")
     color_table = []
     for j in range(len(domains)):
+        if domains[j] == "d03":
+            ls = "--"
+        else:
+            ls = "-"
+
         stats_text, color_t = fct_plot(
             j,
             idx,
@@ -292,7 +331,7 @@ for i in range(length):
             stats_text,
             ax,
             ax2,
-            ls="-",
+            ls=ls,
             name="noon  ",
         )
         color_table.append(color_t)
@@ -357,7 +396,7 @@ for i in range(length):
         label="Observation",
         zorder=2,
         color="k",
-        lw=2,
+        lw=1.8,
     )
     ax2.plot(
         date_range,
@@ -365,7 +404,7 @@ for i in range(length):
         label="Observation",
         zorder=2,
         color="k",
-        lw=2,
+        lw=1.8,
     )
     ax.yaxis.grid(linewidth=0.4, linestyle="--", zorder=1)
     ax.xaxis.grid(linewidth=0.4, linestyle="--", zorder=1)
@@ -373,8 +412,12 @@ for i in range(length):
     ax2.xaxis.grid(linewidth=0.4, linestyle="--", zorder=1)
     # ax2.add_artist(anchored_text)
 
-    ax.set_xlim([pd.Timestamp("2021-03-15"), pd.Timestamp("2021-11-15")])
-    ax2.set_xlim([pd.Timestamp("2022-03-15"), pd.Timestamp("2022-11-15")])
+    ax.set_xlim([pd.Timestamp("2021-04-15"), pd.Timestamp("2021-10-15")])
+    ax2.set_xlim([pd.Timestamp("2022-04-15"), pd.Timestamp("2022-10-15")])
+    # ax.set_xlim([pd.Timestamp("2021-01-01"), pd.Timestamp("2021-12-31")])
+    # ax2.set_xlim([pd.Timestamp("2022-01-01"), pd.Timestamp("2022-12-31")])
+    # ax.set_xlim([pd.Timestamp("2021-01-01"), pd.Timestamp("2021-05-01")])
+    # ax2.set_xlim([pd.Timestamp("2022-01-01"), pd.Timestamp("2022-05-01")])
     # hide the spines between ax and ax2
     ax.spines["right"].set_visible(False)
     ax2.spines["left"].set_visible(False)
@@ -405,63 +448,77 @@ for i in range(length):
             numbers_only.extend(numbers)
         else:
             numbers_only.extend("1")
-
-    numbers_only = np.array(numbers_only).reshape(y, x).astype(float)
+    try:
+        numbers_only = np.array(numbers_only).reshape(y, x).astype(float)
+    except:
+        numbers_only = np.array(numbers_only).astype(float)[1:]
 
     cell_colors = np.empty((y, x), dtype="U10")
     cell_colors.fill("white")
-    good_color, bad_color = "lightblue", "lightpink"
+    good_color, bad_color = "#c6eaf7", "#facbc3"
     color_table = np.stack(color_table)
-    # cell_colors[:,0] = color_table
+    try:
+        cell_colors[
+            np.where(numbers_only[:, 1] == np.min(numbers_only[:, 1]))[0], 1
+        ] = bad_color
+        cell_colors[
+            np.where(np.abs(numbers_only[:, 2]) == np.max(np.abs(numbers_only[:, 2])))[
+                0
+            ],
+            2,
+        ] = bad_color
+        cell_colors[
+            np.where(numbers_only[:, 3] == np.max(numbers_only[:, 3]))[0], 3
+        ] = bad_color
+        cell_colors[
+            np.where(numbers_only[:, 4] == np.max(numbers_only[:, 4]))[0], 4
+        ] = bad_color
 
-    cell_colors[
-        np.where(numbers_only[:, 1] == np.min(numbers_only[:, 1]))[0], 1
-    ] = bad_color
-    cell_colors[
-        np.where(np.abs(numbers_only[:, 2]) == np.max(np.abs(numbers_only[:, 2])))[0], 2
-    ] = bad_color
-    cell_colors[
-        np.where(numbers_only[:, 3] == np.max(numbers_only[:, 3]))[0], 3
-    ] = bad_color
-    cell_colors[
-        np.where(numbers_only[:, 4] == np.max(numbers_only[:, 4]))[0], 4
-    ] = bad_color
+        cell_colors[
+            np.where(numbers_only[:, 1] == np.max(numbers_only[:, 1]))[0], 1
+        ] = good_color
+        cell_colors[
+            np.where(np.abs(numbers_only[:, 2]) == np.min(np.abs(numbers_only[:, 2])))[
+                0
+            ],
+            2,
+        ] = good_color
+        cell_colors[
+            np.where(numbers_only[:, 3] == np.min(numbers_only[:, 3]))[0], 3
+        ] = good_color
+        cell_colors[
+            np.where(numbers_only[:, 4] == np.min(numbers_only[:, 4]))[0], 4
+        ] = good_color
 
-    cell_colors[
-        np.where(numbers_only[:, 1] == np.max(numbers_only[:, 1]))[0], 1
-    ] = good_color
-    cell_colors[
-        np.where(np.abs(numbers_only[:, 2]) == np.min(np.abs(numbers_only[:, 2])))[0], 2
-    ] = good_color
-    cell_colors[
-        np.where(numbers_only[:, 3] == np.min(numbers_only[:, 3]))[0], 3
-    ] = good_color
-    cell_colors[
-        np.where(numbers_only[:, 4] == np.min(numbers_only[:, 4]))[0], 4
-    ] = good_color
+        # Create the second set of axes for the table
+        ax_table = fig.add_axes([0.55, 0.87, 0.33, 0.2])
 
-    # mbe_best
-    # cell_colors[np.abs(numbers_only[:,2]).argmin(),2] = 'blue'
-    # rmse_best = np.argmin(numbers_only[:,3])
-    # mae_best = np.argmin(numbers_only[:,4])
+        # Create the table and add it to the second set of axes
 
-    # Create the fill colors for the table cells
-    # cell_colors = [['lightgray', 'lightgray', 'lightgray'],
-    #             ['lightblue', 'lightgreen', 'lightblue'],
-    #             ['lightgreen', 'lightblue', 'lightgreen']]
+        table = ax_table.table(
+            cellText=data, loc="center", cellColours=cell_colors, fontsize=12
+        )
+        for i in range(len(color_table)):
+            # Get the cell object at row 0, column 1
+            cell = table.get_celld()[(i, 0)]
 
-    # Create the second set of axes for the table
-    ax_table = fig.add_axes([0.55, 0.87, 0.33, 0.2])
+            # Set the font color of the cell to red
+            cell.set_text_props(color=color_table[i])
+            # cell.set_text_props(color='k')
+    except:
+        # Create the second set of axes for the table
+        ax_table = fig.add_axes([0.55, 0.87, 0.33, 0.2])
 
-    # Create the table and add it to the second set of axes
-    table = ax_table.table(cellText=data, loc="center", cellColours=cell_colors)
-    for i in range(len(color_table)):
-        # Get the cell object at row 0, column 1
-        cell = table.get_celld()[(i, 0)]
+        # Create the table and add it to the second set of axes
 
-        # Set the font color of the cell to red
-        cell.set_text_props(color=color_table[i], weight="bold")
+        table = ax_table.table(cellText=data, loc="center")
+        for i in range(len(color_table)):
+            # Get the cell object at row 0, column 1
+            cell = table.get_celld()[(i, 0)]
 
+            # Set the font color of the cell to red
+            cell.set_text_props(color=color_table[i])
+            # cell.set_text_props(color='k')
     # Hide the table axis ticks and labels
     ax_table.axis("off")
 
@@ -471,11 +528,12 @@ for i in range(length):
         ncol=4,
         fancybox=True,
         shadow=True,
-        prop={"size": 9},
+        prop={"size": 12},
     )
     fig.suptitle(var_dict[var.lower()]["description"], fontsize=20, y=1.25)
-    # plt.close()
+    fig.savefig(str(save_dir) + f"/{var}-fireseason.pdf", bbox_inches="tight", dpi=250)
     fig.savefig(str(save_dir) + f"/{var}-fireseason.png", bbox_inches="tight", dpi=250)
+    plt.close()
 
 
 # %%
