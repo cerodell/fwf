@@ -2,7 +2,6 @@
 
 import context
 import json
-import salem
 import gc
 
 import numpy as np
@@ -11,12 +10,12 @@ import pandas as pd
 from scipy import stats
 from pathlib import Path
 
-from sklearn.neighbors import KDTree
-
 import matplotlib.colors
 import matplotlib
 import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
+from pylab import *
+
 from utils.frp import (
     open_fwf,
     open_frp,
@@ -37,57 +36,49 @@ __email__ = "crodell@eoas.ubc.ca"
 #################### INPUTS ####################
 ## define model domain and path to fwf data
 save_fig = False
-case_study = "barrington_lake_fire"  # ['sparks_lake', 'lytton_creek', 'barrington_lake_fire', 'ewf_031', 'quebec_fire_334', 'donnie_creek', 'wildcat', 'marshall_fire', 'oak_fire', 'caldor_fire', 'fire_east_tulare', 'rossmoore_fire', 'crater_creek', 'mcdougall_creek']
+norms = False
+case_study = "caldor_fire"  # ['sparks_lake', 'lytton_creek', 'barrington_lake_fire', 'ewf_031', 'quebec_fire_334', 'donnie_creek', 'wildcat', 'marshall_fire', 'oak_fire', 'caldor_fire', 'fire_east_tulare', 'rossmoore_fire', 'crater_creek', 'mcdougall_creek']
 # print(case_study)
 save_dir = Path(str(data_dir) + f"/images/frp/goes/paper/")
 save_dir.mkdir(parents=True, exist_ok=True)
 ################## END INPUTS ####################
 
-# test = xr.open_dataset("/Volumes/WFRT-Ext22/frp/goes/g18/2023/OR_ABI-L2-FDCF-M6_G18_s20232190020203_e20232190029511_c20232190030022.nc")
 #################### OPEN FILES ####################
-
-
 ## open case study json file
 with open(str(root_dir) + f"/json/fire-cases.json", "r") as fp:
     case_dict = json.load(fp)
 #
-
+print(case_study)
 case_info = case_dict[case_study]
 domain = case_info["domain"]
 filein = f"/Volumes/WFRT-Ext24/fwf-data/wrf/{domain}/02/"
 
-(
-    frp_ds,
-    frp_da,
-    frp_da_og,
-    frp_lats,
-    frp_lons,
-    utc_offset,
-    date_range,
-    fwf_range,
-) = open_frp(case_study, case_info)
-# norm_d = xr.open_dataset(str(data_dir)+f"/norm/fwi-daily-{domain}.nc")
-# norm_h = xr.open_dataset(str(data_dir)+f"/norm/fwi-hourly-{domain}.nc")
-
-
-# Mask =  frp_ds['Mask'].values
-# Power =  frp_ds['Power'].values
-# Power =  xr.where((frp_ds['Mask'] == 10) | (frp_ds['Mask'] == 30), frp_ds['Power'], np.nan)
-# Mask_test = Mask[~np.isnan(Power)]
-# flag_values =  np.array(test['Mask'].attrs['flag_values'])
-# flag_meanings =  np.array(test['Mask'].attrs['flag_meanings'].split())
-# flag_meanings[flag_values ==10]
-
-fwf_range_daily = pd.date_range(
-    fwf_range[0] - pd.Timedelta(days=2), fwf_range[-1] + pd.Timedelta(days=2)
+(frp_ds, frp_da, frp_da_og, frp_lats, frp_lons, utc_offset, start, stop) = open_frp(
+    case_study, case_info
 )
-print(case_study)
+
+
+fwf_range = pd.date_range(
+    start.astype("datetime64[D]") - pd.Timedelta(days=1),
+    stop.astype("datetime64[D]") + pd.Timedelta(days=1),
+)
+
+
 yy, xx = build_tree(case_study, case_info, frp_lats, frp_lons)
 
 
+hourly_ds = xr.combine_nested(
+    [open_fwf(doi, filein, domain, "hourly", yy, xx, utc_offset) for doi in fwf_range],
+    "time",
+)
+daily_ds = xr.combine_nested(
+    [open_fwf(doi, filein, domain, "daily", yy, xx, utc_offset) for doi in fwf_range],
+    "time",
+)
+
 try:
     hourly_ds = xr.open_dataset(
-        str(data_dir) + f"/frp/analysis/wrf/{case_study}-hourly.nc"
+        str(data_dir) + f"/frp/analysis/wrf/{case_study}-hourly-.nc"
     )
     daily_ds = xr.open_dataset(
         str(data_dir) + f"/frp/analysis/wrf/{case_study}-daily-.nc"
@@ -95,11 +86,17 @@ try:
 except:
     print("Making FWI netcdf")
     try:
-        # hourly_ds = xr.combine_nested([open_fwf(doi, filein, domain, "hourly", yy, xx, utc_offset) for doi in fwf_range], "time")
+        hourly_ds = xr.combine_nested(
+            [
+                open_fwf(doi, filein, domain, "hourly", yy, xx, utc_offset)
+                for doi in fwf_range
+            ],
+            "time",
+        )
         daily_ds = xr.combine_nested(
             [
                 open_fwf(doi, filein, domain, "daily", yy, xx, utc_offset)
-                for doi in fwf_range_daily
+                for doi in fwf_range
             ],
             "time",
         )
@@ -108,7 +105,7 @@ except:
         daily_ds = xr.combine_nested(
             [
                 open_fwf(doi, filein, domain, "daily", yy, xx, utc_offset)
-                for doi in fwf_range_daily[:-1]
+                for doi in fwf_range[:-1]
             ],
             "time",
         )
@@ -119,31 +116,11 @@ except:
     # hourly_ds = normalize(hourly_ds, yy, xx, norm_h).rename('S').to_dataset()
     # daily_ds = normalize(daily_ds, yy, xx, norm_d).rename('S').to_dataset()
 
-hourly_ds = xr.open_dataset(str(data_dir) + f"/frp/analysis/wrf/{case_study}-hourly.nc")
-# hourly_ds = normalize(hourly_ds, yy, xx, norm_h).rename('S').to_dataset()
-# daily_ds = normalize(daily_ds, yy, xx, norm_d).rename('S').to_dataset()
-
-
-# %%
-
-non_nan_indices = np.where(~np.isnan(frp_da))[0]
-diff_arr = np.diff(non_nan_indices)
-indices = np.where(diff_arr == 1)[0]
-groups = np.split(indices, np.where(np.diff(indices) != 1)[0] + 1)
-result = [group for group in groups if len(group) > 6]
-
-if (
-    date_range[non_nan_indices[result[1][0]]]
-    - date_range[non_nan_indices[result[0][0]]]
-).astype("timedelta64[h]") >= 24:
-    start = date_range[non_nan_indices[result[0][0]]]
-else:
-    start = date_range[non_nan_indices[result[1][0]]]
-
-if (date_range[non_nan_indices[result[-1][0]]] - start).astype("timedelta64[D]") > 8:
-    stop = date_range[non_nan_indices[result[0][0]] + (24 * 10)]
-else:
-    stop = date_range[non_nan_indices[result[-1][0]]]
+if norms == True:
+    norm_d = xr.open_dataset(str(data_dir) + f"/norm/fwi-daily-{domain}.nc")
+    norm_h = xr.open_dataset(str(data_dir) + f"/norm/fwi-hourly-{domain}.nc")
+    hourly_ds = normalize(hourly_ds, yy, xx, norm_h).rename("S").to_dataset()
+    daily_ds = normalize(daily_ds, yy, xx, norm_d).rename("S").to_dataset()
 
 
 # %%
@@ -153,15 +130,12 @@ else:
 # stop = "2021-07-29T00"
 # start = date_range[non_nan_indices[result[1][0]]]
 # stop = date_range[non_nan_indices[result[0][0]]+(24*10)]
-frp_da = frp_da.sel(t=slice(start, stop))
 frp_raw = frp_da.values
-frp_da_interp = frp_da.interpolate_na(dim="t", method="linear").ffill(
-    dim="t"
-)  # pchip or linear
+frp_da_interp = frp_da.interpolate_na(dim="t", method="linear").ffill(dim="t")
+
 frp_da_og_slice = frp_da_og.sel(t=slice(start, stop))
 hourly_ds = hourly_ds.sel(time=slice(start, stop))
 daily_ds = daily_ds.sel(time=slice(hourly_ds["time"][0], hourly_ds["time"][-1]))
-frp_ds = frp_ds.sel(t=slice(start, stop))
 
 
 hfwi = hourly_ds["S"].values
@@ -208,7 +182,6 @@ set_axis_postion(ax, "FWI")
 
 ax2.plot(frp_da.time, frp_da, color="tab:red", lw=1.2, label="FRP")
 ax2.plot(frp_da.time, hfrp, lw=1.1, color="tab:red", ls="dotted", label="FRP")
-# ax2.plot(frp_da_og_slice.t, frp_da_og_slice, color="pink", lw=1.2, label="FRP")
 
 set_axis_postion(ax2, "FRP (MW)")
 tkw = dict(size=4, width=1.5, labelsize=16)
@@ -261,7 +234,6 @@ static_ds1 = static_ds.isel(
     south_north=slice(yy.min() - 5, yy.max() + 5),
 )
 
-from pylab import *
 
 cmap = cm.get_cmap("Reds", fire.max() + 5)  # PiYG
 hexl = []
@@ -283,20 +255,15 @@ sc = ax.pcolormesh(
     cmap=matplotlib.colors.ListedColormap(hexl),
     alpha=0.5,
 )
-# ax.pcolormesh(
-#     XLONG, XLAT, static_ds1['fire'], zorder=1, color = 'k', alpha=0.5
-# )
+
+
 cbar = plt.colorbar(sc, ax=ax, pad=0.008)
 cbar.set_label("Weighted Count", rotation=270, fontsize=14, labelpad=20)
 XLONG = frp_ds["lons"].values
 XLAT = frp_ds["lats"].values
-# fire = frp_ds["Power"].mean(dim ='t')
+
 fire = np.full_like(XLONG, np.nan)
 fire[~np.isnan(frp_ds.mean(dim="t")["Power"].values)] = 1
-
-# ax.pcolormesh(
-#     XLONG, XLAT, fire, zorder=1,  cmap= matplotlib.colors.ListedColormap(['k']),alpha=0.2
-# )
 ax.scatter(
     XLONG[~np.isnan(frp_ds.mean(dim="t")["Power"].values)],
     XLAT[~np.isnan(frp_ds.mean(dim="t")["Power"].values)],
