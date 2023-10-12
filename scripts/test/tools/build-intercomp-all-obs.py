@@ -106,7 +106,7 @@ ds_obs = ds_obs.sel(
 )
 
 ## drop stations right on domain boundaries, also station with bad data.
-bad_wx = [2275, 3153, 3167, 3266, 3289, 71977, 71948, 71985, 721571]
+bad_wx = [2275, 3153, 3167, 3266, 3289, 71977, 71948, 71985, 721571, 5529, 70194]
 for wx in bad_wx:
     ds_obs = ds_obs.drop_sel(wmo=wx)
 

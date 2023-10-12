@@ -1,9 +1,5 @@
 #!/bluesky/fireweather/miniconda3/envs/fwf/bin/python
 
-"""
-Class to solve the Fire Weather Indices using output from a numerical weather model
-"""
-
 import context
 import os
 import json

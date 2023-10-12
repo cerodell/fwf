@@ -1,4 +1,4 @@
-#!/Users/crodell/miniconda3/envs/fwf/bin/python
+#!/Users/crodell/miniconda3/envs/fwx/bin/python
 
 import context
 import json

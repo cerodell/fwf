@@ -1,0 +1,554 @@
+{
+  "lytton_creek": {
+    "domain": "d03",
+    "min_lat": 50.12,
+    "max_lat": 50.51,
+    "min_lon": -121.7,
+    "max_lon": -121.12,
+    "date_range": [
+      "2021-06-26",
+      "2021-07-26"
+    ],
+    "loc": "Lytton, BC Canada",
+    "goes" : "g17",
+    "nasa": "https://go.nasa.gov/3Qrzlgn",
+    "info": "https://earthobservatory.nasa.gov/images/148530/blazes-rage-in-british-columbia"
+  },
+  "barrington_lake_fire": {
+    "domain": "d02",
+    "min_lat": 43.3,
+    "max_lat": 43.9,
+    "min_lon": -65.85,
+    "max_lon": -65.0,
+    "date_range": [
+      "2023-05-24",
+      "2023-06-08"
+    ],
+    "loc": "Barrington, NS Canada",
+    "goes" : "g16",
+    "nasa": "https://go.nasa.gov/44QYeX7"
+  },
+  "ewf_031": {
+    "domain": "d03",
+    "min_lat": 52.73,
+    "max_lat": 53.53,
+    "min_lon": -116.58,
+    "max_lon": -115.46,
+    "date_range": [
+      "2023-05-12",
+      "2023-06-12"
+    ],
+    "loc": "Yellowhead County, AB Canada",
+    "goes" : "g18",
+    "nasa": "https://go.nasa.gov/43YA7oa"
+  },
+  "quebec_fire_334": {
+    "domain": "d02",
+    "min_lat": 47.7,
+    "max_lat": 49.86,
+    "min_lon": -77.75,
+    "max_lon": -74.41,
+    "date_range": [
+      "2023-05-28",
+      "2023-06-28"
+    ],
+    "loc": "East of Val D'or, QB Canada",
+    "goes" : "g16",
+    "nasa": "https://go.nasa.gov/3YjaWeM"
+  },
+  "donnie_creek": {
+    "domain": "d03",
+    "min_lat": 57.26,
+    "max_lat": 58.19,
+    "min_lon": -122.34,
+    "max_lon": -121.09,
+    "date_range": [
+      "2023-05-09",
+      "2023-06-09"
+    ],
+    "loc": "North of Fort St. John, BC Canada",
+    "goes" : "g18",
+    "nasa": "https://go.nasa.gov/3YjjkuU"
+  },
+  "wildcat": {
+    "domain": "d03",
+    "min_lat": 53.01,
+    "max_lat": 53.46,
+    "min_lon": -102.83,
+    "max_lon": -102.13,
+    "date_range": [
+      "2021-07-19",
+      "2021-08-19"
+    ],
+    "loc": "Hudson Bay, SK Canada",
+    "goes" : "g16",
+    "nasa": "https://go.nasa.gov/43dHisf"
+  },
+  "marshall_fire": {
+    "domain": "d02",
+    "min_lat": 39.5,
+    "max_lat": 40.5,
+    "min_lon": -105.3,
+    "max_lon": -105.1,
+    "date_range": [
+      "2021-12-26",
+      "2022-01-01"
+    ],
+    "loc": "Boulder, CO United States",
+    "goes" : "g16",
+    "nasa": "https://go.nasa.gov/3r7t2E3"
+  },
+  "oak_fire": {
+    "domain": "d02",
+    "min_lat": 37.44,
+    "max_lat": 37.65,
+    "min_lon": -119.97,
+    "max_lon": -119.76,
+    "date_range": [
+      "2022-07-19",
+      "2022-08-19"
+    ],
+    "loc": "Mariposa, CA United States",
+    "goes" : "g17",
+    "info": "https://inciweb.nwcg.gov/incident-information/casnf-oak-fire",
+    "nasa": "https://go.nasa.gov/3PUy6Go"
+  },
+  "caldor_fire": {
+    "domain": "d02",
+    "min_lat": 38.49,
+    "max_lat": 38.96,
+    "min_lon": -120.73,
+    "max_lon": -119.87,
+    "date_range": [
+      "2021-08-12",
+      "2021-09-15"
+    ],
+    "loc": "South Lake Tahoe, CA United States",
+    "goes" : "g17",
+    "info": "https://inciweb.nwcg.gov/incident-information/caenf-caldor-fire",
+    "nasa": "https://go.nasa.gov/3PUE2iK"
+  },
+  "fire_east_tulare": {
+    "domain": "d02",
+    "min_lat": 35.80,
+    "max_lat": 36.30,
+    "min_lon": -118.84,
+    "max_lon": -118.36,
+    "date_range": [
+      "2021-09-08-T00",
+      "2021-10-15-T00"
+    ],
+    "loc": "Sequoia National Park, CA United States",
+    "goes" : "g17",
+    "info": "http://emops.pdc.org/emops/?hazard_id=130925",
+    "nasa": "https://go.nasa.gov/3XT9orJ"
+  },
+  "rossmoore_fire": {
+    "domain": "d03",
+    "min_lat": 50.24,
+    "max_lat": 50.76,
+    "min_lon": -120.65,
+    "max_lon": -120.09,
+    "date_range": [
+      "2023-07-18-T00",
+      "2023-08-15-T00"
+    ],
+    "loc": "Kamloops, BC Canada",
+    "goes" : "g18",
+    "nasa": "https://go.nasa.gov/3DJbKQS"
+  },
+  "crater_creek": {
+    "domain": "d03",
+    "min_lat": 48.96,
+    "max_lat": 49.29,
+    "min_lon": -120.17,
+    "max_lon": -119.80,
+    "date_range": [
+      "2023-08-12-T00",
+      "2023-08-30-T00"
+    ],
+    "loc": "Keremeos, BC Canada",
+    "goes" : "g18",
+    "nasa": "https://go.nasa.gov/3shINci"
+  },
+  "mcdougall_creek": {
+    "domain": "d03",
+    "min_lat": 49.82,
+    "max_lat": 50.10,
+    "min_lon": -119.69,
+    "max_lon": -119.33,
+    "date_range": [
+      "2023-08-15-T00",
+      "2023-08-30-T00"
+    ],
+    "loc": "Kelowna, BC Canada",
+    "goes" : "g18",
+    "nasa": "https://go.nasa.gov/3shINci"
+  },
+   "sparks_lake": {
+    "domain": "d03",
+    "min_lat": 50.9,
+    "max_lat": 51.2,
+    "min_lon": -121,
+    "max_lon": -120.7,
+    "date_range": [
+      "2021-06-29",
+      "2021-07-29"
+    ],    "goes-slice":[
+      "",
+      ""
+    ],
+    "loc": "Kamloops, BC Canada",
+    "goes" : "g17",
+    "nasa": "https://go.nasa.gov/3PKadBi",
+    "info": "https://earthobservatory.nasa.gov/images/148530/blazes-rage-in-british-columbia"
+  },
+  "lower_east_adams_fire": {
+    "domain": "d03",
+    "min_lat": 50.8,
+    "max_lat": 51.26,
+    "min_lon": -120.01,
+    "max_lon": -119.41,
+    "date_range": [
+      "2023-07-10",
+      "2023-08-10"
+    ],
+    "loc": "Adams Lake, BC Canada",
+    "goes" : "g18",
+    "nasa": "https://go.nasa.gov/3Kt0XOo"
+  },
+  "eagle_bluff_fire": {
+    "domain": "d03",
+    "min_lat": 48.83,
+    "max_lat": 49.13,
+    "min_lon": -119.71,
+    "max_lon": -119.40,
+    "date_range": [
+      "2023-07-29",
+      "2023-08-29"
+    ],
+    "loc": "Osoyoos, BC Canada",
+    "goes" : "g18",
+    "nasa": "https://go.nasa.gov/3qkRZMj"
+  },
+  "eagle_complex": {
+    "domain": "d03",
+    "min_lat": 54.28,
+    "max_lat": 54.7,
+    "min_lon": -117.73,
+    "max_lon": -117.16,
+    "date_range": [
+      "2023-05-10",
+      "2023-06-10"
+    ],
+    "loc": "Fox Creek, AB Canada",
+    "goes" : "g18",
+    "nasa": "https://go.nasa.gov/3OG5RKi"
+  },
+  "mckay_creek": {
+    "domain": "d03",
+    "min_lat": 50.76,
+    "max_lat": 51.22,
+    "min_lon": -122.24,
+    "max_lon": -121.74,
+    "date_range": [
+      "2021-06-26",
+      "2021-07-26"
+    ],
+    "goes-slice":[
+      "",
+      ""
+    ],
+    "loc": "Lillooet, BC Canada",
+    "goes" : "g17",
+    "nasa": "https://go.nasa.gov/3PKadBi",
+    "info": "https://earthobservatory.nasa.gov/images/148530/blazes-rage-in-british-columbia"
+  },
+  "st_marys_river": {
+    "domain": "d03",
+    "min_lat": 49.47,
+    "max_lat": 49.83,
+    "min_lon": -116.05,
+    "max_lon": -115.3,
+    "date_range": [
+      "2023-07-15",
+      "2023-08-15"
+    ],
+    "loc": "Cranbrook, BC Canada",
+    "goes" : "g18",
+    "nasa": "https://go.nasa.gov/3rTQghs"
+  },
+  "double_creek": {
+    "domain": "d02",
+    "min_lat": 45.2,
+    "max_lat": 45.8,
+    "min_lon": -117,
+    "max_lon": -116.33,
+    "date_range": [
+      "2022-08-28",
+      "2022-09-28"
+    ],
+    "goes-slice":[
+      "",
+      ""
+    ],
+    "goes" : "g17",
+    "loc": "Council, ID United States",
+    "info": "https://inciweb.nwcg.gov/incident-information/orwwf-double-creek-fire",
+    "nasa": " https://go.nasa.gov/3pyiH3N"
+  },
+  "kimiwan_complex": {
+    "domain": "d03",
+    "min_lat": 55.655,
+    "max_lat": 56.33,
+    "min_lon": -117.22,
+    "max_lon": -116.05,
+    "date_range": [
+      "2023-05-08",
+      "2023-06-08"
+    ],
+    "goes-slice":[
+      "",
+      ""
+    ],
+    "loc": "Peace River, AB Canada",
+    "goes" : "g18"
+  },
+  "munson_creek": {
+    "domain": "d03",
+    "min_lat": 64.864,
+    "max_lat": 65.195,
+    "min_lon": -146.266,
+    "max_lon": -145.513,
+    "date_range": [
+      "2021-06-25",
+      "2021-07-25"
+    ],
+    "goes-slice":[
+      "",
+      ""
+    ],
+    "loc": "East of Fairbanks, AK United States",
+    "goes" : "g17",
+    "nasa": "https://go.nasa.gov/3rhYwaP"
+  },
+  "six_rivers": {
+    "domain": "d02",
+    "min_lat": 40.75,
+    "max_lat": 41.04,
+    "min_lon": -123.76,
+    "max_lon": -123.46,
+    "date_range": [
+      "2022-08-04",
+      "2022-09-04"
+    ],
+    "goes-slice":[
+      "",
+      ""
+    ],
+    "loc": "Willow Creek, CA United States",
+    "goes" : "g17",
+    "info": "https://inciweb.nwcg.gov/incident-information/casrf-six-rivers-lightning-complex",
+    "nasa": "https://go.nasa.gov/3JNd20x"
+  },
+  "mb_096": {
+    "domain": "d02",
+    "min_lat": 51.49,
+    "max_lat": 52.71,
+    "min_lon": -96.58,
+    "max_lon": -95.55,
+    "date_range": [
+      "2021-07-01",
+      "2021-08-01"
+    ],
+    "goes-slice":[
+      "",
+      ""
+    ],
+    "loc": "Division No. 19, MB Canada",
+    "goes" : "g16",
+    "info": "https://www.gov.mb.ca/conservation_fire/Fire-Status/2021/EA-096-firestatus.html",
+    "nasa": "https://go.nasa.gov/44p7zoM"
+  },
+  "eastland_complex": {
+    "domain": "d02",
+    "min_lat": 31.87,
+    "max_lat": 32.5,
+    "min_lon": -99.25,
+    "max_lon": -98.48,
+    "date_range": [
+      "2022-03-14",
+      "2022-04-14"
+    ],
+    "goes-slice":[
+      "",
+      ""
+    ],
+    "loc": "Eastland, TX United States",
+    "goes" : "g16",
+    "nasa": " https://go.nasa.gov/44yl4Cl"
+  },
+  "mbea_112": {
+    "domain": "d02",
+    "min_lat": 50.21,
+    "max_lat": 51.53,
+    "min_lon": -95.32,
+    "max_lon": -94.12,
+    "date_range": [
+      "2021-07-01",
+      "2021-08-01"
+    ],
+    "goes-slice":[
+      "",
+      ""
+    ],
+    "loc": "Eagle Snowshoe, OT Canada",
+    "goes" : "g16",
+    "nasa": "https://go.nasa.gov/3JOeKim"
+  },
+  "mosquito_fire": {
+    "domain": "d02",
+    "min_lat": 38.8,
+    "max_lat": 39.31,
+    "min_lon": -120.95,
+    "max_lon": -120.39,
+    "date_range": [
+      "2022-09-05",
+      "2022-10-05"
+    ],
+    "goes-slice":[
+      "",
+      ""
+    ],
+    "loc": "Foresthill, CA United States",
+    "goes" : "g17",
+    "nasa": "https://go.nasa.gov/3O3Lc2M"
+  },
+  "nwt_gsl": {
+    "domain": "d03",
+    "min_lat": 61.67,
+    "max_lat": 62.46,
+    "min_lon": -115.81,
+    "max_lon": -114.78,
+    "date_range": [
+      "2022-06-15",
+      "2022-06-15"
+    ],
+    "loc": "South West of Yellowknife, NWT Canada",
+    "goes" : "g17",
+    "nasa": "https://go.nasa.gov/3XMQ0Ne"
+  },
+  "moose_fire": {
+    "domain": "d03",
+    "min_lat": 45.12,
+    "max_lat": 45.53,
+    "min_lon": -114.39,
+    "max_lon": -113.87,
+    "date_range": [
+      "2022-07-15",
+      "2022-08-15"
+    ],
+    "goes-slice":[
+      "",
+      ""
+    ],
+    "loc": "Shoup, ID United States",
+    "goes" : "g17",
+    "info": "https://inciweb.nwcg.gov/incident-information/idscf-moose-fire",
+    "nasa": "https://go.nasa.gov/43ezsPd"
+  },
+  "wildcat_fire": {
+    "domain": "d02",
+    "min_lat": 41.5,
+    "max_lat": 41.79,
+    "min_lon": -115.42,
+    "max_lon": -115.05,
+    "date_range": [
+      "2022-07-10",
+      "2022-08-10"
+    ],
+    "goes-slice":[
+      "",
+      ""
+    ],
+    "loc": "Jackpot, NV United States",
+    "goes" : "g17",
+    "info": "https://inciweb.nwcg.gov/incident-information/idscf-moose-fire",
+    "nasa": "https://go.nasa.gov/3NyIIHW"
+  },
+  "mckinney_fire": {
+    "domain": "d02",
+    "min_lat": 41.6,
+    "max_lat": 42,
+    "min_lon": -123.1,
+    "max_lon": -122.5,
+    "date_range": [
+      "2022-07-25",
+      "2022-07-25"
+    ],
+    "goes-slice":[
+      "",
+      ""
+    ],
+    "loc": "Klamath River, CA United States",
+    "goes" : "g17",
+    "info": "https://inciweb.nwcg.gov/incident-information/caknf-mckinney-fire",
+    "nasa": "https://go.nasa.gov/43gDhDA"
+  },
+  "bolt_creek_fire": {
+    "domain": "d03",
+    "min_lat": 47.58,
+    "max_lat": 47.96,
+    "min_lon": -121.63,
+    "max_lon": -121.11,
+    "date_range": [
+      "2022-09-06",
+      "2022-10-06"
+    ],
+    "goes-slice":[
+      "",
+      ""
+    ],
+    "loc": "Skykomish, WA United States",
+    "goes" : "g17",
+    "info": "https://inciweb.nwcg.gov/incident-information/wanws-bolt-creek-fire",
+    "nasa": "https://go.nasa.gov/3XG8qiw"
+  },
+  "santa_barbara_fire": {
+    "domain": "d02",
+    "min_lat": 34.37,
+    "max_lat": 34.62,
+    "min_lon": -120.30,
+    "max_lon": -119.89,
+    "date_range": [
+      "2021-10-10",
+      "2021-11-01"
+    ],
+    "goes-slice":[
+      "",
+      ""
+    ],
+    "loc": "Santa Barbara, CA United States",
+    "goes" : "g17",
+    "info": "http://emops.pdc.org/emops/?hazard_id=131731",
+    "nasa": "https://go.nasa.gov/3rtmIqQ"
+  },
+  "oil_springs_fire": {
+    "domain": "d02",
+    "min_lat": 39.65,
+    "max_lat": 39.83,
+    "min_lon": -108.96,
+    "max_lon": -108.73,
+    "date_range": [
+      "2021-06-10",
+      "2021-06-30"
+    ],
+    "goes-slice":[
+      "",
+      ""
+    ],
+    "loc": "Rangely, CO United States",
+    "goes" : "g17",
+    "nasa": "https://go.nasa.gov/44kiobO"
+  }
+}

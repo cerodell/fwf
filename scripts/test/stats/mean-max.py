@@ -21,11 +21,12 @@ from context import data_dir, root_dir
 
 startTime = datetime.now()
 print("RUN STARTED AT: ", str(startTime))
-model = "eccc"
-domain = "rdps"
+model = "wrf"
+domain = "d02"
 trial_name = "02"
 doi = pd.Timestamp("2021-02-02T06")
-var_list = ["mFt", "mRt", "mSt", "mTt", "mWt", "mHt"]
+# var_list = ["mFt", "mRt", "mSt", "mTt", "mWt", "mHt"]
+var_list = ["mTt"]
 
 date_range_2021 = pd.date_range("2021-04-01", "2021-11-01")
 date_range_2022 = pd.date_range("2022-04-01", "2022-11-01")
@@ -41,7 +42,7 @@ masked_arr = np.ma.masked_where(static_ds["LAND"] == 1, static_ds["LAND"])
 
 try:
     mean_ds = salem.open_xr_dataset(
-        str(data_dir) + f"/{model}/mean-daily-{domain}-{trial_name}-.nc"
+        str(data_dir) + f"/{model}/mean-daily-{domain}-{trial_name}.nc"
     )
 except:
     filein_dir = f"/Volumes/WFRT-Ext24/fwf-data/{model}/{domain}/{trial_name}"
@@ -101,12 +102,13 @@ for var in var_list:
     mean_ds[var].salem.quick_map(
         ax=ax,
         cmap="coolwarm",
-        vmin=-12,
-        vmax=12,
+        vmin=-6,
+        vmax=6,
         oceans=True,
-        lakes=True,
+        # lakes=True,
         states=True,
         prov=True,
+        extend="both",
     )
     ax.set_title(
         f"Average hour offset from noon local for {ext} {var_name.upper()} \n during the 2021/2022 Fire Seasons (April 1 - Oct 31) \n Mean: {round(float(mean_ds[var].mean()),2)}hrs,  Min: {round(float(mean_ds[var].min()),2)}hrs,  Max: {round(float(mean_ds[var].max()),2)}hrs"

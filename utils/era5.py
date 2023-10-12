@@ -47,7 +47,8 @@ def rewrite_era5(doi, model, domain):
 
 
 def read_era5(doi, model, domain):
-    filein = f"/Volumes/WFRT-Ext23/{model}/{domain}/"
+    # filein = f"/Volumes/WFRT-Ext23/{model}/{domain}/"
+    filein = f"/Volumes/ThunderBay/CRodell/{model}/{domain}/"
     file_list = [
         f"{filein}{(doi + pd.Timedelta(days=i)).strftime('%Y%m')}/era5-{(doi + pd.Timedelta(days=i)).strftime('%Y%m%d00.nc')}"
         for i in range(0, 2)

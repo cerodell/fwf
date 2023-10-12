@@ -268,66 +268,68 @@ fig.savefig(
 
 # # lr_model = LinearRegression(normalize=True, copy_X=True, fit_intercept=False)
 
-# y = xr.DataArray(
-#     np.array(obs_gdf["Northing"]),
-#     dims="ids",
-#     coords=dict(ids=obs_gdf.id.values),
-# )
-# x = xr.DataArray(
-#     np.array(obs_gdf["Easting"]),
-#     dims="ids",
-#     coords=dict(ids=obs_gdf.id.values),
-# )
-# static_ds["west_east"], static_ds["south_north"] = (
-#     fwf_ds["west_east"],
-#     fwf_ds["south_north"],
-# )
+y = xr.DataArray(
+    np.array(obs_gdf["Northing"]),
+    dims="ids",
+    coords=dict(ids=obs_gdf.id.values),
+)
+x = xr.DataArray(
+    np.array(obs_gdf["Easting"]),
+    dims="ids",
+    coords=dict(ids=obs_gdf.id.values),
+)
+static_ds["west_east"], static_ds["south_north"] = (
+    fwf_ds["west_east"],
+    fwf_ds["south_north"],
+)
 
-# var_points = static_ds["HGT"].interp(west_east=x, south_north=y, method="nearest")
-# # print(var_points)
-# if len(obs_gdf.index) == len(var_points.values):
-#     var_points = var_points.values
-# else:
-#     raise ValueError("Lengths dont match")
+var_points = static_ds["HGT"].interp(west_east=x, south_north=y, method="nearest")
+# print(var_points)
+if len(obs_gdf.index) == len(var_points.values):
+    var_points = var_points.values
+else:
+    raise ValueError("Lengths dont match")
 
 
-# # var_bias = obs_gdf[var_lower].values.astype(float)
-# obs_points = obs_gdf[f"elev"].values.astype(float)
-# # lats, lons = obs_gdf[f"lats"], obs_gdf[f"lons"]
-# # regress = stats.linregress(var_points, var_bias)
-# # trend = lambda x, y: regress.intercept + regress.slope * x
-# fig = plt.figure(figsize=(8, 6))
-# ax = fig.add_subplot(1, 1, 1)
-# sc = ax.scatter(
-#     var_points,
-#     obs_points,
-#     c=obs_gdf[var_lower],
-#     vmin=-3,
-#     vmax=3,
-#     cmap="coolwarm",
-# )
-# xpoints = ypoints = plt.xlim()
-# ax.plot(xpoints, ypoints, linestyle="--", color="k", lw=0.8, scalex=False, scaley=False)
-# cbar = plt.colorbar(sc, ax=ax, pad=0.04)
-# cbar.ax.tick_params(labelsize=10)
-# cbar.set_label(
-#     "2m Temperature Bias"
-#     + r"($\mathrm{C})$"
-#     + " \n averaged from 01 Jan 2021 - 01 Jan 2023 ",
-#     rotation=90,
-#     fontsize=10,
-#     labelpad=15,
-# )
-# ax.set_xlabel("Model Elevation (m)")
-# ax.set_ylabel("Station Elevation (m)")
-# ax.set_title(
-#     f"Weather Station Elevation vs Modeled Elevation \n at {len(x)} station locations"
-# )
-# plt.savefig(
-#     str(data_dir) + f"/images/{var_lower}-{domain}-model-v-obs-elevation.png",
-#     dpi=250,
-#     bbox_inches="tight",
-# )
+# var_bias = obs_gdf[var_lower].values.astype(float)
+obs_points = obs_gdf[f"elev"].values.astype(float)
+# lats, lons = obs_gdf[f"lats"], obs_gdf[f"lons"]
+# regress = stats.linregress(var_points, var_bias)
+# trend = lambda x, y: regress.intercept + regress.slope * x
+
+
+fig = plt.figure(figsize=(8, 6))
+ax = fig.add_subplot(1, 1, 1)
+sc = ax.scatter(
+    var_points,
+    obs_points,
+    c=obs_gdf[var_lower],
+    vmin=-3,
+    vmax=3,
+    cmap="coolwarm",
+)
+xpoints = ypoints = plt.xlim()
+ax.plot(xpoints, ypoints, linestyle="--", color="k", lw=0.8, scalex=False, scaley=False)
+cbar = plt.colorbar(sc, ax=ax, pad=0.04)
+cbar.ax.tick_params(labelsize=10)
+cbar.set_label(
+    "2m Temperature Bias"
+    + r"($\mathrm{C})$"
+    + " \n averaged from 01 Jan 2021 - 01 Jan 2023 ",
+    rotation=90,
+    fontsize=10,
+    labelpad=15,
+)
+ax.set_xlabel("Model Elevation (m)")
+ax.set_ylabel("Station Elevation (m)")
+ax.set_title(
+    f"Weather Station Elevation vs Modeled Elevation \n at {len(x)} station locations"
+)
+plt.savefig(
+    str(data_dir) + f"/images/{var_lower}-{domain}-model-v-obs-elevation.png",
+    dpi=250,
+    bbox_inches="tight",
+)
 
 # ##################################################################
 # ###################### Universal Kriging #########################

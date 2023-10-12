@@ -26,19 +26,14 @@ import warnings
 
 __author__ = "Christopher Rodell"
 __email__ = "crodell@eoas.ubc.ca"
-
 # ignore RuntimeWarning
 warnings.filterwarnings("ignore", category=RuntimeWarning)
 warnings.filterwarnings("ignore", category=UserWarning)
-2022051606
-#  0:01:47.
-date_range = pd.date_range("2021-01-02", "2023-05-31")
-# date_range = pd.date_range("2023-05-08", "2023-05-08")
-# date_range = pd.date_range("2021-01-02", "2021-01-02")
+date_range = pd.date_range("2019-12-26", "2023-01-01")
 
 config = dict(
-    model="wrf",
-    domain="d03",
+    model="ecmwf",
+    domain="era5",
     trail_name="02",
     initialize=False,
     initialize_hffmc=False,
@@ -50,10 +45,10 @@ config = dict(
 if config["model"] == "eccc":
     config["root_dir"] = "/Volumes/WFRT-Ext23/fwf-data"
 elif config["model"] == "ecmwf":
-    config["root_dir"] = "/Volumes/WFRT-Ext23/ecmwf/era5"
+    config["root_dir"] = "/Volumes/ThunderBay/CRodell/ecmwf/era5/"
 elif config["model"] == "wrf":
     if int(date_range[0].strftime("%Y")) >= 2023:
-        config["root_dir"] = "/Volumes/WFRT-Ext22/fwf-data"
+        config["root_dir"] = "/Volumes/WFRT-Ext24/fwf-data"
     else:
         config["root_dir"] = "/Volumes/Scratch/fwf-data"
 else:

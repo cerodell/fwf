@@ -53,7 +53,8 @@ with open(str(root_dir) + f"/json/fwf-attrs.json", "r") as fp:
 
 try:
     prov_ds = xr.open_dataset(
-        str(data_dir) + f"/intercomp/{trail_name}/{model}/d03-20210401-20221101-null.nc"
+        str(data_dir)
+        + f"/intercomp/{trail_name}/{model}/d03-20210401-20221101-null-gagga.nc"
     )
 except:
     ds = xr.open_dataset(
@@ -100,6 +101,9 @@ except:
     prov_ds = xr.combine_nested([ds_2021, null_ds, ds_2022], concat_dim="time")
     for var in ["elev", "name", "prov", "id", "domain"]:
         prov_ds[var] = prov_ds[var].astype(str)
+
+    prov_ds = prov_ds.set_coords(["elev", "name", "prov", "id", "domain"])
+
     prov_ds.to_netcdf(
         str(data_dir)
         + f"/intercomp/{trail_name}/{model}/d03-20210401-20221101-null.nc",
@@ -167,8 +171,8 @@ def fct_plot(
     fct_flat = fct_flat[~np.isnan(obs_flat_null)]
     fct_flat = np.delete(fct_flat, idx)
     if var == "precip":
-        fct_flat = fct_flat[obs_flat > 0.0]
-        obs_flat = obs_flat[obs_flat > 0.0]
+        fct_flat = fct_flat[obs_flat > 0.25]
+        obs_flat = obs_flat[obs_flat > 0.25]
     else:
         pass
     # print(np.unique(obs_ds.isnull(), return_counts=True))
@@ -257,6 +261,7 @@ for i in range(length):
     obs_flat = np.delete(obs_flat, idx)
     wx_station, wx_count = np.unique(np.delete(wx_station, idx), return_counts=True)
     print(var)
+    print(len(wx_station))
     print(list(wx_station[np.where(wx_count < 30)[0]]))
     print(len(list(wx_station[np.where(wx_count < 30)[0]])))
     print("=============================================")

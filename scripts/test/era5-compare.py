@@ -20,8 +20,8 @@ from context import data_dir, root_dir
 
 
 domain = "d02"
-var = "D"
-year = 2006
+var = "S"
+year = "1994"
 
 
 ### Open color map json
@@ -34,26 +34,25 @@ var2 = cmaps[var]["name"]
 title = cmaps[var]["title"].lower().replace(" ", "_")
 vmin, vmax = cmaps[var]["vmin"], cmaps[var]["vmax"]
 
-# nrcan_ds = salem.open_xr_dataset(str(data_dir) + f"/ecmwf/{title}_1994.nc").sel(Time = pd.to_datetime("1994-07-01").strftime("%j"))
-# nrcan_ds = nrcan_ds.roll(Longitude=int(len(nrcan_ds["Longitude"]) / 2))
+nrcan_ds = salem.open_xr_dataset(str(data_dir) + f"/ecmwf/{title}_1994.nc").sel(
+    Time=pd.to_datetime("1994-07-01").strftime("%j")
+)
+nrcan_ds = nrcan_ds.roll(Longitude=int(len(nrcan_ds["Longitude"]) / 2))
 
-# era5_ds = salem.open_xr_dataset(str(data_dir) + f"/ecmwf/hist/ECMWF_FWI_{var2.upper()}_{year}0701_1200_hr_v4.0_con.nc").isel(time = 0)
-# era5_ds = era5_ds.roll(longitude=int(len(era5_ds["longitude"]) / 2))
+era5_ds = salem.open_xr_dataset(
+    str(data_dir)
+    + f"/ecmwf/hist/ECMWF_FWI_{var2.upper()}_{year}0701_1200_hr_v4.0_con.nc"
+).isel(time=0)
+era5_ds = era5_ds.roll(longitude=int(len(era5_ds["longitude"]) / 2))
 ds = salem.open_xr_dataset(
-    f"/Volumes/WFRT-Ext25/fwf-data/ecmwf/era5/02/fwf-daily-era5-{year}080100.nc"
+    f"/Volumes/WFRT-Ext25/fwf-data/ecmwf/era5/02/fwf-daily-era5-{year}070100.nc"
 ).isel(time=0)
-ds_0 = salem.open_xr_dataset(
-    f"/Volumes/WFRT-Ext25/fwf-data/ecmwf/era5/02/fwf-daily-era5-{1992}080100.nc"
-).isel(time=0)
+era5_ds["longitude"] = ds["west_east"].values
+nrcan_ds["Longitude"] = ds["west_east"].values
 
-# era5_ds["longitude"] = ds['west_east'].values
-# nrcan_ds["Longitude"] = ds['west_east'].values
-
-# ds = ds.sel(south_north = slice(85,20), west_east =slice(-170,-60))
-# ds_0 = ds_0.sel(south_north = slice(85,20), west_east =slice(-170,-60))
-
-# era5_ds = era5_ds.sel(latitude = slice(85,20), longitude =slice(-170,-60))
-# nrcan_ds = nrcan_ds.sel(Latitude = slice(85,20), Longitude =slice(-170,-60))
+ds = ds.sel(south_north=slice(85, 40), west_east=slice(-170, -60))
+era5_ds = era5_ds.sel(latitude=slice(85, 40), longitude=slice(-170, -60))
+nrcan_ds = nrcan_ds.sel(Latitude=slice(85, 40), Longitude=slice(-170, -60))
 
 # static_ds = static_ds.sel(south_north = slice(85,30), west_east =slice(-170,-60))
 
@@ -62,36 +61,31 @@ ds_0 = salem.open_xr_dataset(
 
 fig = plt.figure(figsize=(12, 4))
 ax = fig.add_subplot(1, 1, 1)
-ds[var].salem.quick_map(oceans=True, vmax=600, vmin=vmin, cmap="jet", ax=ax)
+ds[var].salem.quick_map(oceans=True, vmax=vmax, vmin=vmin, cmap="jet", ax=ax)
+fig = plt.figure(figsize=(12, 4))
+ax = fig.add_subplot(1, 1, 1)
+era5_ds[var2].salem.quick_map(oceans=True, vmax=vmax, vmin=vmin, cmap="jet", ax=ax)
+plt.show()
 
 fig = plt.figure(figsize=(12, 4))
 ax = fig.add_subplot(1, 1, 1)
-ds_0[var].salem.quick_map(oceans=True, vmax=600, vmin=vmin, cmap="jet", ax=ax)
-# fig = plt.figure(figsize=(12, 4))
-# ax = fig.add_subplot(1, 1, 1)
-# era5_ds[var2].salem.quick_map(oceans =True, vmax = vmax, vmin = vmin, cmap='jet',ax = ax)
-# plt.show()
-
-# fig = plt.figure(figsize=(12, 4))
-# ax = fig.add_subplot(1, 1, 1)
-# nrcan_ds[var2.upper()].salem.quick_map(oceans =True, vmax = vmax, vmin = vmin, cmap='jet',ax = ax)
-# plt.show()
+nrcan_ds[var2.upper()].salem.quick_map(
+    oceans=True, vmax=vmax, vmin=vmin, cmap="jet", ax=ax
+)
+plt.show()
 
 
 my_dc = ds[var].values
 # my_dc = era5_ds[var2].values
-# ec_dc = nrcan_ds[var2.upper()].values
-past_ds = ds_0[var].values
-my_dc1 = np.where(np.isnan(past_ds), np.nan, my_dc)
+ec_dc = nrcan_ds[var2.upper()].values
+my_dc1 = np.where(np.isnan(ec_dc), np.nan, my_dc)
 
-diff = past_ds - my_dc1
+diff = ec_dc - my_dc1
 
 ds[var2 + "_diff"] = (("south_north", "west_east"), diff)
 fig = plt.figure(figsize=(12, 4))
 ax = fig.add_subplot(1, 1, 1)
-ds[var2 + "_diff"].salem.quick_map(
-    oceans=True, cmap="coolwarm_r", vmin=-100, vmax=100, ax=ax
-)
+ds[var2 + "_diff"].salem.quick_map(cmap="coolwarm", vmin=-3, vmax=3, ax=ax)
 plt.show()
 print(float(ds[var2 + "_diff"].mean()), " MEAN")
 print(float(ds[var2 + "_diff"].min()), " MIN")

@@ -1,0 +1,207 @@
+{
+
+  "sparks_lake": {
+  "domain": "d03",
+  "min_lat": 50.9,
+  "max_lat": 51.2,
+  "min_lon": -121,
+  "max_lon": -120.7,
+  "date_range": [
+    "2021-06-29",
+    "2021-07-29"
+  ],    "goes-slice":[
+    "",
+    ""
+  ],
+  "loc": "Kamloops, BC Canada",
+  "goes" : "g17",
+  "nasa": "https://go.nasa.gov/3PKadBi",
+  "info": "https://earthobservatory.nasa.gov/images/148530/blazes-rage-in-british-columbia"
+},
+  "lytton_creek": {
+    "domain": "d03",
+    "min_lat": 50.12,
+    "max_lat": 50.51,
+    "min_lon": -121.7,
+    "max_lon": -121.12,
+    "date_range": [
+      "2021-06-29",
+      "2021-07-29"
+    ],
+    "loc": "Lytton, BC Canada",
+    "goes" : "g17",
+    "nasa": "https://go.nasa.gov/3Qrzlgn",
+    "info": "https://earthobservatory.nasa.gov/images/148530/blazes-rage-in-british-columbia"
+  },
+  "barrington_lake_fire": {
+    "domain": "d02",
+    "min_lat": 43.3,
+    "max_lat": 43.9,
+    "min_lon": -65.85,
+    "max_lon": -65.0,
+    "date_range": [
+      "2023-05-27",
+      "2023-06-03"
+    ],
+    "loc": "Barrington, NS Canada",
+    "goes" : "g16",
+    "nasa": "https://go.nasa.gov/44QYeX7"
+  },
+  "ewf_031": {
+    "domain": "d03",
+    "min_lat": 52.73,
+    "max_lat": 53.53,
+    "min_lon": -116.58,
+    "max_lon": -115.46,
+    "date_range": [
+      "2023-05-15",
+      "2023-05-22"
+    ],
+    "loc": "Yellowhead County, AB Canada",
+    "goes" : "g18",
+    "nasa": "https://go.nasa.gov/43YA7oa"
+  },
+  "quebec_fire_334": {
+    "domain": "d02",
+    "min_lat": 47.7,
+    "max_lat": 49.86,
+    "min_lon": -77.75,
+    "max_lon": -74.41,
+    "date_range": [
+      "2023-06-01",
+      "2023-06-07"
+    ],
+    "loc": "East of Val D'or, QB Canada",
+    "goes" : "g16",
+    "nasa": "https://go.nasa.gov/3YjaWeM"
+  },
+  "donnie_creek": {
+    "domain": "d03",
+    "min_lat": 57.26,
+    "max_lat": 58.19,
+    "min_lon": -122.34,
+    "max_lon": -121.09,
+    "date_range": [
+      "2023-05-12",
+      "2023-05-20"
+    ],
+    "loc": "North of Fort St. John, BC Canada",
+    "goes" : "g18",
+    "nasa": "https://go.nasa.gov/3YjjkuU"
+  },
+  "wildcat": {
+    "domain": "d03",
+    "min_lat": 53.01,
+    "max_lat": 53.46,
+    "min_lon": -102.83,
+    "max_lon": -102.13,
+    "date_range": [
+      "2021-07-22",
+      "2021-08-02"
+    ],
+    "loc": "Hudson Bay, SK Canada",
+    "goes" : "g16",
+    "nasa": "https://go.nasa.gov/43dHisf"
+  },
+  "marshall_fire": {
+    "domain": "d02",
+    "min_lat": 39.5,
+    "max_lat": 40.5,
+    "min_lon": -105.3,
+    "max_lon": -105.1,
+    "date_range": [
+      "2021-12-29",
+      "2022-01-01"
+    ],
+    "loc": "Boulder, CO United States",
+    "goes" : "g16",
+    "nasa": "https://go.nasa.gov/3r7t2E3"
+  },
+  "oak_fire": {
+    "domain": "d02",
+    "min_lat": 37.4,
+    "max_lat": 37.7,
+    "min_lon": -120.01,
+    "max_lon": -119.71,
+    "date_range": [
+      "2022-07-22",
+      "2022-08-01"
+    ],
+    "loc": "Mariposa, CA United States",
+    "goes" : "g17",
+    "info": "https://inciweb.nwcg.gov/incident-information/casnf-oak-fire",
+    "nasa": "https://go.nasa.gov/3PUy6Go"
+  },
+  "caldor_fire": {
+    "domain": "d02",
+    "min_lat": 38.40,
+    "max_lat": 38.96,
+    "min_lon": -120.73,
+    "max_lon": -119.87,
+    "date_range": [
+      "2021-08-15",
+      "2021-09-09"
+    ],
+    "loc": "South Lake Tahoe, CA United States",
+    "goes" : "g17",
+    "info": "https://inciweb.nwcg.gov/incident-information/caenf-caldor-fire",
+    "nasa": "https://go.nasa.gov/3PUE2iK"
+  },
+  "fire_east_tulare": {
+    "domain": "d02",
+    "min_lat": 35.80,
+    "max_lat": 36.30,
+    "min_lon": -118.84,
+    "max_lon": -118.36,
+    "date_range": [
+      "2021-09-10-T00",
+      "2021-10-10-T00"
+    ],
+    "loc": "Sequoia National Park, CA United States",
+    "goes" : "g17",
+    "info": "http://emops.pdc.org/emops/?hazard_id=130925",
+    "nasa": "https://go.nasa.gov/3XT9orJ"
+  },
+  "rossmoore_fire": {
+    "domain": "d03",
+    "min_lat": 50.24,
+    "max_lat": 50.76,
+    "min_lon": -120.65,
+    "max_lon": -120.09,
+    "date_range": [
+      "2023-07-21-T00",
+      "2023-08-06-T00"
+    ],
+    "loc": "Kamloops, BC Canada",
+    "goes" : "g18",
+    "nasa": "https://go.nasa.gov/3DJbKQS"
+  },
+  "crater_creek": {
+    "domain": "d03",
+    "min_lat": 48.96,
+    "max_lat": 49.29,
+    "min_lon": -120.17,
+    "max_lon": -119.80,
+    "date_range": [
+      "2023-08-15-T00",
+      "2023-08-24-T00"
+    ],
+    "loc": "Keremeos, BC Canada",
+    "goes" : "g18",
+    "nasa": "https://go.nasa.gov/3shINci"
+  },
+  "mcdougall_creek": {
+    "domain": "d03",
+    "min_lat": 49.82,
+    "max_lat": 50.10,
+    "min_lon": -119.69,
+    "max_lon": -119.33,
+    "date_range": [
+      "2023-08-17-T00",
+      "2023-08-24-T00"
+    ],
+    "loc": "Kelowna, BC Canada",
+    "goes" : "g18",
+    "nasa": "https://go.nasa.gov/3shINci"
+  }
+}

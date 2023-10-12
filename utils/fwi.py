@@ -124,6 +124,9 @@ def solve_dmc(ds, P, L_e):
     )
 
     zero_full = np.zeros_like(ds.T)
+    ##  Constrain temp
+    ##    - The log drying rate K is proportional to temperature, becoming negligible at about -1.1°C (Van Wagner 1985) .
+    T = np.where(T < -1.1, -1.1, T)
 
     ########################################################################
     ### (11) Solve for the effective rain (r_e)
@@ -226,6 +229,7 @@ def solve_dc(ds, D, L_f):
     ## Alteration to Eq. 23 (Lawson 2008)
     D = D_r + V * 0.5
     # D = xr.DataArray(D, name="D", dims=("temp", "wind", "rh", "precip"))
+    D = xr.where(D < 15, 15, D)
     ds["D"] = D
 
     return ds
@@ -285,6 +289,7 @@ def solve_bui(ds):
     )
 
     U = U_low + U_high
+    U = xr.where(U < 0, 1.0, U)
     # U = xr.DataArray(U, name="U", dims=("temp", "wind", "rh", "precip"))
     ds["U"] = U
 

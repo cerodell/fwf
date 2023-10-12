@@ -22,7 +22,7 @@ print("RUN STARTED AT: ", str(startTime))
 model = "wrf"
 domain = "d02"
 timestep = "hourly"
-doi = pd.Timestamp("2021-01-10T06")
+doi = pd.Timestamp("2021-02-10T06")
 
 ## test fwf with an hourly_ds
 filein_dir = f"/Volumes/Scratch/fwf-data/wrf/d02/"
@@ -86,6 +86,7 @@ int_ds = xr.combine_nested(
     concat_dim="time",
 ).load()
 
+int_ds["time"] = int_ds["Time"]
 
 ## create I, J for quick indexing
 I, J = np.ogrid[: shape[0], : shape[1]]
@@ -137,3 +138,24 @@ static_ds["diff_rain"].salem.quick_map(vmin=10, vmax=10, cmap="coolwarm")
 print(float(static_ds["diff_rain"].max()))
 print(float(static_ds["diff_rain"].min()))
 print(float(static_ds["diff_rain"].mean()))
+
+
+jj = np.where(static_ds["ZoneST"].values == 8)[0]
+ii = np.where(static_ds["ZoneST"].values == 8)[1]
+max_list = []
+for k in range(len(jj)):
+    i = ii[k]
+    j = jj[k]
+    offset = static_ds["ZoneST"].isel(south_north=j, west_east=i)
+    if int(offset) == 8:
+        print(float(offset))
+        hour = int_ds.isel(south_north=j, west_east=i).sel(
+            time=slice("2021-02-09T21", "2021-02-10T20")
+        )
+        hour_test = hour - hour[0]
+        print(float(hour_test[-1]))
+        print(float(old_rain.isel(south_north=j, west_east=i)))
+        diff = float(hour_test[-1]) - float(old_rain.isel(south_north=j, west_east=i))
+        max_list.append(diff)
+        print("Diff: ", diff)
+        print("===================================")

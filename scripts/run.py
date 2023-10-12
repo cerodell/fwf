@@ -31,12 +31,13 @@ warnings.filterwarnings("ignore", category=RuntimeWarning)
 # """######### create forecast directory for webapge  #############"""
 wrf_model = "wrf4"
 forecast_date = pd.Timestamp("today").strftime("%Y%m%d00")
+forecast_date = pd.Timestamp("2023-05-07").strftime("%Y%m%d00")
 
 make_dir = Path(f"/bluesky/archive/fireweather/forecasts/{forecast_date}/")
 make_dir.mkdir(parents=True, exist_ok=True)
 
 
-domains = ["d02", "d03"]
+domains = ["d03"]
 for domain in domains:
     domain_startTime = datetime.now()
     print(f"start of domain {domain}: ", str(domain_startTime))

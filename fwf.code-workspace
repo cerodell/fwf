@@ -5,7 +5,7 @@
         }
     ],
     "settings": {
-        "python.pythonPath": "/Users/rodell/miniconda3/envs/fwf/bin/python",
+        "python.pythonPath": "/Users/rodell/miniconda3/envs/fwx/bin/python",
         "cSpell.words": [
             "Carree",
             "contourf",

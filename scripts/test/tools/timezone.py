@@ -31,21 +31,25 @@ __email__ = "crodell@eoas.ubc.ca"
 
 season = "ST"
 model = "wrf"
-domain = "d03"
+domain = "d01"
 
 
 filein = str(data_dir) + f"/{model}/{domain}-grid.nc"
-
+filein = str(data_dir) + f"/{model}/wrfout_d01_2023-04-20_00:00:00"
 tzone_shp = (
     str(data_dir) + "/tzone/timezones-with-oceans/combined-shapefile-with-oceans.shp"
 )
 
+
+# old = salem.open_xr_dataset(str(data_dir) + "/static/static-vars-ecmwf-era5-old.nc")
+# new = salem.open_xr_dataset(str(data_dir) + "/static/static-vars-ecmwf-era5.nc")
+
 ## Open datasets
-ds = salem.open_xr_dataset(filein)
+ds = salem.open_xr_dataset(filein).isel(Time=0)
 pyproj_srs = ds.attrs["pyproj_srs"]
 df = salem.read_shapefile(tzone_shp)
-df = df[df["tzid"].str.contains("America")]
-df = df[df["min_y"] > 14]
+# df = df[df["tzid"].str.contains("America")]
+# df = df[df["min_y"] > 14]
 
 
 lats = ds.XLAT.values
@@ -150,7 +154,6 @@ ds["ZoneST"].attrs["pyproj_srs"] = pyproj_srs
 ds["ZoneST"].salem.quick_map(cmap="coolwarm")
 ds = ds.drop("var")
 ds.to_netcdf(str(data_dir) + f"/tzone/tzone-{model}-{domain}-{season}.nc", mode="w")
-
 
 # ####################################
 # ## plot for santity check
