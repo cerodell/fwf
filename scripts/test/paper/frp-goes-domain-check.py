@@ -34,7 +34,7 @@ __email__ = "crodell@eoas.ubc.ca"
 #################### INPUTS ####################
 
 
-case_study = "barrington_lake_fire"
+case_study = "lazy_fire"
 print(case_study)
 ################## END INPUTS ####################
 
@@ -93,7 +93,8 @@ goeslist = goeslist[i - 10 : j + 10]
 
 id = goes_ds_zero.attrs["platform_ID"]
 if (id == "G17") or (id == "G18"):
-    row_slice, column_slice = slice(180, 1200), slice(2900, 3650)
+    row_slice, column_slice = slice(220, 1100), slice(3000, 3750)
+    row_slice, column_slice = slice(800, 1600), slice(3500, 4500)
     latlon_ds = xr.open_dataset(
         str(data_dir) + f"/frp/goes/goes18_abi_full_disk_lat_lon.nc"
     ).isel(rows=row_slice, columns=column_slice)

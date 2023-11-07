@@ -67,7 +67,7 @@ __email__ = "crodell@eoas.ubc.ca"
 
 ########################### INPUTS ###########################
 
-model = "wrf_day2"
+model = "wrf"
 domains = ["d02", "d03"]
 
 # model = "ecmwf"
@@ -152,7 +152,7 @@ time = np.array(prov_ds.time.dt.strftime("%Y-%m-%d"), dtype="<U10")
 start_time = datetime.strptime(str(time[0]), "%Y-%m-%d").strftime("%Y%m%d")
 end_time = datetime.strptime(str(time[-1]), "%Y-%m-%d").strftime("%Y%m%d")
 colors = plt.rcParams["axes.prop_cycle"].by_key()["color"]
-colors = ["tab:green", "tab:orange"]
+colors = ["#3e5da7", "#ee5138"]
 all_obs_ds = prov_ds.sel(domain="obs")
 domains_ds = [prov_ds.sel(domain=domain) for domain in domains]
 
@@ -283,7 +283,7 @@ var_list = [
     "wdir",
     "precip",
 ]
-# var_list = ["precip"]
+var_list = ["fwi"]
 
 length = len(var_list)
 for i in range(length):
@@ -331,7 +331,7 @@ for i in range(length):
             stats_text,
             ax,
             ax2,
-            ls=ls,
+            ls="-",
             name="noon  ",
         )
         color_table.append(color_t)
@@ -435,92 +435,93 @@ for i in range(length):
     ax2.plot((-d, +d), (1 - d, 1 + d), **kwargs)
     ax2.plot((-d, +d), (-d, +d), **kwargs)
 
+    ### NOTE Uncomment below to add tbale to timesseries plot
     # Create the table data
-    lst = stats_text.split(",")[:-1]
-    x = 5
-    y = int(len(lst) / x)
-    data = np.array(lst).reshape(y, x)
+    # lst = stats_text.split(",")[:-1]
+    # x = 5
+    # y = int(len(lst) / x)
+    # data = np.array(lst).reshape(y, x)
 
-    numbers_only = []
-    for string in lst:
-        numbers = re.findall(r"-?\d+\.\d+|-?\d+", string)
-        if numbers:
-            numbers_only.extend(numbers)
-        else:
-            numbers_only.extend("1")
-    try:
-        numbers_only = np.array(numbers_only).reshape(y, x).astype(float)
-    except:
-        numbers_only = np.array(numbers_only).astype(float)[1:]
+    # numbers_only = []
+    # for string in lst:
+    #     numbers = re.findall(r"-?\d+\.\d+|-?\d+", string)
+    #     if numbers:
+    #         numbers_only.extend(numbers)
+    #     else:
+    #         numbers_only.extend("1")
+    # try:
+    #     numbers_only = np.array(numbers_only).reshape(y, x).astype(float)
+    # except:
+    #     numbers_only = np.array(numbers_only).astype(float)[1:]
 
-    cell_colors = np.empty((y, x), dtype="U10")
-    cell_colors.fill("white")
-    good_color, bad_color = "#c6eaf7", "#facbc3"
-    color_table = np.stack(color_table)
-    try:
-        cell_colors[
-            np.where(numbers_only[:, 1] == np.min(numbers_only[:, 1]))[0], 1
-        ] = bad_color
-        cell_colors[
-            np.where(np.abs(numbers_only[:, 2]) == np.max(np.abs(numbers_only[:, 2])))[
-                0
-            ],
-            2,
-        ] = bad_color
-        cell_colors[
-            np.where(numbers_only[:, 3] == np.max(numbers_only[:, 3]))[0], 3
-        ] = bad_color
-        cell_colors[
-            np.where(numbers_only[:, 4] == np.max(numbers_only[:, 4]))[0], 4
-        ] = bad_color
+    # cell_colors = np.empty((y, x), dtype="U10")
+    # cell_colors.fill("white")
+    # good_color, bad_color = "#c6eaf7", "#facbc3"
+    # color_table = np.stack(color_table)
+    # try:
+    #     cell_colors[
+    #         np.where(numbers_only[:, 1] == np.min(numbers_only[:, 1]))[0], 1
+    #     ] = bad_color
+    #     cell_colors[
+    #         np.where(np.abs(numbers_only[:, 2]) == np.max(np.abs(numbers_only[:, 2])))[
+    #             0
+    #         ],
+    #         2,
+    #     ] = bad_color
+    #     cell_colors[
+    #         np.where(numbers_only[:, 3] == np.max(numbers_only[:, 3]))[0], 3
+    #     ] = bad_color
+    #     cell_colors[
+    #         np.where(numbers_only[:, 4] == np.max(numbers_only[:, 4]))[0], 4
+    #     ] = bad_color
 
-        cell_colors[
-            np.where(numbers_only[:, 1] == np.max(numbers_only[:, 1]))[0], 1
-        ] = good_color
-        cell_colors[
-            np.where(np.abs(numbers_only[:, 2]) == np.min(np.abs(numbers_only[:, 2])))[
-                0
-            ],
-            2,
-        ] = good_color
-        cell_colors[
-            np.where(numbers_only[:, 3] == np.min(numbers_only[:, 3]))[0], 3
-        ] = good_color
-        cell_colors[
-            np.where(numbers_only[:, 4] == np.min(numbers_only[:, 4]))[0], 4
-        ] = good_color
+    #     cell_colors[
+    #         np.where(numbers_only[:, 1] == np.max(numbers_only[:, 1]))[0], 1
+    #     ] = good_color
+    #     cell_colors[
+    #         np.where(np.abs(numbers_only[:, 2]) == np.min(np.abs(numbers_only[:, 2])))[
+    #             0
+    #         ],
+    #         2,
+    #     ] = good_color
+    #     cell_colors[
+    #         np.where(numbers_only[:, 3] == np.min(numbers_only[:, 3]))[0], 3
+    #     ] = good_color
+    #     cell_colors[
+    #         np.where(numbers_only[:, 4] == np.min(numbers_only[:, 4]))[0], 4
+    #     ] = good_color
 
-        # Create the second set of axes for the table
-        ax_table = fig.add_axes([0.55, 0.87, 0.33, 0.2])
+    #     # Create the second set of axes for the table
+    #     ax_table = fig.add_axes([0.55, 0.87, 0.33, 0.2])
 
-        # Create the table and add it to the second set of axes
+    #     # Create the table and add it to the second set of axes
 
-        table = ax_table.table(
-            cellText=data, loc="center", cellColours=cell_colors, fontsize=12
-        )
-        for i in range(len(color_table)):
-            # Get the cell object at row 0, column 1
-            cell = table.get_celld()[(i, 0)]
+    #     table = ax_table.table(
+    #         cellText=data, loc="center", cellColours=cell_colors, fontsize=12
+    #     )
+    #     for i in range(len(color_table)):
+    #         # Get the cell object at row 0, column 1
+    #         cell = table.get_celld()[(i, 0)]
 
-            # Set the font color of the cell to red
-            cell.set_text_props(color=color_table[i])
-            # cell.set_text_props(color='k')
-    except:
-        # Create the second set of axes for the table
-        ax_table = fig.add_axes([0.55, 0.87, 0.33, 0.2])
+    #         # Set the font color of the cell to red
+    #         cell.set_text_props(color=color_table[i])
+    #         # cell.set_text_props(color='k')
+    # except:
+    #     # Create the second set of axes for the table
+    #     ax_table = fig.add_axes([0.55, 0.87, 0.33, 0.2])
 
-        # Create the table and add it to the second set of axes
+    #     # Create the table and add it to the second set of axes
 
-        table = ax_table.table(cellText=data, loc="center")
-        for i in range(len(color_table)):
-            # Get the cell object at row 0, column 1
-            cell = table.get_celld()[(i, 0)]
+    #     table = ax_table.table(cellText=data, loc="center")
+    #     for i in range(len(color_table)):
+    #         # Get the cell object at row 0, column 1
+    #         cell = table.get_celld()[(i, 0)]
 
-            # Set the font color of the cell to red
-            cell.set_text_props(color=color_table[i])
-            # cell.set_text_props(color='k')
-    # Hide the table axis ticks and labels
-    ax_table.axis("off")
+    #         # Set the font color of the cell to red
+    #         cell.set_text_props(color=color_table[i])
+    #         # cell.set_text_props(color='k')
+    # # Hide the table axis ticks and labels
+    # ax_table.axis("off")
 
     ax.legend(
         loc="upper center",

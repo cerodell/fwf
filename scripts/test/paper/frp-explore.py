@@ -45,7 +45,7 @@ filein = f"/Volumes/WFRT-Ext24/fwf-data/wrf/{domain}/02/"
 # doi = pd.to_datetime('2023-05-13')
 
 
-case_study = "wildcat"
+case_study = "lazy_fire"
 min_lat = 53.01
 max_lat = 53.46
 min_lon = -102.83

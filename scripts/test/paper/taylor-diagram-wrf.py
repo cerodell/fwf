@@ -11,12 +11,17 @@ import matplotlib.lines as mlines
 
 from context import data_dir
 
+# plt.rc("font", family="sans-serif")
+# plt.rc("text", usetex=True)
+plt.rcParams.update({"font.size": 24})
+
 model = "wrf"
 trail_name = "02"
 
 ## define directory to save figures
-save_dir = Path(str(data_dir) + f"/images/stats/{trail_name}/{model}/taylor/")
-save_dir.mkdir(parents=True, exist_ok=True)
+# save_dir = Path(str(data_dir) + f"/images/stats/{trail_name}/{model}/taylor/")
+save_dir = "/Users/crodell/ams-fwf/LaTeX/img/fwf/"
+# save_dir.mkdir(parents=True, exist_ok=True)
 
 var_list = [
     "ffmc",
@@ -144,18 +149,24 @@ for var in var_list:
             "color_edge": "#000000",
             "color_face": "#000000",
             "markersize": 9,
+            "alpha": 1,
+            "zorder": 10,
         },
         wrf_d03_noon: {
             "marker": "o",
             "color_edge": "#ff4f33",
             "color_face": "#ee5138",
             "markersize": 9,
+            "alpha": 1,
+            "zorder": 10,
         },
         wrf_d02_noon: {
             "marker": "o",
             "color_edge": "#0050ff",
             "color_face": "#3e5da7",
             "markersize": 9,
+            "alpha": 1,
+            "zorder": 10,
         },
     }
     try:
@@ -165,12 +176,16 @@ for var in var_list:
                 "color_edge": "#ff4f33",
                 "color_face": "#ee5138",
                 "markersize": 7,
+                "alpha": 0.1,
+                "zorder": 1,
             },
             wrf_d02_max: {
                 "marker": "D",
                 "color_edge": "#0050ff",
                 "color_face": "#3e5da7",
                 "markersize": 7,
+                "alpha": 0.1,
+                "zorder": 1,
             },
         }
         MARKERS.update(EXTREMS)
@@ -183,12 +198,16 @@ for var in var_list:
                 "color_edge": "#ff4f33",
                 "color_face": "#ee5138",
                 "markersize": 9,
+                "alpha": 0.1,
+                "zorder": 1,
             },
             wrf_d02_hourly: {
                 "marker": "s",
                 "color_edge": "#0050ff",
                 "color_face": "#3e5da7",
                 "markersize": 9,
+                "alpha": 0.1,
+                "zorder": 1,
             },
         }
         MARKERS.update(HOURLIES)
@@ -198,7 +217,7 @@ for var in var_list:
     # ## PLOT STYLE ################################################################# #
 
     FONT_FAMILY = "Times New Roman"
-    FONT_SIZE = 9
+    FONT_SIZE = 10
 
     # specify some styles for the correlation component
     COLS_COR = {"grid": "#DDDDDD", "tick_labels": "#000000", "title": "#000000"}
@@ -255,7 +274,7 @@ for var in var_list:
                 markersymbol=MARKERS[obs_name]["marker"],
                 styleOBS=":",
                 colOBS=MARKERS[obs_name]["color_edge"],
-                alpha=1.0,
+                # alpha=1.0,
                 titleSTD="off",
                 titleRMS="on",
                 showlabelsRMS="on",
@@ -369,13 +388,13 @@ for var in var_list:
 
         # # Write plot to file
         plt.savefig(
-            str(save_dir) + f"/{var}.png",
+            str(save_dir) + f"/{var}-taylor.png",
             facecolor="w",
             bbox_inches="tight",
         )
         # # Write plot to file
         plt.savefig(
-            str(save_dir) + f"/{var}.pdf",
+            str(save_dir) + f"/{var}-taylor.pdf",
             facecolor="w",
             bbox_inches="tight",
             format="pdf",

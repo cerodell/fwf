@@ -6,6 +6,7 @@ import pandas as pd
 import xarray as xr
 import geopandas as gpd
 from pathlib import Path
+import matplotlib.pyplot as plt
 from sklearn.neighbors import KDTree
 
 from datetime import datetime
@@ -14,6 +15,11 @@ from utils.eccc import read_eccc
 from utils.era5 import read_era5
 
 from context import data_dir, root_dir
+
+
+plt.rc("font", family="sans-serif")
+plt.rc("text", usetex=True)
+plt.rcParams.update({"font.size": 18})
 
 
 __author__ = "Christopher Rodell"
@@ -101,16 +107,18 @@ def open_fwf(doi, filein, domain, model, yy, xx, utc_offset):
         ds["time"] = ds["Time"]
         ds = ds.isel(time=slice(0, 24))
         ds["time"] = ds["time"] - np.timedelta64(int(utc_offset), "h")
+        ds = ds[["S", "F"]]
     elif model == "daily":
         ds = ds.isel(time=0)
+        ds = ds[["S", "mS"]]
 
     ds = ds.isel(south_north=yy, west_east=xx)
     ds = ds.mean(dim=["south_north", "west_east"])
 
-    return ds[["S", "F", "R"]]
+    return ds
 
 
-def open_frp(case_study, case_info, doi=False):
+def open_frp(case_study, case_info, doi=False, max_comp=False):
     frp_ds = xr.open_dataset(
         str(data_dir) + f"/frp/analysis/goes/{case_study}-goes-test.nc"
     )
@@ -123,11 +131,14 @@ def open_frp(case_study, case_info, doi=False):
 
     utc_offset = get_time_offest(case_study, case_info)
     frp_ds["time"] = frp_ds["time"] - np.timedelta64(int(utc_offset), "h")
-    frp_ds["Power"] = xr.where(
-        (frp_ds["Mask"] == 10) | (frp_ds["Mask"] == 30) | (frp_ds["Mask"] == 13),
-        frp_ds["Power"],
-        np.nan,
-    )
+    if case_study == "marshall_fire":
+        pass
+    else:
+        frp_ds["Power"] = xr.where(
+            (frp_ds["Mask"] == 10) | (frp_ds["Mask"] == 30) | (frp_ds["Mask"] == 13),
+            frp_ds["Power"],
+            np.nan,
+        )
 
     frp_da = frp_ds["Power"].mean(dim=["x", "y"])
     frp_da_og = frp_da
@@ -136,66 +147,63 @@ def open_frp(case_study, case_info, doi=False):
 
     non_nan_indices = np.where(~np.isnan(frp_da))[0]
     diff_arr = np.diff(non_nan_indices)
-    g12 = np.where(diff_arr > 12)[0]
-    if len(g12) > 0:
-        if (
-            date_range[non_nan_indices[g12[0]]] - date_range[non_nan_indices[0]]
-        ).astype("timedelta64[h]") >= 12:
+    g12 = np.where(diff_arr > 6)[0]
+    if max_comp == False:
+        if len(g12) > 0:
+            if (
+                date_range[non_nan_indices[g12[0]]] - date_range[non_nan_indices[0]]
+            ).astype("timedelta64[h]") >= 6:
+                start_int = 0
+                start = date_range[non_nan_indices[start_int]]
+                stop = date_range[non_nan_indices[g12[0]]]
+                print("Passed 1")
+            else:
+                start_int = g12[0]
+                start = date_range[non_nan_indices[start_int]]
+                stop = date_range[non_nan_indices[g12[1]]]
+                print("Passed 2")
+        else:
             start_int = 0
             start = date_range[non_nan_indices[start_int]]
-            stop = date_range[non_nan_indices[g12[0]]]
-            print("Passed 1")
-        else:
-            start_int = g12[0]
-            start = date_range[non_nan_indices[start_int]]
-            stop = date_range[non_nan_indices[g12[1]]]
-            print("Passed 2")
+            stop = date_range[non_nan_indices[-1]]
+            print("Passed 3")
+
+        if (stop - start).astype("timedelta64[D]") > 10:
+            print(
+                f"{case_study} passed 12 hours of missing data test but exceed ten days of observations, truncating to short comparison time"
+            )
+            stop = date_range[non_nan_indices[start_int] + (24 * 10)]
+        if (stop - start).astype("timedelta64[h]") < 24:
+            if case_study not in [
+                "marshall_fire",
+                "caldor_fire",
+                "fire_east_tulare",
+                "lytton_creek",
+                "lazy_fire",
+            ]:
+                raise ValueError(
+                    f"{case_study} does not pass conditions, must be thrown out"
+                )
+
+        if case_study == "caldor_fire":
+            # start = np.datetime64('2021-08-17-T10:00')
+            start = np.datetime64("2021-08-16T10:00:00.000000000")
+        if case_study == "marshall_fire":
+            start = np.datetime64("2021-12-30T00:00:00.000000000")
+            # stop = np.datetime64('2021-12-30T22:00:00.000000000')
+            stop = np.datetime64("2021-12-31T12:00:00.000000000")
+        if case_study == "fire_east_tulare":
+            start = np.datetime64("2021-09-15T12:00:00.000000000")
+            stop = np.datetime64("2021-09-20T02:00:00.000000000")
+        if case_study == "lytton_creek":
+            start = np.datetime64("2021-06-30T12:00:00.000000000")
+            stop = np.datetime64("2021-07-06T00:00:00.000000000")
+        #     start = date_range[non_nan_indices[0]]
+        #     stop = date_range[non_nan_indices[-1]]
+
     else:
-        start_int = 0
-        start = date_range[non_nan_indices[start_int]]
+        start = date_range[non_nan_indices[0]]
         stop = date_range[non_nan_indices[-1]]
-        print("Passed 3")
-
-    if (stop - start).astype("timedelta64[D]") > 10:
-        print(
-            f"{case_study} passed 12 hours of missing data test but exceed ten days of observations, truncating to short comparison time"
-        )
-        stop = date_range[non_nan_indices[start_int] + (24 * 10)]
-
-    # non_nan_indices = np.where(~np.isnan(frp_da))[0]
-    # diff_arr = np.diff(non_nan_indices)
-    # indices = np.where(diff_arr == 1)[0]
-    # groups = np.split(indices, np.where(np.diff(indices) != 1)[0] + 1)
-    # result = [group for group in groups if len(group) > 6]
-    # if (
-    #     date_range[non_nan_indices[result[1][0]]]
-    #     - date_range[non_nan_indices[result[0][0]]]
-    # ).astype("timedelta64[h]") >= 24:
-    #     start = date_range[non_nan_indices[result[0][0]]]
-    # else:
-    #     start = date_range[non_nan_indices[result[1][0]]]
-
-    # if (date_range[non_nan_indices[result[-1][0]]] - start).astype("timedelta64[D]") > 8:
-    #     stop = date_range[non_nan_indices[result[0][0]] + (24 * 10)]
-    # else:
-    #     stop = date_range[non_nan_indices[result[-1][0]]]
-
-    # non_nan_indices = np.where(~np.isnan(frp_da))[0]
-    # diff_arr = np.diff(non_nan_indices)
-    # g12 = np.where(diff_arr>12)[0]
-    # if len(g12)>0:
-    #     if (
-    #         date_range[non_nan_indices[g12[0]]] - date_range[non_nan_indices[0]]
-    #     ).astype("timedelta64[h]") >= 12:
-    #         print(True)
-    #         start = date_range[non_nan_indices[0]]
-    #         stop = date_range[non_nan_indices[g12[0]]]
-    #     else:
-    #         start = date_range[non_nan_indices[g12[0]]]
-    #         stop = date_range[non_nan_indices[g12[-1]]]
-    # else:
-    #     start = date_range[non_nan_indices[0]]
-    #     stop = date_range[non_nan_indices[-1]]
 
     frp_da = frp_da.sel(time=slice(start, stop))
     frp_da_og = frp_da_og.sel(time=slice(start, stop))
@@ -241,10 +249,13 @@ def open_frp(case_study, case_info, doi=False):
 #     return ds
 
 
-def set_axis_postion(ax, label):
+def set_axis_postion(ax, label, color=False):
     ax.set_ylabel(label, fontsize=16)
-    ax.yaxis.label.set_color(ax.get_lines()[0].get_color())
-    tkw = dict(size=4, width=1.5, labelsize=14)
+    try:
+        ax.yaxis.label.set_color(ax.get_lines()[0].get_color())
+    except:
+        ax.yaxis.label.set_color(color=color, labelsize=20)
+    tkw = dict(size=4, width=1.5, labelsize=18)
     ax.tick_params(
         axis="y",
         colors=ax.get_lines()[0].get_color(),

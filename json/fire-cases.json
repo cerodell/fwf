@@ -1,23 +1,4 @@
 {
-
-  "sparks_lake": {
-  "domain": "d03",
-  "min_lat": 50.9,
-  "max_lat": 51.2,
-  "min_lon": -121,
-  "max_lon": -120.7,
-  "date_range": [
-    "2021-06-29",
-    "2021-07-29"
-  ],    "goes-slice":[
-    "",
-    ""
-  ],
-  "loc": "Kamloops, BC Canada",
-  "goes" : "g17",
-  "nasa": "https://go.nasa.gov/3PKadBi",
-  "info": "https://earthobservatory.nasa.gov/images/148530/blazes-rage-in-british-columbia"
-},
   "lytton_creek": {
     "domain": "d03",
     "min_lat": 50.12,
@@ -47,60 +28,18 @@
     "goes" : "g16",
     "nasa": "https://go.nasa.gov/44QYeX7"
   },
-  "ewf_031": {
-    "domain": "d03",
-    "min_lat": 52.73,
-    "max_lat": 53.53,
-    "min_lon": -116.58,
-    "max_lon": -115.46,
-    "date_range": [
-      "2023-05-15",
-      "2023-05-22"
-    ],
-    "loc": "Yellowhead County, AB Canada",
-    "goes" : "g18",
-    "nasa": "https://go.nasa.gov/43YA7oa"
-  },
-  "quebec_fire_334": {
-    "domain": "d02",
-    "min_lat": 47.7,
-    "max_lat": 49.86,
-    "min_lon": -77.75,
-    "max_lon": -74.41,
-    "date_range": [
-      "2023-06-01",
-      "2023-06-07"
-    ],
-    "loc": "East of Val D'or, QB Canada",
-    "goes" : "g16",
-    "nasa": "https://go.nasa.gov/3YjaWeM"
-  },
-  "donnie_creek": {
-    "domain": "d03",
-    "min_lat": 57.26,
-    "max_lat": 58.19,
-    "min_lon": -122.34,
-    "max_lon": -121.09,
-    "date_range": [
-      "2023-05-12",
-      "2023-05-20"
-    ],
-    "loc": "North of Fort St. John, BC Canada",
-    "goes" : "g18",
-    "nasa": "https://go.nasa.gov/3YjjkuU"
-  },
   "wildcat": {
     "domain": "d03",
     "min_lat": 53.01,
-    "max_lat": 53.46,
+    "max_lat": 53.50,
     "min_lon": -102.83,
     "max_lon": -102.13,
     "date_range": [
-      "2021-07-22",
+      "2021-07-12",
       "2021-08-02"
     ],
     "loc": "Hudson Bay, SK Canada",
-    "goes" : "g16",
+    "goes" : "g17",
     "nasa": "https://go.nasa.gov/43dHisf"
   },
   "marshall_fire": {
@@ -190,18 +129,32 @@
     "goes" : "g18",
     "nasa": "https://go.nasa.gov/3shINci"
   },
-  "mcdougall_creek": {
+  "heather_lake_fire": {
     "domain": "d03",
-    "min_lat": 49.82,
-    "max_lat": 50.10,
-    "min_lon": -119.69,
-    "max_lon": -119.33,
+    "min_lat": 48.86,
+    "max_lat": 49.12,
+    "min_lon": -120.81,
+    "max_lon": -120.56,
     "date_range": [
-      "2023-08-17-T00",
-      "2023-08-24-T00"
+      "2022-08-30-T00",
+      "2022-09-12-T00"
     ],
-    "loc": "Kelowna, BC Canada",
-    "goes" : "g18",
+    "loc": "E.C. Manning, BC Canada",
+    "goes" : "g17",
     "nasa": "https://go.nasa.gov/3shINci"
+  },
+  "boston_bar": {
+    "domain": "d02",
+    "min_lat": 49.92,
+    "max_lat": 50.17,
+    "min_lon": -121.7,
+    "max_lon": -121.44,
+    "date_range": [
+      "2023-08-16",
+      "2023-08-24"
+    ],
+    "goes" : "g18",
+    "info": "https://inciweb.nwcg.gov/incident-information/idscf-moose-fire",
+    "nasa": "https://go.nasa.gov/43ezsPd"
   }
 }

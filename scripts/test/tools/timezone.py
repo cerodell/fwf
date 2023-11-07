@@ -31,11 +31,11 @@ __email__ = "crodell@eoas.ubc.ca"
 
 season = "ST"
 model = "wrf"
-domain = "d01"
+domain = "d02"
 
 
 filein = str(data_dir) + f"/{model}/{domain}-grid.nc"
-filein = str(data_dir) + f"/{model}/wrfout_d01_2023-04-20_00:00:00"
+filein = str(data_dir) + f"/{model}/wrfout_{domain}_2023-04-20_00:00:00"
 tzone_shp = (
     str(data_dir) + "/tzone/timezones-with-oceans/combined-shapefile-with-oceans.shp"
 )
@@ -48,8 +48,8 @@ tzone_shp = (
 ds = salem.open_xr_dataset(filein).isel(Time=0)
 pyproj_srs = ds.attrs["pyproj_srs"]
 df = salem.read_shapefile(tzone_shp)
-# df = df[df["tzid"].str.contains("America")]
-# df = df[df["min_y"] > 14]
+df = df[df["tzid"].str.contains("America")]
+df = df[df["min_y"] > 14]
 
 
 lats = ds.XLAT.values

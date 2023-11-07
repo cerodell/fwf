@@ -39,11 +39,17 @@ __email__ = "crodell@eoas.ubc.ca"
 ## define model domain and path to fwf data
 save_fig = True
 norms = False
-int_plot = False
-case_study = "mcdougall_creek"  # ['sparks_lake', 'lytton_creek', 'barrington_lake_fire', 'ewf_031', 'quebec_fire_334', 'donnie_creek', 'wildcat', 'marshall_fire', 'oak_fire', 'caldor_fire', 'fire_east_tulare', 'rossmoore_fire', 'crater_creek', 'mcdougall_creek']
+int_plot = True
+paper = False
+case_study = "wildcat"  # ['sparks_lake', 'lytton_creek', 'barrington_lake_fire', 'ewf_031', 'quebec_fire_334', 'donnie_creek', 'wildcat', 'marshall_fire', 'oak_fire', 'caldor_fire', 'fire_east_tulare', 'rossmoore_fire', 'crater_creek', 'mcdougall_creek']
 # print(case_study)
-save_dir = Path(str(data_dir) + f"/images/frp/goes/paper/")
-save_dir.mkdir(parents=True, exist_ok=True)
+
+if paper == True:
+    save_dir = Path("/Users/crodell/ams-fwf/LaTeX/img/fwf/")
+    save_dir.mkdir(parents=True, exist_ok=True)
+else:
+    save_dir = Path(str(data_dir) + f"/images/frp/goes/paper/")
+    save_dir.mkdir(parents=True, exist_ok=True)
 ################## END INPUTS ####################
 
 #################### OPEN FILES ####################
@@ -60,37 +66,6 @@ filein = f"/Volumes/WFRT-Ext24/fwf-data/wrf/{domain}/02/"
     case_study, case_info
 )
 
-# non_nan_indices = np.where(~np.isnan(frp_da))[0]
-# diff_arr = np.diff(non_nan_indices)
-# g12 = np.where(diff_arr>12)[0]
-# if len(g12)>0:
-#     if (
-#         date_range[non_nan_indices[g12[0]]] - date_range[non_nan_indices[0]]
-#     ).astype("timedelta64[h]") >= 12:
-#         start_int = 0
-#         start = date_range[non_nan_indices[start_int]]
-#         stop = date_range[non_nan_indices[g12[0]]]
-#         print('Passed 1')
-#     else:
-#         start_int = g12[0]
-#         start = date_range[non_nan_indices[start_int]]
-#         stop = date_range[non_nan_indices[g12[1]]]
-#         print('Passed 2')
-# else:
-#     start_int = 0
-#     start = date_range[non_nan_indices[start_int]]
-#     stop = date_range[non_nan_indices[-1]]
-#     print('Passed 3')
-
-# if (stop - start).astype("timedelta64[D]") > 10:
-#     print(f'{case_study} passed 12 hours of missing data test but exceed ten days of observations, truncating to short comparison time')
-#     stop = date_range[non_nan_indices[start_int] + (24 * 10)]
-
-
-# frp_da = frp_da.sel(time=slice(start, stop))
-# frp_da_og = frp_da_og.sel(time=slice(start, stop))
-# frp_ds = frp_ds.sel(time=slice(start, stop))
-
 
 fwf_range = pd.date_range(
     start.astype("datetime64[D]") - pd.Timedelta(days=1),
@@ -105,12 +80,18 @@ hourly_ds = xr.combine_nested(
 ).sel(
     time=slice(start, stop)
 )  # .compute()
+fwf_range = pd.date_range(
+    start.astype("datetime64[D]") - pd.Timedelta(days=2),
+    stop.astype("datetime64[D]") + pd.Timedelta(days=2),
+)
 daily_ds = xr.combine_nested(
     [open_fwf(doi, filein, domain, "daily", yy, xx, utc_offset) for doi in fwf_range],
     "time",
 )  # .compute()
 daily_ds["time"] = daily_ds["Time"]
-daily_ds = daily_ds.resample(time="1H").nearest().sel(time=slice(start, stop))
+daily_ds = daily_ds.resample(time="1H").nearest()
+daily_ds["time"] = daily_ds["time"] - np.timedelta64(int(12), "h")
+daily_ds = daily_ds.sel(time=slice(start, stop))
 
 
 if norms == True:
@@ -132,6 +113,8 @@ if norms == True:
 frp_raw = frp_da.values
 frp_da_interp = frp_da.interpolate_na(dim="time", method="linear").ffill(dim="time")
 
+
+max_frp = frp_da.resample(time="1D").max()
 
 hfwi = hourly_ds["S"].values
 hfrp = frp_da_interp.values
@@ -172,6 +155,7 @@ ax.set_title(
 ax2 = ax.twinx()
 ax.plot(hourly_ds.time, hfwi, color="tab:blue", lw=1.2, label="Hourly")
 ax.plot(daily_ds.time, dfwi, color="tab:blue", ls="--", lw=1.2, label="Daily")
+
 ax.plot(hourly_ds.time, hfwi, color="tab:red", lw=1, label="FRP", zorder=0)
 set_axis_postion(ax, "FWI")
 
@@ -185,7 +169,7 @@ ax.tick_params(
     **tkw,
 )
 plt.gca().xaxis.set_major_formatter(mdates.DateFormatter("%m-%d-%H"))
-plt.gca().set_xticks(hourly_ds.time.values.astype("datetime64[D]"))
+# plt.gca().set_xticks(hourly_ds.time.values.astype("datetime64[D]"))
 # plt.gca().xaxis.set_major_formatter()
 ax.set_xlabel(f"Local DateTime (MM-DD-HH)", fontsize=16)
 ax.legend(
@@ -200,11 +184,13 @@ fig.autofmt_xdate()
 
 
 if save_fig == True:
-    plt.savefig(
-        str(save_dir) + f"/{case_study}.png",
-        dpi=250,
-        bbox_inches="tight",
-    )
+    if paper == True:
+        plt.savefig(str(save_dir) + f"/{case_study}.pdf", bbox_inches="tight")
+        plt.savefig(str(save_dir) + f"/{case_study}.png", dpi=250, bbox_inches="tight")
+    else:
+        plt.savefig(str(save_dir) + f"/{case_study}.png", dpi=250, bbox_inches="tight")
+
+# %%
 
 ############################ Map FRP on WRF GRID ################################
 
@@ -263,9 +249,21 @@ ax.set_title(
 ax.set_xlabel("Longitude", fontsize=16)
 ax.set_ylabel("Latitude", fontsize=16)
 if save_fig == True:
-    plt.savefig(
-        str(save_dir) + f"/map-frp-count-{case_study}.png", dpi=250, bbox_inches="tight"
-    )
+    if paper == True:
+        plt.savefig(
+            str(save_dir) + f"/map-frp-count-{case_study}.pdf", bbox_inches="tight"
+        )
+        plt.savefig(
+            str(save_dir) + f"/map-frp-count-{case_study}.png",
+            dpi=250,
+            bbox_inches="tight",
+        )
+    else:
+        plt.savefig(
+            str(save_dir) + f"/map-frp-count-{case_study}.png",
+            dpi=250,
+            bbox_inches="tight",
+        )
 
 
 # %%

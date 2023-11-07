@@ -32,7 +32,7 @@ from context import data_dir, root_dir
 
 plt.rc("font", family="sans-serif")
 plt.rc("text", usetex=True)
-# plt.rcParams.update({'font.size': 16})
+plt.rcParams.update({"font.size": 18})
 
 __author__ = "Christopher Rodell"
 __email__ = "crodell@eoas.ubc.ca"
@@ -40,11 +40,17 @@ __email__ = "crodell@eoas.ubc.ca"
 #################### INPUTS ####################
 ## define model domain and path to fwf data
 save_fig = True
-case_study = "mcdougall_creek"  # ['sparks_lake', 'lytton_creek', 'barrington_lake_fire', 'ewf_031', 'quebec_fire_334', 'donnie_creek', 'wildcat', 'marshall_fire', 'oak_fire', 'caldor_fire', 'fire_east_tulare', 'rossmoore_fire', 'crater_creek', 'mcdougall_creek']
+paper = True
+case_study = "caldor_fire"  # ['sparks_lake', 'lytton_creek', 'barrington_lake_fire', 'ewf_031', 'quebec_fire_334', 'donnie_creek', 'wildcat', 'marshall_fire', 'oak_fire', 'caldor_fire', 'fire_east_tulare', 'rossmoore_fire', 'crater_creek', 'mcdougall_creek']
 # print(case_study)
 
-save_dir = Path(str(data_dir) + f"/images/frp/goes/noaa/")
-save_dir.mkdir(parents=True, exist_ok=True)
+if paper == True:
+    save_dir = Path("/Users/crodell/ams-fwf/LaTeX/img/fwf/")
+    save_dir.mkdir(parents=True, exist_ok=True)
+else:
+    save_dir = Path(str(data_dir) + f"/images/frp/goes/paper/")
+    save_dir.mkdir(parents=True, exist_ok=True)
+
 ################## END INPUTS ####################
 
 
@@ -53,7 +59,8 @@ save_dir.mkdir(parents=True, exist_ok=True)
 with open(str(root_dir) + f"/json/fire-cases.json", "r") as fp:
     case_dict = json.load(fp)
 
-for case_study in list(case_dict):
+# for case_study in list(case_dict):
+for case_study in ["caldor_fire"]:
     print(case_study)
     case_info = case_dict[case_study]
     domain = case_info["domain"]
@@ -71,24 +78,24 @@ for case_study in list(case_dict):
     ax = plt.subplot(gs[0, 1])
 
     title_line1 = (
-        r"\fontsize{18pt}{22pt}\selectfont " + f"{case_study.replace('_', ' ').title()}"
+        r"\fontsize{24pt}{22pt}\selectfont " + f"{case_study.replace('_', ' ').title()}"
     )
-    title_line2 = r"\fontsize{12pt}{15pt}\selectfont " + f"{case_info['loc']}"
+    title_line2 = r"\fontsize{18pt}{15pt}\selectfont " + f"{case_info['loc']}"
     title = f"{title_line1}\n{title_line2}"
-    fig.suptitle(title, fontdict={"usetex": True}, y=1.1)
+    fig.suptitle(title, fontdict={"usetex": True}, y=1.15)
 
     ax.set_title(
         "Fire Radiative Power Timeseries",
         loc="left",
         fontdict={"usetex": True},
-        fontsize=14,
+        fontsize=18,
     )
 
     ax.plot(frp_da.time, frp_da, color="k", lw=2, label="FRP 1hour")
     ax.scatter(
-        frp_da.time,
-        frp_da,
-        c=mdates.date2num(pd.to_datetime(frp_da.time.values)),
+        frp_ds.time,
+        frp_ds["Power"].mean(dim=("x", "y")),
+        c=mdates.date2num(pd.to_datetime(frp_ds.time.values)),
         label="FRP 10min",
     )
 
@@ -100,14 +107,14 @@ for case_study in list(case_dict):
     )
     plt.gca().xaxis.set_major_formatter(mdates.DateFormatter("%m-%d-%H"))
     # plt.gca().xaxis.set_major_formatter()
-    ax.set_xlabel("Local DateTime (MM-DD-HH)", fontsize=16)
+    ax.set_xlabel("Local DateTime (MM-DD-HH)", fontsize=18)
     ax.legend(
         # loc="upper right",
-        bbox_to_anchor=(1.0, 1.18),
+        bbox_to_anchor=(1.0, 1.2),
         ncol=3,
         fancybox=True,
         shadow=True,
-        fontsize=12,
+        fontsize=16,
     )
     fig.autofmt_xdate()
     ax.annotate(
@@ -136,17 +143,17 @@ for case_study in list(case_dict):
     cbar = plt.colorbar(sc, ax=ax, pad=0.008, alpha=1)
     loc = mdates.AutoDateLocator()
     cbar.ax.yaxis.set_major_locator(loc)
-    cbar.ax.tick_params(labelsize=14)
+    cbar.ax.tick_params(labelsize=16)
 
     cbar.ax.yaxis.set_major_formatter(mdates.ConciseDateFormatter(loc))
-    ax.set_title(f"Fire Hot Spots", fontsize=14, fontdict={"usetex": True})
-    cbar.set_label("Datetime", rotation=270, fontsize=14, labelpad=20)
+    ax.set_title(f"Fire Hot Spots", fontsize=18, fontdict={"usetex": True}, loc="left")
+    cbar.set_label("Datetime", rotation=270, fontsize=16, labelpad=20)
     ax.set_xlabel("Longitude", fontsize=16)
     ax.set_ylabel("Latitude", fontsize=16)
 
-    tkw = dict(size=4, width=1.5, labelsize=12)
+    tkw = dict(size=4, width=1.5, labelsize=16)
     ax.annotate(
-        "A)", xy=(-0.05, 1.1), xycoords="axes fraction", fontsize=20, fontweight="bold"
+        "A)", xy=(-0.1, 1.1), xycoords="axes fraction", fontsize=20, fontweight="bold"
     )
     ax.tick_params(
         **tkw,
@@ -155,11 +162,19 @@ for case_study in list(case_dict):
     ax.set_ylim(min(df_sample["lats"]) - 0.05, max(df_sample["lats"]) + 0.05)
 
     if save_fig == True:
-        plt.savefig(
-            str(save_dir) + f"/{case_study}-resample.png",
-            dpi=250,
-            bbox_inches="tight",
-        )
-
-
+        if paper == True:
+            plt.savefig(
+                str(save_dir) + f"/{case_study}-resample.pdf", bbox_inches="tight"
+            )
+            plt.savefig(
+                str(save_dir) + f"/{case_study}-resample.png",
+                dpi=250,
+                bbox_inches="tight",
+            )
+        else:
+            plt.savefig(
+                str(save_dir) + f"/{case_study}-resample.png",
+                dpi=250,
+                bbox_inches="tight",
+            )
 # %%

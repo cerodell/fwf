@@ -18,7 +18,7 @@ from plotly.subplots import make_subplots
 import plotly.graph_objects as go
 from sklearn.neighbors import KDTree
 
-import cartopy.crs as ccrs
+# import cartopy.crs as ccrs
 import matplotlib.colors
 import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
@@ -51,151 +51,154 @@ with open(str(root_dir) + f"/json/fire-cases.json", "r") as fp:
 case_list = list(case_dict)
 remove = ["oak_fire", "caldor_fire"]
 new_list = [x for x in case_list if x not in remove]
+# "heather_lake_fire"
+for case_study in ["boston_bar"]:
+    # try:
+    print("Starting   ", case_study)
+    case_info = case_dict[case_study]
+    domain = case_info["domain"]
+    goes = case_info["goes"]
 
-for case_study in new_list:
-    try:
-        print("Starting   ", case_study)
-        case_info = case_dict[case_study]
-        domain = case_info["domain"]
-        goes = case_info["goes"]
+    date_range = pd.date_range(
+        case_info["date_range"][0], case_info["date_range"][1], freq="10min"
+    ) + pd.Timedelta(minutes=5)
+    filein = f"/Volumes/WFRT-Ext24/fwf-data/wrf/{domain}/02/"
 
-        date_range = pd.date_range(
-            case_info["date_range"][0], case_info["date_range"][1], freq="10min"
-        ) + pd.Timedelta(minutes=5)
-        filein = f"/Volumes/WFRT-Ext24/fwf-data/wrf/{domain}/02/"
+    def get_timestamp(file_name):
+        return str(file_name).split("_")[-1].split(".")[0][1:]
 
-        def get_timestamp(file_name):
-            return str(file_name).split("_")[-1].split(".")[0][1:]
+    goeslist = sorted(
+        Path(
+            f"/Volumes/WFRT-Ext22/frp/goes/{goes}/{date_range[0].strftime('%Y')}/"
+        ).glob(f"*"),
+        key=get_timestamp,
+    )
+    goeslist_scan = np.array(
+        [
+            int(str(goeslist[i]).split("_")[-3].split(".")[0][5:8])
+            for i in range(len(goeslist))
+        ]
+    )
+    i = np.where(goeslist_scan == date_range[0].dayofyear)[0][0]
+    j = np.where(goeslist_scan == date_range[-1].dayofyear)[0][0]
 
-        goeslist = sorted(
-            Path(
-                f"/Volumes/WFRT-Ext22/frp/goes/{goes}/{date_range[0].strftime('%Y')}/"
-            ).glob(f"*"),
-            key=get_timestamp,
-        )
-        goeslist_scan = np.array(
-            [
-                int(str(goeslist[i]).split("_")[-3].split(".")[0][5:8])
-                for i in range(len(goeslist))
-            ]
-        )
-        i = np.where(goeslist_scan == date_range[0].dayofyear)[0][0]
-        j = np.where(goeslist_scan == date_range[-1].dayofyear)[0][0]
+    goes_ds_zero = xr.open_dataset(goeslist[0])
+    # # print(goes_ds_zero.attrs['platform_ID'])
+    # # print(goes_ds_zero.t.values)
+    # goes_ds_last = xr.open_dataset(goeslist[-1])
+    # # print(goes_ds_last.t.values)
+    # file_date_range = pd.date_range(str(goes_ds_zero.t.values)[:-13],str(goes_ds_last.t.values)[:-13], freq='10min')
+    # i = file_date_range.get_loc(date_range[0])
+    # j = file_date_range.get_loc(date_range[-1])
+    goeslist = goeslist[i - 10 : j + 10]
 
-        goes_ds_zero = xr.open_dataset(goeslist[0])
-        # # print(goes_ds_zero.attrs['platform_ID'])
-        # # print(goes_ds_zero.t.values)
-        # goes_ds_last = xr.open_dataset(goeslist[-1])
-        # # print(goes_ds_last.t.values)
-        # file_date_range = pd.date_range(str(goes_ds_zero.t.values)[:-13],str(goes_ds_last.t.values)[:-13], freq='10min')
-        # i = file_date_range.get_loc(date_range[0])
-        # j = file_date_range.get_loc(date_range[-1])
-        goeslist = goeslist[i - 10 : j + 10]
+    id = goes_ds_zero.attrs["platform_ID"]
+    if (id == "G17") or (id == "G18"):
+        # row_slice, column_slice = slice(300,1500), slice(2900,3800)
+        # row_slice, column_slice = slice(180, 1200), slice(2900, 3650)
+        row_slice, column_slice = slice(220, 1100), slice(3000, 3750)
+        if case_study == "lazy_fire":
+            row_slice, column_slice = slice(800, 1600), slice(3500, 4500)
+        latlon_ds = xr.open_dataset(
+            str(data_dir) + f"/frp/goes/goes18_abi_full_disk_lat_lon.nc"
+        ).isel(rows=row_slice, columns=column_slice)
+    elif id == "G16":
+        row_slice, column_slice = slice(285, 1100), slice(1530, 3150)
+        latlon_ds = xr.open_dataset(
+            str(data_dir) + f"/frp/goes/goes16_abi_full_disk_lat_lon.nc"
+        ).isel(rows=row_slice, columns=column_slice)
+    else:
+        raise ValueError("Cant find static lat/lon DS for GOES file")
 
-        id = goes_ds_zero.attrs["platform_ID"]
-        if (id == "G17") or (id == "G18"):
-            # row_slice, column_slice = slice(300,1500), slice(2900,3800)
-            row_slice, column_slice = slice(180, 1200), slice(2900, 3650)
-            latlon_ds = xr.open_dataset(
-                str(data_dir) + f"/frp/goes/goes18_abi_full_disk_lat_lon.nc"
-            ).isel(rows=row_slice, columns=column_slice)
-        elif id == "G16":
-            row_slice, column_slice = slice(285, 1100), slice(1530, 3150)
-            latlon_ds = xr.open_dataset(
-                str(data_dir) + f"/frp/goes/goes16_abi_full_disk_lat_lon.nc"
-            ).isel(rows=row_slice, columns=column_slice)
+    goes_ds_zero = goes_ds_zero.isel(y=row_slice, x=column_slice)
+    goes_ds_zero = goes_ds_zero.assign_coords(
+        lats=(("y", "x"), latlon_ds.latitude.values)
+    )
+    goes_ds_zero = goes_ds_zero.assign_coords(
+        lons=(("y", "x"), latlon_ds.longitude.values)
+    )
+    lats, lons = goes_ds_zero.lats, goes_ds_zero.lons
+    # print(f"Lat max {lats.max()}, min  {lats.min()}")
+    # print(f"Lon max {lons.max()}, min  {lons.min()}")
+    # print(np.unique(np.isnan(lats), return_counts= True))
+    # print(np.unique(np.isnan(lons), return_counts= True))
+
+    shape = lats.shape
+    locs = pd.DataFrame({"lats": lats.values.ravel(), "lons": lons.values.ravel()})
+    ## build kdtree
+    goes_tree = KDTree(locs)
+    # print("Fire KDTree built")
+    yy, xx = [], []
+    df = pd.DataFrame(
+        {
+            "lat": [
+                case_info["min_lat"],
+                case_info["max_lat"],
+                case_info["max_lat"],
+                case_info["min_lat"],
+            ],
+            "lon": [
+                case_info["min_lon"],
+                case_info["min_lon"],
+                case_info["max_lon"],
+                case_info["max_lon"],
+            ],
+        }
+    )
+    for index, row in df.iterrows():
+        ## arange wx station lat and long in a formate to query the kdtree
+        single_loc = np.array([row.lat, row.lon]).reshape(1, -1)
+        ## query the kdtree retuning the distacne of nearest neighbor and index
+        dist, ind = goes_tree.query(single_loc, k=1)
+        ## set condition to pass on fire farther than 0.1 degrees
+        if dist > 0.1:
+            pass
         else:
-            raise ValueError("Cant find static lat/lon DS for GOES file")
+            ## if condition passed reformate 1D index to 2D indexes
+            ind_2d = np.unravel_index(int(ind), shape)
+            ## append the indexes to lists
+            yy.append(ind_2d[0])
+            xx.append(ind_2d[1])
+    lats, lons = lats.values, lons.values
+    yy, xx = np.array(yy), np.array(xx)
 
-        goes_ds_zero = goes_ds_zero.isel(y=row_slice, x=column_slice)
-        goes_ds_zero = goes_ds_zero.assign_coords(
-            lats=(("y", "x"), latlon_ds.latitude.values)
-        )
-        goes_ds_zero = goes_ds_zero.assign_coords(
-            lons=(("y", "x"), latlon_ds.longitude.values)
-        )
-        lats, lons = goes_ds_zero.lats, goes_ds_zero.lons
-        # print(f"Lat max {lats.max()}, min  {lats.min()}")
-        # print(f"Lon max {lons.max()}, min  {lons.min()}")
-        # print(np.unique(np.isnan(lats), return_counts= True))
-        # print(np.unique(np.isnan(lons), return_counts= True))
+    # print(f"Lower left {lats[yy[0],xx[0]]},  {lons[yy[0],xx[0]]}")
+    # print(f"Upper left {lats[yy[1],xx[1]]},  {lons[yy[1],xx[1]]}")
+    # print(f"Upper right {lats[yy[2],xx[2]]},  {lons[yy[2],xx[2]]}")
+    # print(f"Lower right {lats[yy[3],xx[3]]},  {lons[yy[3],xx[3]]}")
+    goes_ds_zero = goes_ds_zero.isel(
+        y=slice(yy.min(), yy.max()), x=slice(xx.min(), xx.max())
+    )
+    x_slice = slice(xx.min(), xx.max())
+    y_slice = slice(yy.min(), yy.max())
 
-        shape = lats.shape
-        locs = pd.DataFrame({"lats": lats.values.ravel(), "lons": lons.values.ravel()})
-        ## build kdtree
-        goes_tree = KDTree(locs)
-        # print("Fire KDTree built")
-        yy, xx = [], []
-        df = pd.DataFrame(
-            {
-                "lat": [
-                    case_info["min_lat"],
-                    case_info["max_lat"],
-                    case_info["max_lat"],
-                    case_info["min_lat"],
-                ],
-                "lon": [
-                    case_info["min_lon"],
-                    case_info["min_lon"],
-                    case_info["max_lon"],
-                    case_info["max_lon"],
-                ],
-            }
-        )
-        for index, row in df.iterrows():
-            ## arange wx station lat and long in a formate to query the kdtree
-            single_loc = np.array([row.lat, row.lon]).reshape(1, -1)
-            ## query the kdtree retuning the distacne of nearest neighbor and index
-            dist, ind = goes_tree.query(single_loc, k=1)
-            ## set condition to pass on fire farther than 0.1 degrees
-            if dist > 0.1:
-                pass
-            else:
-                ## if condition passed reformate 1D index to 2D indexes
-                ind_2d = np.unravel_index(int(ind), shape)
-                ## append the indexes to lists
-                yy.append(ind_2d[0])
-                xx.append(ind_2d[1])
-        lats, lons = lats.values, lons.values
-        yy, xx = np.array(yy), np.array(xx)
+    def open_goes(path):
+        ds = xr.open_dataset(path).isel(y=row_slice, x=column_slice)[
+            ["Power", "Temp", "DQF", "Mask", "Area"]
+        ]
+        return ds.isel(y=y_slice, x=x_slice).chunk("auto")
 
-        # print(f"Lower left {lats[yy[0],xx[0]]},  {lons[yy[0],xx[0]]}")
-        # print(f"Upper left {lats[yy[1],xx[1]]},  {lons[yy[1],xx[1]]}")
-        # print(f"Upper right {lats[yy[2],xx[2]]},  {lons[yy[2],xx[2]]}")
-        # print(f"Lower right {lats[yy[3],xx[3]]},  {lons[yy[3],xx[3]]}")
-        goes_ds_zero = goes_ds_zero.isel(
-            y=slice(yy.min(), yy.max()), x=slice(xx.min(), xx.max())
-        )
-        x_slice = slice(xx.min(), xx.max())
-        y_slice = slice(yy.min(), yy.max())
+    goes_ds_fire = xr.combine_nested([open_goes(path) for path in goeslist], "t")
+    goes_ds_fire = goes_ds_fire.assign_coords(
+        lats=(("y", "x"), goes_ds_zero.lats.values)
+    )
+    goes_ds_fire = goes_ds_fire.assign_coords(
+        lons=(("y", "x"), goes_ds_zero.lons.values)
+    )
+    goes_ds_fire.to_netcdf(
+        str(data_dir) + f"/frp/analysis/goes/{case_study}-goes-test.nc", mode="w"
+    )
 
-        def open_goes(path):
-            ds = xr.open_dataset(path).isel(y=row_slice, x=column_slice)[
-                ["Power", "Temp", "DQF", "Mask", "Area"]
-            ]
-            return ds.isel(y=y_slice, x=x_slice).chunk("auto")
-
-        goes_ds_fire = xr.combine_nested([open_goes(path) for path in goeslist], "t")
-        goes_ds_fire = goes_ds_fire.assign_coords(
-            lats=(("y", "x"), goes_ds_zero.lats.values)
-        )
-        goes_ds_fire = goes_ds_fire.assign_coords(
-            lons=(("y", "x"), goes_ds_zero.lons.values)
-        )
-        goes_ds_fire.to_netcdf(
-            str(data_dir) + f"/frp/analysis/goes/{case_study}-goes-test.nc", mode="w"
-        )
-
-        print(np.unique(np.isnan(goes_ds_fire["Power"]), return_counts=True))
-        print("-----------------------")
-        print(case_study)
-        print("PASS")
-        print("-----------------------")
-    except:
-        print("======================")
-        print(case_study)
-        print("FAIL")
-        print("======================")
+    print(np.unique(np.isnan(goes_ds_fire["Power"]), return_counts=True))
+    print("-----------------------")
+    print(case_study)
+    print("PASS")
+    print("-----------------------")
+# except:
+#     print("======================")
+#     print(case_study)
+#     print("FAIL")
+#     print("======================")
 
 
 # frp = frp_ds['Power'].mean(dim=['x','y'])
