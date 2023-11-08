@@ -48,9 +48,12 @@ def rewrite_era5(doi, model, domain):
 
 def read_era5(doi, model, domain):
     # filein = f"/Volumes/WFRT-Ext23/{model}/{domain}/"
-    filein = f"/Volumes/ThunderBay/CRodell/{model}/{domain}/"
+    if domain == "era5":
+        filein = f"/Volumes/ThunderBay/CRodell/{model}/{domain}/"
+    elif domain == "era5-land":
+        filein = f"/Volumes/WFRT-Ext22/{model}/{domain}/"
     file_list = [
-        f"{filein}{(doi + pd.Timedelta(days=i)).strftime('%Y%m')}/era5-{(doi + pd.Timedelta(days=i)).strftime('%Y%m%d00.nc')}"
+        f"{filein}{(doi + pd.Timedelta(days=i)).strftime('%Y%m')}/{domain}-{(doi + pd.Timedelta(days=i)).strftime('%Y%m%d00.nc')}"
         for i in range(0, 2)
     ]
     ds = xr.open_mfdataset(file_list)
@@ -65,7 +68,8 @@ def read_era5(doi, model, domain):
     ds = formate(ds, model, domain)
     ds["W"] = ds["W"] * 3.6
     ds = ds.isel(time=slice(0, 36))
-    ds = ds.roll(west_east=int(len(ds["west_east"]) / 2))
+    if domain == "era5":
+        ds = ds.roll(west_east=int(len(ds["west_east"]) / 2))
 
     return ds.unify_chunks()
 

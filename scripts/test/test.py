@@ -19,6 +19,18 @@ from netCDF4 import Dataset
 from context import data_dir, root_dir
 
 
+era5_land = salem.open_xr_dataset(
+    f"/Volumes/WFRT-Ext22/ecmwf/era5-land/199001/era5-land-1990010200.nc"
+)
+fwf_hourly = salem.open_xr_dataset(
+    "/Volumes/WFRT-Ext24/fwf-data/ecmwf/era5-land/02/fwf-hourly-era5-land-1990010200.nc"
+)
+fwf_daily = salem.open_xr_dataset(
+    "/Volumes/WFRT-Ext24/fwf-data/ecmwf/era5-land/02/fwf-daily-era5-land-1990010100.nc"
+)
+daily_ds = salem.open_xr_dataset(
+    "/Volumes/WFRT-Ext24/fwf-data/wrf/d02/02/fwf-hourly-d02-2021011106.nc"
+)
 domain = "d02"
 var = "D"
 year = 2006
@@ -138,7 +150,7 @@ print(float(ds[var2 + "_diff"].max()), " MAX")
 # doi_daily_ds =salem.open_xr_dataset(f"/Volumes/WFRT-Ext24/fwf-data/wrf/{domain}/02/fwf-hourly-{domain}-2023081706.nc")['S'].isel(time = 0)
 # doi_daily_ds.salem.quick_map(prov = True, states= True, oceans =True, vmax = 40)
 # #
-
+test["H"].isel(time=20).salem.quick_map(prov=True, states=True, oceans=True)
 
 # grid_ds = xr.open_dataset(str(data_dir) + f"/{model}/{domain}-grid.nc")
 

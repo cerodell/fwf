@@ -12,6 +12,7 @@ from context import data_dir
 # era5_ds["tp"] = era5_ds["tp"]*1000
 
 filein = "/Volumes/WFRT-Ext24/era5/era5-2020123100.nc"
+filein = "/Volumes/WFRT-Ext22/ecmwf/era5-land/198912/era5-land-1989122800.nc"
 wrf_model = "wrf4"
 domain = "d02"
 doi = pd.Timestamp(f"{filein[-13:-9]}-{filein[-9:-7]}-{filein[-7:-5]}")
@@ -22,7 +23,7 @@ era5_ds = salem.open_xr_dataset(filein)
 int_time = era5_ds.time.values
 tomorrow = pd.to_datetime(str(int_time[0] + np.timedelta64(1, "D")))
 era5_ds_tomorrow = salem.open_xr_dataset(
-    f'/Volumes/WFRT-Data02/era5/era5-{tomorrow.strftime("%Y%m%d%H")}.nc'
+    f'/Volumes/WFRT-Ext22/ecmwf/era5-land/198912/era5-land-{tomorrow.strftime("%Y%m%d%H")}.nc'
 )
 era5_ds = xr.merge([era5_ds, era5_ds_tomorrow])
 
@@ -36,7 +37,7 @@ era5_ds["r_o_hourly"] = era5_ds.tp * 1000
 # era5_ds['r_o_hourly'] = xr.where(era5_ds['r_o_hourly'] < 0, 0, era5_ds['r_o_hourly'])
 
 # era5_ds["WD"] = 180 + ((180 / np.pi) * np.arctan2(era5_ds["u10"], era5_ds["v10"]))
-era5_ds["SNOWH"] = era5_ds["sd"]
+era5_ds["SNOWH"] = era5_ds["sde"]
 era5_ds["U10"] = era5_ds["u10"]
 era5_ds["V10"] = era5_ds["v10"]
 
@@ -56,7 +57,7 @@ keep_vars = [
 ]
 era5_ds = era5_ds.drop([var for var in list(era5_ds) if var not in keep_vars])
 
-krig_ds = salem.open_xr_dataset(str(data_dir) + "/d02-grid.nc")
+# krig_ds = salem.open_xr_dataset(str(data_dir) + "/d02-grid.nc")
 fwf_d02_ds = xr.open_dataset(
     f'/Volumes/Scratch/FWF-WAN00CG/d02/{doi.strftime("%Y%m")}/fwf-hourly-d02-{doi.strftime("%Y%m%d06")}.nc'
 )

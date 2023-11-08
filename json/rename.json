@@ -38,6 +38,18 @@
         "d2m": "TD",
         "sd": "SNOWH",
         "tp": "r_o_hourly"
+      },
+      "era5-land": {
+        "dims":{
+        "longitude": "west_east",
+        "latitude": "south_north"
+        },
+        "u10": "U10",
+        "v10": "V10",
+        "t2m": "T",
+        "d2m": "TD",
+        "sde": "SNOWH",
+        "tp": "r_o_hourly"
       }
 
 }

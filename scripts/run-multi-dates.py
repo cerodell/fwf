@@ -29,11 +29,11 @@ __email__ = "crodell@eoas.ubc.ca"
 # ignore RuntimeWarning
 warnings.filterwarnings("ignore", category=RuntimeWarning)
 warnings.filterwarnings("ignore", category=UserWarning)
-date_range = pd.date_range("2019-12-26", "2023-01-01")
+date_range = pd.date_range("1990-01-02", "1990-01-03")
 
 config = dict(
     model="ecmwf",
-    domain="era5",
+    domain="era5-land",
     trail_name="02",
     initialize=False,
     initialize_hffmc=False,
@@ -45,7 +45,10 @@ config = dict(
 if config["model"] == "eccc":
     config["root_dir"] = "/Volumes/WFRT-Ext23/fwf-data"
 elif config["model"] == "ecmwf":
-    config["root_dir"] = "/Volumes/ThunderBay/CRodell/ecmwf/era5/"
+    if config["domain"] == "era5":
+        config["root_dir"] = "/Volumes/ThunderBay/CRodell/ecmwf/era5/"
+    elif config["domain"] == "era5-land":
+        config["root_dir"] = "/Volumes/WFRT-Ext22/ecmwf/era5-land/198912/"
 elif config["model"] == "wrf":
     if int(date_range[0].strftime("%Y")) >= 2023:
         config["root_dir"] = "/Volumes/WFRT-Ext24/fwf-data"

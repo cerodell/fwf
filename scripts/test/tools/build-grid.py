@@ -13,7 +13,7 @@ from context import data_dir
 
 
 model = "ecmwf"
-domain = "era5"
+domain = "era5-land"
 
 
 if model == "wrf":
@@ -77,13 +77,23 @@ elif model == "eccc":
     except:
         var_array = ds.TT.isel(time=0, height1=0)
 
-elif model == "era5":
+elif domain == "era5":
     ds = salem.open_xr_dataset(f"/Volumes/WFRT-Ext23/era5/era5-2020010100.nc").isel(
         time=0
     )
     var = "t2m"
     ds["longitude"] = np.arange(-179.75, 180.25, 0.25)
     var_array = ds[var].roll(longitude=int(len(ds["longitude"]) / 2))
+    ds_grid = ds.salem.grid.to_dataset()
+
+elif domain == "era5-land":
+    ds = salem.open_xr_dataset(
+        f"/Volumes/WFRT-Ext22/ecmwf/era5-land/198912/era5-land-1989122800.nc"
+    ).isel(time=0)
+    var = "t2m"
+    # ds["longitude"] = np.arange(-179.75, 180.25, 0.25)
+    # var_array = ds[var].roll(longitude=int(len(ds["longitude"]) / 2))
+    var_array = ds[var]
     ds_grid = ds.salem.grid.to_dataset()
 
 else:

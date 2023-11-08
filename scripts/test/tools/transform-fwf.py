@@ -13,33 +13,37 @@ from utils.fwi import solve_ffmc
 from context import data_dir
 
 
-model = "eccc"
-domain = "hrdps"
+model = "wrf"
+domain = "d03"
 doi = pd.Timestamp("2020-12-31")
 trial_name = "02"
 target_grid = salem.open_xr_dataset(str(data_dir) + f"/{model}/{domain}-grid.nc")
-
-era5_ds = salem.open_xr_dataset(
-    f"/Volumes/WFRT-Ext24/fwf-data/ecmwf/era5/{trial_name}/fwf-daily-era5-{doi.strftime('%Y%m%d00')}.nc"
-)
-
-fig = plt.figure(figsize=(12, 6))
-ax = fig.add_subplot(1, 1, 1)
-era5_ds.isel(time=0)["D"].salem.quick_map(ax=ax, cmap="coolwarm")
+target_grid = salem.open_xr_dataset(str(data_dir) + f"/{model}/{domain}-grid.nc")
 
 
-ds = target_grid.salem.transform(era5_ds, interp="spline")
-
+filein = "/Volumes/WFRT-Ext22/ecmwf/era5-land/198912/era5-land-1989122800.nc"
+era5_ds = salem.open_xr_dataset(filein)
 
 fig = plt.figure(figsize=(12, 6))
 ax = fig.add_subplot(1, 1, 1)
-ds.isel(time=0)["D"].salem.quick_map(ax=ax, cmap="coolwarm")
+era5_ds.isel(time=0)["t2m"].salem.quick_map(ax=ax, cmap="jet")
+
+era5_ds["wsp"] = np.sqrt(era5_ds["u10"] ** 2 + era5_ds["v10"] ** 2)
+ds = target_grid.salem.transform(
+    era5_ds,
+)  # interp="spline")
+
+
+fig = plt.figure(figsize=(12, 6))
+ax = fig.add_subplot(1, 1, 1)
+ds.isel(time=0)["tp"].salem.quick_map(ax=ax, cmap="jet")
 
 if domain != "rdps":
-    ds.to_netcdf(
-        f"/Volumes/WFRT-Ext24/fwf-data/{model}/{domain}/{trial_name}/fwf-daily-{domain}-{doi.strftime('%Y%m%d00')}.nc",
-        mode="w",
-    )
+    pass
+    # ds.to_netcdf(
+    #     f"/Volumes/WFRT-Ext24/fwf-data/{model}/{domain}/{trial_name}/fwf-daily-{domain}-{doi.strftime('%Y%m%d00')}.nc",
+    #     mode="w",
+    # )
 else:
     for var in ds:
         ds[var] = ds[var].interpolate_na(dim="west_east")
@@ -47,16 +51,16 @@ else:
 
     fig = plt.figure(figsize=(12, 6))
     ax = fig.add_subplot(1, 1, 1)
-    ds.isel(time=0)["D"].salem.quick_map(ax=ax, cmap="coolwarm")
+    ds.isel(time=0)["t2m"].salem.quick_map(ax=ax, cmap="jet")
 
     test = ds.isel(time=0)["D"].values
 
     np.unique(np.isnan(test), return_counts=True)
 
-    ds.to_netcdf(
-        f"/Volumes/WFRT-Ext24/fwf-data/{model}/{domain}/{trial_name}/fwf-daily-{domain}-{doi.strftime('%Y%m%d00')}.nc",
-        mode="w",
-    )
+    # ds.to_netcdf(
+    #     f"/Volumes/WFRT-Ext24/fwf-data/{model}/{domain}/{trial_name}/fwf-daily-{domain}-{doi.strftime('%Y%m%d00')}.nc",
+    #     mode="w",
+    # )
 
 
 startTime = datetime.now()
@@ -117,7 +121,7 @@ keep_vars = [
 # print(f"Unification time {datetime.now() - startTime}")
 
 
-# # fwf_unified['T_diff'].salem.quick_map(cmap='coolwarm', extend = 'both', vmin = -1, vmax =1)
+# # fwf_unified['T_diff'].salem.quick_map(cmap='jet', extend = 'both', vmin = -1, vmax =1)
 # # fwf_unified['T'].salem.quick_map(cmap='jet', extend = 'both')
 
 

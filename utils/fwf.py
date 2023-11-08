@@ -623,9 +623,14 @@ class FWF:
                     )
                     da = xr.open_dataset(int_file_dir)
                 elif self.model == "ecmwf":
-                    da = read_era5(
-                        pd.to_datetime(retrieve_time_np), self.model, self.domain
+                    # da = read_era5(
+                    #     pd.to_datetime(retrieve_time_np), self.model, self.domain
+                    # )
+                    int_file_dir = (
+                        str(self.filein_dir)
+                        + f"/{pd.to_datetime(retrieve_time_np).strftime('%Y%m')}/fwf-{timestep}-{self.domain}-{retrieve_time}.nc"
                     )
+                    da = xr.open_dataset(int_file_dir)
                 else:
                     raise ValueError("Bad model input")
                 if i == 0:
