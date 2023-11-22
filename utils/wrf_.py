@@ -155,3 +155,11 @@ def read_wrf(doi, model, domain):
         print("readwrf run time: ", datetime.now() - startTime)
 
     return fwf_ds
+
+
+def grid_wrf(model, domain):
+    ds = salem.open_xr_dataset(
+        str(data_dir) + f"/{model}/wrfout_{domain}_2021-01-14_00:00:00"
+    ).isel(Time=0)
+    ds_grid = ds.salem.grid.to_dataset()
+    return ds_grid

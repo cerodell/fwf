@@ -1,5 +1,8 @@
 #!/Users/crodell/miniconda3/envs/fwx/bin/python
 
+"""
+Script generates the frp 10 in to 1 hourly resampled figures used in the ams hourly fwi paper
+"""
 import context
 import json
 import salem
@@ -39,8 +42,8 @@ __email__ = "crodell@eoas.ubc.ca"
 
 #################### INPUTS ####################
 ## define model domain and path to fwf data
-save_fig = True
-paper = True
+save_fig = False
+paper = False
 case_study = "caldor_fire"  # ['sparks_lake', 'lytton_creek', 'barrington_lake_fire', 'ewf_031', 'quebec_fire_334', 'donnie_creek', 'wildcat', 'marshall_fire', 'oak_fire', 'caldor_fire', 'fire_east_tulare', 'rossmoore_fire', 'crater_creek', 'mcdougall_creek']
 # print(case_study)
 

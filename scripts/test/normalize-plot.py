@@ -19,7 +19,7 @@ from netCDF4 import Dataset
 from context import data_dir, root_dir
 
 
-doi = "2023071006"
+doi = "2023060406"
 domain = "d02"
 var = "S"
 
@@ -72,6 +72,8 @@ ax = fig.add_subplot(1, 1, 1)
 doi_daily_ds.salem.quick_map(
     prov=True, states=True, oceans=True, cmap="jet", vmax=30, ax=ax
 )
+
+
 plt.savefig(
     str(data_dir) + f"/images/norm/fwf-{doi}.png",
     dpi=250,

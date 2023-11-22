@@ -1,3 +1,6 @@
+"""
+Script was created to test wind streamers on leaflet. It works by projecting model data to lat long grid.
+"""
 import context
 import os
 import salem

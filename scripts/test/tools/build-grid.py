@@ -117,5 +117,5 @@ ds_grid[var].salem.quick_map(
     extend="both",
 )
 
-ds_grid.to_netcdf(str(data_dir) + f"/{model}/{domain}-grid.nc")
+# ds_grid.to_netcdf(str(data_dir) + f"/{model}/{domain}-grid.nc")
 # grid_ds = salem.open_xr_dataset(str(data_dir) + f"/wrf/{domain}-grid.nc")

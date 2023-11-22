@@ -1,6 +1,8 @@
 #!/bluesky/fireweather/miniconda3/envs/fwf/bin/python
 
-
+"""
+The script was created to test precipitin carry-over methods between different model initialization times. This is needed for the FWI system as it requires 24 hour accumulated precipitation from 12pm-12pm stand time
+"""
 import context
 import os
 import json

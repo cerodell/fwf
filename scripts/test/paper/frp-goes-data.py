@@ -1,5 +1,9 @@
 #!/Users/crodell/miniconda3/envs/fwx/bin/python
 
+
+"""
+Used to generate netcdf for each fire case study. The netcdf contains a small domain covering the fire at a 10 min sampling period. These take a while to generate.
+"""
 import context
 import json
 import salem
@@ -36,9 +40,7 @@ __email__ = "crodell@eoas.ubc.ca"
 
 #################### INPUTS ####################
 
-
-## define model domain and path to fwf data
-save_fig = True
+case_study = "boston_bar"
 
 ################## END INPUTS ####################
 
@@ -48,11 +50,11 @@ save_fig = True
 with open(str(root_dir) + f"/json/fire-cases.json", "r") as fp:
     case_dict = json.load(fp)
 
-case_list = list(case_dict)
-remove = ["oak_fire", "caldor_fire"]
-new_list = [x for x in case_list if x not in remove]
-# "heather_lake_fire"
-for case_study in ["boston_bar"]:
+# case_list = list(case_dict)
+# remove = ["oak_fire", "caldor_fire"]
+# new_list = [x for x in case_list if x not in remove]
+
+for case_study in [case_study]:
     # try:
     print("Starting   ", case_study)
     case_info = case_dict[case_study]

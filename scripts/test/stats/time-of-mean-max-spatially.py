@@ -104,10 +104,10 @@ for var in var_list:
         cmap="coolwarm",
         vmin=-6,
         vmax=6,
-        oceans=True,
+        # oceans=True,
         # lakes=True,
-        states=True,
-        prov=True,
+        # states=True,
+        # prov=True,
         extend="both",
     )
     ax.set_title(

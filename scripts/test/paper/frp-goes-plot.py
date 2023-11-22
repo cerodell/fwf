@@ -1,5 +1,9 @@
 #!/Users/crodell/miniconda3/envs/fwx/bin/python
 
+
+"""
+Script generates the frp v fwi figures used in the ams hourly fwi paper
+"""
 import context
 import json
 import gc
@@ -30,18 +34,18 @@ from context import data_dir, root_dir
 
 plt.rc("font", family="sans-serif")
 plt.rc("text", usetex=True)
-# plt.rcParams.update({'font.size': 16})
+plt.rcParams.update({"font.size": 18})
 
 __author__ = "Christopher Rodell"
 __email__ = "crodell@eoas.ubc.ca"
 
 #################### INPUTS ####################
 ## define model domain and path to fwf data
-save_fig = True
+save_fig = False
 norms = False
 int_plot = True
-paper = False
-case_study = "wildcat"  # ['sparks_lake', 'lytton_creek', 'barrington_lake_fire', 'ewf_031', 'quebec_fire_334', 'donnie_creek', 'wildcat', 'marshall_fire', 'oak_fire', 'caldor_fire', 'fire_east_tulare', 'rossmoore_fire', 'crater_creek', 'mcdougall_creek']
+paper = True
+case_study = "oak_fire"  # ['barrington_lake_fire', 'wildcat', 'marshall_fire', 'oak_fire', 'caldor_fire', 'fire_east_tulare', 'rossmoore_fire', 'crater_creek', 'lytton_creek]
 # print(case_study)
 
 if paper == True:
@@ -88,10 +92,12 @@ daily_ds = xr.combine_nested(
     [open_fwf(doi, filein, domain, "daily", yy, xx, utc_offset) for doi in fwf_range],
     "time",
 )  # .compute()
+daily_ds_og = daily_ds
 daily_ds["time"] = daily_ds["Time"]
 daily_ds = daily_ds.resample(time="1H").nearest()
-daily_ds["time"] = daily_ds["time"] - np.timedelta64(int(12), "h")
+daily_ds["time"] = daily_ds["time"] + np.timedelta64(int(12), "h")
 daily_ds = daily_ds.sel(time=slice(start, stop))
+# daily_ds = daily_ds.sel(time=slice(start.astype('datetime64[D]'), stop.astype('datetime64[D]')))
 
 
 if norms == True:
@@ -114,7 +120,8 @@ frp_raw = frp_da.values
 frp_da_interp = frp_da.interpolate_na(dim="time", method="linear").ffill(dim="time")
 
 
-max_frp = frp_da.resample(time="1D").max()
+# max_frp = frp_da.resample(time='1D').max()
+# max_frp = max_frp.resample(time="1H").nearest()
 
 hfwi = hourly_ds["S"].values
 hfrp = frp_da_interp.values
@@ -123,12 +130,12 @@ study_range = hourly_ds.time.values
 unique, counts = np.unique(np.isnan(frp_raw), return_counts=True)
 print(f"Precent of values that where observed {round((counts[0]/len(hfrp))*100,2)}")
 hfwip = hfwi[np.isnan(frp_raw) == False]
-dfwip = dfwi[np.isnan(frp_raw) == False]
+# dfwip = dfwi[np.isnan(frp_raw) == False]
 hfrpp = hfrp[np.isnan(frp_raw) == False]
 
 
 pearsonr_h_interp_final = stats.pearsonr(hfwip, hfrpp)
-pearsonr_d_interp_final = stats.pearsonr(dfwip, hfrpp)
+# pearsonr_d_interp_final = stats.pearsonr(dfwip, hfrpp)
 
 
 # %%
@@ -136,34 +143,36 @@ pearsonr_d_interp_final = stats.pearsonr(dfwip, hfrpp)
 year = pd.to_datetime(study_range[-1]).strftime("%Y")
 
 
-fig = plt.figure(figsize=(12, 4))
-fig.suptitle(f"    Fire Weather Index vs Fire Radiative Power", fontsize=20, y=1.11)
+fig = plt.figure(figsize=(14, 4))
+# fig.suptitle(f"    Fire Weather Index vs Fire Radiative Power", fontsize=22, y=1.3, x =0.52)
 
 ax = fig.add_subplot(1, 1, 1)
 title_line1 = (
-    r"\fontsize{18pt}{22pt}\selectfont " + f"{case_study.replace('_', ' ').title()}"
+    r"\fontsize{20pt}{22pt}\selectfont " + f"{case_study.replace('_', ' ').title()}"
 )
-title_line2 = r"\fontsize{12pt}{15pt}\selectfont " + f"{case_info['loc']}" + f", {year}"
+title_line2 = r"\fontsize{16pt}{15pt}\selectfont " + f"{case_info['loc']}" + f", {year}"
 title = f"{title_line1}\n{title_line2}"
-ax.set_title(title, loc="center", fontdict={"usetex": True})
+ax.set_title(title, loc="center", fontdict={"usetex": True}, y=1.2)
+# fig.suptitle(title, y=1.11)
 
 ax.set_title(
-    f"r: {round(pearsonr_h_interp_final[0],2)} Hourly FWI \nr: {round(pearsonr_d_interp_final[0],2)}   Daily FWI    \n  Values observed: {round((counts[0]/len(frp_raw))*100,2)}%",
+    f"r: {round(pearsonr_h_interp_final[0],2)} Hourly FWI   \n  Values observed: {round((counts[0]/len(frp_raw))*100,2)}"
+    + r"$\%$",
     loc="right",
-    fontsize=12,
+    fontsize=16,
 )
 ax2 = ax.twinx()
-ax.plot(hourly_ds.time, hfwi, color="tab:blue", lw=1.2, label="Hourly")
-ax.plot(daily_ds.time, dfwi, color="tab:blue", ls="--", lw=1.2, label="Daily")
+ax.plot(hourly_ds.time, hfwi, color="tab:blue", lw=1.2, label="HFWI")
+ax.plot(daily_ds.time, dfwi, color="tab:blue", ls="--", lw=1.2, label="DFWI")
 
-ax.plot(hourly_ds.time, hfwi, color="tab:red", lw=1, label="FRP", zorder=0)
+ax.plot(hourly_ds.time, hfwi, color="tab:red", lw=1, label="HFRP", zorder=0)
 set_axis_postion(ax, "FWI")
 
 ax2.plot(frp_da.time, frp_da, color="tab:red", lw=1.2, label="FRP")
 ax2.plot(frp_da.time, hfrp, lw=1.1, color="tab:red", ls="dotted", label="FRP")
 
 set_axis_postion(ax2, "FRP (MW)")
-tkw = dict(size=4, width=1.5, labelsize=16)
+tkw = dict(size=4, width=1.5, labelsize=18)
 ax.tick_params(
     axis="x",
     **tkw,
@@ -171,14 +180,14 @@ ax.tick_params(
 plt.gca().xaxis.set_major_formatter(mdates.DateFormatter("%m-%d-%H"))
 # plt.gca().set_xticks(hourly_ds.time.values.astype("datetime64[D]"))
 # plt.gca().xaxis.set_major_formatter()
-ax.set_xlabel(f"Local DateTime (MM-DD-HH)", fontsize=16)
+ax.set_xlabel(f"Local DateTime (MM-DD-HH)", fontsize=18)
 ax.legend(
     # loc="upper right",
-    bbox_to_anchor=(0.35, 1.18),
+    bbox_to_anchor=(0.42, 1.2),
     ncol=3,
     fancybox=True,
     shadow=True,
-    fontsize=12,
+    fontsize=16,
 )
 fig.autofmt_xdate()
 
@@ -230,7 +239,7 @@ sc = ax.pcolormesh(
 
 
 cbar = plt.colorbar(sc, ax=ax, pad=0.008)
-cbar.set_label("Weighted Count", rotation=270, fontsize=14, labelpad=20)
+cbar.set_label("Weighted Count", rotation=270, fontsize=20, labelpad=20)
 XLONG = frp_ds["lons"].values
 XLAT = frp_ds["lats"].values
 
@@ -244,10 +253,10 @@ ax.scatter(
 )
 ax.set_title(
     f"GOES FRP Locations overlaid on WRF GRID \n {case_study.replace('_',' ').title()}",
-    fontsize=14,
+    fontsize=22,
 )
-ax.set_xlabel("Longitude", fontsize=16)
-ax.set_ylabel("Latitude", fontsize=16)
+ax.set_xlabel("Longitude", fontsize=20)
+ax.set_ylabel("Latitude", fontsize=20)
 if save_fig == True:
     if paper == True:
         plt.savefig(
@@ -278,17 +287,16 @@ if int_plot == True:
     # Create figure with secondary y-axis
     fig = make_subplots(specs=[[{"secondary_y": True}]])
 
-    # Add traces
     fig.add_trace(
-        go.Scatter(x=df.index, y=df["Power"], name="FRP"),
+        go.Scatter(x=df.index, y=df["FWI"], name="FWI"),
         secondary_y=False,
     )
 
+    # Add traces
     fig.add_trace(
-        go.Scatter(x=df.index, y=df["FWI"], name="FWI"),
+        go.Scatter(x=df.index, y=df["Power"], name="FRP"),
         secondary_y=True,
     )
-
     # Add figure title
     fig.update_layout(title_text="FRP v FWI")
 
@@ -296,8 +304,8 @@ if int_plot == True:
     fig.update_xaxes(title_text="Time")
 
     # Set y-axes titles
-    fig.update_yaxes(title_text="<b>FRP</b>", secondary_y=False)
-    fig.update_yaxes(title_text="<b>FWI</b>", secondary_y=True)
+    fig.update_yaxes(title_text="<b>FRP</b>", secondary_y=True)
+    fig.update_yaxes(title_text="<b>FWI</b>", secondary_y=False)
 
     fig.show()
 # %%

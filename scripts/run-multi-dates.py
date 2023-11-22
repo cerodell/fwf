@@ -55,7 +55,9 @@ elif config["model"] == "wrf":
     else:
         config["root_dir"] = "/Volumes/Scratch/fwf-data"
 else:
-    raise ValueError("YIKES! Sorry check your paths")
+    raise ValueError(
+        "YIKES! Sorry this model is not supported yet, you'll need to run /tools/build-static-ds.py"
+    )
 
 
 for date in date_range:

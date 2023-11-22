@@ -186,3 +186,24 @@ def transform_era5(filein):
     print(f"Time to config era5 to wrf domain {datetime.now() - startTime}")
 
     return era5_ds
+
+
+def grid_ecmwf(model, domain):
+    if domain == "era5":
+        ds = salem.open_xr_dataset(f"/Volumes/WFRT-Ext23/era5/era5-2020010100.nc").isel(
+            time=0
+        )
+        var = "t2m"
+        ds["longitude"] = np.arange(-179.75, 180.25, 0.25)
+        var_array = ds[var].roll(longitude=int(len(ds["longitude"]) / 2))
+        ds_grid = ds.salem.grid.to_dataset()
+
+    elif domain == "era5-land":
+        ds = salem.open_xr_dataset(
+            f"/Volumes/WFRT-Ext22/ecmwf/era5-land/198912/era5-land-1989122800.nc"
+        ).isel(time=0)
+        var = "t2m"
+        var_array = ds[var]
+        ds_grid = ds.salem.grid.to_dataset()
+
+    return ds_grid

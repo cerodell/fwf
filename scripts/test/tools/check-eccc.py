@@ -7,7 +7,6 @@ import time
 import xarray as xr
 import pandas as pd
 from pathlib import Path
-import wget
 import gc
 
 

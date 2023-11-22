@@ -37,7 +37,7 @@ __email__ = "crodell@eoas.ubc.ca"
 
 #################### INPUTS ####################
 ## define model domain and path to fwf data
-save_fig = True
+save_fig = False
 norms = False
 int_plot = True
 paper = False

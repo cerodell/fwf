@@ -155,6 +155,7 @@ ds["ZoneST"].salem.quick_map(cmap="coolwarm")
 ds = ds.drop("var")
 ds.to_netcdf(str(data_dir) + f"/tzone/tzone-{model}-{domain}-{season}.nc", mode="w")
 
+
 # ####################################
 # ## plot for santity check
 # ####################################
