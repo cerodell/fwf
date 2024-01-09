@@ -35,7 +35,7 @@ def file_size(file_path):
         return convert_bytes(file_info.st_size)
 
 
-def compressor(ds, var_dict):
+def compressor(ds, var_dict=None):
     """
     this function comresses datasets
     """

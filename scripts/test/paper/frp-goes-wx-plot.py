@@ -29,8 +29,6 @@ from utils.frp import (
     build_tree,
     get_time_offest,
     normalize,
-    set_axis_postion_full_fwx,
-    hourly_precip,
 )
 from context import data_dir, root_dir
 
@@ -43,12 +41,11 @@ __email__ = "crodell@eoas.ubc.ca"
 
 #################### INPUTS ####################
 ## define model domain and path to fwf data
-save_fig = True
+save_fig = False
 norms = False
-int_plot = False
-paper = True
-full_fwx = True
-case_study = "marshall_fire"  # ['barrington_lake_fire', 'wildcat', 'marshall_fire', 'oak_fire', 'caldor_fire', 'fire_east_tulare', 'rossmoore_fire', 'crater_creek', 'lytton_creek]
+int_plot = True
+paper = False
+case_study = "caldor_fire"  # ['barrington_lake_fire', 'wildcat', 'marshall_fire', 'oak_fire', 'caldor_fire', 'fire_east_tulare', 'rossmoore_fire', 'crater_creek', 'lytton_creek]
 # print(case_study)
 
 if paper == True:
@@ -81,17 +78,8 @@ fwf_range = pd.date_range(
 yy, xx = build_tree(case_study, case_info, frp_lats, frp_lons)
 
 
-if full_fwx == True:
-    var_list = ["F", "R", "S", "T", "W", "H", "r_o"]
-    var_listD = var_list + ["D", "U", "P"]
-else:
-    var_list = var_listd = False
-
 hourly_ds = xr.combine_nested(
-    [
-        open_fwf(doi, filein, domain, "hourly", yy, xx, utc_offset, var_list)
-        for doi in fwf_range
-    ],
+    [open_fwf(doi, filein, domain, "hourly", yy, xx, utc_offset) for doi in fwf_range],
     "time",
 ).sel(
     time=slice(start, stop)
@@ -101,17 +89,13 @@ fwf_range = pd.date_range(
     stop.astype("datetime64[D]") + pd.Timedelta(days=2),
 )
 daily_ds = xr.combine_nested(
-    [
-        open_fwf(doi, filein, domain, "daily", yy, xx, utc_offset, var_listD)
-        for doi in fwf_range
-    ],
+    [open_fwf(doi, filein, domain, "daily", yy, xx, utc_offset) for doi in fwf_range],
     "time",
 )  # .compute()
 daily_ds_og = daily_ds
-daily_ds_og2 = daily_ds
 daily_ds["time"] = daily_ds["Time"]
 daily_ds = daily_ds.resample(time="1H").nearest()
-daily_ds["time"] = daily_ds["time"] + np.timedelta64(int(13), "h")
+daily_ds["time"] = daily_ds["time"] + np.timedelta64(int(12), "h")
 daily_ds = daily_ds.sel(time=slice(start, stop))
 # daily_ds = daily_ds.sel(time=slice(start.astype('datetime64[D]'), stop.astype('datetime64[D]')))
 
@@ -164,30 +148,15 @@ fig = plt.figure(figsize=(14, 4))
 
 ax = fig.add_subplot(1, 1, 1)
 title_line1 = (
-    r"\fontsize{22pt}{24pt}\selectfont " + f"{case_study.replace('_', ' ').title()}"
+    r"\fontsize{20pt}{22pt}\selectfont " + f"{case_study.replace('_', ' ').title()}"
 )
-title_line2 = r"\fontsize{18pt}{17pt}\selectfont " + f"{case_info['loc']}" + f", {year}"
+title_line2 = r"\fontsize{16pt}{15pt}\selectfont " + f"{case_info['loc']}" + f", {year}"
 title = f"{title_line1}\n{title_line2}"
 ax.set_title(title, loc="center", fontdict={"usetex": True}, y=1.2)
 # fig.suptitle(title, y=1.11)
 
-if case_info["goes"] == "g16":
-    sate = "GOES-East"
-elif case_info["goes"] == "g17":
-    sate = "GOES-West"
-elif case_info["goes"] == "g18":
-    sate = "GOES-West"
-else:
-    pass
-if case_info["domain"] == "d02":
-    reso = "12-km"
-elif case_info["domain"] == "d03":
-    reso = "4-km"
-else:
-    pass
-
 ax.set_title(
-    f"Satellite: {sate} \n WRF Domain: {reso} \n \n r: {round(pearsonr_h_interp_final[0],2)} Hourly FWI   \n  Values observed: {round((counts[0]/len(frp_raw))*100,2)}"
+    f"r: {round(pearsonr_h_interp_final[0],2)} Hourly FWI   \n  Values observed: {round((counts[0]/len(frp_raw))*100,2)}"
     + r"$\%$",
     loc="right",
     fontsize=16,
@@ -323,184 +292,6 @@ if save_fig == True:
             dpi=250,
             bbox_inches="tight",
         )
-# %%
-
-if full_fwx == True:
-    hourly_ds = hourly_ds.compute()
-    daily_ds_wx = daily_ds_og2.compute()
-    daily_ds_fwx = daily_ds_wx.copy()
-    hourly_ds = hourly_precip(hourly_ds)
-    daily_ds_wx["time"] = daily_ds_wx["time"] + np.timedelta64(int(12), "h")
-    daily_ds_wx = daily_ds_wx.sel(time=slice(start, stop))
-    daily_ds_wx["Time"] = daily_ds_wx["time"]
-
-    daily_ds_fwx["time"] = daily_ds_fwx["time"] + np.timedelta64(int(16), "h")
-    daily_ds_fwx = daily_ds_fwx.sel(time=slice(start, stop))
-    daily_ds_fwx["Time"] = daily_ds_fwx["time"]
-    hourly_ds["Time"] = hourly_ds["time"]
-
-    # def plot_real(hourly_ds,daily_ds, title, casestudy_name, at_wmo = False):
-    colors_list = plt.rcParams["axes.prop_cycle"].by_key()["color"]
-    start_fwx = pd.to_datetime(hourly_ds.Time.values[0]).strftime("%B %d")
-    stop_fwx = pd.to_datetime(hourly_ds.Time.values[-1]).strftime("%B %d")
-    start_save = pd.to_datetime(hourly_ds.Time.values[0]).strftime("%Y%m%d")
-    stop_save = pd.to_datetime(hourly_ds.Time.values[-1]).strftime("%Y%m%d")
-    year = pd.to_datetime(hourly_ds.Time.values[-1]).strftime("%Y")
-    fig = plt.figure(figsize=(14, 12))
-    # fig.suptitle("Fire Weather Index System Sensitivity Case Study", fontsize=20)
-    ax = fig.add_subplot(2, 1, 1)
-    ax.set_title(f"{title} \n \nFire Weather", loc="left", fontsize=20)
-    ax.set_title(
-        f"WRF Domain: {reso} \n{start_fwx} - {stop_fwx}, {year}",
-        loc="right",
-        fontsize=20,
-    )
-    ffmc = ax
-    dmc = ax.twinx()
-    dc = ax.twinx()
-    isi = ax.twinx()
-    bui = ax.twinx()
-    fwi = ax.twinx()
-    marker = "D"
-    ffmc.plot(hourly_ds["Time"], hourly_ds.F, color=colors_list[1], lw=2, zorder=9)
-    # ffmc.plot(daily_ds_og['Time'],daily_ds_og.F, color=colors_list[1], lw=1, ls = '-.', zorder =9)
-    ffmc.scatter(
-        daily_ds_fwx["Time"],
-        daily_ds_fwx.F,
-        color=colors_list[1],
-        zorder=10,
-        marker=marker,
-    )
-
-    # dmc.plot(daily_ds_og.Time,daily_ds_og.P, color=colors_list[2], lw=2)
-    # dmc.plot(daily_ds_og.Time,daily_ds_og.P, color=colors_list[2], lw=1, ls = '-.', zorder = 7)
-    dmc.scatter(
-        daily_ds_fwx.Time, daily_ds_fwx.P, color=colors_list[2], zorder=8, marker=marker
-    )
-
-    # dc.plot(daily_ds.Time,daily_ds.D, color=colors_list[5], lw=2)
-    # dc.plot(daily_ds_og.Time,daily_ds_og.D, color=colors_list[5], lw=1, ls = '-.', zorder = 7)
-    dc.scatter(
-        daily_ds_fwx.Time, daily_ds_fwx.D, color=colors_list[5], zorder=8, marker=marker
-    )
-
-    isi.plot(hourly_ds.Time, hourly_ds.R, color=colors_list[4], lw=2, zorder=9)
-    # isi.plot(daily_ds_og.Time,daily_ds_og.R, color=colors_list[4], lw=1, ls = '-.', zorder = 9)
-    isi.scatter(
-        daily_ds_fwx.Time,
-        daily_ds_fwx.R,
-        color=colors_list[4],
-        zorder=10,
-        marker=marker,
-    )
-
-    # bui.plot(daily_ds_og.Time,daily_ds_og.U, color=colors_list[7], lw=2)
-    # bui.plot(daily_ds_og.Time,daily_ds_og.U, color=colors_list[7], lw=1, ls = '-.', zorder = 7)
-    bui.scatter(
-        daily_ds_fwx.Time, daily_ds_fwx.U, color=colors_list[7], zorder=8, marker=marker
-    )
-
-    fwi.plot(hourly_ds.Time, hourly_ds.S, color="firebrick", lw=2, zorder=9)
-    # fwi.plot(daily_ds_og.Time,daily_ds_og.S, color=colors_list[3], lw=1, ls = '-.', zorder = 9)
-    fwi.scatter(
-        daily_ds_fwx.Time, daily_ds_fwx.S, color="firebrick", zorder=10, marker=marker
-    )
-
-    set_axis_postion_full_fwx(ffmc, "left", 0, "FFMC")
-    set_axis_postion_full_fwx(dmc, "left", 80, "DMC")
-    set_axis_postion_full_fwx(dc, "left", 160, "DC")
-    set_axis_postion_full_fwx(isi, "right", 0, "ISI")
-    set_axis_postion_full_fwx(bui, "right", 80, "BUI")
-    set_axis_postion_full_fwx(fwi, "right", 160, "FWI")
-    ax.set_xticklabels([])
-
-    # set_axis_postion_full_fwx(ffmc, "left", 0, "FFMC")
-    # set_axis_postion_full_fwx(dmc, "left", 80, "DMC")
-    # set_axis_postion_full_fwx(dc, "left", 160, "DC")
-    # set_axis_postion_full_fwx(isi, "right", 0, "ISI")
-    # set_axis_postion_full_fwx(fwi, "right", 80, "FWI")
-
-    # plt.gca().xaxis.set_major_formatter(mdates.DateFormatter('%m-%d-%H'))
-    date_array = daily_ds_wx["time"] - np.timedelta64(int(12), "h")
-    extended_date_array = np.append(date_array, date_array[-1] + np.timedelta64(1, "D"))
-    # plt.gca().set_xticks(extended_date_array)
-    tkw = dict(size=4, width=1.5, labelsize=18)
-    ax.tick_params(
-        axis="x",
-        **tkw,
-    )
-    # ax.set_xlabel("Local DateTime (MM-DD-HH)", fontsize=16)
-
-    ax = fig.add_subplot(2, 1, 2)
-    ax.set_title(f"Weather Inputs", loc="left", fontsize=20)
-    temp = ax
-    rh = ax.twinx()
-    wsp = ax.twinx()
-    # wdir = ax.twinx()
-    precip = ax.twinx()
-
-    temp.plot(hourly_ds.Time, hourly_ds.T, color=colors_list[3], lw=2, zorder=9)
-    temp.scatter(
-        daily_ds_wx.Time, daily_ds_wx.T, color=colors_list[3], zorder=10, marker=marker
-    )
-
-    rh.plot(hourly_ds.Time, hourly_ds.H, color=colors_list[0], lw=2, zorder=9)
-    rh.scatter(
-        daily_ds_wx.Time, daily_ds_wx.H, color=colors_list[0], zorder=10, marker=marker
-    )
-
-    # wdir.plot(hourly_ds.Time, hourly_ds.WD, color="grey", lw=2, zorder = 9)
-
-    wsp.plot(hourly_ds.Time, hourly_ds.W, color="k", lw=2, zorder=9)
-    wsp.scatter(daily_ds_wx.Time, daily_ds_wx.W, color="k", zorder=10, marker=marker)
-    precip.plot(
-        hourly_ds.Time, hourly_ds.r_o_hourly, color=colors_list[2], lw=2, zorder=6
-    )
-    r_oi = np.array(daily_ds_wx.r_o)
-    r_oi[r_oi < 0.09] = 0
-    precip.scatter(
-        daily_ds_wx.Time, r_oi, color=colors_list[2], zorder=7, marker=marker
-    )
-    precip.set_ylim(0)
-
-    set_axis_postion_full_fwx(temp, "left", 0, "Temperature (C)")
-    set_axis_postion_full_fwx(rh, "left", 80, "Relative Humidity " + r"$(\%)$")
-    set_axis_postion_full_fwx(wsp, "right", 0, "Wind Speed (km/hr)")
-    # set_axis_postion_full_fwx(wdir, "right", 80, "Wind Direction (deg)")
-    set_axis_postion_full_fwx(precip, "right", 80, "Precipitation (mm)")
-
-    plt.gca().xaxis.set_major_formatter(mdates.DateFormatter("%m-%d-%H"))
-    # plt.gca().set_xticks(extended_date_array)
-    ax.set_xlabel("Local DateTime (MM-DD-HH)", fontsize=20)
-    tkw = dict(size=4, width=1.5, labelsize=18)
-    ax.tick_params(
-        axis="x",
-        **tkw,
-    )
-    fig.autofmt_xdate()
-
-    if save_fig == True:
-        if paper == True:
-            plt.savefig(
-                str(save_dir) + f"/{case_study}-fwx.pdf",
-                bbox_inches="tight",
-            )
-            plt.savefig(
-                str(save_dir) + f"/{case_study}-fwx.png",
-                dpi=250,
-                bbox_inches="tight",
-            )
-        else:
-            plt.savefig(
-                str(save_dir) + f"/{case_study}-fwx.png",
-                dpi=250,
-                bbox_inches="tight",
-            )
-else:
-    pass
-
-
-# FF0000
 
 
 # %%

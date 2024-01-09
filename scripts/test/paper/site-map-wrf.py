@@ -39,9 +39,9 @@ startTime = datetime.now()
 model = "wrf"
 trail_name = "02"
 wx_stations = False
-fx_locs = False
+fx_locs = True
 wx_hourly = False
-tzone = True
+tzone = False
 save_name = "blank"
 
 
@@ -150,12 +150,13 @@ if fx_locs == True:
     ax.scatter(
         xx,
         yy,
-        color="red",
+        color="tab:orange",
         zorder=10,
         alpha=1,
         marker="v",
         edgecolors="k",
-        s=80,
+        lw=1.5,
+        s=200,
         label="WildFires",
         transform=crs.PlateCarree(),
     )

@@ -72,14 +72,24 @@ def read_wrf(doi, model, domain):
         - True: do not write wrfout to zarr
 
     """
-    # filein = f'/Volumes/Scratch/fwf-data/{model}/{domain}/{doi.strftime("%Y%m")}/fwf-hourly-{domain}-{doi.strftime("%Y%m%d06")}.nc'
-    filein = f'/Volumes/WFRT-EXT24/fwf-data/{model}/{domain}/02/fwf-hourly-{domain}-{doi.strftime("%Y%m%d06")}.nc'
+    if int(doi.strftime("%Y")) >= 2023:
+        filein = f'/Volumes/WFRT-EXT23/fwf-data/{model}/{domain}/{doi.strftime("%Y%m")}/fwf-hourly-{domain}-{doi.strftime("%Y%m%d06")}.nc'
+    else:
+        filein = f'/Volumes/Scratch/fwf-data/{model}/{domain}/{doi.strftime("%Y%m")}/fwf-hourly-{domain}-{doi.strftime("%Y%m%d06")}.nc'
+
+    # filein = f'/Volumes/WFRT-EXT24/fwf-data/{model}/{domain}/02/fwf-hourly-{domain}-{doi.strftime("%Y%m%d06")}.nc'
     # print(os.path.isfile(filein))
     # print(filein)
     if os.path.isfile(filein) == True:
         grid_ds = salem.open_xr_dataset(str(data_dir) + f"/wrf/{domain}-grid.nc")
-        fwf_ds = salem.open_xr_dataset(filein)
+        fwf_ds = xr.open_dataset(filein)
+        try:
+            del fwf_ds["south_north"]
+            del fwf_ds["west_east"]
+        except:
+            pass
         fwf_ds.attrs["pyproj_srs"] = grid_ds.attrs["pyproj_srs"]
+        fwf_ds = fwf_ds.transpose("time", "south_north", "west_east")
 
     else:
         filein = str(data_dir) + f'/{doi.strftime("%Y%m%d00")}/'

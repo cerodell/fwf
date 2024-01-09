@@ -33,12 +33,12 @@ config = {"wrf": ["d02", "d03"]}
 # config = {"eccc": ["hrdps", "rdps"], "wrf": ["d02", "d03"]}
 
 
-trail_name = "02"
+trail_name = "04"
 # model_save = list(config.keys())[0]
 # domain_save = config[model_save][0]
-model_save = "wrf_day2"
+model_save = "wrf"
 domain_save = "d03"
-lead_time = 2
+lead_time = 1
 
 # date_range = pd.date_range("2021-01-01", "2021-01-10")
 date_range = pd.date_range("2021-01-01", "2022-12-31")
@@ -51,10 +51,10 @@ save_dir.mkdir(parents=True, exist_ok=True)
 ################## END INPUTS ##################
 
 var_list = [
-    "TD",
+    # "TD",
     "S",
     "T",
-    "WD",
+    # "WD",
     "W",
     "P",
     "F",
@@ -75,6 +75,9 @@ var_list = [
     "hF",
     "hR",
     "hS",
+    "h16F",
+    "h16R",
+    "h16S",
     "mT",
     "mW",
     "mH",

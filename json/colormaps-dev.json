@@ -26,6 +26,10 @@
       "name"  : "hffmc",
       "title": "Hourly Fine Fuel Moisture Code"
          },
+   "h16F" : {
+            "name"  : "h16ffmc",
+            "title": "1600 Hour Fine Fuel Moisture Code"
+            },
    "mFt" : {
       "name"  : "mffmct",
       "title": "Hour of Max Fine Fuel Moisture Code"
@@ -90,6 +94,10 @@
       "name"  : "hisi",
       "title": "Hourly Initial Spread Index"
          },
+   "h16R" : {
+            "name"  : "h16isi",
+            "title": "1600 Hour Initial Spread Index"
+            },
    "mRt" : {
       "name"  : "misit",
       "title": "Hour of Max Initial Spread Index"
@@ -138,6 +146,10 @@
       "name"  : "hfwi",
       "title": "Hourly Fire Weather Index"
          },
+   "h16S" : {
+      "name"  : "h16fwi",
+      "title": "1600 Hour Fire Weather Index"
+      },
    "mSt" : {
       "name"  : "mfwit",
       "title": "Hour of Max Fire Weather Index"
@@ -197,8 +209,8 @@
              "title": "Temperature 2m (°C)",
              "sigma": 0.4,
               "paper":{
-               "vmax"  : 2,
-               "vmin"  : -2,
+               "vmax"  : 3,
+               "vmin"  : -3,
                "cmap"  : "RdBu_r"
               }
 
@@ -244,7 +256,7 @@
          },
 "mHt" : {
       "name"  : "mrht",
-      "title": "Hour of MinRelative Humidity 2m (%)"
+      "title": "Hour of Min Relative Humidity 2m (%)"
          },
  "r_o"  : {
              "colors18": ["#ffffff", "#a9a5a5", "#6e6e6e", "#b3f9a9", "#79f572", "#50f150", "#1fb51e", "#0ca10d", "#1563d3", "#54a8f5", "#b4f1fb", "#ffe978", "#ffa100", "#ff3300", "#a50000", "#b58d83", "#9886ba","#8d008d"],

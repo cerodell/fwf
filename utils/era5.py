@@ -46,17 +46,44 @@ def rewrite_era5(doi, model, domain):
     return ds
 
 
+def era5_land(doi, model, domain, filein):
+    file_yesterday = f"{filein}{(doi + pd.Timedelta(days=-1)).strftime('%Y%m')}/{domain}-{(doi + pd.Timedelta(days=-1)).strftime('%Y%m%d00.nc')}"
+    file = f"{filein}{(doi).strftime('%Y%m')}/{domain}-{(doi).strftime('%Y%m%d00.nc')}"
+
+    ds_yesterday = xr.open_dataset(file_yesterday).isel(time=23).chunk("auto")
+    ds = xr.open_dataset(file).chunk("auto")
+    ds["tp"][0] = ds["tp"][0] - ds_yesterday["tp"].values
+    old_tp = ds["tp"]
+    r_oi = np.array(ds["tp"])
+    r_o_plus1 = np.dstack((np.zeros_like(ds["tp"][0]).T, r_oi.T)).T
+    r_hourly_list = []
+    for i in range(len(ds.time)):
+        r_hour = r_oi[i] - r_o_plus1[i]
+        r_hourly_list.append(r_hour)
+    r_hourly = np.stack(r_hourly_list)
+    r_hourly = xr.DataArray(r_hourly, name="tp", dims=("time", "latitude", "longitude"))
+    ds["tp"] = r_hourly
+    return ds
+
+
 def read_era5(doi, model, domain):
     # filein = f"/Volumes/WFRT-Ext23/{model}/{domain}/"
     if domain == "era5":
         filein = f"/Volumes/ThunderBay/CRodell/{model}/{domain}/"
+        file_list = [
+            f"{filein}{(doi + pd.Timedelta(days=i)).strftime('%Y%m')}/{domain}-{(doi + pd.Timedelta(days=i)).strftime('%Y%m%d00.nc')}"
+            for i in range(0, 2)
+        ]
+        ds = xr.open_mfdataset(file_list)
     elif domain == "era5-land":
-        filein = f"/Volumes/WFRT-Ext22/{model}/{domain}/"
-    file_list = [
-        f"{filein}{(doi + pd.Timedelta(days=i)).strftime('%Y%m')}/{domain}-{(doi + pd.Timedelta(days=i)).strftime('%Y%m%d00.nc')}"
-        for i in range(0, 2)
-    ]
-    ds = xr.open_mfdataset(file_list)
+        filein = f"/Volumes/WFRT-Ext25/{model}/{domain}/"
+        date_range = pd.date_range(doi, doi + pd.Timedelta(days=1))
+
+        ds = xr.combine_nested(
+            [era5_land(date, model, domain, filein) for date in date_range],
+            concat_dim="time",
+        ).chunk("auto")
+
     # print(ds)
     try:
         ds = ds.isel(expver=0)

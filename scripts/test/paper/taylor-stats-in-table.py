@@ -16,12 +16,6 @@ save_dir = Path(str(data_dir) + f"/images/stats/{trail_name}/{model}/taylor/")
 save_dir.mkdir(parents=True, exist_ok=True)
 
 var_list = [
-    "ffmc",
-    "dmc",
-    "dc",
-    "bui",
-    "isi",
-    "fwi",
     "temp",
     "rh",
     "ws",

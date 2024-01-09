@@ -18,6 +18,9 @@ from mpl_toolkits.axes_grid1 import make_axes_locatable
 from context import data_dir, root_dir
 
 
+test = xr.open_dataset(
+    "/Volumes/WFRT-Ext22/frp/goes/g18/2023/OR_ABI-L2-FDCF-M6_G18_s20232440050219_e20232440059527_c20232440100027.nc"
+)
 previous_daily_ds = xr.open_dataset(
     "/Volumes/WFRT-Ext24/fwf-data/wrf/d02/02/fwf-daily-d02-2021011006.nc"
 )

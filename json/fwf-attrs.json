@@ -27,6 +27,9 @@
   "hF": {
     "description": "HOURLY NOON FINE FUEL MOISTURE CODE"
   },
+  "h16F": {
+    "description": "HOURLY 1600 FINE FUEL MOISTURE CODE"
+  },
   "mF": {
     "description": "MAX FINE FUEL MOISTURE CODE"
   },
@@ -86,6 +89,9 @@
   "hR": {
     "description": "HOURLY NOON INITIAL SPREAD INDEX"
   },
+  "h16R": {
+    "description": "HOURLY 1600 INITIAL SPREAD INDEX"
+  },
   "mR": {
     "description": "MAX INITIAL SPREAD INDEX"
   },
@@ -112,6 +118,9 @@
   },
   "hS": {
     "description": "HOURLY NOON FIRE WEATHER INDEX"
+  },
+  "h16S": {
+    "description": "HOURLY 1600 FIRE WEATHER INDEX"
   },
   "mS": {
     "description": "MAX FIRE WEATHER INDEX"

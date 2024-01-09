@@ -1,3 +1,5 @@
+#!/Users/crodell/miniconda3/envs/fwf/bin/python
+
 import context
 import numpy as np
 import pandas as pd
@@ -27,9 +29,9 @@ __email__ = "crodell@eoas.ubc.ca"
 # model = "nwp"
 # domains = ["d02", "d03", "rdps", "hrdps"]
 
-model = "wrf"
+model = "wrf_day2"
 domains = ["d02", "d03"]
-trail_name = "02"
+trail_name = "04"
 fwf_dir = f"/Volumes/WFRT-Ext24/fwf-data/"
 
 ## define directory to save figures
@@ -51,9 +53,12 @@ except:
 
 ## make time dim sliceable with datetime
 ds["time"] = ds["Time"]
-ds_2021 = ds.sel(time=slice("2021-05-01", "2021-09-30"))
-ds_2022 = ds.sel(time=slice("2022-05-01", "2022-09-30"))
-null_ds = ds.sel(time=slice("2021-10-01", "2022-04-30"))
+# ds_2021 = ds.sel(time=slice("2021-05-01", "2021-09-30"))
+# ds_2022 = ds.sel(time=slice("2022-05-01", "2022-09-30"))
+# null_ds = ds.sel(time=slice("2021-10-01", "2022-04-30"))
+ds_2021 = ds.sel(time=slice("2021-04-01", "2021-10-31"))
+ds_2022 = ds.sel(time=slice("2022-04-01", "2022-10-31"))
+null_ds = ds.sel(time=slice("2021-11-01", "2022-03-30"))
 null_array = np.full(null_ds["temp"].shape, np.nan)
 for var in null_ds:
     null_ds[var] = (("time", "domain", "wmo"), null_array)
@@ -83,8 +88,8 @@ def solve_stats(j, idx, var, obs_ds, obs_flat, obs_flat_null, name):
     fct_flat = np.delete(fct_flat, idx)
 
     if var == "precip":
-        fct_flat = fct_flat[obs_flat > 0.1]
-        obs_flat = obs_flat[obs_flat > 0.1]
+        fct_flat = fct_flat[obs_flat > 0.01]
+        obs_flat = obs_flat[obs_flat > 0.01]
     else:
         pass
 
@@ -124,10 +129,10 @@ var_list = [
     "isi",
     "fwi",
     "temp",
-    "td",
+    # "td",
     "rh",
     "ws",
-    "wdir",
+    # "wdir",
     "precip",
 ]
 # var_list = ["precip"]
@@ -161,7 +166,7 @@ for i in range(length):
             obs_ds,
             obs_flat,
             obs_flat_null,
-            name="noon  ",
+            name="daily  ",
         )
         dfs.append(df_i)
         try:
@@ -189,12 +194,24 @@ for i in range(length):
                 obs_ds,
                 obs_flat,
                 obs_flat_null,
-                name="hourly",
+                name="h1200",
             )
             dfs.append(df_i)
         except:
             pass
-
+        try:
+            df_i, obs_flat_final = solve_stats(
+                j,
+                idx,
+                "h16" + var,
+                obs_ds,
+                obs_flat,
+                obs_flat_null,
+                name="h1600",
+            )
+            dfs.append(df_i)
+        except:
+            pass
     combined_df = pd.concat(dfs)
 
     obs_df = {

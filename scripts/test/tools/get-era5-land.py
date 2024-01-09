@@ -10,7 +10,8 @@ from pathlib import Path
 c = cdsapi.Client()
 save_dir = "/Volumes/WFRT-Ext25/ecmwf/era5-land/"
 # date_range = pd.date_range("2013-02-12", "2019-12-27")
-date_range = pd.date_range("2009-08-18", "2023-01-01")
+# date_range = pd.date_range("2017-02-18", "2020-01-01")
+date_range = pd.date_range("2023-01-01", "2024-01-01")
 for date in date_range:
     startTime = datetime.now()
     make_dir = Path(str(save_dir) + f"/{date.strftime('%Y%m')}")

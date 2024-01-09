@@ -1,23 +1,26 @@
 import context
 
+import json
 import numpy as np
 import pandas as pd
 from pathlib import Path
-
+import gc
 
 import skill_metrics as sm
 import matplotlib.pyplot as plt
 import matplotlib.lines as mlines
 
-from context import data_dir
+from context import data_dir, root_dir
 
 # plt.rc("font", family="sans-serif")
 # plt.rc("text", usetex=True)
 plt.rcParams.update({"font.size": 24})
 
 model = "wrf"
-trail_name = "02"
+trail_name = "04"
 
+with open(str(root_dir) + f"/json/fwf-attrs.json", "r") as fp:
+    var_dict = json.load(fp)
 ## define directory to save figures
 # save_dir = Path(str(data_dir) + f"/images/stats/{trail_name}/{model}/taylor/")
 save_dir = "/Users/crodell/ams-fwf/LaTeX/img/fwf/"
@@ -31,21 +34,26 @@ var_list = [
     "isi",
     "fwi",
     "temp",
-    "td",
+    # "td",
     "rh",
     "ws",
-    "wdir",
+    # "wdir",
     "rh",
 ]
 var_list = ["fwi"]
 for var in var_list:
-    day1_df = pd.read_csv(str(data_dir) + f"/intercomp/02/{model}/{var}-stats.csv")
+    day1_df = pd.read_csv(
+        str(data_dir) + f"/intercomp/{trail_name}/{model}/{var}-stats.csv"
+    )
     day1_df["domain"] = day1_df["domain"].str.strip()
     stdev_obs = float(day1_df[day1_df["domain"] == "obs"]["std_dev"])
 
-    day2_df = pd.read_csv(str(data_dir) + f"/intercomp/02/{model}_day2/{var}-stats.csv")
+    day2_df = pd.read_csv(
+        str(data_dir) + f"/intercomp/{trail_name}/{model}_day2/{var}-stats.csv"
+    )
     day2_df["domain"] = day2_df["domain"].str.strip()
     stdev_obs2 = float(day2_df[day2_df["domain"] == "obs"]["std_dev"])
+
     if stdev_obs != stdev_obs2:
         raise ValueError("We have an issue! The day1 and day2 std dont match")
 
@@ -68,16 +76,25 @@ for var in var_list:
     else:
         name = "max"
 
-    wrf_d03_noon = f"WRF 4km Daily               {get_mbe(day1_df, 'd03-noon')},             {get_mbe(day2_df, 'd03-noon')}"
-    wrf_d02_noon = f"WRF 12km Daily             {get_mbe(day1_df, 'd02-noon')},             {get_mbe(day2_df, 'd02-noon')}"
+    wrf_d03_daily = f"WRF 4km   Daily              {get_mbe(day1_df, 'd03-daily')},             {get_mbe(day2_df, 'd03-daily')}"
+    wrf_d02_daily = f"WRF 12km Daily              {get_mbe(day1_df, 'd02-daily')},             {get_mbe(day2_df, 'd02-daily')}"
+    # if var not in ['fwi', 'ffmc', 'isi']:
+    if var in ["temp", "rh", "ws"]:
+        condition = day1_df["domain"] == f"d03-{name}"
+        day1_df = day1_df[~condition]
     try:
-        wrf_d03_max = f"WRF 4km {name.capitalize()}                 {get_mbe(day1_df, f'd03-{name}')},             {get_mbe(day2_df, f'd03-{name}')}"
-        wrf_d02_max = f"WRF 12km {name.capitalize()}               {get_mbe(day1_df, f'd02-{name}')},             {get_mbe(day2_df, f'd02-{name}')}"
+        wrf_d03_1200 = f"WRF 4km   1200               {get_mbe(day1_df, 'd03-h1200')},             {get_mbe(day2_df, 'd03-h1200')}"
+        wrf_d02_1200 = f"WRF 12km 1200               {get_mbe(day1_df, 'd02-h1200')},             {get_mbe(day2_df, 'd02-h1200')}"
     except:
         pass
     try:
-        wrf_d03_hourly = f"WRF 4km Noon               {get_mbe(day1_df, 'd03-hourly')},             {get_mbe(day2_df, 'd03-hourly')}"
-        wrf_d02_hourly = f"WRF 12km Noon             {get_mbe(day1_df, 'd02-hourly')},             {get_mbe(day2_df, 'd02-hourly')}"
+        wrf_d03_1600 = f"WRF 4km   1600               {get_mbe(day1_df, 'd03-h1600')},             {get_mbe(day2_df, 'd03-h1600')}"
+        wrf_d02_1600 = f"WRF 12km 1600               {get_mbe(day1_df, 'd02-h1600')},             {get_mbe(day2_df, 'd02-h1600')}"
+    except:
+        pass
+    try:
+        wrf_d03_max = f"WRF 4km   {name.capitalize()}                {get_mbe(day1_df, f'd03-{name}')},             {get_mbe(day2_df, f'd03-{name}')}"
+        wrf_d02_max = f"WRF 12km {name.capitalize()}                {get_mbe(day1_df, f'd02-{name}')},             {get_mbe(day2_df, f'd02-{name}')}"
     except:
         pass
     # ## DATA ####################################################################### #
@@ -85,43 +102,47 @@ for var in var_list:
     LEGEND_SUBPLOT = 2
     try:
         day1_dict = {
-            wrf_d03_noon: stats_tuple(day1_df, "d03-noon"),
+            wrf_d03_daily: stats_tuple(day1_df, "d03-daily"),
+            wrf_d03_1200: stats_tuple(day1_df, "d03-h1200"),
+            wrf_d03_1600: stats_tuple(day1_df, "d03-h1600"),
             wrf_d03_max: stats_tuple(day1_df, f"d03-{name}"),
-            wrf_d03_hourly: stats_tuple(day1_df, "d03-hourly"),
-            wrf_d02_noon: stats_tuple(day1_df, "d02-noon"),
+            wrf_d02_daily: stats_tuple(day1_df, "d02-daily"),
+            wrf_d02_1200: stats_tuple(day1_df, "d02-h1200"),
+            wrf_d02_1600: stats_tuple(day1_df, "d02-h1600"),
             wrf_d02_max: stats_tuple(day1_df, f"d02-{name}"),
-            wrf_d02_hourly: stats_tuple(day1_df, "d02-hourly"),
         }
         day2_dict = {
-            wrf_d03_noon: stats_tuple(day2_df, "d03-noon"),
+            wrf_d03_daily: stats_tuple(day2_df, "d03-daily"),
+            wrf_d03_1200: stats_tuple(day2_df, "d03-h1200"),
+            wrf_d03_1600: stats_tuple(day2_df, "d03-h1600"),
             wrf_d03_max: stats_tuple(day2_df, f"d03-{name}"),
-            wrf_d03_hourly: stats_tuple(day2_df, "d03-hourly"),
-            wrf_d02_noon: stats_tuple(day2_df, "d02-noon"),
+            wrf_d02_daily: stats_tuple(day2_df, "d02-daily"),
+            wrf_d02_1200: stats_tuple(day2_df, "d02-h1200"),
+            wrf_d02_1600: stats_tuple(day2_df, "d02-h1600"),
             wrf_d02_max: stats_tuple(day2_df, f"d02-{name}"),
-            wrf_d02_hourly: stats_tuple(day2_df, "d02-hourly"),
         }
     except:
         try:
             day1_dict = {
-                wrf_d03_noon: stats_tuple(day1_df, "d03-noon"),
+                wrf_d03_daily: stats_tuple(day1_df, "d03-daily"),
                 wrf_d03_max: stats_tuple(day1_df, f"d03-{name}"),
-                wrf_d02_noon: stats_tuple(day1_df, "d02-noon"),
+                wrf_d02_daily: stats_tuple(day1_df, "d02-daily"),
                 wrf_d02_max: stats_tuple(day1_df, f"d02-{name}"),
             }
             day2_dict = {
-                wrf_d03_noon: stats_tuple(day2_df, "d03-noon"),
+                wrf_d03_daily: stats_tuple(day2_df, "d03-daily"),
                 wrf_d03_max: stats_tuple(day2_df, "d03-max"),
-                wrf_d02_noon: stats_tuple(day2_df, "d02-noon"),
+                wrf_d02_daily: stats_tuple(day2_df, "d02-daily"),
                 wrf_d02_max: stats_tuple(day2_df, "d02-max"),
             }
         except:
             day1_dict = {
-                wrf_d03_noon: stats_tuple(day1_df, "d03-noon"),
-                wrf_d02_noon: stats_tuple(day1_df, "d02-noon"),
+                wrf_d03_daily: stats_tuple(day1_df, "d03-daily"),
+                wrf_d02_daily: stats_tuple(day1_df, "d02-daily"),
             }
             day2_dict = {
-                wrf_d03_noon: stats_tuple(day2_df, "d03-noon"),
-                wrf_d02_noon: stats_tuple(day2_df, "d02-noon"),
+                wrf_d03_daily: stats_tuple(day2_df, "d03-daily"),
+                wrf_d02_daily: stats_tuple(day2_df, "d02-daily"),
             }
 
     SUBPLOTS_DATA = [
@@ -152,7 +173,7 @@ for var in var_list:
             "alpha": 1,
             "zorder": 10,
         },
-        wrf_d03_noon: {
+        wrf_d03_daily: {
             "marker": "o",
             "color_edge": "#ff4f33",
             "color_face": "#ee5138",
@@ -160,7 +181,7 @@ for var in var_list:
             "alpha": 1,
             "zorder": 10,
         },
-        wrf_d02_noon: {
+        wrf_d02_daily: {
             "marker": "o",
             "color_edge": "#0050ff",
             "color_face": "#3e5da7",
@@ -169,6 +190,50 @@ for var in var_list:
             "zorder": 10,
         },
     }
+    try:
+        H1200 = {
+            wrf_d03_1200: {
+                "marker": "s",
+                "color_edge": "#ff4f33",
+                "color_face": "#ee5138",
+                "markersize": 9,
+                "alpha": 0.1,
+                "zorder": 1,
+            },
+            wrf_d02_1200: {
+                "marker": "s",
+                "color_edge": "#0050ff",
+                "color_face": "#3e5da7",
+                "markersize": 9,
+                "alpha": 0.1,
+                "zorder": 1,
+            },
+        }
+        MARKERS.update(H1200)
+    except:
+        pass
+    try:
+        H1600 = {
+            wrf_d03_1600: {
+                "marker": "p",
+                "color_edge": "#ff4f33",
+                "color_face": "#ee5138",
+                "markersize": 9,
+                "alpha": 0.1,
+                "zorder": 1,
+            },
+            wrf_d02_1600: {
+                "marker": "p",
+                "color_edge": "#0050ff",
+                "color_face": "#3e5da7",
+                "markersize": 9,
+                "alpha": 0.1,
+                "zorder": 1,
+            },
+        }
+        MARKERS.update(H1600)
+    except:
+        pass
     try:
         EXTREMS = {
             wrf_d03_max: {
@@ -191,29 +256,6 @@ for var in var_list:
         MARKERS.update(EXTREMS)
     except:
         pass
-    try:
-        HOURLIES = {
-            wrf_d03_hourly: {
-                "marker": "s",
-                "color_edge": "#ff4f33",
-                "color_face": "#ee5138",
-                "markersize": 9,
-                "alpha": 0.1,
-                "zorder": 1,
-            },
-            wrf_d02_hourly: {
-                "marker": "s",
-                "color_edge": "#0050ff",
-                "color_face": "#3e5da7",
-                "markersize": 9,
-                "alpha": 0.1,
-                "zorder": 1,
-            },
-        }
-        MARKERS.update(HOURLIES)
-    except:
-        pass
-
     # ## PLOT STYLE ################################################################# #
 
     FONT_FAMILY = "Times New Roman"
@@ -383,6 +425,12 @@ for var in var_list:
         # create legend and free memory
         ax.legend(handles=legend_handles, loc="center")
         del ax, legend_handles
+        fig.suptitle(
+            var_dict[var.lower()]["description"].title(),
+            fontsize=20,
+            y=0.96,
+        )
+
         # avoid some overlapping
         plt.tight_layout()
 
@@ -391,6 +439,7 @@ for var in var_list:
             str(save_dir) + f"/{var}-taylor.png",
             facecolor="w",
             bbox_inches="tight",
+            pad_inches=0,
         )
         # # Write plot to file
         plt.savefig(
@@ -398,5 +447,18 @@ for var in var_list:
             facecolor="w",
             bbox_inches="tight",
             format="pdf",
+            pad_inches=0,
         )
-        del MARKERS, SUBPLOTS_DATA, LEGEND_SUBPLOT
+        del MARKERS, SUBPLOTS_DATA, LEGEND_SUBPLOT, day1_dict, day2_dict
+        try:
+            del (
+                wrf_d03_max,
+                wrf_d02_max,
+                wrf_d03_1200,
+                wrf_d02_1200,
+                wrf_d03_daily,
+                wrf_d02_daily,
+            )
+        except:
+            pass
+        gc.collect()

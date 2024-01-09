@@ -563,5 +563,33 @@
     "loc": "Canal Flats, BC Canada",
     "goes" : "g18",
     "nasa": "https://go.nasa.gov/3ZRAhNG"
+  },
+  "heather_lake_fire": {
+    "domain": "d03",
+    "min_lat": 48.86,
+    "max_lat": 49.12,
+    "min_lon": -120.81,
+    "max_lon": -120.56,
+    "date_range": [
+      "2022-08-30-T00",
+      "2022-09-12-T00"
+    ],
+    "loc": "E.C. Manning, BC Canada",
+    "goes" : "g17",
+    "nasa": "https://go.nasa.gov/3shINci"
+  },
+  "boston_bar": {
+    "domain": "d02",
+    "min_lat": 49.92,
+    "max_lat": 50.17,
+    "min_lon": -121.7,
+    "max_lon": -121.44,
+    "date_range": [
+      "2023-08-16",
+      "2023-08-24"
+    ],
+    "goes" : "g18",
+    "info": "https://inciweb.nwcg.gov/incident-information/idscf-moose-fire",
+    "nasa": "https://go.nasa.gov/43ezsPd"
   }
 }

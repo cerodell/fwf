@@ -42,7 +42,7 @@ def get_time_offest(case_study, case_info):
     print(df_center)
     center_x, center_y = get_locs(pyproj_srs, df_center)
 
-    utc_offset = static_ds["ZoneDT"].interp(
+    utc_offset = static_ds["ZoneST"].interp(
         west_east=center_x, south_north=center_y, method="nearest"
     )
     return utc_offset
@@ -98,7 +98,7 @@ def normalize(ds, yy, xx, norm_ds):
     return ds
 
 
-def open_fwf(doi, filein, domain, model, yy, xx, utc_offset):
+def open_fwf(doi, filein, domain, model, yy, xx, utc_offset, var_list=False):
     ds = xr.open_dataset(
         filein + f"/fwf-{model}-{domain}-{doi.strftime('%Y%m%d06')}.nc"
     ).chunk("auto")
@@ -107,11 +107,17 @@ def open_fwf(doi, filein, domain, model, yy, xx, utc_offset):
         ds["time"] = ds["Time"]
         ds = ds.isel(time=slice(0, 24))
         ds["time"] = ds["time"] - np.timedelta64(int(utc_offset), "h")
-        ds = ds[["S", "F"]]
+        if var_list == False:
+            ds = ds[["S", "F"]]
+        else:
+            ds = ds[var_list]
+
     elif model == "daily":
         ds = ds.isel(time=0)
-        ds = ds[["S", "mS"]]
-
+        if var_list == False:
+            ds = ds[["S", "mS"]]
+        else:
+            ds = ds[var_list]
     ds = ds.isel(south_north=yy, west_east=xx)
     ds = ds.mean(dim=["south_north", "west_east"])
 
@@ -200,6 +206,9 @@ def open_frp(case_study, case_info, doi=False, max_comp=False):
             stop = np.datetime64("2021-07-06T00:00:00.000000000")
         #     start = date_range[non_nan_indices[0]]
         #     stop = date_range[non_nan_indices[-1]]
+        if case_study == "wildcat":
+            # start = np.datetime64('2021-08-17-T10:00')
+            start = np.datetime64("2021-07-22T22:00:00.000000000")
 
     else:
         start = date_range[non_nan_indices[0]]
@@ -249,8 +258,78 @@ def open_frp(case_study, case_info, doi=False, max_comp=False):
 #     return ds
 
 
+def hourly_precip(hourly_ds):
+    mask = hourly_ds.time.dt.hour == 23
+    idx = np.where(mask == True)[0]
+    rain = []
+    rain.append(list(hourly_ds["r_o"].isel(time=slice(0, idx[0])).values))
+    # for j in range(len(idx)):
+    for i in range(len(idx)):
+        try:
+            print(i)
+            hrd = hourly_ds["r_o"].isel(time=slice(idx[i] + 1, idx[i + 1])).values
+            for j in range(i + 1):
+                h23 = hourly_ds["r_o"].isel(time=idx[j]).values
+                hrd = hrd + h23
+                print("j", j)
+                if i == j:
+                    rain.append([float(hrd[0])])
+            rain.append(list(hrd))
+        except:
+            print(i)
+            hrd = hourly_ds["r_o"].isel(time=slice(idx[i] + 1, -1)).values
+            for j in range(i + 1):
+                h23 = hourly_ds["r_o"].isel(time=idx[j]).values
+                hrd = hrd + h23
+                print("j", j)
+                if i == j:
+                    rain.append([float(hrd[0])])
+            rain.append(list(hrd))
+    rain.append(list([rain[-1][-1]]))
+    flattened_list = [item for sublist in rain for item in sublist]
+    hourly_ds["r_o"] = ("time", flattened_list)
+    if hourly_ds["r_o"].values[0] != 0.0:
+        hourly_ds["r_o"] = hourly_ds["r_o"] - hourly_ds["r_o"].values[0]
+
+    r_oi = np.array(hourly_ds["r_o"])
+    r_hourly = np.diff(r_oi, prepend=0)
+    r_hourly[r_hourly < 0.1] = 0
+    r_hourly = xr.DataArray(r_hourly, name="r_o_hourly", dims=("time"))
+    hourly_ds["r_o_hourly"] = r_hourly
+    return hourly_ds
+
+
+def make_patch_spines_invisible(ax):
+    ax.set_frame_on(True)
+    ax.patch.set_visible(False)
+    for sp in ax.spines.values():
+        sp.set_visible(False)
+
+
+def set_axis_postion_full_fwx(ax, side, offset, label):
+    ax.spines[side].set_position(("outward", offset))
+    make_patch_spines_invisible(ax)
+    ax.spines[side].set_visible(True)
+    ax.yaxis.set_label_position(side)
+    ax.yaxis.set_ticks_position(side)
+    ax.set_ylabel(label, fontsize=20)
+    try:
+        color = ax.get_lines()[0].get_color()
+    except:
+        color = ax.collections[0].get_edgecolor()
+    ax.yaxis.label.set_color(color)
+    tkw = dict(size=4, width=1.5, labelsize=18)
+    ax.tick_params(
+        axis="y",
+        colors=color,
+        **tkw,
+    )
+    # ax.grid(True)
+    ax.grid(which="major", axis="x", linestyle="--", zorder=2, lw=0.3)
+
+
 def set_axis_postion(ax, label, color=False):
-    ax.set_ylabel(label, fontsize=16)
+    ax.set_ylabel(label, fontsize=20)
     try:
         ax.yaxis.label.set_color(ax.get_lines()[0].get_color())
     except:

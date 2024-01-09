@@ -10,6 +10,12 @@ import geopandas as gpd
 
 import matplotlib.pyplot as plt
 import matplotlib.colors
+import cartopy.crs as crs
+import cartopy.feature as cfeature
+
+from netCDF4 import Dataset
+from wrf import to_np, getvar, get_cartopy, latlon_coords, g_uvmet, ll_to_xy, xy_to_ll
+
 
 from datetime import datetime, timedelta
 from utils.wrf_ import read_wrf
@@ -36,7 +42,7 @@ chrome-extension://efaidnbmnnnibpcajpcglclefindmkaj/https://gml.noaa.gov/grad/so
 
 """
 
-doi = pd.Timestamp("2021-06-15")
+doi = pd.Timestamp("2024-06-15")
 
 # static_ds = salem.open_xr_dataset(str(data_dir) + "/static/static-vars-ecmwf-era5-land.nc")
 static_ds = salem.open_xr_dataset(str(data_dir) + "/static/static-vars-wrf-d02.nc")
@@ -72,14 +78,64 @@ L_e = (
     )
     - 3
 )
-fig, ax = plt.subplots(figsize=(8, 6))
-static_ds["L_e"] = (("south_north", "west_east"), L_e)
-static_ds["L_e"].attrs = static_ds.attrs
-static_ds["L_e"].salem.quick_map(ax=ax)
-ax.set_title(
-    f"Day length factor {L_e_old} from Van Wagner 1987 \n Valid: {doi.strftime('%Y %b %d')}"
+
+T = 30
+H = 35
+K = 1.894 * (T + 1.1) * (100 - H) * (L_e * 1e-4)
+K_old = 1.894 * (T + 1.1) * (100 - H) * (L_e_old * 1e-4)
+
+
+# Open the NetCDF file
+ncfile = Dataset(str(data_dir) + f"/wrf/wrfout_d01_2023-04-20_00:00:00")
+
+# Get the sea level pressure
+slp = getvar(ncfile, "slp")
+
+
+# Get the latitude and longitude points
+lats, lons = latlon_coords(slp)
+
+# Get the cartopy mapping object
+cart_proj = get_cartopy(slp)
+
+## bring in state/prov boundaries
+states_provinces = cfeature.NaturalEarthFeature(
+    category="cultural",
+    name="admin_1_states_provinces_shp",
+    scale="50m",
+    facecolor="none",
 )
 
+
+# Create a figure
+fig = plt.figure(figsize=(14, 8))
+# Set the GeoAxes to the projection used by WRF
+ax = plt.axes(projection=cart_proj)
+ax.add_feature(cfeature.OCEAN, color="white", zorder=2)
+ax.add_feature(states_provinces, linewidth=0.5, edgecolor="black", zorder=5)
+ax.coastlines("50m", linewidth=0.8, zorder=5)
+static_ds["L_e"] = (("south_north", "west_east"), L_e)
+static_ds["L_e"].attrs = static_ds.attrs
+static_ds["K"] = (("south_north", "west_east"), K)
+static_ds["K"].attrs = static_ds.attrs
+# static_ds["L_e"].salem.quick_map(ax=ax)
+clb = ax.contourf(
+    static_ds["XLONG"], static_ds["XLAT"], static_ds["L_e"], transform=crs.PlateCarree()
+)
+ax.contour(
+    static_ds["XLONG"],
+    static_ds["XLAT"],
+    static_ds["L_e"],
+    [L_e_old],
+    zorder=10,
+    color="k",
+    transform=crs.PlateCarree(),
+)
+ax.set_title(
+    f"Day length factor {L_e_old} from Van Wagner 1987 \n Mean of new method {round(float(static_ds['L_e'].mean()),1)} \n Valid: {doi.strftime('%Y %b %d')}"
+)
+cb_ctt = fig.colorbar(clb, ax=ax, pad=0.01)
+# cb_ctt.set_label("Relative Humidity" + r"(\%)", rotation=90)
 
 # if -np.tan(latInRad) * np.tan(np.deg2rad(declinationOfEarth)) <= -1.0:
 #     return 24.0

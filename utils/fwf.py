@@ -79,7 +79,6 @@ class FWF:
         """
 
         self.int_ds = read_dataset(config)
-
         ############ Set up dataset and get attributes ################
         self.attrs = self.int_ds.attrs
         self.model = config["model"]
@@ -93,7 +92,7 @@ class FWF:
         self.initialize_hffmc = config["initialize_hffmc"]
 
         ## NOTE this will be adjusted when made operational
-        self.iterator_dir = f"/Volumes/WFRT-Ext24/fwf-data/{self.model}/{self.domain}/{self.trail_name}/"
+        self.iterator_dir = f"/Volumes/WFRT-Ext23/fwf-data/{self.model}/{self.domain}/{self.trail_name}/"
         # self.iterator_dir = f"/Volumes/WFRT-Ext25/fwf-data/{self.model}/{self.domain}/{self.trail_name}/"
         self.filein_dir = f"{self.root_dir}/{self.model}/{self.domain}"
         self.save_dir = Path(self.iterator_dir)
@@ -121,13 +120,38 @@ class FWF:
         month = np.datetime_as_string(self.int_ds.Time[0], unit="h")
         print("Current Month:  ", month[5:7])
         month = int(month[5:7]) - 1
-        L_e = [6.5, 7.5, 9.0, 12.8, 13.9, 13.9, 12.4, 10.9, 9.4, 8.0, 7.0, 6.0]
-        L_e = L_e[month]
+        # L_e = [6.5, 7.5, 9.0, 12.8, 13.9, 13.9, 12.4, 10.9, 9.4, 8.0, 7.0, 6.0]
+        # L_e = L_e[month]
+        L_e_n90_30 = [6.5, 7.5, 9.0, 12.8, 13.9, 13.9, 12.4, 10.9, 9.4, 8.0, 7.0, 6.0][
+            month
+        ]
+        L_e_n30_10 = [7.9, 8.4, 8.9, 9.5, 9.9, 10.2, 10.1, 9.7, 9.1, 8.6, 8.1, 7.8][
+            month
+        ]
+        L_e_e = 9.0
+        L_e_s30_10 = [10.1, 9.6, 9.1, 8.5, 8.1, 7.8, 7.9, 8.3, 8.9, 9.4, 9.9, 10.2][
+            month
+        ]
+        L_e_s90_30 = [11.5, 10.5, 9.2, 7.9, 6.8, 6.2, 6.5, 7.4, 8.7, 10, 11.2, 11.8][
+            month
+        ]
+        LATS = self.int_ds.XLAT.values
+        L_e = np.where(LATS <= 30, self.zero_full, L_e_n90_30)
+        L_e = np.where((LATS > 30) | (LATS < 10), L_e, L_e_n30_10)
+        L_e = np.where((LATS > 10) | (LATS < -10), L_e, L_e_e)
+        L_e = np.where((LATS < -30) | (LATS > -10), L_e, L_e_s30_10)
+        L_e = np.where(LATS >= -30, L_e, L_e_s90_30)
         self.L_e = L_e
 
         ### Daylength adjustment in Drought Code
-        L_f = [-1.6, -1.6, -1.6, 0.9, 3.8, 5.8, 6.4, 5.0, 2.4, 0.4, -1.6, -1.6]
-        L_f = L_f[month]
+        # L_f = [-1.6, -1.6, -1.6, 0.9, 3.8, 5.8, 6.4, 5.0, 2.4, 0.4, -1.6, -1.6]
+        # L_f = L_f[month]
+        L_f_n = [-1.6, -1.6, -1.6, 0.9, 3.8, 5.8, 6.4, 5.0, 2.4, 0.4, -1.6, -1.6][month]
+        L_f_e = 1.4
+        L_f_s = [6.4, 5, 2.4, 0.4, -1.6, -1.6, -1.6, -1.6, -1.6, 0.9, 3.8, 5.8][month]
+        L_f = np.where(LATS <= 20, self.zero_full, L_f_n)
+        L_f = np.where((LATS > 20) | (LATS < -20), L_f, L_f_e)
+        L_f = np.where(LATS >= -20, L_f, L_f_s)
         self.L_f = L_f
 
         ## Open Data Attributes for writing
@@ -192,7 +216,7 @@ class FWF:
         #     self.int_ds[var] = (('time','south_north', 'west_east'), masked_array)
         #     self.int_ds[var].attrs['pyproj_srs'] = self.int_ds.attrs['pyproj_srs']
         # print("Mask: ", datetime.now() - maskTime)
-
+        print(list(self.int_ds))
         self.hourly_ds = self.int_ds
 
         ### Solve for hourly rain totals in mm....will be used in ffmc calculation
@@ -210,10 +234,11 @@ class FWF:
         ################################################################################
         ################################################################################
         ## TODO remove all this all, will be required for int_ds
-        try:
-            self.int_ds = self.int_ds.drop_vars(["SNW", "SNOWH", "U10", "V10"])
-        except:
-            self.int_ds = self.int_ds.drop_vars(["U10", "V10"])
+        for var in ["SNW", "SNOWH", "U10", "V10"]:
+            try:
+                self.int_ds = self.int_ds.drop_vars(var)
+            except:
+                pass
 
         ### Create an hourly and daily datasets for use with their respected codes/indices
         self.daily_ds = self.get_noon(self.int_ds, list(self.int_ds))
@@ -2110,10 +2135,9 @@ class FWF:
     """ ###################### Create Daily Dataset ###########################"""
     """########################################################################"""
 
-    def get_noon(self, int_ds, var_list, carryover_rain=True):
+    def get_noon(self, int_ds, var_list, carryover_rain=True, offset_noon=False):
         """
-        Creates a dataset of forecast variables averaged from
-        (1100-1300) local to act as the noon local conditions for daily index/codes
+        Creates a dataset of forecast variables with standard noon local conditions for daily index/codes
         calculations
 
         Parameters
@@ -2124,8 +2148,7 @@ class FWF:
         Returns
         -------
             daily_ds: DataSet
-                Dataset of daily variables at noon local averaged from (1100-1300)
-                local the averaging was done as a buffer for any frontal passage.
+                Dataset of daily variables at standard noon local
         """
 
         print("Create Daily/Noon ds")
@@ -2149,15 +2172,23 @@ class FWF:
         ]
         print(f"index of 12Z times {index} with initial time {int_time}Z")
 
+        ## this is to get the index for the desired time of day offset from noon. When used a 1 is added to get in the local daily light time, as the fwi is built on standard time
+        if offset_noon == False:
+            offset_noon = 0
+        elif type(offset_noon) == int:
+            offset_noon = offset_noon + 1
+        else:
+            raise ValueError(f"Invalided offset_noon of {offset_noon}")
         ## loop every 24 hours at noon local
         files_ds = []
         for i in index:
             # print(i)
             ## loop each variable
+            print(f"offset_noon {offset_noon}")
             mean_da = []
             for var in var_list:
                 var_array = int_ds[var].values
-                noon = var_array[(i + tzone), I, J]
+                noon = var_array[(i + tzone + offset_noon), I, J]
                 day = np.array(int_ds.Time[i + 1], dtype="datetime64[D]")
                 var_da = xr.DataArray(
                     noon,
@@ -2193,7 +2224,7 @@ class FWF:
                 noon_ds.r_o[i] -= x_prev
                 x_prev = x_val
             print("Daily ds done")
-        elif carryover_rain == False:
+        elif (carryover_rain == False) and (offset_noon == False):
             var_dict = {var_list[i]: "h" + var_list[i] for i in range(len(var_list))}
             noon_ds = noon_ds.rename(var_dict)
             for var in var_list:
@@ -2202,6 +2233,19 @@ class FWF:
                     "HOURLY NOON " + int_ds[var].attrs["description"]
                 )
             print("Noon ds done")
+        elif (carryover_rain == False) and (offset_noon != False):
+            hourname = f"h{12 + offset_noon -1}"
+            var_dict = {
+                var_list[i]: hourname + var_list[i] for i in range(len(var_list))
+            }
+            print(var_dict)
+            noon_ds = noon_ds.rename(var_dict)
+            for var in var_list:
+                noon_ds[hourname + var].attrs = int_ds[var].attrs
+                noon_ds[hourname + var].attrs["description"] = (
+                    f"{hourname.upper()}00 Hour " + int_ds[var].attrs["description"]
+                )
+            print("Offset Noon ds done")
         else:
             raise ValueError(
                 f"Invalided carryover_rain option: {carryover_rain}. Only supports boolean inputs \n Please try with True or False :)"
@@ -2216,7 +2260,6 @@ class FWF:
         # Subset the dataset
         ds_subset = houlry_ds[var_list]
         # ds_subset = houlry_ds.chunk("auto")
-
         ## find all index of 00Z in the continuous dataarray based on the inital time
         time_array = houlry_ds.Time.values
         int_time = int(pd.Timestamp(time_array[0]).hour)
@@ -2274,10 +2317,12 @@ class FWF:
         ]
         ## loop every 00Z index and find daily max temps between local midnight to midnight using an array of utc offsets
         ds_j_list = []
+
         for j in range(len(index)):
             ds_i_list = []
             for i in range(index[j], index[j] + 24):
                 ind_a = xr.DataArray(i + tzone, dims=["south_north", "west_east"])
+                # print(ind_a.south_north.values)
                 ds_i = ds_subset.isel(time=ind_a)
                 try:
                     ds_i = ds_i.drop(
@@ -2293,8 +2338,10 @@ class FWF:
                 #     ("south_north", "west_east"),
                 #     ds_i.Time.values.astype("datetime64[h]").astype(int) % 24,
                 # )
+                ds_i = ds_i.reset_coords("time")
                 ds_i_list.append(ds_i.drop(["Time"]).chunk("auto"))
             ds_j = xr.combine_nested(ds_i_list, concat_dim="time").load()
+
             mds_j = ds_j.max(dim="time")
             if "H" in var_list:
                 mds_j["H"] = ds_j["H"].min(dim="time")
@@ -2454,6 +2501,7 @@ class FWF:
         return ds
 
     def prepare_ds(self, ds):
+        ds = ds.transpose("time", "south_north", "west_east")
         loadTime = datetime.now()
         print("Start Loading ", datetime.now())
         ds = ds.load()
@@ -2478,6 +2526,8 @@ class FWF:
             - Needed for carry over to intilaze tomorrow's model run
         """
         self.initializer("hourly")
+        ## NOTE REMOVE THIS WHEN NOT USING ERA5 DATA!!!
+        self.hourly_ds = self.hourly_ds.isel(time=slice(0, 24))
         hourly_ds = self.hourly_loop()
         hourly_ds.attrs = self.attrs
 
@@ -2510,13 +2560,30 @@ class FWF:
         #     hourly_ds, self.daily_ds, ["F", "R", "S", "T", "W", "H"]
         # )
         # noon_ds = self.get_noon(hourly_ds, ["F", "R", "S"], carryover_rain=False)
+        # h1600_ds = self.get_noon(hourly_ds, ["F", "R", "S"], carryover_rain=False, offset_noon = 4)
         # print('max_ds', list(max_ds))
         # print('noon_ds', list(noon_ds))
+        # print('h1600_ds', list(h1600_ds))
         # print('self.daily_ds', list(self.daily_ds))
 
-        # daily_ds = xr.merge([max_ds, self.daily_ds, noon_ds])
+        # daily_ds = xr.merge([max_ds, self.daily_ds, noon_ds, h1600_ds])
         # print('daily_ds', list(daily_ds))
-        daily_ds = self.daily_ds
+        keep_vars = [
+            "F",
+            "P",
+            "D",
+            "r_o_tomorrow",
+            "R",
+            "U",
+            "S",
+            "DSR",
+            "T",
+            "W",
+            "H",
+            "r_o",
+        ]
+        daily_ds = self.daily_ds[keep_vars]
+        print("daily_ds", list(daily_ds))
         daily_ds.attrs = self.attrs
         for var in daily_ds.data_vars:
             daily_ds[var] = daily_ds[var].astype(dtype="float32")
@@ -2539,7 +2606,8 @@ class FWF:
         )
         writeTime = datetime.now()
         print("Start Write ", datetime.now())
-        keep_vars = ["F", "R", "S", "T", "W", "H", "r_o"]
+        keep_vars = ["F", "R", "S"]
+        # keep_vars = ['F', 'T', 'TD', 'U10', 'V10', 'W', 'WD', 'r_o', 'H', 'R', 'S']
         # hourly_ds = hourly_ds.drop(
         #     [var for var in list(hourly_ds) if var not in keep_vars]
         # )

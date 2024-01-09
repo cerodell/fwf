@@ -32,8 +32,8 @@ __email__ = "crodell@eoas.ubc.ca"
 
 
 ## define model domain and path to fwf data
-save_fig = True
-case_study = "oil_springs_fire"
+save_fig = False
+case_study = "heather_lake_fire"
 print(case_study)
 
 ################## END INPUTS ####################
