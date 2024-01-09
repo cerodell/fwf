@@ -20,8 +20,8 @@ from context import data_dir, fwf_dir
 from datetime import datetime, date, timedelta
 
 
-wrf_model = "wrf4"
-forecast_date = "2021051006"  ## "YYYYMMDDHH"
+wrf_model = "wrf3"
+forecast_date = "2018040106"  ## "YYYYMMDDHH"
 domain = "d02"  ## or 'd03'
 name = "hourly"  ## or 'daily'
 
@@ -132,5 +132,5 @@ elif wrf_model == "wrf4":
 else:
     pass
 
-
+print(save_dir)
 fig.savefig(save_dir, dpi=240)

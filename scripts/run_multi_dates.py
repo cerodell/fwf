@@ -27,8 +27,8 @@ __email__ = "crodell@eoas.ubc.ca"
 # ignore RuntimeWarning
 warnings.filterwarnings("ignore", category=RuntimeWarning)
 
-wrf_model = "wrf4"
-date_range = pd.date_range("2018-05-01", "2018-10-01")
+wrf_model = "wrf3"
+date_range = pd.date_range("2019-07-06", "2019-10-01")
 
 # """######### get directory to yesterdays hourly/daily .zarr files.  #############"""
 for date in date_range:
@@ -45,7 +45,7 @@ for date in date_range:
         print(wrf_file_dir)
 
         # """######### Open wrf_out.nc and write  new hourly/daily .zarr files #############"""
-        coeff = FWF(wrf_file_dir, domain, wrf_model, fbp_mode=False, initialize=False)
+        coeff = FWF(wrf_file_dir, domain, wrf_model, fbp_mode=True, initialize=False)
 
         coeff.daily()
         coeff.hourly()

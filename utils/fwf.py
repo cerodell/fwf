@@ -1,10 +1,8 @@
-#!/bluesky/fireweather/miniconda3/envs/fwf/bin/python
-
 """
 Class to solve the Fire Weather Indices using output from a numerical weather model
 """
 
-# import context
+import context
 import math
 import json
 import numpy as np
@@ -17,8 +15,7 @@ from pathlib import Path
 # from netCDF4 import Dataset
 from datetime import datetime
 from utils.read_wrfout import readwrf
-
-from context import data_dir, fwf_zarr_dir
+from context import data_dir, fwf_dir
 
 __author__ = "Christopher Rodell"
 __email__ = "crodell@eoas.ubc.ca"
@@ -26,17 +23,17 @@ __email__ = "crodell@eoas.ubc.ca"
 
 class FWF:
     """
-    Class to solve the Fire Weather Indices using output from a numerical weather model
+    Class to solve the Fire Weather Index System and the Fire Behavior Predictions System using output from a numerical weather model
 
     Parameters
     ----------
 
     wrf_file_dir: str
-        - File directory to (zarr) file of WRF met variables to calculate FWI
+        - File directory to (nc) file of WRF met variables to calculate FWI
     domain: str
         - the wrf domain tag, examples d03 or d02
     wrf_model: str
-        - the wrf version, this will be removed i n future version assuming WRFv4 is being used
+        - the wrf version, this will be removed in future versions assuming WRFv4 is being used
 
     fbp_mode: boolean
         - True, FBP will be resolved with FWI and both returned
@@ -51,12 +48,12 @@ class FWF:
     -------
 
     daily_ds: DataSet
-        Writes a DataSet (zarr) of daily
+        Writes a DataSet (nc) of daily
         - FWI indices/codes
         - Associated Meterology
 
     hourly_ds: DataSet
-        Writes a DataSet (zarr) of hourly
+        Writes a DataSet (nc) of hourly
         - FWI indices/codes
         - Associated Meterology
         - FBP products (if fbp_mode is True)
@@ -74,32 +71,111 @@ class FWF:
 
         """
         ### Read then open WRF dataset
-        if wrf_file_dir.endswith(".zarr"):
+        if wrf_file_dir.endswith(".nc"):
+            print("Re-run using nc file")
+            wrf_ds = xr.open_dataset(wrf_file_dir)
+            keep_vars = [
+                "SNOWC",
+                "SNOWH",
+                "SNW",
+                "T",
+                "TD",
+                "U10",
+                "V10",
+                "W",
+                "WD",
+                "r_o",
+            ]
+            wrf_ds = wrf_ds.drop([var for var in list(wrf_ds) if var not in keep_vars])
+            if np.max(wrf_ds.r_o.values[0]) or np.max(wrf_ds.SNW.values[0]) > 0:
+                exit
+            if np.max(wrf_ds.TD) < -100:
+                wrf_ds["TD"] = wrf_ds.TD + 273.15
+                RH = (
+                    (6.11 * 10 ** (7.5 * (wrf_ds.TD / (237.7 + wrf_ds.TD))))
+                    / (6.11 * 10 ** (7.5 * (wrf_ds.T / (237.7 + wrf_ds.T))))
+                    * 100
+                )
+                RH = xr.where(RH > 100, 100, RH)
+                RH = xr.DataArray(
+                    RH, name="H", dims=("time", "south_north", "west_east")
+                )
+                wrf_ds["H"] = RH
+            else:
+                RH = (
+                    (6.11 * 10 ** (7.5 * (wrf_ds.TD / (237.7 + wrf_ds.TD))))
+                    / (6.11 * 10 ** (7.5 * (wrf_ds.T / (237.7 + wrf_ds.T))))
+                    * 100
+                )
+                RH = xr.where(RH > 100, 100, RH)
+                RH = xr.DataArray(
+                    RH, name="H", dims=("time", "south_north", "west_east")
+                )
+                wrf_ds["H"] = RH
+            if np.min(wrf_ds.H) > 90:
+                raise ValueError("ERROR: Check TD unphysical RH values")
+
+            print(f"Min RH : {float(np.min(wrf_ds.H))}")
+            print(f"Mean RH : {float(np.mean(wrf_ds.H))}")
+            print(f"Max RH : {float(np.max(wrf_ds.H))}")
+            print(f"Min TD : {float(np.min(wrf_ds.TD))}")
+            print(f"Max TD : {float(np.max(wrf_ds.TD))}")
+            print(list(wrf_ds))
+            ### Read then open WRF dataset
+        elif wrf_file_dir.endswith(".zarr"):
             print("Re-run using zarr file")
             wrf_ds = xr.open_zarr(wrf_file_dir)
-            wrf_ds = wrf_ds.compute()
-            attrs = wrf_ds.r_o.attrs
-            wrf_ds["r_o"] = wrf_ds.r_o - wrf_ds.r_o.isel(time=0)
-            wrf_ds["r_o"].attrs = attrs
-            print(float(wrf_ds.r_o.isel(time=0).max()))
-            attrs = wrf_ds.SNW.attrs
-            wrf_ds["SNW"] = wrf_ds.SNW - wrf_ds.SNW.isel(time=0)
-            wrf_ds["SNW"].attrs = attrs
-            RH = (
-                (6.11 * 10 ** (7.5 * (wrf_ds.TD / (237.7 + wrf_ds.TD))))
-                / (6.11 * 10 ** (7.5 * (wrf_ds.T / (237.7 + wrf_ds.T))))
-                * 100
-            )
-            RH = xr.where(RH > 100, 100, RH)
-            wrf_ds["RH"] = wrf_ds["H"]
-            wrf_ds["H"] = RH
-            print(wrf_ds["H"].values.max())
-            wrf_ds = wrf_ds.drop_vars("RH")
-            print(list(wrf_ds))
+            keep_vars = [
+                "SNOWC",
+                "SNOWH",
+                "SNW",
+                "T",
+                "TD",
+                "U10",
+                "V10",
+                "W",
+                "WD",
+                "r_o",
+            ]
+            wrf_ds = wrf_ds.drop([var for var in list(wrf_ds) if var not in keep_vars])
+            if np.max(wrf_ds.r_o.values[0]) or np.max(wrf_ds.SNW.values[0]) > 0:
+                exit
+            if np.max(wrf_ds.TD) < -100:
+                wrf_ds["TD"] = wrf_ds.TD + 273.15
+                RH = (
+                    (6.11 * 10 ** (7.5 * (wrf_ds.TD / (237.7 + wrf_ds.TD))))
+                    / (6.11 * 10 ** (7.5 * (wrf_ds.T / (237.7 + wrf_ds.T))))
+                    * 100
+                )
+                RH = xr.where(RH > 100, 100, RH)
+                RH = xr.DataArray(
+                    RH, name="H", dims=("time", "south_north", "west_east")
+                )
+                wrf_ds["H"] = RH
+            else:
+                RH = (
+                    (6.11 * 10 ** (7.5 * (wrf_ds.TD / (237.7 + wrf_ds.TD))))
+                    / (6.11 * 10 ** (7.5 * (wrf_ds.T / (237.7 + wrf_ds.T))))
+                    * 100
+                )
+                RH = xr.where(RH > 100, 100, RH)
+                RH = xr.DataArray(
+                    RH, name="H", dims=("time", "south_north", "west_east")
+                )
+                wrf_ds["H"] = RH
+            if np.min(wrf_ds.H) > 90:
+                raise ValueError("ERROR: Check TD unphysical RH values")
 
+            print(f"Min RH : {float(np.min(wrf_ds.H))}")
+            print(f"Max RH : {float(np.max(wrf_ds.H))}")
+            print(f"Min TD : {float(np.min(wrf_ds.TD))}")
+            print(f"Max TD : {float(np.max(wrf_ds.TD))}")
+            print(list(wrf_ds))
         else:
             print("New-run, use readwrf to get vars from nc files")
             wrf_ds = readwrf(wrf_file_dir, domain, wright=False)
+
+        wrf_ds = wrf_ds.load()
         ## Get dataset attributes
         self.attrs = wrf_ds.attrs
 
@@ -143,13 +219,23 @@ class FWF:
             self.var_dict = json.load(fp)
 
         ## Open gridded static
-        static_ds = xr.open_zarr(
-            str(data_dir) + f"/static/static-vars-{wrf_model}-{domain}.zarr"
+        static_ds = xr.open_dataset(
+            str(data_dir) + f"/static/static-vars-{wrf_model}-{domain}.nc"
         )
 
         ## Define Static Variables for FPB
+        print(f"FBP Mode {fbp_mode}")
         self.fbp_mode = fbp_mode
-        self.ELV, self.LAT, self.LON, self.FUELS, self.GS, self.SAZ, self.tzone = (
+        (
+            self.ELV,
+            self.LAT,
+            self.LON,
+            self.FUELS,
+            self.GS,
+            self.SAZ,
+            self.tzone,
+            self.PC,
+        ) = (
             static_ds.HGT.values,
             static_ds.XLAT.values,
             static_ds.XLONG.values * -1,
@@ -157,6 +243,7 @@ class FWF:
             static_ds.GS.values,
             static_ds.SAZ.values,
             static_ds.ZoneDT.values,
+            static_ds.PC.values,
         )
 
         # ### Create an hourly datasets for use with their respected codes/indices
@@ -247,14 +334,12 @@ class FWF:
                 retrive_time = pd.to_datetime(str(int_time[0] - np.timedelta64(1, "D")))
                 retrive_time = retrive_time.strftime("%Y%m%d%H")
                 hourly_file_dir = (
-                    str(fwf_zarr_dir) + f"/fwf-hourly-{domain}-{retrive_time}.zarr"
+                    str(fwf_dir) + f"/fwf-hourly-{domain}-{retrive_time}.nc"
                 )
-                daily_file_dir = (
-                    str(fwf_zarr_dir) + f"/fwf-daily-{domain}-{retrive_time}.zarr"
-                )
+                daily_file_dir = str(fwf_dir) + f"/fwf-daily-{domain}-{retrive_time}.nc"
 
-                previous_hourly_ds = xr.open_zarr(hourly_file_dir)
-                previous_daily_ds = xr.open_zarr(daily_file_dir)
+                previous_hourly_ds = xr.open_dataset(hourly_file_dir)
+                previous_daily_ds = xr.open_dataset(daily_file_dir)
                 print(
                     f"{Path(hourly_file_dir).exists()}: Found previous FFMC on date {retrive_time}, will merge with hourly_ds"
                 )
@@ -271,14 +356,14 @@ class FWF:
                     )
                     retrive_time = retrive_time.strftime("%Y%m%d%H")
                     hourly_file_dir = (
-                        str(fwf_zarr_dir) + f"/fwf-hourly-{domain}-{retrive_time}.zarr"
+                        str(fwf_dir) + f"/fwf-hourly-{domain}-{retrive_time}.nc"
                     )
                     daily_file_dir = (
-                        str(fwf_zarr_dir) + f"/fwf-daily-{domain}-{retrive_time}.zarr"
+                        str(fwf_dir) + f"/fwf-daily-{domain}-{retrive_time}.nc"
                     )
 
-                    previous_hourly_ds = xr.open_zarr(hourly_file_dir)
-                    previous_daily_ds = xr.open_zarr(daily_file_dir)
+                    previous_hourly_ds = xr.open_dataset(hourly_file_dir)
+                    previous_daily_ds = xr.open_dataset(daily_file_dir)
                     print(
                         f"{Path(hourly_file_dir).exists()}: Found previous FFMC on date {retrive_time}, will merge with hourly_ds"
                     )
@@ -295,7 +380,7 @@ class FWF:
 
             # """ ################## Fine Fuel Moisture Code (FFMC) ##################### """
             ### Open previous days hourly_ds
-            previous_hourly_ds = xr.open_zarr(hourly_file_dir)
+            previous_hourly_ds = xr.open_dataset(hourly_file_dir)
             previous_time = np.array(previous_hourly_ds.Time.dt.strftime("%Y-%m-%dT%H"))
             previous_time = datetime.strptime(
                 str(previous_time[0]), "%Y-%m-%dT%H"
@@ -328,7 +413,7 @@ class FWF:
 
             # """ ####################   Daily Dataset    ##################### """
             ### Open previous days daily_ds
-            previous_daily_ds = xr.open_zarr(daily_file_dir)
+            previous_daily_ds = xr.open_dataset(daily_file_dir)
             previous_time = np.array(previous_daily_ds.Time.dt.strftime("%Y-%m-%dT%H"))
             try:
                 previous_time = datetime.strptime(
@@ -648,7 +733,7 @@ class FWF:
         P = P_r + K
         # Hold P to P_initial if snow cover is more than 50%
         P = xr.where(SNOWC > self.snowfract, self.P_initial, P)
-        P = xr.where(P < 0, 0.0, P)
+        P = xr.where(P < 0, 1.0, P)
 
         self.P = P
         return P
@@ -749,7 +834,7 @@ class FWF:
         D = D_r + V * 0.5
         # Hold D to D_initial if snow cover is more than 50%
         D = xr.where(SNOWC > self.snowfract, self.D_initial, D)
-        D = xr.where(D < 0, 0.0, D)
+        D = xr.where(D < 0, 1.0, D)
 
         self.D = D
         return D
@@ -758,7 +843,7 @@ class FWF:
     """ #################### Initial Spread Index #############################"""
     """########################################################################"""
 
-    def solve_isi(self, hourly_ds, fbp=False):
+    def solve_isi(self, hourly_ds, W, fbp=False):
         """
         Calculates the hourly initial spread index
 
@@ -929,44 +1014,65 @@ class FWF:
 
     def solve_fbp(self, hourly_ds):
         """
-        Calculates the hourly fire weather index and daily severity rating
+        Solves the Fire Behavior Predictions System at hourly intervals
 
+        Parameters
         ----------
-            W: datarray
-                - Wind speed, km/hr
-            F: datarray
-                - Fine fuel moisture code
-            R: datarray
-                - Initial spread index
-            S: datarray
-                - Fire weather index
-            DSR: datarray
-                - Daily severity rating
+        hourly_ds: DataSet
+            - Dataset of hourly forecast variables
+                - W: DataArray
+                    - Wind speed, km/hr
+                - F: DataArray
+                    - Fine fuel moisture code
+                - R: DataArray
+                    - Initial spread index
 
         Returns
         -------
-        S: datarray
-            - An datarray of FWI
-        DSR datarray
-            - An datarray of DSR
+        hourly_ds: DataSet
+            - Datarray of
+                - FMC: DataArray
+                    - Foliar Moisture Content, %
+                - SFC: DataArray
+                    - Surface Fuel Consumption, kg m^{-2}
+                - TFC: DataArray
+                    - Total Fuel Consumption, kg m^{-2}
+                - CFB: DataArray
+                    - Crown Fraction Burned, %
+                - ROS: DataArray
+                    - Rate of Spread, m min^{-1}
+                - HFI: DataArray
+                    - Head Fire Intensity, kW m^{-1}
         """
-
+        FBPloopTime = datetime.now()
+        print("Start of FBP")
         ## Open fuels converter
-        fc_df = pd.read_csv(str(data_dir) + "/fbp/fuel_converter.csv")
-        fc_df = fc_df.drop_duplicates(subset=["CFFDRS"])
-        fc_df["Code"] = fc_df["National_FBP_Fueltypes_2014"]
-        fc_df = fc_df.set_index("CFFDRS")
-        fc_dict = fc_df.transpose().to_dict()
-
-        daily_ds = self.daily_ds
-        ELV, LAT, LON, FUELS, GS, SAZ = (
+        # hourly_ds = self.rechunk(hourly_ds)
+        ELV, LAT, LON, FUELS, GS, SAZ, PC = (
             self.ELV,
             self.LAT,
             self.LON,
             self.FUELS,
             self.GS,
             self.SAZ,
+            self.PC,
         )
+        unique = np.unique(FUELS)
+
+        fc_df = pd.read_csv(str(data_dir) + "/fbp/fuel_converter.csv")
+        fc_df = fc_df.drop_duplicates(subset=["CFFDRS"])
+        fc_df["Code"] = fc_df["FWF_Code"]
+        drop_fuels = list(set(fc_df["Code"].values) - set(unique))
+        for code in drop_fuels:
+            fc_df = fc_df[fc_df["Code"] != code]
+        fc_df.loc[fc_df["CFFDRS"] == "M1 C25%", "CFFDRS"] = "M1"
+        fc_df = fc_df[~fc_df["CFFDRS"].str.contains("M1/")]
+        fc_df = fc_df.set_index("CFFDRS")
+        fc_dict = fc_df.transpose().to_dict()
+
+        daily_ds = self.daily_ds
+        # daily_ds = self.rechunk(daily_ds)
+
         ## Define Static Variables
         WD, dx, dy = (
             hourly_ds.WD,
@@ -995,7 +1101,6 @@ class FWF:
 
         ## Get day of year or Julian date
         date = pd.Timestamp(self.date)
-        print(date)
 
         D_j = int(date.strftime("%j"))
 
@@ -1015,15 +1120,20 @@ class FWF:
         ###################    Surface Fuel Consumption  #######################
         ########################################################################
         ## Define frequently used variables
-        FFMC, BUI, GFL, PC, PH = hourly_ds.F, daily_ds.U, 0.3, 50, 50
+        FFMC, BUI, GFL, PH = hourly_ds.F, daily_ds.U, 0.3, 50
         index = [i for i in range(1, len(FFMC) + 1) if i % 24 == 0]
         ## Build a BUI datarray fo equal length to hourly forecast bisecting is by day
         BUI_i = BUI.values
-        BUI_day1 = np.stack([BUI_i[0]] * index[0])
-        BUI_day2 = np.stack([BUI_i[1]] * (len(FFMC) - index[0]))
-        BUI = np.vstack([BUI_day1, BUI_day2])
+        try:
+            BUI_day1 = np.stack([BUI_i[0]] * index[0])
+            BUI_day2 = np.stack([BUI_i[1]] * (len(FFMC) - index[0]))
+            BUI = np.vstack([BUI_day1, BUI_day2])
+        except:
+            BUI = np.stack([BUI_i[0]] * len(FFMC))
+            print(len(BUI))
+
         BUI = xr.DataArray(BUI, name="BUI", dims=("time", "south_north", "west_east"))
-        hourly_ds["BUI"] = BUI
+        # hourly_ds["BUI"] = BUI
 
         ## Solve Surface Fuel Consumption for C1 Fuels adjusted from (Wotton et. al. 2009) (9)
         SFC = zero_full3D
@@ -1039,9 +1149,9 @@ class FWF:
 
         ## Solve Fuel Consumption for C2, M3, and M4 Fuels  (10)
         SFC = xr.where(
-            (FUELS == fc_dict["C2"]["Code"])
-            | (FUELS == fc_dict["M3"]["Code"])
-            | (FUELS == fc_dict["M4"]["Code"]),
+            (FUELS == fc_dict["C2"]["Code"]),
+            # | (FUELS == fc_dict["M3"]["Code"])
+            # | (FUELS == fc_dict["M4"]["Code"]),
             5.0 * (1 - np.exp(-0.0115 * BUI)),
             SFC,
         )
@@ -1055,7 +1165,7 @@ class FWF:
 
         ## Solve Fuel Consumption for C5, C6 Fuels  (12)
         SFC = xr.where(
-            (FUELS == fc_dict["C5"]["Code"]) | (FUELS == fc_dict["C6"]["Code"]),
+            (FUELS == fc_dict["C5"]["Code"]),  # | (FUELS == fc_dict["C6"]["Code"]),
             5.0 * (1 - np.exp(-0.0149 * BUI)) ** 2.48,
             SFC,
         )
@@ -1075,7 +1185,7 @@ class FWF:
 
         ## Solve Fuel Consumption for M1, M2 Fuels  (17)
         SFC = xr.where(
-            (FUELS == fc_dict["M1"]["Code"]) | (FUELS == fc_dict["M2"]["Code"]),
+            (FUELS == fc_dict["M1"]["Code"]),  # | (FUELS == fc_dict["M2"]["Code"]),
             PC / 100 * (5.0 * (1 - np.exp(-0.0115 * BUI)))
             + ((100 - PC) / 100 * (1.5 * (1 - np.exp(-0.0183 * BUI)))),
             SFC,
@@ -1088,59 +1198,38 @@ class FWF:
             SFC,
         )
 
-        ## Solve Fuel Consumption for S1 Fuels  (19, 20, 25)
-        SFC = xr.where(
-            (FUELS == fc_dict["S1"]["Code"]),
-            4.0 * (1 - np.exp(-0.025 * BUI)) + 4.0 * (1 - np.exp(-0.034 * BUI)),
-            SFC,
-        )
+        # ## Solve Fuel Consumption for S1 Fuels  (19, 20, 25)
+        # SFC = xr.where(
+        #     (FUELS == fc_dict["S1"]["Code"]),
+        #     4.0 * (1 - np.exp(-0.025 * BUI)) + 4.0 * (1 - np.exp(-0.034 * BUI)),
+        #     SFC,
+        # )
 
-        ## Solve Fuel Consumption for S2 Fuels  (21, 22, 25)
-        SFC = xr.where(
-            (FUELS == fc_dict["S2"]["Code"]),
-            10.0 * (1 - np.exp(-0.013 * BUI)) + 6.0 * (1 - np.exp(-0.060 * BUI)),
-            SFC,
-        )
+        # ## Solve Fuel Consumption for S2 Fuels  (21, 22, 25)
+        # SFC = xr.where(
+        #     (FUELS == fc_dict["S2"]["Code"]),
+        #     10.0 * (1 - np.exp(-0.013 * BUI)) + 6.0 * (1 - np.exp(-0.060 * BUI)),
+        #     SFC,
+        # )
 
-        ## Solve Fuel Consumption for S3 Fuels  (23, 24, 25)
-        SFC = xr.where(
-            (FUELS == fc_dict["S3"]["Code"]),
-            12.0 * (1 - np.exp(-0.0166 * BUI)) + 20.0 * (1 - np.exp(-0.0210 * BUI)),
-            SFC,
-        )
+        # ## Solve Fuel Consumption for S3 Fuels  (23, 24, 25)
+        # SFC = xr.where(
+        #     (FUELS == fc_dict["S3"]["Code"]),
+        #     12.0 * (1 - np.exp(-0.0166 * BUI)) + 20.0 * (1 - np.exp(-0.0210 * BUI)),
+        #     SFC,
+        # )
 
         # Remove negative SFC value
         SFC = xr.where(SFC <= 0, 0.01, SFC)
         SFC = xr.DataArray(SFC, name="SFC", dims=("time", "south_north", "west_east"))
         hourly_ds["SFC"] = SFC.astype(dtype="float32")
 
-        ###################   Rate of Spread Equations  #######################
-        #######################################################################
-        def solve_isi(hourly_ds, W, fbp=False):
-            W, F, m_o = W, hourly_ds.F, hourly_ds.m_o
-
-            ### (24) Solve for wind function (f_W) with condition for fbp
-            f_W = xr.where(
-                (W >= 40) & (fbp == True),
-                12 * (1 - np.exp(-0.0818 * (W - 28))),
-                np.exp(0.05039 * W),
-            )
-
-            ### (25) Solve for fine fuel moisture function (f_F)
-            f_F = 91.9 * np.exp(-0.1386 * m_o) * (1 + np.power(m_o, 5.31) / 4.93e7)
-
-            ### (26) Solve for initial spread index (R)
-            R = 0.208 * f_W * f_F
-            R = xr.DataArray(R, name="R", dims=("time", "south_north", "west_east"))
-
-            return R
-
         ## Define frequently used variables
         PDF = 35  # percent dead balsam fir default
         C = 80  # degree of curing(%)
         # ISI = hourly_ds.R
-        ISZ = solve_isi(hourly_ds, W=0, fbp=True)
-        hourly_ds["ISZ"] = ISZ.astype(dtype="float32")
+        ISZ = self.solve_isi(hourly_ds, W=0, fbp=True)
+        # hourly_ds["ISZ"] = ISZ.astype(dtype="float32")
 
         ## (O-1A grass) grass curing coefficient (Wotton et. al. 2009)
         CF = xr.where(
@@ -1160,6 +1249,18 @@ class FWF:
             )
             return ROS
 
+        ## General Rate of Spread Equation for C-1 to C-5, and C-7 (26)
+        # def solve_gen_ros(ROS, fueltype, ISI):
+        #     func = lambda ROS, fueltype, ISI: xr.where(FUELS == fc_dict[fueltype]["Code"],
+        #                                     fc_dict[fueltype]["a"]
+        #                                     * (
+        #                                         (1 - np.exp(-fc_dict[fueltype]["b"] * ISI))
+        #                                         ** fc_dict[fueltype]["c"]
+        #                                     ),
+        #                                     ROS,
+        #                                 )
+        #     return xr.apply_ufunc(func, ROS, fueltype, ISI)
+
         def solve_M_ros(fueltype, ISI):
             ROS = fc_dict[fueltype]["a"] * (
                 (1 - np.exp(-fc_dict[fueltype]["b"] * ISI)) ** fc_dict[fueltype]["c"]
@@ -1167,15 +1268,15 @@ class FWF:
             return ROS
 
         def solve_ros(ISI, FMC, PDF, fc_dict, *args):
-            ##  (M-3)
-            fc_dict["M3"]["a"] = 170 * np.exp(-35.0 / PDF)  # (29)
-            fc_dict["M3"]["b"] = 0.082 * np.exp(-36 / PDF)  # (30)
-            fc_dict["M3"]["c"] = 1.698 - 0.00303 * PDF  # (31)
+            # ##  (M-3)
+            # fc_dict["M3"]["a"] = 170 * np.exp(-35.0 / PDF)  # (29)
+            # fc_dict["M3"]["b"] = 0.082 * np.exp(-36 / PDF)  # (30)
+            # fc_dict["M3"]["c"] = 1.698 - 0.00303 * PDF  # (31)
 
-            ##  (M-4)
-            fc_dict["M4"]["a"] = 140 * np.exp(-35.5 / PDF)  # (22)
-            fc_dict["M4"]["b"] = 0.0404  # (33)
-            fc_dict["M4"]["c"] = 3.02 * np.exp(-0.00714 * PDF)  # (34)
+            # ##  (M-4)
+            # fc_dict["M4"]["a"] = 140 * np.exp(-35.5 / PDF)  # (22)
+            # fc_dict["M4"]["b"] = 0.0404  # (33)
+            # fc_dict["M4"]["c"] = 3.02 * np.exp(-0.00714 * PDF)  # (34)
 
             ROS = zero_full3D
             for fueltype in [
@@ -1186,11 +1287,11 @@ class FWF:
                 "C5",
                 "C7",
                 "D1",
-                "S1",
-                "S2",
-                "S3",
-                "M3",
-                "M4",
+                # "S1",
+                # "S2",
+                # "S3",
+                # "M3",
+                # "M4",
             ]:
                 ROS = solve_gen_ros(ROS, fueltype, ISI)
 
@@ -1203,13 +1304,13 @@ class FWF:
                 zero_full3D,
             )
 
-            ##  (M-2 green)   (28)
-            ROS_M2 = xr.where(
-                FUELS == fc_dict["M2"]["Code"],
-                ((PC / 100) * solve_M_ros("C2", ISI))
-                + (0.2 * ((PC / 100) * solve_M_ros("D1", ISI))),
-                zero_full3D,
-            )
+            # ##  (M-2 green)   (28)
+            # ROS_M2 = xr.where(
+            #     FUELS == fc_dict["M2"]["Code"],
+            #     ((PC / 100) * solve_M_ros("C2", ISI))
+            #     + (0.2 * ((PC / 100) * solve_M_ros("D1", ISI))),
+            #     zero_full3D,
+            # )
 
             ROS_O1a = xr.where(
                 (FUELS == fc_dict["O1a"]["Code"]),
@@ -1229,56 +1330,58 @@ class FWF:
             )
             if args:
                 ## Surface spread rate
-                ROS = ROS + ROS_M1 + ROS_M2 + ROS_O1a + ROS_O1b
+                ROS = ROS + ROS_M1 + ROS_O1a + ROS_O1b
+                # ROS = ROS + ROS_M1 + ROS_M2 + ROS_O1a + ROS_O1b
                 ROS = ROS * BE
             else:
-                ROS = ROS + ROS_M1 + ROS_M2 + ROS_O1a + ROS_O1b
+                ROS = ROS + ROS_M1 + ROS_O1a + ROS_O1b
+                # ROS = ROS + ROS_M1 + ROS_M2 + ROS_O1a + ROS_O1b
 
             return ROS
 
-        def solve_c6(ISI, FMC, fc_dict, *args):
-            ##  (C-6) Conifer plantation spread rate
-            T = 1500 - 2.75 * FMC  # (59)
-            h = 460 + 25.9 * FMC  # (60)
-            FME = (((1.5 - 0.00275 * FMC) ** 4.0) / (460 + (25.9 * FMC))) * 1000  # (61)
+        # def solve_c6(ISI, FMC, fc_dict, *args):
+        #     ##  (C-6) Conifer plantation spread rate
+        #     T = 1500 - 2.75 * FMC  # (59)
+        #     h = 460 + 25.9 * FMC  # (60)
+        #     FME = (((1.5 - 0.00275 * FMC) ** 4.0) / (460 + (25.9 * FMC))) * 1000  # (61)
 
-            ROS_C6 = xr.where(
-                (FUELS == fc_dict["C6"]["Code"]),
-                30 * (1 - np.exp(-0.08 * ISI)) ** 3.0,
-                zero_full3D,
-            )
+        #     ROS_C6 = xr.where(
+        #         (FUELS == fc_dict["C6"]["Code"]),
+        #         30 * (1 - np.exp(-0.08 * ISI)) ** 3.0,
+        #         zero_full3D,
+        #     )
 
-            if args:
-                ## (63)
-                RSS = ROS_C6 * BE
-                ## (64)
-                RSC = xr.where(
-                    (FUELS == fc_dict["C6"]["Code"]),
-                    60 * (1 - np.exp(-0.0497 * ISI)) ** 1.0 * (FME / 0.778),
-                    zero_full3D,
-                )
-                ## (56)
-                CSI = 0.001 * (fc_dict["C6"]["CBH"] ** 1.5) * (460 + 25.9 * FMC) ** 1.5
-                ## (57)
-                RSO = CSI / (300 * SFC)
-                ## (58)
-                CFB = xr.where(RSS > RSO, 1 - np.exp(-0.23 * (RSS - RSO)), 0)
-                CFB = xr.where(CFB < 0, 0.0, CFB)
-                # CFB = 1 - np.exp(-0.23 * (ROS_C6 - RSO))
-                ## (65)
-                ROS = np.where(
-                    FUELS == fc_dict["C6"]["Code"], RSS + CFB * (RSC - RSS), zero_full3D
-                )
-            else:
-                ROS = ROS_C6
+        #     if args:
+        #         ## (63)
+        #         RSS = ROS_C6 * BE
+        #         ## (64)
+        #         RSC = xr.where(
+        #             (FUELS == fc_dict["C6"]["Code"]),
+        #             60 * (1 - np.exp(-0.0497 * ISI)) ** 1.0 * (FME / 0.778),
+        #             zero_full3D,
+        #         )
+        #         ## (56)
+        #         CSI = 0.001 * (fc_dict["C6"]["CBH"] ** 1.5) * (460 + 25.9 * FMC) ** 1.5
+        #         ## (57)
+        #         RSO = CSI / (300 * SFC)
+        #         ## (58)
+        #         CFB = xr.where(RSS > RSO, 1 - np.exp(-0.23 * (RSS - RSO)), 0)
+        #         CFB = xr.where(CFB < 0, 0.0, CFB)
+        #         # CFB = 1 - np.exp(-0.23 * (ROS_C6 - RSO))
+        #         ## (65)
+        #         ROS = np.where(
+        #             FUELS == fc_dict["C6"]["Code"], RSS + CFB * (RSC - RSS), zero_full3D
+        #         )
+        #     else:
+        #         ROS = ROS_C6
 
-            return ROS
+        #     return ROS
 
         ## Surface spread rate with zero wind on level terrain
         RSZ = solve_ros(ISZ, FMC, PDF, fc_dict)
-        RSZ_C6 = solve_c6(ISZ, FMC, fc_dict)
-        RSZ = RSZ + RSZ_C6
-        hourly_ds["RSZ"] = RSZ
+        # RSZ_C6 = solve_c6(ISZ, FMC, fc_dict)
+        # RSZ = RSZ + RSZ_C6
+        # hourly_ds["RSZ"] = RSZ
 
         ###################   Effect of Slope on Rate of Spread  #######################
         ################################################################################
@@ -1291,7 +1394,7 @@ class FWF:
 
         ## Surface spread rate with zero wind, upslope (40)
         RSF = RSZ * SF
-        hourly_ds["RSF"] = RSF.astype(dtype="float32")
+        # hourly_ds["RSF"] = RSF.astype(dtype="float32")
 
         ## Solve ISF (ie ISI, with zero wind upslope) for the majority of fuels (41)
         ## NOTE adjusted base don 41a, 41b (Wotton 2009)
@@ -1312,6 +1415,23 @@ class FWF:
             )
             return ISF
 
+        # def solve_isf(ISF, fueltype, RSF):
+        #     func = lambda ISF, fueltype, RSF:  xr.where(
+        #         FUELS == fc_dict[fueltype]["Code"],
+        #         xr.where(
+        #             (1 - (RSF / fc_dict[fueltype]["a"]) ** (1 / fc_dict[fueltype]["c"]))
+        #             >= 0.01,
+        #             np.log(
+        #                 1
+        #                 - (RSF / fc_dict[fueltype]["a"]) ** (1 / fc_dict[fueltype]["c"])
+        #             )
+        #             / -fc_dict[fueltype]["b"],
+        #             np.log(0.01) / -fc_dict[fueltype]["b"],
+        #         ),
+        #         ISF,
+        #     )
+        #     return xr.apply_ufunc(func, ISF, fueltype, RSF)
+
         ISF = zero_full3D
         for fueltype in [
             "C1",
@@ -1319,18 +1439,18 @@ class FWF:
             "C3",
             "C4",
             "C5",
-            "C6",
+            # "C6",
             "C7",
             "D1",
-            "S1",
-            "S2",
-            "S3",
+            # "S1",
+            # "S2",
+            # "S3",
         ]:
             ISF = solve_isf(ISF, fueltype, RSF)
 
         ## Solve ISF (ie ISI, with zero wind upslope) for M1 and M2 (42)
         ISF_M1M2 = xr.where(
-            (FUELS == fc_dict["M1"]["Code"]) | (FUELS == fc_dict["M2"]["Code"]),
+            (FUELS == fc_dict["M1"]["Code"]),  # | (FUELS == fc_dict["M2"]["Code"]),
             np.log(
                 1
                 - ((100 - RSF) / (PC * fc_dict["C2"]["a"])) ** (1 / fc_dict["C2"]["c"])
@@ -1356,7 +1476,7 @@ class FWF:
 
         ## Combine all ISFs (ie ISI, with zero wind upslope)
         ISF = ISF + ISF_M1M2 + ISF_O1a + ISF_O1b
-        hourly_ds["ISF"] = ISF.astype(dtype="float32")
+        # hourly_ds["ISF"] = ISF.astype(dtype="float32")
 
         ### (25) Solve for fine fuel moisture function (f_F)
         m_o = hourly_ds.m_o
@@ -1394,7 +1514,7 @@ class FWF:
         RAZ = xr.where(WSX < 0, 360 - RAZ, RAZ)
 
         ## Solve ISI equation (from the FWI System) (52, 53, 53a)
-        ISI = solve_isi(hourly_ds, WSV, fbp=True)
+        ISI = self.solve_isi(hourly_ds, WSV, fbp=True)
 
         hourly_ds["ISI"] = ISI.astype(dtype="float32")
 
@@ -1417,13 +1537,29 @@ class FWF:
             )
             return BE
 
+        # def solve_be(BE, fueltype, BUI):
+        #     func = lambda BE, fueltype, BUI: xr.where(
+        #         FUELS == fc_dict[fueltype]["Code"],
+        #         xr.where(
+        #             (BUI > 0) & (fc_dict[fueltype]["BUI_o"] > 0),
+        #             np.exp(
+        #                 50
+        #                 * np.log(fc_dict[fueltype]["q"])
+        #                 * ((1 / BUI) - (1 / fc_dict[fueltype]["BUI_o"]))
+        #             ),
+        #             1,
+        #         ),
+        #         BE,
+        #     )
+        #     return xr.apply_ufunc(func, BE, fueltype, BUI)
+
         BE = zero_full3D
         for fueltype in fc_df.index.values[:-8]:
             BE = solve_be(BE, fueltype, BUI)
 
         ROS = solve_ros(ISI, FMC, PDF, fc_dict, BE)
-        ROS_C6 = solve_c6(ISI, FMC, fc_dict, BE)
-        ROS = ROS + ROS_C6
+        # ROS_C6 = solve_c6(ISI, FMC, fc_dict, BE)
+        # ROS = ROS + ROS_C6
         ROS = xr.where(ROS < 0, 0.0, ROS)
         hourly_ds["ROS"] = ROS.astype(dtype="float32")
 
@@ -1477,6 +1613,7 @@ class FWF:
         HFI = 300 * TFC * ROS
         # print('HFI', np.max(HFI.values))
         hourly_ds["HFI"] = HFI.astype(dtype="float32")
+        print(f"End of FBP with run time of {datetime.now() - FBPloopTime}")
 
         return hourly_ds
 
@@ -1494,18 +1631,6 @@ class FWF:
         ----------
             wrf_ds: DataSet
                 WRF dataset at 4-km spatial resolution and one hour tempolar resolution
-                    - tzdict:  dictionary
-                        - Dictionary of all times zones in North America and their respective offsets to UTC
-                    - zone_id: in
-                        - ID of model domain with hours off set from UTC
-                    - noon: int
-                        - 1200 local index based on ID
-                    - plus: int
-                        - 1300 local index based on ID
-                    - minus: int
-                        - 1100 local index based on ID
-                    - tzone_ds: dataset
-                        - Gridded 2D array of zone_id
 
         Returns
         -------
@@ -1607,7 +1732,7 @@ class FWF:
 
         Returns
         -------
-        daily_ds: DataSet
+        hourly_ds: DataSet
             A xarray DataSet with all the hourly FWI codes/indices solved
         """
 
@@ -1618,12 +1743,10 @@ class FWF:
             [self.solve_ffmc(self.hourly_ds.isel(time=i)) for i in range(length)],
             "time",
         )
-        # P    = xr.combine_nested([self.solve_dmc(self.hourly_ds.isel(time=i)) for i in range(length)], 'time')
-        # P    = P.to_dataset(name="P")
         print(f"Hourly loop done, Time: {datetime.now() - loopTime}")
         hourly_ds = xr.merge([FFMC, self.hourly_ds])
 
-        ISI = self.solve_isi(hourly_ds, fbp=False)
+        ISI = self.solve_isi(hourly_ds, hourly_ds.W, fbp=False)
         hourly_ds["R"] = ISI
         self.R = ISI
         FWI, DSR = self.solve_fwi()
@@ -1670,10 +1793,19 @@ class FWF:
         return daily_ds
 
     def rechunk(self, ds):
+        ds = ds.load()
         ds = ds.chunk(chunks="auto")
         ds = ds.unify_chunks()
+        return ds
+
+    def prepare_ds(self, ds):
+        loadTime = datetime.now()
+        print("Start Loading ", datetime.now())
+        ds = ds.load()
         for var in list(ds):
             ds[var].encoding = {}
+        print("Load Time: ", datetime.now() - loadTime)
+
         return ds
 
     """#######################################"""
@@ -1682,12 +1814,12 @@ class FWF:
 
     def hourly(self):
         """
-        Writes hourly_ds (.zarr) and adds the appropriate attributes to each variable
+        Writes hourly_ds (.nc) and adds the appropriate attributes to each variable
 
         Returns
         -------
         make_dir: str
-            - File directory to (zarr) file of todays hourly FWI codes
+            - File directory to (nc) file of todays hourly FWI codes
             - Needed for carry over to intilaze tomorrow's model run
         """
         hourly_ds = self.hourly_loop()
@@ -1703,18 +1835,18 @@ class FWF:
         file_date = datetime.strptime(str(file_date), "%Y-%m-%dT%H").strftime(
             "%Y%m%d%H"
         )
-        print("Hourly zarr initialized at :", file_date)
+        print("Hourly nc initialized at :", file_date)
 
-        # # ## Write and save DataArray (.zarr) file
+        # # ## Write and save DataArray (.nc) file
         make_dir = Path(
-            str(fwf_zarr_dir)
-            + str("/fwf-hourly-")
-            + self.domain
-            + str(f"-{file_date}.zarr")
+            str(fwf_dir) + str("/fwf-hourly-") + self.domain + str(f"-{file_date}.nc")
         )
-        make_dir.mkdir(parents=True, exist_ok=True)
-        hourly_ds = self.rechunk(hourly_ds)
-        hourly_ds.to_zarr(make_dir, mode="w")
+        # make_dir.mkdir(parents=True, exist_ok=True)
+        hourly_ds = self.prepare_ds(hourly_ds)
+        writeTime = datetime.now()
+        print("Start Write ", datetime.now())
+        hourly_ds.to_netcdf(make_dir, mode="w")
+        print("Write Time: ", datetime.now() - writeTime)
         print(f"wrote working {make_dir}")
 
         return str(make_dir)
@@ -1725,12 +1857,12 @@ class FWF:
 
     def daily(self):
         """
-        Writes daily_ds (.zarr) and adds the appropriate attributes to each variable
+        Writes daily_ds (.nc) and adds the appropriate attributes to each variable
 
         Returns
         -------
         make_dir: str
-            - File directory to (zarr) file of todays daily FWI codes
+            - File directory to (nc) file of todays daily FWI codes
             - Needed for carry over to intilaze tomorrow's model run
         """
         daily_ds = self.daily_loop()
@@ -1747,19 +1879,19 @@ class FWF:
             "%Y%m%d%H"
         )
 
-        print("Daily zarr initialized at :", file_date)
+        print("Daily nc initialized at :", file_date)
 
-        # # ## Write and save DataArray (.zarr) file
+        # # ## Write and save DataArray (.nc) file
         make_dir = Path(
-            str(fwf_zarr_dir)
-            + str("/fwf-daily-")
-            + self.domain
-            + str(f"-{file_date}.zarr")
+            str(fwf_dir) + str("/fwf-daily-") + self.domain + str(f"-{file_date}.nc")
         )
-        make_dir.mkdir(parents=True, exist_ok=True)
-        daily_ds = self.rechunk(daily_ds)
+        # make_dir.mkdir(parents=True, exist_ok=True)
+        daily_ds = self.prepare_ds(daily_ds)
         self.daily_ds = daily_ds
-        daily_ds.to_zarr(make_dir, mode="w")
+        writeTime = datetime.now()
+        print("Start Write ", datetime.now())
+        daily_ds.to_netcdf(make_dir, mode="w")
+        print("Write Time: ", datetime.now() - writeTime)
         print(f"wrote working {make_dir}")
 
         return str(make_dir)

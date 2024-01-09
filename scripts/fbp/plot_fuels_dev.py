@@ -24,7 +24,7 @@ print("RUN STARTED AT: ", str(startTime))
 
 ## Choose wrf domain
 domain = "d02"
-wrf_model = "wrf4"
+wrf_model = "wrf3"
 save_file = f"/images/cffdrs-{wrf_model}-{domain}-2019.png"
 save_dir = str(data_dir) + save_file
 

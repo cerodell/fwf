@@ -10,8 +10,8 @@ from context import data_dir, xr_dir, wrf_dir, tzone_dir
 from datetime import datetime, date, timedelta
 
 
-domain = "d03"
-wrf_model = "wrf4"
+domain = "d02"
+wrf_model = "wrf3"
 
 ### Open Fuel converter spreadsheet
 fuel_converter = str(data_dir) + "/fbp/fuel_converter_dev.csv"
@@ -185,7 +185,7 @@ static_ds.FUELS.attrs = {
 ## Write to static dataset to zarr file and load all arrays to memory
 static_ds = static_ds.compute()
 
-static_ds.to_zarr(
-    str(data_dir) + f"/static/static-vars-{wrf_model}-{domain}-dev.zarr", mode="w"
+static_ds.to_netcdf(
+    str(data_dir) + f"/static/static-vars-{wrf_model}-{domain}.nc", mode="w"
 )
-print(f"Wrote: {str(data_dir)}/static/static-vars-{wrf_model}-{domain}-dev.zarr")
+print(f"Wrote: {str(data_dir)}/static/static-vars-{wrf_model}-{domain}.nc")
