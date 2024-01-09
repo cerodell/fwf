@@ -9,7 +9,7 @@ from pathlib import Path
 from datetime import datetime
 
 from utils.compressor import compressor
-
+from utils.climatology import get_daily_files, hour_qunt, rechunk, open_ds, concat_ds
 from context import root_dir
 
 ## https://stackoverflow.com/questions/49620140/get-hourly-average-for-each-month-from-a-netcds-file
@@ -24,90 +24,19 @@ method = "hourly"
 start = "1991-01-01"
 stop = "2020-12-31"
 
-# ## open fwf attributes
-# with open(str(root_dir) + f"/json/fwf-attrs.json", "r") as fp:
-#     attrs = json.load(fp)
 
 ## open additional fwf attributes
 with open(str(root_dir) + f"/json/colormaps-dev.json", "r") as fp:
     attrs_plus = json.load(fp)
 
-# mask = xr.open_dataset("/Volumes/WFRT-Ext25/ecmwf/era5-land/202201/era5-land-2022010100.nc").isel(time =0).notnull().rename({'t2m': 'S'})['S'].values
 
-
-def get_daily_files(fwf, method, start, stop):
-    if fwf == True:
-        ## get all fwf data derived from era5-land
-        pathlist = sorted(
-            Path("/Volumes/WFRT-Ext23/fwf-data/ecmwf/era5-land/04/").glob(
-                f"fwf-{method}*"
-            )
-        )
-    else:
-        root = Path("/Volumes/WFRT-Ext25/ecmwf/era5-land/")
-
-        # Get all monthly folders in the root path
-        monthly_folders = [folder for folder in root.glob("*") if folder.is_dir()]
-
-        # Iterate through each monthly folder
-        daily_files = []
-        for monthly_folder in monthly_folders:
-            # Get all daily files in the current monthly folder
-            daily_files.extend(
-                list(monthly_folder.glob("**/*.nc"))
-            )  # Change the pattern accordingly
-
-        pathlist = sorted(daily_files)
-
-    date_range = pd.date_range(str(pathlist[0])[-13:-5], str(pathlist[-1])[-13:-5])
-    pathlist = pathlist[
-        int(np.where(date_range == start)[0][0]) : int(
-            np.where(date_range == stop)[0][0]
-        )
-        + 1
-    ]
-
-    return pathlist
-
-
-def hour_qunt(x):
-    """
-    function groups time to hourly and solves hourly mean
-
-    """
-    # x = x.chunk({'time': -1})
-    x = rechunk(x)
-    return x.groupby("time.hour").quantile(
-        [0, 0.25, 0.5, 0.75, 0.9, 0.95, 0.99, 1.0], dim="time"
-    )
-
-
-# def open_ds(path):
-#     ds = xr.open_dataset(path, chunks= 'auto')[var].drop(['XLAT', 'XLONG'])
-#     ds['time'] = ds['Time']
-#     return ds.drop(['Time'])
-
-
-def rechunk(ds):
-    ds = ds.chunk(chunks="auto")
-    ds = ds.unify_chunks()
-    return ds
-
-
+## get all files for era5-land of fwf
 pathlist = get_daily_files(fwf, method, start, stop)
-ds = salem.open_xr_dataset(str(pathlist[0]))["S"].chunk("auto")
 
 ## open =, chunk and combine into single dask chunk dataset
 open = datetime.now()
 print("Start opening: ", open)
-ds = xr.concat(
-    [
-        xr.open_dataset(path, chunks="auto")[var].drop(["XLAT", "XLONG"])
-        for path in pathlist
-    ],
-    dim="time",
-).to_dataset()
-# ds_full = xr.concat([open_ds(path) for path in pathlist],dim = 'time').to_dataset()
+ds = concat_ds(pathlist, var)
 print("Opening Time: ", datetime.now() - open)
 
 
@@ -116,23 +45,18 @@ print("Start rechunking: ", rechunk_time)
 ds = rechunk(ds)
 print("rechunk Time: ", datetime.now() - rechunk_time)
 
-drop_time = datetime.now()
-print("Start dropping: ", drop_time)
-ds["time"] = ds["Time"]
-ds = ds.drop(["Time"])
-print("Dropping Time: ", datetime.now() - drop_time)
-
-
-rechunk_time = datetime.now()
-print("Start rechunking: ", rechunk_time)
-ds = rechunk(ds)
-print("rechunk Time: ", datetime.now() - rechunk_time)
-
-
 group = datetime.now()
 print("Start Grouping: ", group)
-# ds = ds.groupby('time.dayofyear').apply(hour_qunt)
-ds = ds.groupby("time.month").apply(hour_qunt)
+if method == "daily":
+    ## group data into dayofyear and solve for quantiles for each day over the 30 years
+    ds = ds.groupby("time.dayofyear").quantile(
+        [0, 0.25, 0.5, 0.75, 0.9, 0.95, 0.99, 1.0], dim="time"
+    )
+elif method == "hourly":
+    ## group data into hours for each month and solve for quantiles for each hour on each month over the 30 years
+    ds = ds.groupby("time.month").apply(hour_qunt)
+else:
+    raise ValueError(f"Not a valid method: {method}")
 print("Grouping Time: ", datetime.now() - group)
 
 
@@ -141,11 +65,7 @@ ds.attrs["pyproj_srs"] = "+proj=longlat +datum=WGS84 +no_defs"
 ds.attrs[
     "description"
 ] = f"30 year ({start.replace('-','')}-{stop.replace('-','')}) climatology"
-
-# ds[var].attrs = attrs[var]
-# ds[var].attrs['abbr'] = attrs_plus[var]['name']
 ds[var].attrs["pyproj_srs"] = "+proj=longlat +datum=WGS84 +no_defs"
-
 
 rechunk_time = datetime.now()
 print("Start rechunking: ", rechunk_time)
@@ -163,6 +83,30 @@ ds.to_netcdf(
     # encoding = encoding
 )
 print("Write Time: ", datetime.now() - write)
+
+
+# group = datetime.now()
+# print("Start Grouping: ", group)
+# ds_dayofyear = ds.groupby('time.dayofyear').apply(hour_qunt)
+# print("Day of year Time: ", datetime.now() - group)
+
+# group = datetime.now()
+# print("Start Grouping: ", group)
+# ds_month = ds.groupby('time.month').apply(hour_qunt)
+# print("Month Time: ", datetime.now() - group)
+
+
+# rechunk_time = datetime.now()
+# print("Start rechunking: ", rechunk_time)
+# ds = rechunk(ds)
+# print("rechunk Time: ", datetime.now() - rechunk_time)
+
+# drop_time = datetime.now()
+# print("Start dropping: ", drop_time)
+# ds["time"] = ds["Time"]
+# ds = ds.drop(["Time"])
+# print("Dropping Time: ", datetime.now() - drop_time)
+
 
 # di, dj = 517, 237
 # for i in range(0,3):
