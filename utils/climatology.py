@@ -19,9 +19,9 @@ def get_daily_files(fwf, method, start, stop):
                 f"fwf-{method}*"
             )
         )
+        x, y = "west_east", "south_north"
     else:
         root = Path("/Volumes/WFRT-Ext25/ecmwf/era5-land/")
-
         # Get all monthly folders in the root path
         monthly_folders = [folder for folder in root.glob("*") if folder.is_dir()]
 
@@ -34,6 +34,7 @@ def get_daily_files(fwf, method, start, stop):
             )  # Change the pattern accordingly
 
         pathlist = sorted(daily_files)
+        x, y = "longitude", "latitude"
 
     date_range = pd.date_range(str(pathlist[0])[-13:-5], str(pathlist[-1])[-13:-5])
     pathlist = pathlist[
@@ -43,7 +44,15 @@ def get_daily_files(fwf, method, start, stop):
         + 1
     ]
 
-    return pathlist
+    return pathlist, x, y
+
+
+# def hour_qunt(x):
+#     """
+#     function groups time to hourly and solves hourly mean
+
+#     """
+#     return x.groupby("time.hour").max(dim="time", engine='flox',method='cohorts', skipna = False)
 
 
 def hour_qunt(x):
@@ -51,32 +60,85 @@ def hour_qunt(x):
     function groups time to hourly and solves hourly mean
 
     """
-    x = x.chunk({"time": -1})
     # x = rechunk(x)
-    return x.groupby("time.hour", allow_rechunk=True).quantile(
-        [0, 0.25, 0.5, 0.75, 0.9, 0.95, 0.99, 1.0], dim="time"
+    x = x.chunk({"time": -1})
+    return x.groupby("time.hour").quantile(
+        [0, 0.25, 0.5, 0.75, 0.9, 0.95, 0.99, 1],
+        dim="time",
+        skipna=False,
     )
 
 
-def rechunk(ds):
-    ds = ds.chunk(chunks="auto")
-    ds = ds.unify_chunks()
-    return ds
-
-
-def open_ds(path, var):
-    ds = xr.open_dataset(path, chunks="auto")[var].drop(["XLAT", "XLONG"])
+def open_ds(path, var, x, y):
+    ds = (
+        xr.open_dataset(path)[var]
+        .drop(["XLAT", "XLONG"])
+        .chunk(chunks={y: 237, x: 517})
+    )
     ds["time"] = ds["Time"]
     ds = ds.drop(["Time"])
     return ds
 
 
-# def concat_ds(pathlist, var):
-#     return xr.concat([xr.open_dataset(path, chunks="auto")[var].drop(["XLAT", "XLONG"])for path in pathlist],dim="time",).to_dataset()
+def concat_ds(pathlist, var, x, y):
+    return (
+        xr.concat(
+            [open_ds(path, var, x, y) for path in pathlist],
+            dim="time",
+        )
+        .to_dataset()
+        .convert_calendar("noleap")
+    )
 
 
-def concat_ds(pathlist, var):
-    return xr.combine_nested(
-        [open_ds(path, var) for path in pathlist],
-        "time",
-    ).to_dataset()
+def slice_ds(ds_full, i, j, di, dj):
+    ii = i + 1
+    jj = j + 1
+    slicing = datetime.now()
+    print("Start Slicing: ", slicing)
+    try:
+        ds = ds_full.isel(
+            latitude=slice(j * dj, jj * dj), longitude=slice(i * di, ii * di)
+        ).copy(deep=True)
+    except:
+        ds = ds_full.isel(
+            south_north=slice(j * dj, jj * dj), west_east=slice(i * di, ii * di)
+        ).copy(deep=True)
+    print("Slicing Time: ", datetime.now() - slicing)
+    return ds
+
+
+# ds = xr.open_dataset(str(pathlist[0][0]))['S'].isel(time = 0).drop(['XLAT', 'XLONG', 'Time'])
+# ds_slice = xr.open_zarr(str(save_dir) + f"/{var}-{method}-climatology-{start.replace('-','')}-{stop.replace('-','')}-i0j0.zarr")
+# dayofyear = ds_slice['dayofyear'].values
+# hour = ds_slice['hour'].values
+# south_north = ds['south_north'].values
+# west_east = ds['west_east'].values
+# da = xr.DataArray(
+#     data=np.full((len(dayofyear), len(hour), len(south_north), len(west_east)), np.nan),
+#     name = var,
+#     dims=["dayofyear", "hour", "south_north", "west_east"],
+#     coords=dict(
+#         south_north = south_north,
+#         west_east = west_east,
+#         dayofyear = dayofyear,
+#         hour=hour,
+#     )
+# )
+# # (24, 711, 1551)
+# # (24, 711/3, 1551/3) = (24, 237, 517)
+# # (24, 711/9, 1551/11) = (24, 79, 141)
+# file_names = []
+# di, dj = 517, 237
+# for i in range(0,3):
+#     ii = i +1
+#     for j in range(0,3):
+#         jj = j+1
+#         try:
+#             ds_slice = xr.open_zarr(str(save_dir) + f"/{var}-{method}-climatology-{start.replace('-','')}-{stop.replace('-','')}-i{i}j{j}.zarr")
+#             da[:, :, j*dj: jj*dj, i*di: ii*di] = ds_slice['S']
+#             file_names.append(str(save_dir) + f"/{var}-{method}-climatology-{start.replace('-','')}-{stop.replace('-','')}-i{i}j{j}.zarr")
+#         except:
+#             pass
+
+# da.isel(dayofyear=189, hour =0).plot()
