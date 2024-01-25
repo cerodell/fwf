@@ -21,29 +21,27 @@ from context import data_dir
 
 startTime = datetime.now()
 print("RUN STARTED AT: ", str(startTime))
-model = "wrf"
-domain = "d02"
+model = "ecmwf"
+domain = "era5-land"
 timestep = "hourly"
-doi = pd.Timestamp("2021-02-10T06")
+doi = pd.Timestamp("2020-06-10T00")
 
 ## test fwf with an hourly_ds
-filein_dir = f"/Volumes/Scratch/fwf-data/wrf/d02/"
+filein_dir = f"/Volumes/WFRT-Ext23/fwf-data/ecmwf/era5-land/04/"
 
-filein_dir_old = f"/Volumes/WFRT-Ext24/fwf-data/wrf/d02/02"
+# filein_dir_old = f"/Volumes/WFRT-Ext24/fwf-data/wrf/d02/02"
 
 
 hourly_ds = xr.open_dataset(
-    str(filein_dir)
-    + f"{doi.strftime('%Y%m')}/fwf-{timestep}-{domain}-{doi.strftime('%Y%m%d%H')}.nc"
+    str(filein_dir) + f"/fwf-{timestep}-{domain}-{doi.strftime('%Y%m%d%H')}.nc"
 )
 daily_ds_og = salem.open_xr_dataset(
-    str(filein_dir)
-    + f"{doi.strftime('%Y%m')}/fwf-daily-{domain}-{doi.strftime('%Y%m%d%H')}.nc"
+    str(filein_dir) + f"/fwf-daily-{domain}-{doi.strftime('%Y%m%d%H')}.nc"
 )
 
 ## Open gridded static
 static_ds = salem.open_xr_dataset(
-    str(data_dir) + f"/static/static-vars-wrf-{domain}.nc"
+    str(data_dir) + f"/static/static-vars-{model}-{domain}.nc"
 )
 tzone_array = static_ds.ZoneST.values
 shape = tzone_array.shape
@@ -123,41 +121,44 @@ daily_ds = xr.combine_nested(files_ds, "time")
 print("numpy indexing time: ", datetime.now() - np_startTime)
 
 
-new_rain = daily_ds.isel(time=1) - daily_ds.isel(time=0)
-old_rain = daily_ds_og["r_o"].isel(time=0)
-diff_rain = new_rain - old_rain
+# new_rain = daily_ds.isel(time=1) - daily_ds.isel(time=0)
+# old_rain = daily_ds_og["r_o"].isel(time=0)
+# diff_rain = new_rain - old_rain
 
-static_ds["new_rain"] = new_rain
-static_ds["new_rain"].attrs = static_ds.attrs
-static_ds["old_rain"] = old_rain
-static_ds["old_rain"].attrs = static_ds.attrs
-static_ds["diff_rain"] = (("south_north", "west_east"), diff_rain.values)
-static_ds["diff_rain"].attrs = static_ds.attrs
+# static_ds["new_rain"] = new_rain
+# static_ds["new_rain"].attrs = static_ds.attrs
+# static_ds["old_rain"] = old_rain
+# static_ds["old_rain"].attrs = static_ds.attrs
+# static_ds["diff_rain"] = (("south_north", "west_east"), diff_rain.values)
+# static_ds["diff_rain"].attrs = static_ds.attrs
 
-static_ds["diff_rain"].salem.quick_map(vmin=10, vmax=10, cmap="coolwarm")
-
-
-print(float(static_ds["diff_rain"].max()))
-print(float(static_ds["diff_rain"].min()))
-print(float(static_ds["diff_rain"].mean()))
+# static_ds["diff_rain"].salem.quick_map(vmin=10, vmax=10, cmap="coolwarm")
 
 
-jj = np.where(static_ds["ZoneST"].values == 8)[0]
-ii = np.where(static_ds["ZoneST"].values == 8)[1]
-max_list = []
-for k in range(len(jj)):
-    i = ii[k]
-    j = jj[k]
-    offset = static_ds["ZoneST"].isel(south_north=j, west_east=i)
-    if int(offset) == 8:
-        print(float(offset))
-        hour = int_ds.isel(south_north=j, west_east=i).sel(
-            time=slice("2021-02-09T21", "2021-02-10T20")
-        )
-        hour_test = hour - hour[0]
-        print(float(hour_test[-1]))
-        print(float(old_rain.isel(south_north=j, west_east=i)))
-        diff = float(hour_test[-1]) - float(old_rain.isel(south_north=j, west_east=i))
-        max_list.append(diff)
-        print("Diff: ", diff)
-        print("===================================")
+# print(float(static_ds["diff_rain"].max()))
+# print(float(static_ds["diff_rain"].min()))
+# print(float(static_ds["diff_rain"].mean()))
+
+
+# jj = np.where(static_ds["ZoneST"].values == 8)[0]
+# ii = np.where(static_ds["ZoneST"].values == 8)[1]
+# max_list = []
+# for k in range(len(jj)):
+#     i = ii[k]
+#     j = jj[k]
+#     offset = static_ds["ZoneST"].isel(south_north=j, west_east=i)
+#     if int(offset) == 8:
+#         print(float(offset))
+#         hour = int_ds.isel(south_north=j, west_east=i).sel(
+#             time=slice("2021-02-09T21", "2021-02-10T20")
+#         )
+#         hour_test = hour - hour[0]
+#         print(float(hour_test[-1]))
+#         print(float(old_rain.isel(south_north=j, west_east=i)))
+#         diff = float(hour_test[-1]) - float(old_rain.isel(south_north=j, west_east=i))
+#         max_list.append(diff)
+#         print("Diff: ", diff)
+#         print("===================================")
+
+
+print("RUN TIME: ", datetime.now() - startTime)

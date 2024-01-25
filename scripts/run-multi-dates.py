@@ -1,4 +1,4 @@
-#!/Users/crodell/miniconda3/envs/fwf/bin/python
+#!/Users/crodell/miniconda3/envs/fwx/bin/python
 
 """
 Runs the FWF model for over user defined dates
@@ -30,7 +30,7 @@ __email__ = "crodell@eoas.ubc.ca"
 warnings.filterwarnings("ignore", category=RuntimeWarning)
 warnings.filterwarnings("ignore", category=UserWarning)
 # date_range = pd.date_range("1990-01-01", "1990-01-01")
-date_range = pd.date_range("1990-01-02", "2021-01-01")
+date_range = pd.date_range("2023-10-30", "2024-01-01")
 
 config = dict(
     model="ecmwf",
@@ -62,6 +62,7 @@ else:
 
 
 for date in date_range:
+    print("===================================================")
     date_startTime = datetime.now()
     config["doi"] = date
     coeff = FWF(

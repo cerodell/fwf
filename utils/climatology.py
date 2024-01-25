@@ -106,39 +106,3 @@ def slice_ds(ds_full, i, j, di, dj):
         ).copy(deep=True)
     print("Slicing Time: ", datetime.now() - slicing)
     return ds
-
-
-# ds = xr.open_dataset(str(pathlist[0][0]))['S'].isel(time = 0).drop(['XLAT', 'XLONG', 'Time'])
-# ds_slice = xr.open_zarr(str(save_dir) + f"/{var}-{method}-climatology-{start.replace('-','')}-{stop.replace('-','')}-i0j0.zarr")
-# dayofyear = ds_slice['dayofyear'].values
-# hour = ds_slice['hour'].values
-# south_north = ds['south_north'].values
-# west_east = ds['west_east'].values
-# da = xr.DataArray(
-#     data=np.full((len(dayofyear), len(hour), len(south_north), len(west_east)), np.nan),
-#     name = var,
-#     dims=["dayofyear", "hour", "south_north", "west_east"],
-#     coords=dict(
-#         south_north = south_north,
-#         west_east = west_east,
-#         dayofyear = dayofyear,
-#         hour=hour,
-#     )
-# )
-# # (24, 711, 1551)
-# # (24, 711/3, 1551/3) = (24, 237, 517)
-# # (24, 711/9, 1551/11) = (24, 79, 141)
-# file_names = []
-# di, dj = 517, 237
-# for i in range(0,3):
-#     ii = i +1
-#     for j in range(0,3):
-#         jj = j+1
-#         try:
-#             ds_slice = xr.open_zarr(str(save_dir) + f"/{var}-{method}-climatology-{start.replace('-','')}-{stop.replace('-','')}-i{i}j{j}.zarr")
-#             da[:, :, j*dj: jj*dj, i*di: ii*di] = ds_slice['S']
-#             file_names.append(str(save_dir) + f"/{var}-{method}-climatology-{start.replace('-','')}-{stop.replace('-','')}-i{i}j{j}.zarr")
-#         except:
-#             pass
-
-# da.isel(dayofyear=189, hour =0).plot()

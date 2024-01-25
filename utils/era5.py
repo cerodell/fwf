@@ -7,6 +7,7 @@ Transforms ERA5 Data to the WRF domain and matches the variable naming conventio
 import context
 import json
 import salem
+import dask
 import numpy as np
 import xarray as xr
 import geopandas as gpd
@@ -51,18 +52,41 @@ def era5_land(doi, model, domain, filein):
     file = f"{filein}{(doi).strftime('%Y%m')}/{domain}-{(doi).strftime('%Y%m%d00.nc')}"
 
     ds_yesterday = xr.open_dataset(file_yesterday).isel(time=23).chunk("auto")
+    try:
+        ds_yesterday = ds_yesterday.isel(expver=0)
+    except:
+        pass
     ds = xr.open_dataset(file).chunk("auto")
+    try:
+        ds = ds.isel(expver=0)
+    except:
+        pass
     ds["tp"][0] = ds["tp"][0] - ds_yesterday["tp"].values
     old_tp = ds["tp"]
-    r_oi = np.array(ds["tp"])
-    r_o_plus1 = np.dstack((np.zeros_like(ds["tp"][0]).T, r_oi.T)).T
+    r_oi = ds["tp"]
+
+    r_o_plus1 = dask.array.dstack((dask.array.zeros_like(ds["tp"][0]).T, r_oi.T)).T
     r_hourly_list = []
     for i in range(len(ds.time)):
         r_hour = r_oi[i] - r_o_plus1[i]
         r_hourly_list.append(r_hour)
-    r_hourly = np.stack(r_hourly_list)
+    r_hourly = dask.array.stack(r_hourly_list)
     r_hourly = xr.DataArray(r_hourly, name="tp", dims=("time", "latitude", "longitude"))
     ds["tp"] = r_hourly
+
+    # ds_yesterday = xr.open_dataset(file_yesterday).isel(time=23).chunk("auto")
+    # ds = xr.open_dataset(file).chunk("auto")
+    # ds["tp"][0] = ds["tp"][0] - ds_yesterday["tp"].values
+    # old_tp = ds["tp"]
+    # r_oi = np.array(ds["tp"])
+    # r_o_plus1 = np.dstack((np.zeros_like(ds["tp"][0]).T, r_oi.T)).T
+    # r_hourly_list = []
+    # for i in range(len(ds.time)):
+    #     r_hour = r_oi[i] - r_o_plus1[i]
+    #     r_hourly_list.append(r_hour)
+    # r_hourly = np.stack(r_hourly_list)
+    # r_hourly = xr.DataArray(r_hourly, name="tp", dims=("time", "latitude", "longitude"))
+    # ds["tp"] = r_hourly
     return ds
 
 
@@ -89,12 +113,12 @@ def read_era5(doi, model, domain):
         ds = ds.isel(expver=0)
     except:
         pass
+    ds = ds.isel(time=slice(0, 36))
     ds["t2m"] = ds["t2m"] - 273.15
     ds["d2m"] = ds["d2m"] - 273.15
     ds["tp"] = ds["tp"] * 1000
     ds = formate(ds, model, domain)
     ds["W"] = ds["W"] * 3.6
-    ds = ds.isel(time=slice(0, 36))
     if domain == "era5":
         ds = ds.roll(west_east=int(len(ds["west_east"]) / 2))
 

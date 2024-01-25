@@ -21,23 +21,23 @@ from context import root_dir
 
 from dask.distributed import LocalCluster, Client
 
-cluster = LocalCluster(
-    n_workers=2,
-    #    threads_per_worker=,
-    memory_limit="7GB",
-    processes=False,
-)
-client = Client(cluster)
+# cluster = LocalCluster(
+#     n_workers=2,
+#     #    threads_per_worker=,
+#     memory_limit="7GB",
+#     processes=False,
+# )
+# client = Client(cluster)
 # client = Client(processes=False)
+# print(client)
 ## On workstation
 # http://137.82.23.185:8787/status
 ## On personal
 #  http://10.0.0.88:8787/status
-print(client)
 
 save_dir = Path("/Volumes/WFRT-Ext22/ecmwf/era5-land/")
 save_dir.mkdir(parents=True, exist_ok=True)
-var = "F"
+var = "S"
 fwf = True
 method = "hourly"
 start = "1991-01-01"
@@ -60,6 +60,10 @@ print("Opening at: ", openT)
 ds = concat_ds(pathlist, var, x, y)
 print("Opening Time: ", datetime.now() - openT)
 
+dss = ds
+# for k, gg in ds.groupby('time.dayofyear'):
+#     print(k)
+#     print(gg)
 
 group = datetime.now()
 print("Grouping at: ", group)
