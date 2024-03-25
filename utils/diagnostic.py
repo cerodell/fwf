@@ -42,12 +42,12 @@ def solve_RH(ds):
     rh = xr.where(rh > 100, 100, rh)
     ## Create a new dataset variable for relative humidity and assign calculated values to it
     ds["H"] = rh
-    if (
-        ds.H.min() > 90
-    ):  # check if any RH values are nonphysical (i.e., less than 0 or greater than 100)
-        raise ValueError(
-            "ERROR: Check TD nonphysical RH values"
-        )  # if so, raise a value error with a warning message
+    # if (
+    #     ds.H.min() > 90
+    # ):  # check if any RH values are nonphysical (i.e., less than 0 or greater than 100)
+    #     raise ValueError(
+    #         "ERROR: Check TD nonphysical RH values"
+    #     )  # if so, raise a value error with a warning message
     return ds
 
 

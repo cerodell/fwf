@@ -52,7 +52,7 @@ def get_daily_files(fwf, method, start, stop):
 #     function groups time to hourly and solves hourly mean
 
 #     """
-#     return x.groupby("time.hour").max(dim="time", engine='flox',method='cohorts', skipna = False)
+#     return x.groupby("time.hour").mean(dim="time", engine='flox',method='cohorts', skipna = False)
 
 
 def hour_qunt(x):
@@ -60,13 +60,23 @@ def hour_qunt(x):
     function groups time to hourly and solves hourly mean
 
     """
-    # x = rechunk(x)
-    x = x.chunk({"time": -1})
-    return x.groupby("time.hour").quantile(
-        [0, 0.25, 0.5, 0.75, 0.9, 0.95, 0.99, 1],
-        dim="time",
-        skipna=False,
+    return x.groupby("time.hour").std(
+        dim="time", engine="flox", method="cohorts", skipna=False
     )
+
+
+# def hour_qunt(x):
+#     """
+#     function groups time to hourly and solves hourly mean
+
+#     """
+#     # x = rechunk(x)
+#     x = x.chunk({"time": -1})
+#     return x.groupby("time.hour").quantile(
+#         [0, 0.25, 0.5, 0.75, 0.9, 0.95, 0.99, 1],
+#         dim="time",
+#         skipna=False,
+#     )
 
 
 def open_ds(path, var, x, y):

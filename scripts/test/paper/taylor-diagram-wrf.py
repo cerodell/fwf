@@ -440,8 +440,9 @@ for var in var_list:
             facecolor="w",
             bbox_inches="tight",
             pad_inches=0,
+            dpi=300,
         )
-        # # Write plot to file
+        # Write plot to file
         plt.savefig(
             str(save_dir) + f"/{var}-taylor.pdf",
             facecolor="w",

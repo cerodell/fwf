@@ -29,6 +29,7 @@ from utils.frp import (
     build_tree,
     get_time_offest,
     normalize,
+    normalize_era5,
     set_axis_postion_full_fwx,
     hourly_precip,
 )
@@ -47,8 +48,8 @@ save_fig = True
 norms = False
 int_plot = False
 paper = True
-full_fwx = True
-case_study = "marshall_fire"  # ['barrington_lake_fire', 'wildcat', 'marshall_fire', 'oak_fire', 'caldor_fire', 'fire_east_tulare', 'rossmoore_fire', 'crater_creek', 'lytton_creek]
+full_fwx = False
+case_study = "caldor_fire"  # ['barrington_lake_fire', 'wildcat', 'marshall_fire', 'oak_fire', 'caldor_fire', 'fire_east_tulare', 'rossmoore_fire', 'crater_creek', 'lytton_creek]
 # print(case_study)
 
 if paper == True:
@@ -67,7 +68,7 @@ with open(str(root_dir) + f"/json/fire-cases.json", "r") as fp:
 print(case_study)
 case_info = case_dict[case_study]
 domain = case_info["domain"]
-filein = f"/Volumes/WFRT-Ext24/fwf-data/wrf/{domain}/02/"
+filein = f"/Volumes/WFRT-Ext24/fwf-data/wrf/{domain}/04/"
 
 (frp_ds, frp_da, frp_da_og, frp_lats, frp_lons, utc_offset, start, stop) = open_frp(
     case_study, case_info
@@ -85,7 +86,7 @@ if full_fwx == True:
     var_list = ["F", "R", "S", "T", "W", "H", "r_o"]
     var_listD = var_list + ["D", "U", "P"]
 else:
-    var_list = var_listd = False
+    var_list = var_listD = False
 
 hourly_ds = xr.combine_nested(
     [
@@ -119,8 +120,9 @@ daily_ds = daily_ds.sel(time=slice(start, stop))
 if norms == True:
     norm_d = xr.open_dataset(str(data_dir) + f"/norm/fwi-daily-{domain}.nc")
     norm_h = xr.open_dataset(str(data_dir) + f"/norm/fwi-hourly-{domain}.nc")
-    hourly_ds = normalize(hourly_ds, yy, xx, norm_h).rename("S").to_dataset()
+    hourly_ds = normalize_era5(hourly_ds, yy, xx, utc_offset).rename("S").to_dataset()
     daily_ds = normalize(daily_ds, yy, xx, norm_d).rename("S").to_dataset()
+    # hourly_ds = normalize(hourly_ds, yy, xx, norm_h).rename("S").to_dataset()
 
 
 # %%

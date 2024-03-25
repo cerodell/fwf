@@ -16,8 +16,9 @@ from netCDF4 import Dataset
 import matplotlib.pyplot as plt
 from wrf import ll_to_xy, xy_to_ll
 from datetime import datetime, date, timedelta
-from utils.compressor import compressor, file_size
 from dask.distributed import LocalCluster, Client
+
+from utils.compressor import compressor, file_size
 
 from context import data_dir, root_dir
 
@@ -29,46 +30,48 @@ __email__ = "crodell@eoas.ubc.ca"
 
 #################### INPUTS ####################
 
-# config = {"ecmwf": ["era5"]}
-config = {"wrf": ["d02", "d03"]}
+
+# config = {"ecmwf": ["era5-land"]}
+# config = {"wrf": ["d02"]}
 # config = {"eccc": ["hrdps", "rdps"], "wrf": ["d02", "d03"]}
-
-
-trail_name = "04"
+config = {"ecmwf": ["era5-land"], "wrf": ["d02"]}
+trails_config = {"ecmwf-trial": "04", "wrf-trial": "01"}
+trail_name = "01"
 # model_save = list(config.keys())[0]
 # domain_save = config[model_save][0]
 model_save = "wrf"
 domain_save = "d03"
 lead_time = 1
 
-# date_range = pd.date_range("2023-10-01", "2023-10-10")
-date_range = pd.date_range("2021-03-01", "2023-11-01")
-fwf_dir = f"/Volumes/WFRT-Ext24/fwf-data/"
+# date_range = pd.date_range("2022-06-01", "2022-06-10")
+date_range = pd.date_range("2021-01-06", "2022-11-16")
+fwf_dir = f"/Volumes/WFRT-Ext23/fwf-data/"
 
 # make a file directory based on user inputs to save dataset
 save_dir = Path(str(data_dir) + f"/intercomp/{trail_name}/{model_save}/")
 save_dir.mkdir(parents=True, exist_ok=True)
 
-### On workstation
-### http://137.82.23.185:8787/status
-### On personal
-###  http://10.0.0.88:8787/status
-# cluster = LocalCluster(
-#     n_workers=4,
-#     #    threads_per_worker=,
-#     memory_limit="8GB",
-#     processes=False,
-# )
-# client = Client(cluster)
-# print(client)
+
+## On workstation
+## http://137.82.23.185:8787/status
+## On personal
+##  http://10.0.0.88:8787/status
+cluster = LocalCluster(
+    n_workers=2,
+    #    threads_per_worker=,
+    memory_limit="16GB",
+    processes=False,
+)
+client = Client(cluster)
+print(client)
 
 ################## END INPUTS ##################
 
 var_list = [
-    "TD",
+    # "TD",
     "S",
     "T",
-    "WD",
+    # "WD",
     "W",
     "P",
     "F",
@@ -83,24 +86,25 @@ var_list = [
     # "TMAX",
     # "FS_days",
     # "dFS",
-    "mF",
-    "mR",
-    "mS",
-    "hF",
-    "hR",
-    "hS",
-    "mT",
-    "mW",
-    "mH",
-    "mFt",
-    "mRt",
-    "mSt",
-    "mTt",
-    "mWt",
-    "mHt",
+    # "mF",
+    # "mR",
+    # "mS",
+    # "hF",
+    # "hR",
+    # "hS",
+    # "h16F",
+    # "h16R",
+    # "h16S",
+    # "mT",
+    # "mW",
+    # "mH",
+    # "mFt",
+    # "mRt",
+    # "mSt",
+    # "mTt",
+    # "mWt",
+    # "mHt",
 ]
-
-var_list = ["T", "H", "W", "r_o", "S", "mS", "hS", "h16S"]
 drop_vars = ["DSR", "SNOWC", "r_o_hourly", "r_o_tomorrow", "SNOWH"]
 drop_cords = ["XLAT", "XLONG", "west_east", "south_north", "XTIME", "time"]
 #################### Open static datasets ####################
@@ -114,10 +118,7 @@ with open(str(root_dir) + f"/json/fwf-attrs.json", "r") as fp:
     var_dict = json.load(fp)
 
 ## open master obs file and slice along date range of interest
-ds_obs = xr.open_dataset(
-    str(data_dir) + f"/obs/observations-{domain_save}-20191231-20231231.nc"
-)
-
+ds_obs = xr.open_dataset(str(data_dir) + f"/obs/observations-all-20191231-20221231.nc")
 
 ds_obs = ds_obs.sel(
     time=slice(date_range[0].strftime("%Y-%m-%d"), date_range[-1].strftime("%Y-%m-%d"))
@@ -162,7 +163,6 @@ def get_locs(pyproj_srs):
         coords=dict(wmo=gpm25.wmo.values),
     )
     # print("Locs Time: ", datetime.now() - get_locs_time)
-
     return x, y
 
 
@@ -187,19 +187,31 @@ x_hrdps, y_hrdps = get_locs(
     ]
 )
 
+x_era5L, y_era5L = get_locs(
+    xr.open_dataset(str(data_dir) + f"/static/static-vars-ecmwf-era5-land.nc").attrs[
+        "pyproj_srs"
+    ]
+)
+
 
 locs_dict = {
     "d02": [x_d02, y_d02],
     "d03": [x_d03, y_d03],
     "rdps": [x_rdps, y_rdps],
     "hrdps": [x_hrdps, y_hrdps],
+    "era5-land": [x_era5L, y_era5L],
 }
 
 
-def read_fwf(doi, model, domain, lead_time):
+def read_fwf(doi, model, domain, trail_name, lead_time):
     """
     opens datasets, index on day one forecast and drop variables not use for comparison
     """
+    if model == "wrf":
+        fwf_dir = f"/Volumes/WFRT-Ext24/fwf-data/"
+    else:
+        fwf_dir = f"/Volumes/WFRT-Ext23/fwf-data/"
+
     print(doi.strftime("%Y%m%d"))
     if model == "wrf":
         hour = "06"
@@ -207,7 +219,7 @@ def read_fwf(doi, model, domain, lead_time):
         hour = "00"
     if lead_time == 1:
         ds = (
-            salem.open_xr_dataset(
+            xr.open_dataset(
                 fwf_dir
                 + f"{model}/{domain}/{trail_name}/fwf-daily-{domain}-{doi.strftime('%Y%m%d')}{hour}.nc"
             )
@@ -217,7 +229,7 @@ def read_fwf(doi, model, domain, lead_time):
     elif lead_time == 2:
         try:
             ds = (
-                salem.open_xr_dataset(
+                xr.open_dataset(
                     fwf_dir
                     + f"{model}/{domain}/{trail_name}/fwf-daily-{domain}-{(doi- np.timedelta64(1, 'D')).strftime('%Y%m%d')}{hour}.nc"
                 )
@@ -229,7 +241,7 @@ def read_fwf(doi, model, domain, lead_time):
                 f"{model}/{domain}/{trail_name}/fwf-daily-{domain}-{doi.strftime('%Y%m%d')}{hour}.nc"
             )
             ds = (
-                salem.open_xr_dataset(
+                xr.open_dataset(
                     fwf_dir
                     + f"{model}/{domain}/{trail_name}/fwf-daily-{domain}-{doi.strftime('%Y%m%d')}{hour}.nc"
                 )
@@ -290,7 +302,16 @@ ds = xr.combine_by_coords(
     [
         xr.combine_nested(
             [
-                rename(read_fwf(doi, model, domain, lead_time=lead_time), domain)
+                rename(
+                    read_fwf(
+                        doi,
+                        model,
+                        domain,
+                        trails_config[model + "-trial"],
+                        lead_time=lead_time,
+                    ),
+                    domain,
+                )
                 for doi in date_range
             ],
             concat_dim="time",
@@ -309,6 +330,10 @@ print("Load Time: ", datetime.now() - load_start)
 ############################### Use when merging with master obs.  ###################################
 
 merge = datetime.now()
+try:
+    ds = ds.drop(["south_north", "west_east"])
+except:
+    pass
 ## merge the forecasted values at wx station with their observed values
 final_ds = xr.combine_by_coords([ds, ds_obs.expand_dims(dim={"domain": ["obs"]})])
 print("Merge Time: ", datetime.now() - merge)

@@ -16,7 +16,7 @@ __email__ = "crodell@eoas.ubc.ca"
 goes = "17"
 bucket = f"noaa-goes{goes}"
 product = "ABI-L2-FDCF"
-date_range = pd.date_range("2021-06-01", "2021-11-01", freq="H")
+date_range = pd.date_range("2020-09-08", "2020-09-10", freq="H")
 
 s3 = s3fs.S3FileSystem(anon=True)
 # s3.ls(f"{bucket}") ## uncomment to list all goes products

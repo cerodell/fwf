@@ -15,6 +15,8 @@ from datetime import datetime
 from utils.wrf_ import grid_wrf
 from utils.eccc import grid_eccc
 from utils.era5 import grid_ecmwf
+from utils.adda import grid_adda
+
 
 from context import data_dir, root_dir
 
@@ -33,7 +35,12 @@ class build_static:
         #       except:
         #           pass
         # except:
-        function_mapping = {"wrf": grid_wrf, "eccc": grid_eccc, "ecmwf": grid_ecmwf}
+        function_mapping = {
+            "wrf": grid_wrf,
+            "eccc": grid_eccc,
+            "ecmwf": grid_ecmwf,
+            "adda": grid_adda,
+        }
         selected_function = function_mapping.get(model)
         if selected_function is not None:
             ds = selected_function(model, domain)
@@ -84,8 +91,15 @@ class build_static:
             ds = self.ds_grid
             pyproj_srs = ds.attrs["pyproj_srs"]
             df = salem.read_shapefile(tzone_shp)
-            df = df[df["tzid"].str.contains("America")]
-            df = df[df["min_y"] > 14]
+            # df = df[df["tzid"].str.contains("America")]
+            # df = df[~df["tzid"].str.contains("Asia")]
+            # df = df[~df["tzid"].str.contains("Australia")]
+            # df = df[~df["tzid"].str.contains("Antarctica")]
+            # df = df[~df["tzid"].str.contains("Europe")]
+            # df = df[~df["tzid"].str.contains("Africa")]
+            # df = df[df["min_y"] > 14]
+            # df = df[df["min_y"] > 0]
+            # df = df[df["min_x"] <-180]
 
             lats = ds.XLAT.values
             zero_full = np.zeros(lats.shape)
@@ -165,7 +179,8 @@ class build_static:
                     zero_full[index[0], index[1]] = hours
             else:
                 raise ValueError("ERROR: This is not a valid time of year")
-
+            # zero_full[zero_full<=0] = 10
+            # zero_full[zero_full>10] = 10
             ds_zones = xr.DataArray(
                 zero_full.astype(int), name="Zone", dims=("south_north", "west_east")
             )
@@ -201,6 +216,26 @@ class build_static:
                 str(data_dir)
                 + f"/tzone/tzone-{self.model}-{self.domain}-{self.season}.nc"
             )
+            try:
+                model = self.model
+                domain = self.domain
+                function_mapping = {
+                    "wrf": grid_wrf,
+                    "eccc": grid_eccc,
+                    "ecmwf": grid_ecmwf,
+                    "adda": grid_adda,
+                }
+                selected_function = function_mapping.get(model)
+                if selected_function is not None:
+                    ds = selected_function(model, domain)
+                else:
+                    raise ValueError(f"Function from {model} is not found")
+                tzone_ds["HGT"] = ds["HGT"].isel(time=0)
+                for var in tzone_ds:
+                    tzone_ds[var].attrs = tzone_ds.attrs
+            except:
+                pass
+
             tzone_ds.to_netcdf(
                 str(data_dir) + f"/static/static-vars-{self.model}-{self.domain}.nc",
                 mode="w",

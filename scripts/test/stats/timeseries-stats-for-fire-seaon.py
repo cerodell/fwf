@@ -68,10 +68,13 @@ __email__ = "crodell@eoas.ubc.ca"
 ########################### INPUTS ###########################
 
 model = "wrf"
-domains = ["d02", "d03"]
+domains = ["d03", "d02"]
 
 # model = "ecmwf"
 # domains = ["era5"]
+
+# model = "nwp"
+# domains = ["d02", "d03", "rdps", "hrdps"]
 
 # model = "nwp"
 # domains = ["d02", "d03", "rdps", "hrdps"]
@@ -92,6 +95,9 @@ try:
     ds = xr.open_dataset(
         str(data_dir) + f"/intercomp/{trail_name}/{model}/d03-20210101-20221231.nc",
     )
+    # ds = xr.open_dataset(
+    #     str(data_dir) + f"/intercomp/{trail_name}/{model}/d03-20210106-20221116.nc",
+    # )
 except:
     ds = xr.open_dataset(
         str(data_dir) + f"/intercomp/{trail_name}/{model}/20210101-20221231.nc",
@@ -99,6 +105,12 @@ except:
 ## make time dim sliceable with datetime
 ds["time"] = ds["Time"]
 
+ds_new = xr.open_dataset(
+    str(data_dir) + f"/intercomp/01/{model}/d03-20210106-20221116.nc",
+)
+ds = ds.sel(wmo=ds_new["wmo"])
+
+ds = ds.sel(wmo=ds_new.sel(domain="era5-land")["temp"].notnull().any(dim="time").values)
 
 # ds_2021 = ds.sel(time=slice("2021-05-01", "2021-09-30"))
 # ds_2022 = ds.sel(time=slice("2022-05-01", "2022-09-30"))
@@ -109,6 +121,7 @@ null_ds = ds.sel(time=slice("2021-11-01", "2022-03-31"))
 null_array = np.full(null_ds["temp"].shape, np.nan)
 for var in null_ds:
     null_ds[var] = (("time", "domain", "wmo"), null_array)
+    # null_ds[var] = (("domain", "time", "wmo"), null_array)
 
 ds_2021 = ds_2021.drop("Time")
 ds_2022 = ds_2022.drop("Time")
@@ -119,8 +132,8 @@ for var in ["elev", "name", "prov", "id", "domain"]:
     prov_ds[var] = prov_ds[var].astype(str)
 
 
-wmo_idx = np.loadtxt(str(data_dir) + "/intercomp/02/wx_station.txt").astype(int)
-prov_ds = prov_ds.sel(wmo=wmo_idx)
+# wmo_idx = np.loadtxt(str(data_dir) + "/intercomp/02/wx_station.txt").astype(int)
+# prov_ds = prov_ds.sel(wmo=wmo_idx)
 # prov_ds = prov_ds.sel(time=slice("2021-01-02", "2021-12-31"))
 
 ######################## Set up plotting stuff ###########################
@@ -173,6 +186,8 @@ def fct_plot(
         dom_name = "RDPS 10km"
     elif domain == "era5":
         dom_name = "ERA5 30km"
+    elif domain == "era5-land":
+        dom_name = "ERA5 9km"
     else:
         pass
     # colors = colors
@@ -250,20 +265,20 @@ def fct_plot(
 # %%
 # var_list = ["temp", "td", "rh", "ws", "wdir", "precip"]
 # var_list = ["ffmc", "dmc", "dc", "bui", "isi", "fwi"]
-var_list = [
-    "ffmc",
-    "dmc",
-    "dc",
-    "bui",
-    "isi",
-    "fwi",
-    "temp",
-    # "td",
-    "rh",
-    "ws",
-    # "wdir",
-    "precip",
-]
+# var_list = [
+#     "ffmc",
+#     "dmc",
+#     "dc",
+#     "bui",
+#     "isi",
+#     "fwi",
+#     "temp",
+#     # "td",
+#     "rh",
+#     "ws",
+#     # "wdir",
+#     "precip",
+# ]
 var_list = ["temp", "rh", "ws", "precip"]
 
 length = len(var_list)
@@ -295,11 +310,11 @@ for j in np.arange(0, length + 4, 2):
     print(len(wx_count))
     print(list(wx_station[np.where(wx_count < 30)[0]]))
     print(len(list(wx_station[np.where(wx_count < 30)[0]])))
-    np.savetxt(
-        str(data_dir) + "/intercomp/02/wx_station.txt",
-        wx_station.astype(int),
-        delimiter=",",
-    )
+    # np.savetxt(
+    #     str(data_dir) + "/intercomp/02/wx_station.txt",
+    #     wx_station.astype(int),
+    #     delimiter=",",
+    # )
     print("=============================================")
     color_table = []
     for j in range(len(domains)):
@@ -516,6 +531,7 @@ for j in np.arange(0, length + 4, 2):
     except:
         # Create the second set of axes for the table
         # ax_table = fig.add_axes([0.55, 0.87, 0.33, 0.2])
+        tbbox = [0.05, 0.96, 0.9, 0.22]
 
         # Create the table and add it to the second set of axes
         table = ax2.table(cellText=data, bbox=tbbox, zorder=10, fontsize=12)

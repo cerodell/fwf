@@ -23,8 +23,8 @@ from utils.static import build_static
 __author__ = "Christopher Rodell"
 __email__ = "crodell@eoas.ubc.ca"
 
-model = "ecmwf"
-domain = "era5-land"
+model = "adda"
+domain = "d01"
 
 coeff = build_static(model, domain)
 

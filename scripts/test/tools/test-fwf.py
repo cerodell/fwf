@@ -19,23 +19,25 @@ from utils.open import read_dataset
 
 from context import data_dir, root_dir
 
+# from utils.geoutils import get_locs
 
 runTime = datetime.now()
-doi = pd.Timestamp("2023-11-01")
+doi = pd.Timestamp("2021-01-06")
 
-ds = xr.open_dataset(
-    f'/Volumes/WFRT-Ext25/ecmwf/era5-land/{doi.strftime("%Y%m")}/era5-land-{doi.strftime("%Y%m%d%H")}.nc'
-)
+# ds = xr.open_dataset(
+#     f'/Volumes/WFRT-Ext25/ecmwf/era5-land/{doi.strftime("%Y%m")}/era5-land-{doi.strftime("%Y%m%d%H")}.nc'
+# )
 
 config = dict(
-    model="ecmwf",
-    domain="era5-land",
-    trail_name="04",
+    model="wrf",
+    domain="d02",
+    trail_name="01",
     initialize=False,
     initialize_hffmc=False,
     overwinter=False,
     fbp_mode=False,
     correctbias=False,
+    reanalysis_mode=True,
 )
 
 
@@ -60,36 +62,35 @@ config["doi"] = doi
 
 model = config["model"]
 domain = config["domain"]
+
+## Open gridded static
+static_ds = salem.open_xr_dataset(
+    str(data_dir) + f"/static/static-vars-{model.lower()}-{domain}.nc"
+)
+
 int_ds = read_dataset(config).chunk("auto")
 
-hourly_ds = xr.open_dataset(
-    f"/Volumes/WFRT-Ext23/fwf-data/ecmwf/era5-land/04/fwf-hourly-era5-land-{doi.strftime('%Y%m%d%H')}.nc"
-)
-hourly_climo = salem.open_xr_dataset(
-    "/Volumes/WFRT-Ext22/ecmwf/era5-land/S-hourly-climatology-19910101-20201231-quant.zarr"
-)
+# int_ds = int_ds.drop(['XLONG', 'XLAT'])
 
-# shape = np.shape(int_ds.T[0, :, :])
-# static_ds = xr.open_dataset(
-#     str(data_dir) + f"/static/static-vars-{model.lower()}-{domain}.nc"
-# )
-# var_list = list(int_ds)
-# carryover_rain=True
-# offset_noon=False
+# int_ds = int_ds.assign_coords({"XLONG": static_ds['XLONG'], "XLAT": static_ds['XLAT']})
 
-# dailyTime = datetime.now()
-# print('---------------------------------------------------')
-# print("Obtain noon local weather data")
+
+# # daily_ds = xr.open_dataset(f'/Volumes/WFRT-Ext25/fwf-data/wrf/d02/01/fwf-daily-d02-{doi.strftime("%Y%m%d06")}.nc').fillna(0)
+daily_ds = xr.open_dataset(
+    f"/Volumes/WFRT-Ext24/fwf-data/wrf/d02/01/fwf-daily-d02-2021010606-example.nc"
+)
+daily_ds["time"] = daily_ds["Time"]
+
+
 # ### Call on variables
-# tzone = static_ds.ZoneST.values
-
+# tzone = static_ds['ZoneST'].values
+# shape = tzone.shape
 # # correct for places on int dateline
 # tzone[tzone <= -12] *= -1
 
 # ## create I, J for quick indexing
 # I, J = np.ogrid[: shape[0], : shape[1]]
 
-# ## determine index for looping based on length of time array and initial time
 # time_array = int_ds.Time.values
 # int_time = int(pd.Timestamp(time_array[0]).hour)
 # length = len(time_array) + 1
@@ -97,23 +98,83 @@ hourly_climo = salem.open_xr_dataset(
 # index = [
 #     i - int_time if 12 - int_time >= 0 else i + 24 - int_time for i in num_days
 # ]
-# print(f"For NWP with {str(int_time).zfill(2)}Z, will use index(s) of {index} as index(s) to represent 12Z")
-
-# times = xr.DataArray(12 + tzone.values+ offset_noon, dims= ('south_north', 'west_east'))
-# south_north = xr.DataArray(I[:,0], dims= 'time')
-# west_east = xr.DataArray(J[0,:], dims= 'time')
-
-# # test = int_ds[12 + tzone.values+ offset_noon]
-# test = int_ds.isel(time=times)# south_north =south_north, west_east = west_east)
+# print(
+#     f"For NWP with {str(int_time).zfill(2)}Z, will use index(s) of {index} as index(s) to represent 12Z"
+# )
 
 
-# ## this is to get the index for the desired time of day offset from noon. When used a 1 is added to get in the local daily light time, as the fwi is built on standard time
-# if offset_noon == False:
-#     offset_noon = 0
-# elif type(offset_noon) == int:
-#     offset_noon = offset_noon + 1
-# else:
-#     raise ValueError(f"Invalided offset_noon of {offset_noon}")
+# south_north = static_ds["south_north"].values
+# west_east = static_ds["west_east"].values
+
+# %%
+# U = daily_ds['U'].values
+# daily_ds['south_north'] = south_north
+# daily_ds['west_east'] = west_east
+
+# dTOh = datetime.now()
+# data = np.full(
+#     (len(time_array), len(south_north), len(west_east)),
+#     np.nan,
+# )
+
+# unique_TZ = np.unique(tzone)
+# for i in range(len(index)):
+#     for TZ in unique_TZ:
+#         idx = np.where(tzone==TZ)
+#         data[index[i] + 4 + TZ,idx[0], idx[1]] = U[i,idx[0], idx[1]]
+# # for i in range(len(index)):
+# #     data[(index[i] + tzone ), :,:] = daily_ds['U'].values[i,I, J]
+# var = 'U'
+# da = xr.DataArray(
+#     data=data,
+#     name=var,
+#     dims=["time", "south_north", "west_east"],
+#     coords=dict(
+#         south_north=south_north,
+#         west_east=west_east,
+#         time=time_array,
+#     ),
+# )#.chunk('auto')
+
+# ## method = 'nearest' will do what i have written for my ams paper first describing the fwf
+# # method = 'nearest'
+# method = 'pchip'
+# da_ful = da.interpolate_na(dim = 'time', method = method)
+# da_ful.attrs = static_ds.attrs
+# da.attrs = static_ds.attrs
+# print('Time to resample daily tp hourly:  ', datetime.now()-dTOh)
+
+
+# for i in range(20,26):
+#     fig = plt.figure(figsize=(10,6))
+#     ax = fig.add_subplot(1,1,1)
+#     da.isel(time = i).salem.quick_map(oceans=True, vmax = 20, ax = ax)
+#     plt.savefig(str(data_dir) + f"/images/hourly/{var}-{pd.Timestamp(str(da.isel(time = i)['time'].values)).strftime('%Y%m%d%H')}")
+
+# for i in range(20,26):
+#     fig = plt.figure(figsize=(10,6))
+#     da_ful.isel(time = i).salem.quick_map(oceans=True, vmax = 20)
+#     plt.savefig(str(data_dir) + f"/images/hourly/{var}-full-{pd.Timestamp(str(da_ful.isel(time = i)['time'].values)).strftime('%Y%m%d%H')}")
+
+# x, y  = get_locs(pyproj_srs= static_ds.attrs['pyproj_srs'], df = None, lat = 51.7, lon = -121.7)
+# x, y  = get_locs(pyproj_srs= static_ds.attrs['pyproj_srs'], df = None, lat = 50.6471, lon = -120.342)
+
+# offset = int(static_ds['ZoneST'].interp(south_north= y, west_east=x))
+# daily_ds["time"] = daily_ds["Time"] + np.timedelta64(17 + offset, "h")
+
+# fig = plt.figure()
+# ax = fig.add_subplot(1,1,1)
+
+# ax.plot(da_ful.time, da_ful.interp(south_north= y, west_east=x), color = 'tab:blue', label = 'hourly BUI')
+# ax.scatter(daily_ds.time, daily_ds['U'].interp(south_north= y, west_east=x), color = 'tab:red', label = 'daily BUI', zorder = 10)
+# ax.legend()
+# fig.autofmt_xdate(rotation=45)
+# plt.savefig(str(data_dir) + f"/images/hourly/{var}-timeseries-{method}")
+
+# %%
+# for i in range(len(time_array)):
+#     da.isel(time = i).plot()
+
 # ## loop every 24 hours at noon local
 # files_ds = []
 # for i in index:
@@ -123,7 +184,7 @@ hourly_climo = salem.open_xr_dataset(
 #     mean_da = []
 #     for var in var_list:
 #         var_array = int_ds[var].values
-#         noon = var_array[(i + tzone + offset_noon), I, J]
+#         noon = var_array[(i + tzone ), I, J]
 #         day = np.array(int_ds.Time[i + 1], dtype="datetime64[D]")
 #         var_da = xr.DataArray(
 #             noon,
@@ -139,56 +200,137 @@ hourly_climo = salem.open_xr_dataset(
 # noon_ds = xr.combine_nested(files_ds, "time")
 
 
-# if carryover_rain == True:
-#     ## create datarray for carry over rain, this will be added to the next days rain totals
-#     ## NOTE: this is rain that fell from noon local until 23 hours past the model initial time ie 00Z, 06Z..
-#     r_o_tomorrow_i = int_ds.r_o.values[22] - noon_ds.r_o.values[0]
-#     r_o_tomorrow = [r_o_tomorrow_i for i in range(len(num_days))]
-#     r_o_tomorrow = np.stack(r_o_tomorrow)
-#     r_o_tomorrow_da = xr.DataArray(
-#         r_o_tomorrow,
-#         name="r_o_tomorrow",
-#         dims=("time", "south_north", "west_east"),
-#         coords=noon_ds.coords,
-#     )
-#     r_o_tomorrow_da = xr.where(r_o_tomorrow_da > 1e-4, r_o_tomorrow_da, 0.0)
+# hourly_ds = xr.open_dataset(
+#     f"/Volumes/WFRT-Ext23/fwf-data/ecmwf/era5-land/04/fwf-hourly-era5-land-{doi.strftime('%Y%m%d%H')}.nc"
+# )
+# hourly_climo = salem.open_xr_dataset(
+#     "/Volumes/WFRT-Ext22/ecmwf/era5-land/S-hourly-climatology-19910101-20201231-quant.zarr"
+# )
+# %%
+shape = np.shape(int_ds.T[0, :, :])
+static_ds = xr.open_dataset(
+    str(data_dir) + f"/static/static-vars-{model.lower()}-{domain}.nc"
+)
+var_list = list(int_ds)
+carryover_rain = True
+offset_noon = False
 
-#     noon_ds["r_o_tomorrow"] = r_o_tomorrow_da
+dailyTime = datetime.now()
+print("---------------------------------------------------")
+print("Obtain noon local weather data")
+### Call on variables
+tzone = static_ds.ZoneST.values
 
-#     ## create daily 24 accumulated precipitation totals
-#     x_prev = 0
-#     for i, x_val in enumerate(noon_ds.r_o):
-#         noon_ds.r_o[i] -= x_prev
-#         x_prev = x_val
-#     # print("Daily ds done")
-# elif (carryover_rain == False) and (offset_noon == False):
-#     var_dict = {var_list[i]: "h" + var_list[i] for i in range(len(var_list))}
-#     noon_ds = noon_ds.rename(var_dict)
-#     for var in var_list:
-#         noon_ds["h" + var].attrs = int_ds[var].attrs
-#         noon_ds["h" + var].attrs["description"] = (
-#             "HOURLY NOON " + int_ds[var].attrs["description"]
-#         )
-#     # print("Noon ds done")
-# elif (carryover_rain == False) and (offset_noon != False):
-#     hourname = f"h{12 + offset_noon -1}"
-#     var_dict = {
-#         var_list[i]: hourname + var_list[i] for i in range(len(var_list))
-#     }
-#     print(var_dict)
-#     noon_ds = noon_ds.rename(var_dict)
-#     for var in var_list:
-#         noon_ds[hourname + var].attrs = int_ds[var].attrs
-#         noon_ds[hourname + var].attrs["description"] = (
-#             f"{hourname.upper()}00 Hour " + int_ds[var].attrs["description"]
-#         )
-#     # print("Offset Noon ds done")
-# else:
-#     raise ValueError(
-#         f"Invalided carryover_rain option: {carryover_rain}. Only supports boolean inputs \n Please try with True or False :)"
-#     )
-# print("Time to obtain noon local weather data:  ",  datetime.now() - dailyTime)
-# print('---------------------------------------------------')
+# correct for places on int dateline
+tzone[tzone <= -12] *= -1
+
+## create I, J for quick indexing
+I, J = np.ogrid[: shape[0], : shape[1]]
+
+## determine index for looping based on length of time array and initial time
+time_array = int_ds.Time.values
+int_time = int(pd.Timestamp(time_array[0]).hour)
+length = len(time_array) + 1
+num_days = [i - 12 for i in range(1, length) if i % 24 == 0]
+index = [i - int_time if 12 - int_time >= 0 else i + 24 - int_time for i in num_days]
+print(
+    f"For NWP with {str(int_time).zfill(2)}Z, will use index(s) of {index} as index(s) to represent 12Z"
+)
+
+times = xr.DataArray(12 + tzone + offset_noon, dims=("south_north", "west_east"))
+south_north = xr.DataArray(I[:, 0], dims="time")
+west_east = xr.DataArray(J[0, :], dims="time")
+
+# test = int_ds[12 + tzone.values+ offset_noon]
+# test = int_ds.isel(time=times)# south_north =south_north, west_east = west_east)
+
+
+## this is to get the index for the desired time of day offset from noon. When used a 1 is added to get in the local daily light time, as the fwi is built on standard time
+if offset_noon == False:
+    offset_noon = 0
+elif type(offset_noon) == int:
+    offset_noon = offset_noon + 1
+else:
+    raise ValueError(f"Invalided offset_noon of {offset_noon}")
+## loop every 24 hours at noon local
+files_ds = []
+for i in index:
+    # print(i)
+    ## loop each variable
+    # print(f"offset_noon {offset_noon}")
+    mean_da = []
+    for var in var_list:
+        var_array = int_ds[var].values
+        noon = var_array[(i + tzone + offset_noon), I, J]
+        day = np.array(int_ds.Time[i + 1], dtype="datetime64[D]")
+        var_da = xr.DataArray(
+            noon,
+            name=var,
+            dims=("south_north", "west_east"),
+            coords=int_ds.isel(time=i).coords,
+        )
+        var_da["Time"] = day
+        mean_da.append(var_da)
+    mean_ds = xr.merge(mean_da)
+    files_ds.append(mean_ds)
+
+noon_ds = xr.combine_nested(files_ds, "time")
+
+
+if carryover_rain == True:
+    ## create datarray for carry over rain, this will be added to the next days rain totals
+    ## NOTE: this is rain that fell from noon local until 23 hours past the model initial time ie 00Z, 06Z..
+    r_o_tomorrow_i = int_ds.r_o.values[22] - noon_ds.r_o.values[0]
+    r_o_tomorrow = [r_o_tomorrow_i for i in range(len(num_days))]
+    r_o_tomorrow = np.stack(r_o_tomorrow)
+    r_o_tomorrow_da = xr.DataArray(
+        r_o_tomorrow,
+        name="r_o_tomorrow",
+        dims=("time", "south_north", "west_east"),
+        coords=noon_ds.coords,
+    )
+    r_o_tomorrow_da = xr.where(r_o_tomorrow_da > 1e-4, r_o_tomorrow_da, 0.0)
+
+    noon_ds["r_o_tomorrow"] = r_o_tomorrow_da
+
+    ## create daily 24 accumulated precipitation totals
+    # x_prev = 0
+    # for i, x_val in enumerate(noon_ds.r_o):
+    #     noon_ds.r_o[i] -= x_prev
+    #     print(x_prev)
+    #     x_prev = x_val
+    x_prev = 0
+    for i in range(len(noon_ds.time)):
+        noon_ds.r_o[i] -= x_prev
+        print(x_prev)
+        x_prev = noon_ds.r_o[i]
+    # print("Daily ds done")
+elif (carryover_rain == False) and (offset_noon == False):
+    var_dict = {var_list[i]: "h" + var_list[i] for i in range(len(var_list))}
+    noon_ds = noon_ds.rename(var_dict)
+    for var in var_list:
+        noon_ds["h" + var].attrs = int_ds[var].attrs
+        noon_ds["h" + var].attrs["description"] = (
+            "HOURLY NOON " + int_ds[var].attrs["description"]
+        )
+    # print("Noon ds done")
+elif (carryover_rain == False) and (offset_noon != False):
+    hourname = f"h{12 + offset_noon -1}"
+    var_dict = {var_list[i]: hourname + var_list[i] for i in range(len(var_list))}
+    print(var_dict)
+    noon_ds = noon_ds.rename(var_dict)
+    for var in var_list:
+        noon_ds[hourname + var].attrs = int_ds[var].attrs
+        noon_ds[hourname + var].attrs["description"] = (
+            f"{hourname.upper()}00 Hour " + int_ds[var].attrs["description"]
+        )
+    # print("Offset Noon ds done")
+else:
+    raise ValueError(
+        f"Invalided carryover_rain option: {carryover_rain}. Only supports boolean inputs \n Please try with True or False :)"
+    )
+print("Time to obtain noon local weather data:  ", datetime.now() - dailyTime)
+print("---------------------------------------------------")
 
 
 # # runTime = datetime.now()
@@ -367,3 +509,5 @@ hourly_climo = salem.open_xr_dataset(
 
 # # hourly_ds.isel(south_north = 50, west_east = 100)['S'].plot()
 # # hourly_ds.isel(south_north = 50, west_east = 100)['R'].plot()
+
+# %%

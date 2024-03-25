@@ -1,14 +1,18 @@
 #!/bluesky/fireweather/miniconda3/envs/fwf/bin/python
 
 import context
+import salem
 import numpy as np
 import xarray as xr
 import geojsoncontour
+import pandas as pd
+import geopandas as gpd
 from pathlib import Path
 from netCDF4 import Dataset
 import branca.colormap as cm
 import scipy.ndimage as ndimage
 from scipy.ndimage.filters import gaussian_filter
+from sklearn.neighbors import KDTree
 
 import matplotlib.pyplot as plt
 import matplotlib.colors
@@ -196,6 +200,44 @@ def colormaps(cmaps, var):
     return cmap
 
 
+def get_pyproj_loc(pyproj_srs, df, lat=None, lon=None):
+    if lat == None:
+        pass
+    else:
+        if (type(lat) == float) or (type(lat) == int):
+            lat, lon = [lat], [lon]
+            df = pd.DataFrame({"lats": lat, "lons": lon})
+        else:
+            df = pd.DataFrame({"lats": lat, "lons": lon})
+    # get_locs_time = datetime.now()
+    try:
+        loc_values = df.wmo.values
+        loc = "wmo"
+    except:
+        loc_values = df.index.values
+        loc = "loc"
+    gpm25 = gpd.GeoDataFrame(
+        df,
+        crs="EPSG:4326",
+        #  crs="+init=epsg:4326",
+        geometry=gpd.points_from_xy(df["lons"], df["lats"]),
+    ).to_crs(pyproj_srs)
+
+    x = xr.DataArray(
+        np.array(gpm25.geometry.x),
+        dims=loc,
+        coords={loc: loc_values},
+    )
+    y = xr.DataArray(
+        np.array(gpm25.geometry.y),
+        dims=loc,
+        coords={loc: loc_values},
+    )
+    # print("Locs Time: ", datetime.now() - get_locs_time)
+
+    return x, y
+
+
 # def contourf_to_geojson(contourf, geojson_filepath=None, min_angle_deg=None,
 #                         ndigits=5, unit='', stroke_width=1, fill_opacity=.9, fill_opacity_range=None,
 #                         geojson_properties=None, strdump=False, serialize=True):
@@ -225,3 +267,46 @@ def colormaps(cmaps, var):
 #                 fill_opacity += opacity_increment
 #     feature_collection = FeatureCollection(polygon_features)
 #     return _render_feature_collection(feature_collection, geojson_filepath, strdump, serialize)
+
+
+def make_KDtree(model, domain, lats, lons):
+
+    static_ds = salem.open_xr_dataset(
+        str(data_dir) + f"/static/static-vars-{model}-{domain}.nc"
+    )
+    shape = static_ds.XLAT.shape
+    locs = pd.DataFrame(
+        {"lats": static_ds.XLAT.values.ravel(), "lons": static_ds.XLONG.values.ravel()}
+    )
+    ## build kdtree
+    fwf_tree = KDTree(locs)
+    print("Fire KDTree built")
+    yy, xx = [], []
+    # df = pd.DataFrame(
+    #     {'lat': [case_info['min_lat'],case_info['max_lat'], case_info['max_lat'], case_info['min_lat']],
+    #     'lon': [case_info['min_lon'],case_info['min_lon'], case_info['max_lon'], case_info['max_lon']]
+    #     }
+    # )
+    try:
+        df = pd.DataFrame({"lat": lats, "lon": lons})
+    except:
+        df = pd.DataFrame({"lat": [lats], "lon": [lons]})
+    for index, row in df.iterrows():
+        ## arange wx station lat and long in a formate to query the kdtree
+        single_loc = np.array([row.lat, row.lon]).reshape(1, -1)
+        ## query the kdtree retuning the distacne of nearest neighbor and index
+        dist, ind = fwf_tree.query(single_loc, k=1)
+        ## set condition to pass on fire farther than 0.1 degrees
+        if dist > 0.1:
+            pass
+        else:
+            ## if condition passed reformate 1D index to 2D indexes
+            ind_2d = np.unravel_index(int(ind), shape)
+            ## append the indexes to lists
+            yy.append(ind_2d[0])
+            xx.append(ind_2d[1])
+    yy, xx = np.array(yy), np.array(xx)
+    # yy, yy_counts = np.unique(yy, return_counts=True)
+    # xx, xx_counts = np.unique(xx, return_counts=True)
+
+    return yy, xx

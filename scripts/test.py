@@ -5,38 +5,124 @@ import salem
 import numpy as np
 import pandas as pd
 import xarray as xr
+import matplotlib.pyplot as plt
+
 from context import data_dir, root_dir
 from utils.diagnostic import solve_RH, solve_TD, solve_W_WD, solve_r_o
 
+# from utils.geoutils import get_locs
 
-rave = xr.open_dataset(
-    "/Volumes/WFRT-Ext24/rave/RAVE-HrlyEmiss-3km_v1r3_blend_s202310080800000_e202310080859590_c202310081002430.nc"
+
+# ds_2014 = salem.open_wrf_dataset(
+#        str(data_dir)+  f"/adda/wrfout_d01_2001-06-30_21_00_00"
+#     )
+
+
+ds = xr.open_zarr(
+    "/Volumes/WFRT-Ext21/fwf-data/adda/d01/01/fwf-hourly-d01-2002081100.zarr"
+)
+
+# fig = plt.figure(figsize=(12, 6))
+# ax = fig.add_subplot(1, 1, 1)
+# ds["D"].isel(time = 0).salem.quick_map(ax=ax, cmap="jet",  vmax =500, oceans = True, lakes = True, prov = True, states = True)
+
+fig = plt.figure(figsize=(12, 6))
+ax = fig.add_subplot(1, 1, 1)
+ds["S"].isel(time=0).salem.quick_map(
+    ax=ax, cmap="jet", vmax=40, oceans=True, lakes=True, prov=True, states=True
 )
 
 
-model = "ecmwf"
-domain = "era5-land"
-doi = pd.Timestamp("2020-08-13")
-# print(list(xr.open_dataset(f'/Volumes/Scratch/fwf-data/wrf/{domain}/{doi.strftime("%Y%m")}/fwf-hourly-{domain}-{doi.strftime("%Y%m%d06")}.nc')))
-hourly = salem.open_xr_dataset(
-    f'/Volumes/WFRT-EXT23/fwf-data/{model}/{domain}/04/fwf-hourly-{domain}-{doi.strftime("%Y%m%d00")}.nc'
-)
+# ds = xr.open_zarr('/Volumes/WFRT-Ext21/fwf-data/adda/d01/01/2001/fwf-daily-d01-2001041100.zarr')
 
-daily_ly = salem.open_xr_dataset(
-    f'/Volumes/WFRT-EXT23/fwf-data/{model}/{domain}/04/fwf-daily-{domain}-{(doi-pd.Timedelta(365*15, "d")).strftime("%Y%m%d00")}.nc'
-)
-daily_cy = salem.open_xr_dataset(
-    f'/Volumes/WFRT-EXT23/fwf-data/{model}/{domain}/04/fwf-daily-{domain}-{doi.strftime("%Y%m%d00")}.nc'
-)
-daily_cy.sel(west_east=slice(-130, -110), south_north=slice(55, 45))[
-    "D"
-].salem.quick_map(cmap="coolwarm")
-(daily_cy["D"] - daily_ly["D"]).salem.quick_map(cmap="coolwarm", vmin=-500, vmax=500)
-
-daily_cy["D"].salem.quick_map(vmax=3000)
+# fig = plt.figure(figsize=(12, 6))
+# ax = fig.add_subplot(1, 1, 1)
+# ds["D"].isel(time = 0).salem.quick_map(ax=ax, cmap="jet",  vmax =500, oceans = True)
 
 
-daily_cy["F"].salem.quick_map(vmax=101)
+# ds = xr.open_zarr('/Volumes/WFRT-Ext21/fwf-data/adda/d01/01/fwf-hourly-d01-2001010200.zarr')
+
+# fig = plt.figure(figsize=(12, 6))
+# ax = fig.add_subplot(1, 1, 1)
+# ds["S"].isel(time = 23).salem.quick_map(ax=ax, cmap="jet", vmax =40)
+
+
+# static_ds = salem.open_xr_dataset(
+#     str(data_dir) + f"/static/static-vars-adda-d01.nc"
+# )
+# # # print(static_ds)
+
+
+# fig = plt.figure(figsize=(12, 6))
+# ax = fig.add_subplot(1, 1, 1)
+# static_ds["ZoneST"].salem.quick_map(ax=ax, cmap="terrain")
+
+
+# # ds_2014_00 = xr.open_dataset(
+# #         f"/Volumes/WFRT-Ext20/2014/cstm_d01_2014-12-31_23_00_00.nc"
+# #     )
+
+# ds_2001 = xr.open_dataset(
+#         f"/Volumes/ThunderBay/CRodell/ADDA_V2/2001/cstm_d01_2001-12-31_23_00_00.nc"
+#     )['precipitation_0m'].isel(time =0 )
+# ds_2001.plot()
+
+# ds_2002 = xr.open_dataset(
+#         f"/Volumes/ThunderBay/CRodell/ADDA_V2/test/cstm_d01_2002-01-01_00_00_00.nc"
+#     )['precipitation_0m'].isel(time =0 )
+# ds_2002.plot()
+# ds_t2d = xr.open_dataset(
+#         f"/Volumes/WFRT-Ext20/td2/2001/TD2_2001-03-26_05.nc"
+#     )
+
+# ds_grid = ds.salem.grid.to_dataset()
+# rave = xr.open_dataset(
+#     "/Volumes/WFRT-Ext24/rave/RAVE-HrlyEmiss-3km_v1r3_blend_s202310080800000_e202310080859590_c202310081002430.nc"
+# )
+
+
+# model = "wrf"
+# domain = "d02"
+# doi = pd.Timestamp("2021-01-06")
+# trial = '01'
+# # print(list(xr.open_dataset(f'/Volumes/Scratch/fwf-data/wrf/{domain}/{doi.strftime("%Y%m")}/fwf-hourly-{domain}-{doi.strftime("%Y%m%d06")}.nc')))
+# hourly_ds = salem.open_xr_dataset(
+#     f'/Volumes/WFRT-EXT24/fwf-data/{model}/{domain}/{trial}/fwf-hourly-{domain}-{doi.strftime("%Y%m%d06")}.nc'
+# )
+
+# hourly_ds_old = xr.open_dataset(
+#     f'/Volumes/WFRT-EXT24/fwf-data/{model}/{domain}/04/fwf-hourly-{domain}-{doi.strftime("%Y%m%d06")}.nc'
+# )
+# hourly_ds_old['south_north'] = hourly_ds['south_north']
+# hourly_ds_old['west_east'] = hourly_ds['west_east']
+# daily_ds = salem.open_xr_dataset(
+#     f'/Volumes/WFRT-EXT24/fwf-data/{model}/{domain}/{trial}/fwf-daily-{domain}-{doi.strftime("%Y%m%d06")}.nc'
+# )
+
+# x, y  = get_locs(pyproj_srs= daily_ds.attrs['pyproj_srs'], df = None, lat = 40 , lon = -104)
+
+# fig = plt.figure()
+# ax = fig.add_subplot(1,1,1)
+# ax.plot(hourly_ds['S'].time, hourly_ds['S'].interp(south_north= y, west_east=x), color = 'tab:blue')
+# ax.plot(hourly_ds_old['S'].Time, hourly_ds_old['S'].interp(south_north= y, west_east=x), color = 'tab:red')
+# # ax.legend()
+# fig.autofmt_xdate(rotation=45)
+
+# (hourly_ds['S'] - hourly_ds_old['S']).isel(time = 20).plot()
+
+
+# daily_cy = salem.open_xr_dataset(
+#     f'/Volumes/WFRT-EXT23/fwf-data/{model}/{domain}/{trial}/fwf-daily-{domain}-{doi.strftime("%Y%m%d00")}.nc'
+# )
+# daily_cy.sel(west_east=slice(-130, -110), south_north=slice(55, 45))[
+#     "D"
+# ].salem.quick_map(cmap="coolwarm")
+# (daily_cy["D"] - daily_ly["D"]).salem.quick_map(cmap="coolwarm", vmin=-500, vmax=500)
+
+# daily_cy["D"].salem.quick_map(vmax=3000)
+
+
+# daily_cy["F"].salem.quick_map(vmax=101)
 
 # daily = daily.sel(south_north = slice(84, 46))
 

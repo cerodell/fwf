@@ -9,11 +9,14 @@
         "cSpell.words": [
             "Carree",
             "contourf",
+            "ecmwf",
             "geojsoncontour",
             "lons",
             "ndigits",
             "pcolormesh",
             "ufunc",
+            "vmax",
+            "WFRT",
             "xarray"
         ]
     }

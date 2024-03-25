@@ -38,7 +38,7 @@ var_list = [
     "ws",
     "precip",
 ]
-var_list = ["fwi"]
+# var_list = ["fwi"]
 for var in var_list:
     print(f"+++++++===========  {var} =============++++++++")
     day1_df = pd.read_csv(
@@ -47,13 +47,13 @@ for var in var_list:
     day1_df["domain"] = day1_df["domain"].str.strip()
     stdev_obs = float(day1_df[day1_df["domain"] == "obs"]["std_dev"].iloc[0])
 
-    day2_df = pd.read_csv(
-        str(data_dir) + f"/intercomp/{trail_name}/{model}_day2/{var}-stats.csv"
-    )
-    day2_df["domain"] = day2_df["domain"].str.strip()
-    stdev_obs2 = float(day2_df[day2_df["domain"] == "obs"]["std_dev"].iloc[0])
-    if stdev_obs != stdev_obs2:
-        raise ValueError("We have an issue! The day1 and day2 std dont match")
+    # day2_df = pd.read_csv(
+    #     str(data_dir) + f"/intercomp/{trail_name}/{model}_day2/{var}-stats.csv"
+    # )
+    # day2_df["domain"] = day2_df["domain"].str.strip()
+    # stdev_obs2 = float(day2_df[day2_df["domain"] == "obs"]["std_dev"].iloc[0])
+    # if stdev_obs != stdev_obs2:
+    #     raise ValueError("We have an issue! The day1 and day2 std dont match")
 
     def get_mbe(df, domain):
         mbe = round(float(df[df["domain"] == domain]["mbe"].iloc[0]), 2)
@@ -77,11 +77,11 @@ for var in var_list:
     print_stats(day1_df, "d03-daily")
     print_stats(day1_df, "d02-daily")
 
-    print_stats(day1_df, "d03-h1200")
-    print_stats(day1_df, "d02-h1200")
+    # print_stats(day1_df, "d03-h1200")
+    # print_stats(day1_df, "d02-h1200")
 
-    print_stats(day1_df, "d03-h1600")
-    print_stats(day1_df, "d02-h1600")
+    # print_stats(day1_df, "d03-h1600")
+    # print_stats(day1_df, "d02-h1600")
 
-    print_stats(day1_df, "d03-max")
-    print_stats(day1_df, "d02-max")
+    # print_stats(day1_df, "d03-max")
+    # print_stats(day1_df, "d02-max")

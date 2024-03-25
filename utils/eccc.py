@@ -18,7 +18,8 @@ import geopandas as gpd
 from context import data_dir, root_dir
 
 
-def read_eccc(doi, model, domain):
+def read_eccc(config):
+    doi, model, domain = config["doi"], config["model"], config["domain"]
     filein = f'/Volumes/WFRT-Ext23/fwf-data/{model}/{domain}/{doi.strftime("%Y%m")}/fwf-hourly-{domain}-{doi.strftime("%Y%m%d00")}.nc'
     if os.path.isfile(filein) == True:
         print(f'Found: fwf-hourly-{domain}-{doi.strftime("%Y%m%d00")}.nc')

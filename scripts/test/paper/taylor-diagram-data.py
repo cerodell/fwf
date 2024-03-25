@@ -5,7 +5,7 @@ import numpy as np
 import pandas as pd
 import xarray as xr
 
-import skill_metrics as sm
+# import skill_metrics as sm
 import matplotlib.pyplot as plt
 from matplotlib import rcParams
 
@@ -29,7 +29,7 @@ __email__ = "crodell@eoas.ubc.ca"
 # model = "nwp"
 # domains = ["d02", "d03", "rdps", "hrdps"]
 
-model = "wrf_day2"
+model = "wrf"
 domains = ["d02", "d03"]
 trail_name = "04"
 fwf_dir = f"/Volumes/WFRT-Ext24/fwf-data/"
@@ -42,37 +42,77 @@ save_dir.mkdir(parents=True, exist_ok=True)
 ############ Open static datasets and prepare ################
 
 
-try:
-    ds = xr.open_dataset(
-        str(data_dir) + f"/intercomp/{trail_name}/{model}/d03-20210101-20221231.nc",
-    )
-except:
-    ds = xr.open_dataset(
-        str(data_dir) + f"/intercomp/{trail_name}/{model}/20210101-20221231.nc",
-    )
-
+ds = xr.open_dataset(
+    str(data_dir) + f"/intercomp/{trail_name}/{model}/d03-20210301-20231101.nc",
+)
+# ## drop stations right on domain boundaries, also station with bad data.
+# bad_wx = [1221, 1374, 3107, 3125, 3137, 3141, 3145, 3192, 3215, 3236, 3267, 3280, 3292, 5530]
+# for wx in bad_wx:
+#     ds = ds.drop_sel(wmo=wx)
+dims_order = ["time", "domain", "wmo"]
+ds = ds.transpose(*dims_order)[
+    ["fwi", "mfwi", "hfwi", "h16fwi", "temp", "rh", "ws", "precip"]
+]
+for coords in ["domain", "elev", "name", "prov", "id"]:
+    ds[coords] = ds[coords].values.astype("str")
 ## make time dim sliceable with datetime
 ds["time"] = ds["Time"]
+ds = ds.chunk("auto")
 # ds_2021 = ds.sel(time=slice("2021-05-01", "2021-09-30"))
 # ds_2022 = ds.sel(time=slice("2022-05-01", "2022-09-30"))
 # null_ds = ds.sel(time=slice("2021-10-01", "2022-04-30"))
 ds_2021 = ds.sel(time=slice("2021-04-01", "2021-10-31"))
 ds_2022 = ds.sel(time=slice("2022-04-01", "2022-10-31"))
-null_ds = ds.sel(time=slice("2021-11-01", "2022-03-30"))
-null_array = np.full(null_ds["temp"].shape, np.nan)
-for var in null_ds:
-    null_ds[var] = (("time", "domain", "wmo"), null_array)
+ds_2023 = ds.sel(time=slice("2023-04-01", "2023-10-31"))
+
+null21_ds = ds.sel(time=slice("2021-11-01", "2022-03-30"))
+null22_ds = ds.sel(time=slice("2022-11-01", "2023-03-30"))
+
+
+null_array = np.full(null21_ds["fwi"].shape, np.nan)
+for var in null21_ds:
+    null21_ds[var] = (("time", "domain", "wmo"), null_array)
+    null22_ds[var] = (("time", "domain", "wmo"), null_array)
 
 ds_2021 = ds_2021.drop("Time")
 ds_2022 = ds_2022.drop("Time")
-null_ds = null_ds.drop("Time")
+ds_2023 = ds_2023.drop("Time")
+null21_ds = null21_ds.drop("Time")
+null22_ds = null22_ds.drop("Time")
 
-prov_ds = xr.combine_nested([ds_2021, null_ds, ds_2022], concat_dim="time")
+prov_ds = xr.combine_nested(
+    [ds_2021, null21_ds, ds_2022, null22_ds, ds_2023], concat_dim="time"
+)
 for var in ["elev", "name", "prov", "id", "domain"]:
     prov_ds[var] = prov_ds[var].astype(str)
 
-wmo_idx = np.loadtxt(str(data_dir) + "/intercomp/02/wx_station.txt").astype(int)
-prov_ds = prov_ds.sel(wmo=wmo_idx)
+# wmo_idx = np.loadtxt(str(data_dir) + "/intercomp/02/wx_station.txt").astype(int)
+# prov_ds = prov_ds.sel(wmo=wmo_idx)
+## drop stations right on domain boundaries, also station with bad data.
+bad_wx = [
+    1221,
+    1374,
+    3107,
+    3125,
+    3137,
+    3141,
+    3145,
+    3192,
+    3215,
+    3236,
+    3267,
+    3280,
+    3292,
+    5530,
+    1430,
+    1995,
+    3173,
+    3187,
+    720429,
+    720868,
+]
+for wx in bad_wx:
+    prov_ds = prov_ds.drop_sel(wmo=wx)
 all_obs_ds = prov_ds.sel(domain="obs")
 domains_ds = [prov_ds.sel(domain=domain) for domain in domains]
 
@@ -88,8 +128,8 @@ def solve_stats(j, idx, var, obs_ds, obs_flat, obs_flat_null, name):
     fct_flat = np.delete(fct_flat, idx)
 
     if var == "precip":
-        fct_flat = fct_flat[obs_flat > 0.01]
-        obs_flat = obs_flat[obs_flat > 0.01]
+        fct_flat = fct_flat[obs_flat > 0.1]
+        obs_flat = obs_flat[obs_flat > 0.1]
     else:
         pass
 
@@ -122,12 +162,6 @@ def solve_stats(j, idx, var, obs_ds, obs_flat, obs_flat_null, name):
 
 
 var_list = [
-    "ffmc",
-    "dmc",
-    "dc",
-    "bui",
-    "isi",
-    "fwi",
     "temp",
     # "td",
     "rh",
@@ -135,7 +169,7 @@ var_list = [
     # "wdir",
     "precip",
 ]
-# var_list = ["precip"]
+# var_list = ["fwi"]
 
 length = len(var_list)
 for i in range(length):
@@ -154,7 +188,7 @@ for i in range(length):
     wx_station, wx_count = np.unique(np.delete(wx_station, idx), return_counts=True)
     print(var)
     print(len(wx_count))
-    # print(list(wx_station[np.where(wx_count < 30)[0]]))
+    print(list(wx_station[np.where(wx_count < 30)[0]]))
     print(len(list(wx_station[np.where(wx_count < 30)[0]])))
     print("=============================================")
     dfs = []

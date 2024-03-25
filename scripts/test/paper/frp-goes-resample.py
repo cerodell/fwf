@@ -42,8 +42,8 @@ __email__ = "crodell@eoas.ubc.ca"
 
 #################### INPUTS ####################
 ## define model domain and path to fwf data
-save_fig = False
-paper = False
+save_fig = True
+paper = True
 case_study = "caldor_fire"  # ['sparks_lake', 'lytton_creek', 'barrington_lake_fire', 'ewf_031', 'quebec_fire_334', 'donnie_creek', 'wildcat', 'marshall_fire', 'oak_fire', 'caldor_fire', 'fire_east_tulare', 'rossmoore_fire', 'crater_creek', 'mcdougall_creek']
 # print(case_study)
 
@@ -99,7 +99,7 @@ for case_study in ["caldor_fire"]:
         frp_ds.time,
         frp_ds["Power"].mean(dim=("x", "y")),
         c=mdates.date2num(pd.to_datetime(frp_ds.time.values)),
-        label="FRP 10min",
+        label="FRP 15min",
     )
 
     set_axis_postion(ax, "FRP (MW)")

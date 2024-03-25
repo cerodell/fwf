@@ -40,7 +40,7 @@ paper = True
 model = "wrf"
 domain = "d02"
 var = "F"
-trail_name = "02"
+trail_name = "04"
 
 vars = ["F", "P", "D", "R", "U", "S", "T", "H", "W", "r_o"]
 vars = ["W"]
@@ -59,37 +59,75 @@ with open(str(root_dir) + "/json/colormaps-dev.json") as f:
     cmaps = json.load(f)
 
 
-try:
-    ds = xr.open_dataset(
-        str(data_dir) + f"/intercomp/{trail_name}/{model}/d03-20210101-20221231.nc",
-    )
-except:
-    ds = xr.open_dataset(
-        str(data_dir) + f"/intercomp/{trail_name}/{model}/20210101-20221231.nc",
-    )
+# try:
+ds_old = xr.open_dataset(
+    str(data_dir) + f"/intercomp/{trail_name}/{model}/d03-20210101-20221231.nc",
+)
+# except:
+#     ds = xr.open_dataset(
+#         str(data_dir) + f"/intercomp/{trail_name}/{model}/20210101-20221231.nc",
+#     )
+ds = xr.open_dataset(
+    str(data_dir) + f"/intercomp/{trail_name}/{model}/d03-20210301-20231101.nc",
+)
+
+dims_order = ["time", "domain", "wmo"]
+ds = ds.transpose(*dims_order)
+for var in ["elev", "name", "prov", "id", "domain"]:
+    ds[var] = ds[var].astype(str)
 ## make time dim sliceable with datetime
 ds["time"] = ds["Time"]
+ds = ds.chunk("auto")
+
+## make time dim sliceable with datetime
+# ds["time"] = ds["Time"]
 wmo_idx = np.loadtxt(str(data_dir) + "/intercomp/02/wx_station.txt").astype(int)
 ds = ds.sel(wmo=wmo_idx)
+
 for wx in [71232, 71245]:
     ds = ds.drop_sel(wmo=wx)
 ## make time dim sliceable with datetime
-ds["time"] = ds["Time"]
+# ds["time"] = ds["Time"]
+
+# ds_2021 = ds.sel(time=slice("2021-04-01", "2021-10-31"))
+# ds_2022 = ds.sel(time=slice("2022-04-01", "2022-10-31"))
+# null_ds = ds.sel(time=slice("2021-11-01", "2022-03-31"))
+# null_array = np.full(null_ds["temp"].shape, np.nan)
+# for var in null_ds:
+#     null_ds[var] = (("time", "domain", "wmo"), null_array)
+
+# ds_2021 = ds_2021.drop("Time")
+# ds_2022 = ds_2022.drop("Time")
+# null_ds = null_ds.drop("Time")
+
+# ds = xr.combine_nested([ds_2021, null_ds, ds_2022], concat_dim="time")
 
 ds_2021 = ds.sel(time=slice("2021-04-01", "2021-10-31"))
 ds_2022 = ds.sel(time=slice("2022-04-01", "2022-10-31"))
-null_ds = ds.sel(time=slice("2021-11-01", "2022-03-31"))
-null_array = np.full(null_ds["temp"].shape, np.nan)
-for var in null_ds:
-    null_ds[var] = (("time", "domain", "wmo"), null_array)
+ds_2023 = ds.sel(time=slice("2023-04-01", "2023-10-31"))
+
+null21_ds = ds.sel(time=slice("2021-11-01", "2022-03-30"))
+null22_ds = ds.sel(time=slice("2022-11-01", "2023-03-30"))
+
+
+null_array = np.full(null21_ds["fwi"].shape, np.nan)
+for var in null21_ds:
+    null21_ds[var] = (("time", "domain", "wmo"), null_array)
+    null22_ds[var] = (("time", "domain", "wmo"), null_array)
 
 ds_2021 = ds_2021.drop("Time")
 ds_2022 = ds_2022.drop("Time")
-null_ds = null_ds.drop("Time")
+ds_2023 = ds_2023.drop("Time")
+null21_ds = null21_ds.drop("Time")
+null22_ds = null22_ds.drop("Time")
 
-ds = xr.combine_nested([ds_2021, null_ds, ds_2022], concat_dim="time")
-for var in ["elev", "name", "prov", "id", "domain"]:
-    ds[var] = ds[var].astype(str)
+ds = xr.combine_nested(
+    [ds_2021, null21_ds, ds_2022, null22_ds, ds_2023], concat_dim="time"
+)
+
+
+# for var in ["elev", "name", "prov", "id", "domain"]:
+#     ds[var] = ds[var].astype(str)
 
 ##################################################################
 
@@ -98,10 +136,10 @@ for cord in ["elev", "name", "prov", "id"]:
 ds["elev"] = ds["elev"].astype(float)
 ds["elev"] = xr.where(ds["elev"] < 0, 0, ds["elev"])
 
-for cord in ["elev", "name", "prov", "id"]:
-    ds[cord] = ds[cord].astype(str)
+# for cord in ["elev", "name", "prov", "id"]:
+#     ds[cord] = ds[cord].astype(str)
 
-ds = ds.chunk("auto")
+# ds = ds.chunk("auto")
 
 
 def make_mean_bias(ds, domain):
@@ -136,7 +174,7 @@ def make_mean_bias(ds, domain):
     df_wmo.head()
 
     # Assuming 'column_name' is the name of the column you're interested in
-    column_name = "fwi"
+    column_name = "precip"
 
     # Calculate mean and standard deviation
     mean_value = df_wmo[column_name].mean()

@@ -90,7 +90,8 @@ def era5_land(doi, model, domain, filein):
     return ds
 
 
-def read_era5(doi, model, domain):
+def read_era5(config):
+    doi, model, domain = config["doi"], config["model"], config["domain"]
     # filein = f"/Volumes/WFRT-Ext23/{model}/{domain}/"
     if domain == "era5":
         filein = f"/Volumes/ThunderBay/CRodell/{model}/{domain}/"

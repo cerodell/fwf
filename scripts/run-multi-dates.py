@@ -16,6 +16,7 @@ from utils.wrf_ import read_wrf
 from utils.eccc import read_eccc
 from utils.era5 import read_era5
 
+
 startTime = datetime.now()
 print("RUN STARTED AT: ", str(startTime))
 
@@ -30,17 +31,23 @@ __email__ = "crodell@eoas.ubc.ca"
 warnings.filterwarnings("ignore", category=RuntimeWarning)
 warnings.filterwarnings("ignore", category=UserWarning)
 # date_range = pd.date_range("1990-01-01", "1990-01-01")
-date_range = pd.date_range("2023-10-30", "2024-01-01")
+# date_range = pd.date_range("2023-05-13", "2023-05-18")
+# date_range = pd.date_range("2023-05-29", "2023-06-01")
+# date_range = pd.date_range("2002-01-01", "2002-01-02")
+date_range = pd.date_range("2002-08-29", "2002-12-31")
 
 config = dict(
-    model="ecmwf",
-    domain="era5-land",
-    trail_name="04",
+    model="adda",
+    domain="d01",
+    trail_name="01",
     initialize=False,
     initialize_hffmc=False,
     overwinter=False,
     fbp_mode=False,
     correctbias=False,
+    reanalysis_mode=False,
+    parallel=True,
+    file_formate="zarr",
 )
 
 if config["model"] == "eccc":
@@ -55,6 +62,8 @@ elif config["model"] == "wrf":
         config["root_dir"] = "/Volumes/WFRT-Ext23/fwf-data"
     else:
         config["root_dir"] = "/Volumes/Scratch/fwf-data"
+elif config["model"] == "adda":
+    config["root_dir"] = "/Volumes/ThunderBay/CRodell/ADDA_V2/"
 else:
     raise ValueError(
         "YIKES! Sorry this model is not supported yet, you'll need to run /tools/build-static-ds.py"

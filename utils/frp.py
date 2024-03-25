@@ -98,6 +98,47 @@ def normalize(ds, yy, xx, norm_ds):
     return ds
 
 
+def normalize_era5(ds, yy, xx, utc_offset):
+    static_ds = salem.open_xr_dataset(str(data_dir) + f"/static/static-vars-wrf-d02.nc")
+    var = "S"
+    climo_ds = xr.open_zarr(
+        f"/Volumes/WFRT-Ext22/ecmwf/era5-land/{var}-hourly-climatology-19910101-20201231-compressed.zarr"
+    )[var]
+    # ds["time"] = ds["Time"]
+    ds = ds[var]
+    date_range = pd.date_range(
+        str(ds["Time"].values[0] - np.timedelta64(int(utc_offset), "h")),
+        str(ds["Time"].values[-1] + np.timedelta64(int(utc_offset), "h")),
+        freq="h",
+    )
+    dayofyear = xr.DataArray(
+        date_range.dayofyear, dims="time", coords=dict(time=date_range)
+    )
+    hours = xr.DataArray(date_range.hour, dims="time", coords=dict(time=date_range))
+    maxS = (climo_ds.sel(dayofyear=dayofyear, hour=hours, quantile=1)).max()
+    minS = (climo_ds.sel(dayofyear=dayofyear, hour=hours, quantile=0)).min()
+    # maxS["time"] = maxS["time"] - np.timedelta64(int(utc_offset), "h")
+    # minS["time"] = minS["time"] - np.timedelta64(int(utc_offset), "h")
+    print(str(ds["time"].values[0]))
+    print(str(ds["time"].values[-1]))
+    maxS = maxS.sel(time=slice(str(ds["time"].values[0]), str(ds["time"].values[-1])))
+    minS = minS.sel(time=slice(str(ds["time"].values[0]), str(ds["time"].values[-1])))
+    maxS = (
+        static_ds.salem.transform(maxS)
+        .isel(south_north=yy, west_east=xx)
+        .max(dim=["south_north", "west_east"])
+    )
+    minS = (
+        static_ds.salem.transform(minS)
+        .isel(south_north=yy, west_east=xx)
+        .min(dim=["south_north", "west_east"])
+    )
+
+    nomr_ds = (ds - minS) / (maxS - minS)
+    print(nomr_ds)
+    return nomr_ds
+
+
 def open_fwf(doi, filein, domain, model, yy, xx, utc_offset, var_list=False):
     ds = xr.open_dataset(
         filein + f"/fwf-{model}-{domain}-{doi.strftime('%Y%m%d06')}.nc"
@@ -108,7 +149,10 @@ def open_fwf(doi, filein, domain, model, yy, xx, utc_offset, var_list=False):
         ds = ds.isel(time=slice(0, 24))
         ds["time"] = ds["time"] - np.timedelta64(int(utc_offset), "h")
         if var_list == False:
-            ds = ds[["S", "F"]]
+            try:
+                ds = ds[["S", "F", "HFI"]]
+            except:
+                ds = ds[["S", "F"]]
         else:
             ds = ds[var_list]
 
@@ -328,7 +372,13 @@ def set_axis_postion_full_fwx(ax, side, offset, label):
     ax.grid(which="major", axis="x", linestyle="--", zorder=2, lw=0.3)
 
 
-def set_axis_postion(ax, label, color=False):
+def set_axis_postion(ax, label, color=False, side=False, offset=False):
+    if offset != False:
+        ax.spines[side].set_position(("outward", offset))
+        ax.spines[side].set_visible(True)
+        ax.yaxis.set_label_position(side)
+        ax.yaxis.set_ticks_position(side)
+        # make_patch_spines_invisible(ax)
     ax.set_ylabel(label, fontsize=20)
     try:
         ax.yaxis.label.set_color(ax.get_lines()[0].get_color())
@@ -342,6 +392,7 @@ def set_axis_postion(ax, label, color=False):
     )
     # ax.grid(True)
     ax.grid(which="major", axis="x", linestyle="--", zorder=2, lw=0.3)
+    return
 
 
 def get_locs(pyproj_srs, df):

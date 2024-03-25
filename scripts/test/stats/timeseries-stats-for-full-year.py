@@ -39,8 +39,8 @@ config = {"wrf": ["d02", "d03"], "eccc": ["rdps", "hrdps"]}
 domains = ["d02", "d03", "rdps", "hrdps"]
 
 model = "wrf"
-domains = ["d02", "d03"]
-trail_name = "02"
+domains = ["era5-land"]
+trail_name = "04"
 fwf_dir = f"/Volumes/WFRT-Ext24/fwf-data/"
 
 ######################### END INPUTS #########################
@@ -51,11 +51,11 @@ with open(str(root_dir) + f"/json/fwf-attrs.json", "r") as fp:
     var_dict = json.load(fp)
 
 ds = xr.open_dataset(
-    str(data_dir) + f"/intercomp/{trail_name}/{model}/20210101-20221231.nc",
+    str(data_dir) + f"/intercomp/{trail_name}/{model}/d03-20210101-20231101.nc",
 )
 ds["time"] = ds["Time"]
 ## drop a bad weather station
-ds = ds.drop_sel(wmo=2275)
+# ds = ds.drop_sel(wmo=2275)
 for var in ["elev", "name", "prov", "id", "domain"]:
     ds[var] = ds[var].astype(str)
 prov_ds = ds

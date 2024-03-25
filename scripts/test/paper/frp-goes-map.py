@@ -36,7 +36,7 @@ __email__ = "crodell@eoas.ubc.ca"
 #################### INPUTS ####################
 ## define model domain and path to fwf data
 save_fig = False
-case_study = "boston_bar"
+case_study = "caldor_fire"
 doi = "2021-08-23"
 print(case_study)
 save_dir = Path(str(data_dir) + f"/images/frp/goes/noaa/")
