@@ -11,8 +11,9 @@ from datetime import datetime
 from context import data_dir
 
 
-adda_dir = "/Volumes/ThunderBay/CRodell/ADDA_V2/"
-doi, model, domain, trial = pd.Timestamp("2002-08-29"), "adda", "d01", "01"
+adda_dir_all = "/Volumes/ThunderBay/CRodell/ADDA_V2/"
+adda_dir_td2 = "/Volumes/WFRT-Ext20/ADDA_V2/TD2/"
+doi, model, domain, trial = pd.Timestamp("2004-04-01"), "adda", "d01", "01"
 
 filein = f'/Volumes/WFRT-Ext21/fwf-data/{model}/{domain}/trial/fwf-hourly-{domain}-{doi.strftime("%Y%m%d00")}.nc'
 
@@ -40,7 +41,9 @@ else:
 
     def get_files_vars(date_of_int):
         return sorted(
-            Path(str(adda_dir) + f'/{date_of_int.strftime("%Y")}/').glob(f"cstm_d01*"),
+            Path(str(adda_dir_all) + f'/{date_of_int.strftime("%Y")}/').glob(
+                f"cstm_d01*"
+            ),
             key=get_timestamp_vars,
         )
 
@@ -74,7 +77,7 @@ else:
 
     def get_files_td2(date_of_int):
         return sorted(
-            Path(str(adda_dir) + f'/td2/{date_of_int.strftime("%Y")}/').glob(f"TD2_*"),
+            Path(str(adda_dir_td2) + f'/{date_of_int.strftime("%Y")}/').glob(f"TD2_*"),
             key=get_timestamp_td2,
         )
 

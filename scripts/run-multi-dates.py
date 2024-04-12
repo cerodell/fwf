@@ -33,8 +33,8 @@ warnings.filterwarnings("ignore", category=UserWarning)
 # date_range = pd.date_range("1990-01-01", "1990-01-01")
 # date_range = pd.date_range("2023-05-13", "2023-05-18")
 # date_range = pd.date_range("2023-05-29", "2023-06-01")
-# date_range = pd.date_range("2002-01-01", "2002-01-02")
-date_range = pd.date_range("2002-08-29", "2002-12-31")
+# date_range = pd.date_range("2004-01-01", "2004-01-02")
+date_range = pd.date_range("2004-12-30", "2004-12-31")
 
 config = dict(
     model="adda",

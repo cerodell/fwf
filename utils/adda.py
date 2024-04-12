@@ -16,11 +16,12 @@ from context import data_dir
 
 
 def read_adda(config):
-    """"""
+
     doi, model, domain = config["doi"], config["model"], config["domain"]
 
     filein = f'/Volumes/WFRT-Ext21/fwf-data/{model}/{domain}/trial/fwf-hourly-{domain}-{doi.strftime("%Y%m%d00")}.nc'
-    adda_dir = "/Volumes/ThunderBay/CRodell/ADDA_V2/"
+    adda_dir_all = "/Volumes/ThunderBay/CRodell/ADDA_V2/"
+    adda_dir_TD2 = "/Volumes/WFRT-Ext20/ADDA_V2/TD2/"
 
     if os.path.isfile(filein) == True:
         grid_ds = salem.open_xr_dataset(str(data_dir) + f"/{model}/{domain}-grid.nc")
@@ -46,7 +47,7 @@ def read_adda(config):
 
         def get_files_vars(date_of_int):
             return sorted(
-                Path(str(adda_dir) + f'/{date_of_int.strftime("%Y")}/').glob(
+                Path(str(adda_dir_all) + f'/{date_of_int.strftime("%Y")}/').glob(
                     f"cstm_d01*"
                 ),
                 key=get_timestamp_vars,
@@ -82,7 +83,7 @@ def read_adda(config):
 
         def get_files_td2(date_of_int):
             return sorted(
-                Path(str(adda_dir) + f'/td2/{date_of_int.strftime("%Y")}/').glob(
+                Path(str(adda_dir_TD2) + f'/{date_of_int.strftime("%Y")}/').glob(
                     f"TD2_*"
                 ),
                 key=get_timestamp_td2,

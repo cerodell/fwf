@@ -43,8 +43,8 @@ __email__ = "crodell@eoas.ubc.ca"
 #################### INPUTS ####################
 ## define model domain and path to fwf data
 save_fig = True
-paper = True
-case_study = "caldor_fire"  # ['sparks_lake', 'lytton_creek', 'barrington_lake_fire', 'ewf_031', 'quebec_fire_334', 'donnie_creek', 'wildcat', 'marshall_fire', 'oak_fire', 'caldor_fire', 'fire_east_tulare', 'rossmoore_fire', 'crater_creek', 'mcdougall_creek']
+paper = False
+case_study = "oak_fire"  # ['sparks_lake', 'lytton_creek', 'barrington_lake_fire', 'ewf_031', 'quebec_fire_334', 'donnie_creek', 'wildcat', 'marshall_fire', 'oak_fire', 'caldor_fire', 'fire_east_tulare', 'rossmoore_fire', 'crater_creek', 'mcdougall_creek']
 # print(case_study)
 
 if paper == True:
@@ -63,7 +63,7 @@ with open(str(root_dir) + f"/json/fire-cases.json", "r") as fp:
     case_dict = json.load(fp)
 
 # for case_study in list(case_dict):
-for case_study in ["caldor_fire"]:
+for case_study in ["oak_fire"]:
     print(case_study)
     case_info = case_dict[case_study]
     domain = case_info["domain"]
@@ -102,7 +102,7 @@ for case_study in ["caldor_fire"]:
         label="FRP 15min",
     )
 
-    set_axis_postion(ax, "FRP (MW)")
+    # set_axis_postion(ax, "FRP (MW)")
     tkw = dict(size=4, width=1.5, labelsize=16)
     ax.tick_params(
         axis="x",

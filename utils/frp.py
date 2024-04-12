@@ -19,7 +19,7 @@ from context import data_dir, root_dir
 
 plt.rc("font", family="sans-serif")
 plt.rc("text", usetex=True)
-plt.rcParams.update({"font.size": 18})
+plt.rcParams.update({"font.size": 14})
 
 
 __author__ = "Christopher Rodell"
@@ -379,6 +379,7 @@ def set_axis_postion(ax, label, color=False, side=False, offset=False):
         ax.yaxis.set_label_position(side)
         ax.yaxis.set_ticks_position(side)
         # make_patch_spines_invisible(ax)
+
     ax.set_ylabel(label, fontsize=20)
     try:
         ax.yaxis.label.set_color(ax.get_lines()[0].get_color())

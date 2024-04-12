@@ -26,8 +26,51 @@ from matplotlib import cm
 import netCDF4 as nc
 from scipy.interpolate import interp2d
 
+from salem import DataLevels, GoogleVisibleMap, Map
 
-filein = "/Volumes/ThunderBay/CRodell/ADDA_V2/2002/"
+
+shp = salem.read_shapefile(
+    "/Users/crodell/fwf/data/smartfire/nbac_2021/nbac_2021_r9_20220624.shp"
+)
+
+
+shp = shp.iloc[0]
+
+g = GoogleVisibleMap(
+    x=[shp.min_x, shp.max_x],
+    y=[shp.min_y, shp.max_y],
+    scale=2,  # scale is for more details
+    maptype="satellite",
+)  # try out also: 'terrain'
+
+
+f, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 5))
+
+# the google static image is a standard rgb image
+ggl_img = g.get_vardata()
+ax1.imshow(ggl_img)
+ax1.set_title("Google static map")
+
+# make a map of the same size as the image (no country borders)
+sm = Map(g.grid, factor=1, countries=False)
+sm.set_shapefile(shp)  # add the glacier outlines
+sm.set_rgb(ggl_img)  # add the background rgb image
+sm.set_scale_bar(location=(0.88, 0.94))  # add scale
+sm.visualize(ax=ax2)  # plot it
+ax2.set_title("GPR measurements")
+
+# read the point GPR data and add them to the plot
+df = pd.read_csv(get_demo_file("gtd_ttt_kesselwand.csv"))
+dl = DataLevels(df.THICKNESS, levels=np.arange(10, 201, 10), extend="both")
+x, y = sm.grid.transform(df.POINT_LON.values, df.POINT_LAT.values)
+ax2.scatter(x, y, color=dl.to_rgb(), s=50, edgecolors="k", linewidths=1)
+dl.append_colorbar(ax2, label="Ice thickness (m)")
+
+# make it nice
+plt.tight_layout()
+plt.show()
+
+# filein = "/Volumes/ThunderBay/CRodell/ADDA_V2/2002/"
 # ds = xr.open_dataset(filein+'cstm_d01_2002-08-29_17_00_00.nc')
 # ds_1 = xr.open_dataset(filein+'cstm_d01_2002-08-29_17_00_00.nc')
 # ds_1['time'] = [0]
@@ -39,21 +82,21 @@ filein = "/Volumes/ThunderBay/CRodell/ADDA_V2/2002/"
 #   except:
 #     pass
 # ds_2['time'] = [1]
-ds_3 = xr.open_dataset(filein + "cstm_d01_2002-08-29_19_00_00.nc")
-# ds_3['time'] = [2]
+# ds_3 = xr.open_dataset(filein + "cstm_d01_2002-08-29_19_00_00.nc")
+# # ds_3['time'] = [2]
 
-# ds = xr.combine_nested([ds_1, ds_2, ds_3], concat_dim= 'time').chunk('auto')
+# # ds = xr.combine_nested([ds_1, ds_2, ds_3], concat_dim= 'time').chunk('auto')
 
-# ds = ds.interpolate_na(dim='time')
+# # ds = ds.interpolate_na(dim='time')
 
-# ds_final = ds.isel(time = 1).expand_dims({'time': [0]}).drop_vars('time')
-# ds_final.attrs = {}
-# for var in ds_final:
-#   print(var)
-#   ds_final[var].attrs = ds_1[var].attrs
-ds_final = ds_3
-ds_final["times"].values = np.array([b"2002-08-29_18:00:00"], dtype="|S19")
-ds_final.to_netcdf(filein + "cstm_d01_2002-08-29_18_00_00.nc", mode="w")
+# # ds_final = ds.isel(time = 1).expand_dims({'time': [0]}).drop_vars('time')
+# # ds_final.attrs = {}
+# # for var in ds_final:
+# #   print(var)
+# #   ds_final[var].attrs = ds_1[var].attrs
+# ds_final = ds_3
+# ds_final["times"].values = np.array([b"2002-08-29_18:00:00"], dtype="|S19")
+# ds_final.to_netcdf(filein + "cstm_d01_2002-08-29_18_00_00.nc", mode="w")
 # doi = pd.Timestamp('2001-08-08T00')
 # # fileine = '/Volumes/WFRT-Ext24/fwf-data/wrf/d02'
 # daily_ds = salem.open_xr_dataset(f'/Volumes/WFRT-Ext21/fwf-data/adda/d01/01/fwf-daily-d01-{doi.strftime("%Y%m%d%H")}.zarr')

@@ -21,7 +21,7 @@ import matplotlib.pyplot as plt
 import cartopy.crs as ccrs
 
 var_name = "S"
-doi = pd.Timestamp("2020-09-09T20")
+doi = pd.Timestamp("2021-07-15T20")
 
 rave_pl = sorted(
     Path(f"/Volumes/WFRT-Ext24/rave/{doi.strftime('%Y')}/{doi.strftime('%m')}/").glob(
@@ -37,7 +37,15 @@ era5_pl = sorted(
 )
 
 climo_ds = xr.open_zarr(
-    f"/Volumes/WFRT-Ext22/ecmwf/era5-land/{var_name}-hourly-climatology-19910101-20201231-compressed.zarr"
+    f"/Volumes/WFRT-Ext23/ecmwf/era5-land/{var_name}-hourly-climatology-19910101-20201231-compressed.zarr"
+)[var_name].sel(dayofyear=int(doi.strftime("%j")) - 1, hour=int(doi.strftime("%H")))
+
+climo_ds_mean = xr.open_zarr(
+    f"/Volumes/WFRT-Ext23/ecmwf/era5-land/{var_name}-hourly-climatology-19910101-20201231-mean.zarr"
+)[var_name].sel(dayofyear=int(doi.strftime("%j")) - 1, hour=int(doi.strftime("%H")))
+
+climo_ds_std = xr.open_zarr(
+    f"/Volumes/WFRT-Ext23/ecmwf/era5-land/{var_name}-hourly-climatology-19910101-20201231-std.zarr"
 )[var_name].sel(dayofyear=int(doi.strftime("%j")) - 1, hour=int(doi.strftime("%H")))
 
 
@@ -63,13 +71,18 @@ frp_ds = salem.Grid(
 
 frp_ds = frp_ds.assign_coords({"time": rave_ds.time.values})
 # rave_ds = xr.where(rave_ds['QA'] != 3, rave_ds,  np.nan)
-frp_ds["FRP_MEAN"] = (("time", "y", "x"), rave_ds["FRP_MEAN"].values[:, ::-1])
+FRP_MEAN = xr.where(rave_ds["QA"] != 3, rave_ds["FRP_MEAN"], np.nan)
+frp_ds["FRP_MEAN"] = (("time", "y", "x"), FRP_MEAN.data[:, ::-1])
+
 frp_ds["FRP_MEAN"].attrs = frp_ds.attrs
 frp_ds = frp_ds.sel(x=slice(-180, -27), y=slice(20, 75)).sel(time=doi)
 
 lon, lat = frp_ds.salem.grid.ll_coordinates
 
-frp_locs = np.argwhere(~np.isnan(frp_ds["FRP_MEAN"].values))
+# frp_locs = np.argwhere(~np.isnan(frp_ds["FRP_MEAN"].values))
+
+frp_locs = np.argwhere(frp_ds["FRP_MEAN"].values > 100)
+
 
 lon_locs = lon[frp_locs[:, 0], frp_locs[:, 1]]
 lat_locs = lat[frp_locs[:, 0], frp_locs[:, 1]]
@@ -82,16 +95,24 @@ xlats = era5_ds["XLAT"].values[y, x]
 xlons = era5_ds["XLONG"].values[y, x]
 
 fwi_values = fwi_array[y, x]
-fwi_max = climo_ds.sel(quantile=1).values[y, x]
+fwi_max = climo_ds.sel(quantile=0.99).values[y, x]
 fwi_min = climo_ds.sel(quantile=0).values[y, x]
 fwi_norm = (fwi_values - fwi_min) / (fwi_max - fwi_min)
 
-fig = plt.figure(figsize=(6, 6))
-ax = fig.add_subplot(2, 1, 1)
-ax.scatter(fwi_values, frp_values)
+fwi_mean = climo_ds_mean.values[y, x]
+fwi_std = climo_ds_std.values[y, x]
+fwi_stand = (fwi_values - fwi_mean) / fwi_std
 
-ax = fig.add_subplot(2, 1, 2)
-ax.scatter(fwi_norm, frp_values)
+
+# fig = plt.figure(figsize=(6, 6))
+# ax = fig.add_subplot(3, 1, 1)
+# ax.scatter(fwi_values, frp_values)
+
+# ax = fig.add_subplot(3, 1, 2)
+# ax.scatter(fwi_norm, frp_values)
+
+# ax = fig.add_subplot(3, 1, 3)
+# ax.scatter(fwi_stand, frp_values)
 
 df = pd.DataFrame(
     {
@@ -100,6 +121,7 @@ df = pd.DataFrame(
         "frp": frp_values,
         "fwi": fwi_values,
         "fwi_norm": fwi_norm,
+        "fwi_stand": fwi_stand,
         "fwi_max": fwi_max,
         "fwi_min": fwi_min,
         "xlats": xlats,
@@ -115,7 +137,17 @@ fig = px.scatter_mapbox(
     # size=f"fwi",
     color_continuous_scale="jet",
     center={"lat": 55.0, "lon": -96.0},
-    hover_data=["frp", "fwi", "fwi_norm", "fwi_max", "fwi_min", "xlats", "xlons"],
+    hover_data=[
+        "frp",
+        "fwi",
+        "fwi_norm",
+        "fwi_stand",
+        "fwi_max",
+        "fwi_min",
+        "xlats",
+        "xlons",
+    ],
+    # hover_data=["frp"],
     mapbox_style="carto-positron",
     range_color=[0, 300],
     zoom=1.5,

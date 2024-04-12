@@ -47,9 +47,9 @@ __email__ = "crodell@eoas.ubc.ca"
 save_fig = True
 norms = False
 int_plot = False
-paper = True
+paper = False
 full_fwx = False
-case_study = "caldor_fire"  # ['barrington_lake_fire', 'wildcat', 'marshall_fire', 'oak_fire', 'caldor_fire', 'fire_east_tulare', 'rossmoore_fire', 'crater_creek', 'lytton_creek]
+case_study = "oak_fire"  # ['barrington_lake_fire', 'wildcat', 'marshall_fire', 'oak_fire', 'caldor_fire', 'fire_east_tulare', 'rossmoore_fire', 'crater_creek', 'lytton_creek]
 # print(case_study)
 
 if paper == True:
@@ -259,7 +259,7 @@ hexl = ["green"] + hexl[6:]
 
 fig = plt.figure(figsize=(8, 8))
 ax = fig.add_subplot(1, 1, 1)
-if case_study == "caldor_fire":
+if case_study == "oak_fire":
     x, y = 4, -3
     XLONG = static_ds1["XLONG"].values[x:y, x:y]
     XLAT = static_ds1["XLAT"].values[x:y, x:y]

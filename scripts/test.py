@@ -19,26 +19,28 @@ from utils.diagnostic import solve_RH, solve_TD, solve_W_WD, solve_r_o
 
 
 ds = xr.open_zarr(
-    "/Volumes/WFRT-Ext21/fwf-data/adda/d01/01/fwf-hourly-d01-2002081100.zarr"
+    "/Volumes/WFRT-Ext21/fwf-data/adda/d01/01/fwf-hourly-d01-2003010100.zarr"
 )
 
 # fig = plt.figure(figsize=(12, 6))
 # ax = fig.add_subplot(1, 1, 1)
-# ds["D"].isel(time = 0).salem.quick_map(ax=ax, cmap="jet",  vmax =500, oceans = True, lakes = True, prov = True, states = True)
+# ds["S"].isel(time = 0).salem.quick_map(ax=ax, cmap="jet", vmax = 30)
 
 fig = plt.figure(figsize=(12, 6))
 ax = fig.add_subplot(1, 1, 1)
 ds["S"].isel(time=0).salem.quick_map(
-    ax=ax, cmap="jet", vmax=40, oceans=True, lakes=True, prov=True, states=True
+    ax=ax, cmap="jet", vmax=30, oceans=True, lakes=True, prov=True, states=True
 )
 
 
-# ds = xr.open_zarr('/Volumes/WFRT-Ext21/fwf-data/adda/d01/01/2001/fwf-daily-d01-2001041100.zarr')
-
-# fig = plt.figure(figsize=(12, 6))
-# ax = fig.add_subplot(1, 1, 1)
-# ds["D"].isel(time = 0).salem.quick_map(ax=ax, cmap="jet",  vmax =500, oceans = True)
-
+ds_1 = xr.open_zarr(
+    "/Volumes/WFRT-Ext21/fwf-data/adda/d01/01/fwf-hourly-d01-2002123100.zarr"
+)
+fig = plt.figure(figsize=(12, 6))
+ax = fig.add_subplot(1, 1, 1)
+ds_1["S"].isel(time=0).salem.quick_map(
+    ax=ax, cmap="jet", vmax=30, oceans=True, lakes=True, prov=True, states=True
+)
 
 # ds = xr.open_zarr('/Volumes/WFRT-Ext21/fwf-data/adda/d01/01/fwf-hourly-d01-2001010200.zarr')
 
@@ -95,11 +97,11 @@ ds["S"].isel(time=0).salem.quick_map(
 # )
 # hourly_ds_old['south_north'] = hourly_ds['south_north']
 # hourly_ds_old['west_east'] = hourly_ds['west_east']
-# daily_ds = salem.open_xr_dataset(
-#     f'/Volumes/WFRT-EXT24/fwf-data/{model}/{domain}/{trial}/fwf-daily-{domain}-{doi.strftime("%Y%m%d06")}.nc'
+# hourly_ds = salem.open_xr_dataset(
+#     f'/Volumes/WFRT-EXT24/fwf-data/{model}/{domain}/{trial}/fwf-hourly-{domain}-{doi.strftime("%Y%m%d06")}.nc'
 # )
 
-# x, y  = get_locs(pyproj_srs= daily_ds.attrs['pyproj_srs'], df = None, lat = 40 , lon = -104)
+# x, y  = get_locs(pyproj_srs= hourly_ds.attrs['pyproj_srs'], df = None, lat = 40 , lon = -104)
 
 # fig = plt.figure()
 # ax = fig.add_subplot(1,1,1)
@@ -111,20 +113,20 @@ ds["S"].isel(time=0).salem.quick_map(
 # (hourly_ds['S'] - hourly_ds_old['S']).isel(time = 20).plot()
 
 
-# daily_cy = salem.open_xr_dataset(
-#     f'/Volumes/WFRT-EXT23/fwf-data/{model}/{domain}/{trial}/fwf-daily-{domain}-{doi.strftime("%Y%m%d00")}.nc'
+# hourly_cy = salem.open_xr_dataset(
+#     f'/Volumes/WFRT-EXT23/fwf-data/{model}/{domain}/{trial}/fwf-hourly-{domain}-{doi.strftime("%Y%m%d00")}.nc'
 # )
-# daily_cy.sel(west_east=slice(-130, -110), south_north=slice(55, 45))[
+# hourly_cy.sel(west_east=slice(-130, -110), south_north=slice(55, 45))[
 #     "D"
 # ].salem.quick_map(cmap="coolwarm")
-# (daily_cy["D"] - daily_ly["D"]).salem.quick_map(cmap="coolwarm", vmin=-500, vmax=500)
+# (hourly_cy["D"] - hourly_ly["D"]).salem.quick_map(cmap="coolwarm", vmin=-500, vmax=500)
 
-# daily_cy["D"].salem.quick_map(vmax=3000)
+# hourly_cy["D"].salem.quick_map(vmax=3000)
 
 
-# daily_cy["F"].salem.quick_map(vmax=101)
+# hourly_cy["F"].salem.quick_map(vmax=101)
 
-# daily = daily.sel(south_north = slice(84, 46))
+# hourly = hourly.sel(south_north = slice(84, 46))
 
 # era5_ds = salem.open_xr_dataset(f"/Volumes/WFRT-Ext25/ecmwf/era5-land/{doi.strftime('%Y%m')}/era5-land-{doi.strftime('%Y%m%d00')}.nc")
 
@@ -229,10 +231,10 @@ ds["S"].isel(time=0).salem.quick_map(
 # (ds['r_o'][1] - ds['r_o'][2]).plot()
 
 
-# daily_ds = salem.open_xr_dataset("/Volumes/WFRT-Ext22/fwf-data/ecmwf/era5/02/fwf-daily-era5-2022081600.nc")
-# daily_ds =daily_ds.sel(south_north = slice(daily.south_north.max(), daily.south_north.min()), west_east = slice(daily.west_east.min(), daily.west_east.max()))
-# daily_ds['D'].salem.quick_map(vmax = 600)
-# daily_ds['P'].salem.quick_map(vmax = 60)
+# hourly_ds = salem.open_xr_dataset("/Volumes/WFRT-Ext22/fwf-data/ecmwf/era5/02/fwf-hourly-era5-2022081600.nc")
+# hourly_ds =hourly_ds.sel(south_north = slice(hourly.south_north.max(), hourly.south_north.min()), west_east = slice(hourly.west_east.min(), hourly.west_east.max()))
+# hourly_ds['D'].salem.quick_map(vmax = 600)
+# hourly_ds['P'].salem.quick_map(vmax = 60)
 
 
 # static_ds = salem.open_xr_dataset(
@@ -286,12 +288,12 @@ ds["S"].isel(time=0).salem.quick_map(
 
 # hourly_ds = hourly_ds.transpose('time', 'south_north', 'west_east')
 
-# # daily_ds.isel(time =0)['h16S'].salem.quick_map(oceans=True, cmap = 'jet', vmin = 0, vmax =30)
-# # daily_ds.isel(time =0)['S'].salem.quick_map(oceans=True, cmap = 'jet', vmin = 0, vmax =30)
+# # hourly_ds.isel(time =0)['h16S'].salem.quick_map(oceans=True, cmap = 'jet', vmin = 0, vmax =30)
+# # hourly_ds.isel(time =0)['S'].salem.quick_map(oceans=True, cmap = 'jet', vmin = 0, vmax =30)
 
-# # daily_ds['diff'] = daily_ds.isel(time =0)['S'] - daily_ds.isel(time =0)['h16S']
-# # daily_ds['diff'].attrs =  daily_ds['S'].attrs
-# # daily_ds['diff'].salem.quick_map(oceans=True, cmap = 'coolwarm', vmin = -10, vmax =10)
+# # hourly_ds['diff'] = hourly_ds.isel(time =0)['S'] - hourly_ds.isel(time =0)['h16S']
+# # hourly_ds['diff'].attrs =  hourly_ds['S'].attrs
+# # hourly_ds['diff'].salem.quick_map(oceans=True, cmap = 'coolwarm', vmin = -10, vmax =10)
 # # U = 30
 # # B = 1.49e-11
 # # L = 500 * 1000

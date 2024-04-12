@@ -8,7 +8,6 @@ import pandas as pd
 import xarray as xr
 from pathlib import Path
 from datetime import datetime
-import plotly.express as px
 
 from utils.compressor import compressor
 from utils.geoutils import make_KDtree
@@ -38,7 +37,7 @@ era5_pl = sorted(
 
 climo_ds = (
     xr.open_zarr(
-        f"/Volumes/WFRT-Ext22/ecmwf/era5-land/{var_name}-hourly-climatology-19910101-20201231-compressed.zarr"
+        f"/Volumes/WFRT-Ext23/ecmwf/era5-land/{var_name}-hourly-climatology-19910101-20201231-compressed.zarr"
     )[var_name]
     .sel(
         dayofyear=int(doi.strftime("%j")) - 1,
@@ -50,7 +49,7 @@ climo_ds = (
 
 climo_mean = (
     xr.open_zarr(
-        f"/Volumes/WFRT-Ext22/ecmwf/era5-land/{var_name}-hourly-climatology-19910101-20201231-mean.zarr"
+        f"/Volumes/WFRT-Ext23/ecmwf/era5-land/{var_name}-hourly-climatology-19910101-20201231-mean.zarr"
     )[var_name]
     .sel(
         dayofyear=int(doi.strftime("%j")) - 1,
@@ -61,7 +60,7 @@ climo_mean = (
 )
 climo_std = (
     xr.open_zarr(
-        f"/Volumes/WFRT-Ext22/ecmwf/era5-land/{var_name}-hourly-climatology-19910101-20201231-std.zarr"
+        f"/Volumes/WFRT-Ext23/ecmwf/era5-land/{var_name}-hourly-climatology-19910101-20201231-std.zarr"
     )[var_name]
     .sel(
         dayofyear=int(doi.strftime("%j")) - 1,

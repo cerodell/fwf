@@ -2113,7 +2113,7 @@ class FWF:
         # hourly_ds["RSF"] = RSF.astype(dtype="float32")
 
         ## Solve ISF (ie ISI, with zero wind upslope) for the majority of fuels (41)
-        ## NOTE adjusted base don 41a, 41b (Wotton 2009)
+        ## NOTE adjusted based on 41a, 41b (Wotton 2009)
         def solve_isf(ISF, fueltype, RSF):
             ISF = np.where(
                 FUELS == fc_dict[fueltype]["Code"],

@@ -21,7 +21,7 @@ import cartopy.crs as ccrs
 
 
 var_name = "S"
-doi = pd.Timestamp("2020-09-09T20")
+doi = pd.Timestamp("2021-07-15T20")
 
 rave_pl = sorted(
     Path(f"/Volumes/WFRT-Ext24/rave/{doi.strftime('%Y')}/{doi.strftime('%m')}/").glob(
@@ -39,7 +39,7 @@ frp_ds = salem.Grid(
         rave_ds.attrs["geospatial_lat_resolution"],
     ),
     x0y0=(
-        rave_ds.attrs["geospatial_lon_min"] - 359,
+        rave_ds.attrs["geospatial_lon_min"] - 360,
         rave_ds.attrs["geospatial_lat_min"],
     ),
     proj=salem.wgs84,
@@ -49,7 +49,7 @@ frp_ds = salem.Grid(
 # lon_rave = rave_ds['frp_ds_lon'].values
 # lat_rave = rave_ds['frp_ds_lat'].values
 # lon, lat = frp_ds.ll_coordinates
-FRP_MEAN = xr.where(rave_ds["QA"] != 3, rave_ds["FRP_MEAN"], np.nan)
+FRP_MEAN = xr.where(rave_ds["QA"] != 3, rave_ds["PM25"], np.nan)
 
 frp_ds["FRP_MEAN"] = (
     ("y", "x"),
@@ -60,7 +60,7 @@ frp_ds["FRP_MEAN"].attrs = frp_ds.attrs
 
 frp_ds = frp_ds.sel(x=slice(-180, -27))
 
-frp_ds["FRP_MEAN"].salem.quick_map(vmax=1, cmap="Reds")
+frp_ds["FRP_MEAN"].salem.quick_map(vmax=100, cmap="Reds")
 
 
 # df_wmo = {
