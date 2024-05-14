@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Wildfire Map</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    <style>
+      html, body {
+          height: 100%;
+          margin: 0;
+          padding: 0;
+      }
+      #map {
+          height: 100%;  /* Adjust height so both map and timeseries can be visible */
+          width: 100%;
+      }
+      #timeseries {
+          width:  99%;
+          height: 400px;
+          position: absolute;  /* Make the timeseries div float above the map */
+          bottom: 10px;       /* Position it at the bottom */
+          left: 10px;         /* Position it from the left */
+          background: white;  /* Ensure it's visible on the map */
+          padding: 10px;
+          box-shadow: 0 0 15px rgba(0,0,0,0.2);  /* Optional: Adds shadow for better visibility */
+          z-index: 1000;      /* Make sure it's above the map layers */
+          display: none;      /* Initially hidden */
+      }
+  </style>
+
+</head>
+<body>
+  <body>
+    <div id="map"></div>
+    <div id="timeseries">
+      <!-- Container div for the top controls -->
+      <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+        <div id="fireInfo" style="flex-grow: 1;"></div>
+        <button id="showFirePerimeter" onclick="showFirePerimeter()">Show Fire Perimeter</button>
+        <button onclick="closeTimeSeries()">&times;</button>
+      </div>
+      <select id="variableSelector" onchange="changeVariable()" style="margin-top: 20px;">
+        <option value="FWI">Fire Weather Index</option>
+        <option value="HFI">Head Fire Intensity</option>
+        <option value="FFMC">Fine Fuel Moisture Code</option>
+        <option value="ISI">Initial Spread Index</option>
+        <option value="BUI">Build up Index</option>
+        <option value="WS">10m Wind Speed</option>
+        <option value="WD">10m Wind Direction</option>
+        <option value="TEMP">2m Temperature</option>
+        <option value="RH">2m Relative Humidity</option>
+        <option value="PRECIP">Precipitation mm</option>
+        <option value="Live_Leaf">Live Leaf</option>
+        <option value="Dead_Foliage">Dead Foliage</option>
+        <option value="Live_Wood">Live Wood</option>
+        <option value="Dead_Wood">Dead Wood</option>
+        <option value="PM25">PM2.5</option>
+        <option value="NDVI">Norm. Dif. Veg. Index</option>
+        <option value="LAI">Leaf Area Index</option>
+      </select>
+      <div id="plot" style="width: 100%; height: 350px;"></div>
+    </div>
+    <script src='omnivore.js'></script>
+    <script src="map.js"></script>
+</body>
+</html>
+
+</body>
+</html>

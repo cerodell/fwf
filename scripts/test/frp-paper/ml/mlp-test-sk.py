@@ -3,27 +3,39 @@ import salem
 import joblib
 import random
 import string
+import itertools
 import numpy as np
 import xarray as xr
 import pandas as pd
 
 import matplotlib.pyplot as plt
+from pathlib import Path
 
 from sklearn.neural_network import MLPRegressor
 from sklearn.preprocessing import StandardScaler
 from sklearn.model_selection import train_test_split
-
+from sklearn.metrics import r2_score
 from scipy import stats
 from utils.stats import MBE
 
 from context import data_dir, root_dir
 
 
-trail = "test3"
+trail = "feature-selection"
 spatially_averaged = True
 norm_fwi = True
+
+
 # keep_vars = ['FFMC', 'HFI','LAI', 'NDVI', 'HGT', 'GS', 'Live_Leaf', 'Live_Wood', 'Dead_Foliage', 'Dead_Wood', 'hour', 'month']
-keep_vars = ["FFMC", "HFI", "LAI", "NDVI", "HGT", "GS", "hour", "month"]
+keep_vars = ["FWI", "FFMC", "HFI", "LAI", "NDVI", "HGT", "GS", "hour", "month"]
+
+# i = 0
+# # Loop from length of keep_vars-1 down to 1
+# for r in range(len(keep_vars)-1, 0, -1):
+#     for combination in itertools.combinations(keep_vars, r):
+#         i +=1
+#         print(combination)
+
 
 filein = f"/Volumes/WFRT-Ext23/mlp-data/"
 df_2021 = (
@@ -38,6 +50,7 @@ df_2022 = (
 )
 
 df = pd.concat([df_2021, df_2022], ignore_index=True)
+df.loc[df["HGT"] < 0, "HGT"] = 0
 
 df["local_time"] = pd.to_datetime(df["time"]) - pd.to_timedelta(
     df["ZoneST"].astype(int), unit="h"
@@ -56,17 +69,6 @@ df["month"] = df["local_time"].dt.month
 
 # for var in ['LAI', 'NDVI', 'HGT', 'GS', 'Live_Leaf', 'Live_Wood', 'Dead_Foliage', 'Dead_Wood',]:
 #     df[var] = (df[var] - df[var].min()) / (df[var].max() - df[var].min())
-
-
-y = df["FRP"]
-X = df[keep_vars]
-X_train, X_test, y_train, y_test = train_test_split(X, y, random_state=1)
-
-scaler = StandardScaler().fit(X_train)
-joblib.dump(scaler, str(data_dir) + f"/mlp/scaler.joblib")
-
-X_train = scaler.transform(X_train)
-X_test = scaler.transform(X_test)
 
 
 def rmse(target, prediction):
@@ -128,6 +130,24 @@ for header in headers:
 
 print(df_model)
 
+
+i = 0
+# for combination in itertools.combinations(keep_vars, len(keep_vars) - 1):
+#     print(combination)
+#     test_list = list(combination)
+test_list = keep_vars
+
+save_dir = Path(str(data_dir) + f"/mlp/{trail}/{'-'.join(test_list)}")
+save_dir.mkdir(parents=True, exist_ok=True)
+y = df["FRP"]
+X = df[test_list]
+X_train, X_test, y_train, y_test = train_test_split(X, y, random_state=1)
+
+scaler = StandardScaler().fit(X_train)
+joblib.dump(scaler, str(save_dir) + "/scaler.joblib")
+
+X_train = scaler.transform(X_train)
+X_test = scaler.transform(X_test)
 
 for model_num in range(num_models):  # for each model in the ensemble
 
@@ -204,7 +224,7 @@ for model_num in range(num_models):  # for each model in the ensemble
             }
             df_model = pd.concat([df_model, pd.DataFrame([row])], ignore_index=True)
 
-            joblib.dump(model, str(data_dir) + f"/mlp/{trail}/model-{name}.joblib")
+            joblib.dump(model, str(save_dir) + f"/model-{name}.joblib")
 
     indBest = RMSE.index(np.min(RMSE))  # index of model with lowest RMSE
     RMSE_ensemble.append(np.min(RMSE))
@@ -223,73 +243,73 @@ for model_num in range(num_models):  # for each model in the ensemble
 
 y_out_ensemble_mean = np.mean(y_out_ensemble, axis=0)
 RMSE_ensemble_mean = rmse(y_out_ensemble_mean, y_test)
-df_model.to_csv(str(data_dir) + f"/mlp/{trail}/model-config.csv")
+df_model.to_csv(str(save_dir) + f"/model-config.csv")
 
-plt.figure(figsize=(12, 8))
+# plt.figure(figsize=(12, 8))
 
-plt.subplot(241)
-plt.scatter(len(RMSE_ensemble), RMSE_ensemble_mean, c="k", marker="*")
-plt.scatter(range(len(RMSE_ensemble)), RMSE_ensemble)
-plt.xlabel("Model #")
-plt.ylabel("RMSE")
-plt.title("Error")
+# plt.subplot(241)
+# plt.scatter(len(RMSE_ensemble), RMSE_ensemble_mean, c="k", marker="*")
+# plt.scatter(range(len(RMSE_ensemble)), RMSE_ensemble)
+# plt.xlabel("Model #")
+# plt.ylabel("RMSE")
+# plt.title("Error")
 
-plt.subplot(242)
-plt.scatter(range(len(nhn_best)), nhn_best)
-plt.xlabel("Model #")
-plt.ylabel("# Hidden Neurons")
-plt.title("Hidden Neurons")
+# plt.subplot(242)
+# plt.scatter(range(len(nhn_best)), nhn_best)
+# plt.xlabel("Model #")
+# plt.ylabel("# Hidden Neurons")
+# plt.title("Hidden Neurons")
 
-plt.subplot(243)
-plt.scatter(range(len(nhl_best)), nhl_best)
-plt.xlabel("Model #")
-plt.ylabel("# Hidden Layers")
-plt.title("Hidden Layers")
+# plt.subplot(243)
+# plt.scatter(range(len(nhl_best)), nhl_best)
+# plt.xlabel("Model #")
+# plt.ylabel("# Hidden Layers")
+# plt.title("Hidden Layers")
 
-plt.subplot(244)
-plt.scatter(y_test, y_out_ensemble_mean)
-# plt.plot((np.min(y_test),np.max(y_test)),'k--')
-plt.xlabel("y_test")
-plt.ylabel("y_model")
-plt.title("Ensemble")
+# plt.subplot(244)
+# plt.scatter(y_test, y_out_ensemble_mean)
+# # plt.plot((np.min(y_test),np.max(y_test)),'k--')
+# plt.xlabel("y_test")
+# plt.ylabel("y_model")
+# plt.title("Ensemble")
 
-plt.subplot(212)
-plt.plot(y_out_ensemble_mean)
-plt.plot(np.array(y_test), alpha=0.5, color="tab:red")
+# plt.subplot(212)
+# plt.plot(y_out_ensemble_mean)
+# plt.plot(np.array(y_test), alpha=0.5, color="tab:red")
 
-plt.tight_layout()
+# plt.tight_layout()
 
-plt.show()
+# plt.show()
 
-saveIt = 0
+# saveIt = 0
 
 
-plt.figure(figsize=(12, 5))
-plt.plot(range(len(y_test)), y_test, label="Observations", zorder=0, alpha=0.3)
-plt.plot(
-    range(len(y_test)),
-    np.transpose(y_out_ensemble[-1]),
-    color="k",
-    alpha=0.4,
-    label="Individual Models",
-    zorder=1,
-)  # plot first ensemble member with a label
-# plt.plot(range(len(y_test)),np.transpose(y_out_ensemble[1:]),color = 'k',alpha = 0.4,zorder=1) #plot remaining ensemble members without labels for a nicer legend
-# plt.plot(range(len(y_test)),y_out_ensemble_mean,color = 'k',label = 'Ensemble',zorder=2, linewidth = 3)
-plt.xlabel("Time", fontsize=20)
-plt.ylabel("y", fontsize=20)
-plt.xticks(fontsize=16)
-plt.yticks(fontsize=16)
-plt.title("MLP Model Results", fontsize=24)
-plt.legend(fontsize=16, loc="best")
-plt.xlim(0, 200)
-plt.ylim(0, 1000)
+# plt.figure(figsize=(12, 5))
+# plt.plot(range(len(y_test)), y_test, label="Observations", zorder=0, alpha=0.3)
+# plt.plot(
+#     range(len(y_test)),
+#     np.transpose(y_out_ensemble[-1]),
+#     color="k",
+#     alpha=0.4,
+#     label="Individual Models",
+#     zorder=1,
+# )  # plot first ensemble member with a label
+# # plt.plot(range(len(y_test)),np.transpose(y_out_ensemble[1:]),color = 'k',alpha = 0.4,zorder=1) #plot remaining ensemble members without labels for a nicer legend
+# # plt.plot(range(len(y_test)),y_out_ensemble_mean,color = 'k',label = 'Ensemble',zorder=2, linewidth = 3)
+# plt.xlabel("Time", fontsize=20)
+# plt.ylabel("y", fontsize=20)
+# plt.xticks(fontsize=16)
+# plt.yticks(fontsize=16)
+# plt.title("MLP Model Results", fontsize=24)
+# plt.legend(fontsize=16, loc="best")
+# plt.xlim(0, 200)
+# plt.ylim(0, 1000)
 
-plt.tight_layout()
+# plt.tight_layout()
 
-plt.show()
+# plt.show()
 
-# from scipy import stats
-# for i in range(len(y_out_ensemble)):
-#     print(i)
-#     print('pearsonr: ' + str(np.round(stats.pearsonr(y_test, y_out_ensemble[i])[0],2)))
+# # from scipy import stats
+# # for i in range(len(y_out_ensemble)):
+# #     print(i)
+# #     print('pearsonr: ' + str(np.round(stats.pearsonr(y_test, y_out_ensemble[i])[0],2)))

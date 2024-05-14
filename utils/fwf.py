@@ -147,7 +147,7 @@ class FWF:
         else:
             # self.iterator_dir = f"/Volumes/WFRT-Ext24/fwf-data/{self.model}/{self.domain}/{self.trail_name}/"
             # self.iterator_dir = f"/Volumes/WFRT-Ext25/fwf-data/{self.model}/{self.domain}/{self.trail_name}/"
-            self.iterator_dir = f"/Volumes/WFRT-Ext21/fwf-data/{self.model}/{self.domain}/{self.trail_name}/"
+            self.iterator_dir = f"/Volumes/ThunderBay/CRodell/{self.model}/{self.domain}/{self.trail_name}/"
             self.filein_dir = f"{self.root_dir}/{self.model}/{self.domain}"
             self.save_dir = Path(self.iterator_dir)
         self.save_dir.mkdir(parents=True, exist_ok=True)

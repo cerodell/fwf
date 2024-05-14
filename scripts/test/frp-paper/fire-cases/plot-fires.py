@@ -27,7 +27,7 @@ from matplotlib.colors import LinearSegmentedColormap
 import matplotlib.dates as mdates
 import cartopy.crs as ccrs
 
-ID = 25586618
+ID = 25407482
 # Configuration dictionary for the RAVE and FWX models
 config = dict(
     model="wrf",
@@ -43,53 +43,7 @@ fire_i = firep_df.iloc[12:13]
 i = firep_df[firep_df["id"] == ID].index[0]
 fire_i = firep_df.iloc[i : i + 1]
 
-
-ds = xr.open_zarr(f"/Volumes/WFRT-Ext23/fire/hfi/{config['year']}-{ID}.zarr")
-# ## update config to get dates of interest for a fire permitter
-# config.update(
-#     date_range=[fire_i['initialdat'].to_list()[0],  fire_i['finaldate'].to_list()[0]],
-#     fire_i = fire_i
-# )
-# rave = RAVE(config=config)
-# rave_ds = rave.open_rave()
-
-# fwx = FWX(config=config)
-# fwx_ds = fwx.open_fwx(var_list=['S', 'HFI'])
-
-# viirs = VIIRS(config=config)
-# ndvi_ds = viirs.open_ndvi()
-# lai_ds = viirs.open_lai()
-
-
-# # Subset the datasets for the region of interest (ROI) and compute the results
-# rave_roi = rave_ds["FRP_MEAN"].salem.subset(shape=fire_i, margin=1, all_touched=True)
-# rave_roi = rave_roi.salem.roi(shape=fire_i, all_touched=True).compute()
-# # rave_roi = rave_roi.compute()
-
-
-# def tranform_ds(ds, rave_roi, fire_i, margin):
-#     ds = ds.salem.subset(shape=fire_i, margin=margin, all_touched=True)
-#     ds = rave_roi.salem.transform(ds, interp="linear")  # Apply a spatial transform to align datasets
-#     ds = ds.salem.roi(shape=fire_i, all_touched=True)
-#     try:
-#         ds = ds.drop_vars('Time')  # Finalize the FWX dataset
-#     except:
-#         pass
-#     return ds
-
-# fwx_roi = tranform_ds(fwx_ds, rave_roi, fire_i, margin= 1).compute()
-# ndvi_roi = tranform_ds(ndvi_ds['NDVI'], rave_roi, fire_i, margin= 20).compute()
-# lai_roi = tranform_ds(lai_ds['LAI'], rave_roi, fire_i, margin= 20).compute()
-
-
-# # rave_roi_daily = rave_roi.resample(time='D').mean()
-# # rave_roi_daily = xr.combine_nested([rave_roi_daily.sel(time = i, method = 'nearest') for i in ndvi_roi.time.values], concat_dim='time')
-# # rave_roi_daily.coords['time'] = ndvi_roi.time.values
-
-# # Replace zeros with NaN to handle areas without fire data
-# # ndvi_roi = xr.where(rave_roi_daily == 0, np.nan, ndvi_roi)
-# fwx_roi = xr.where(rave_roi == 0, np.nan, fwx_roi)
-# rave_roi = xr.where(rave_roi == 0, np.nan, rave_roi)
+ds = xr.open_zarr(f"/Volumes/WFRT-Ext23/fire/all/{config['year']}-{ID}.zarr")
 
 # %%
 plt.rcParams.update({"font.size": 14})
@@ -140,7 +94,7 @@ ds_space_avg = ds.mean(dim=("y", "x"))
 
 # First line plot on the bottom left
 ax = fig.add_subplot(gs[1, :])
-ax.plot(ds_space_avg.time, ds_space_avg["FWI"], color="tab:blue", label="FWI")
+ax.plot(ds_space_avg.time, ds_space_avg["S"], color="tab:blue", label="FWI")
 ax.xaxis.set_major_formatter(DateFormatter("%Y-%m-%d"))
 plt.setp(ax.get_xticklabels(), rotation=30, ha="right")
 set_axis_postion(ax, "FWI")
@@ -159,7 +113,7 @@ set_axis_postion(ax, "FRP (MW)")
 ds_nan_free = ds_space_avg.dropna("time")
 ax.set_title(
     "FWI pearsonr: "
-    + str(np.round(stats.pearsonr(ds_nan_free["FRP"], ds_nan_free["FWI"])[0], 2))
+    + str(np.round(stats.pearsonr(ds_nan_free["FRP"], ds_nan_free["S"])[0], 2))
     + "\n HFI pearsonr: "
     + str(np.round(stats.pearsonr(ds_nan_free["FRP"], ds_nan_free["HFI"])[0], 2)),
     loc="right",
@@ -168,7 +122,7 @@ ax.set_title(
 # Adjust layout for a better fit
 fig.tight_layout()
 plt.show()
-fig.savefig(str(data_dir) + f'/images/rave/{fire_i["id"].values[0]}.png')
+fig.savefig(str(data_dir) + f'/images/rave/fwi-frp/{fire_i["id"].values[0]}.png')
 
 
 # # %%

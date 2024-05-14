@@ -1,4 +1,4 @@
-#!/bluesky/fireweather/miniconda3/envs/fwf/bin/python
+#!/Users/crodell/miniconda3/envs/fwx/bin/python
 
 import context
 import salem
@@ -7,17 +7,13 @@ import xarray as xr
 import geojsoncontour
 import pandas as pd
 import geopandas as gpd
-from pathlib import Path
-from netCDF4 import Dataset
 import branca.colormap as cm
 import scipy.ndimage as ndimage
-from scipy.ndimage.filters import gaussian_filter
 from sklearn.neighbors import KDTree
 
 import matplotlib.pyplot as plt
 import matplotlib.colors
 
-from datetime import datetime, date, timedelta
 
 from wrf import getvar
 from context import data_dir

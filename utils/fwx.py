@@ -122,12 +122,14 @@ class FWX:
         try:
             static_d03["HGT"].salem.subset(shape=fire_i, margin=20, all_touched=True)
             domain = "d03"
+            self.static_ds = static_d03[["HGT", "GS", "ZoneST"]].expand_dims("time")
         except:
             try:
                 static_d02["HGT"].salem.subset(
                     shape=fire_i, margin=20, all_touched=True
                 )
                 domain = "d02"
+                self.static_ds = static_d02[["HGT", "GS", "ZoneST"]].expand_dims("time")
             except:
                 pass
         print(domain)
@@ -169,7 +171,7 @@ class FWX:
         ds = xr.open_dataset(filein, chunks="auto")[var_list].isel(time=slice(0, 24))
         return ds
 
-    def open_fwx(self, var_list=None):
+    def open_fwx(self, var_list=None, add_static=False):
         """
         Combines multiple FWX datasets into a single dataset, optionally filtering by variables.
 
@@ -189,9 +191,7 @@ class FWX:
                 concat_dim="time",
                 combine_attrs="drop_conflicts",
             )
-            # Copying projection information to all variables after combining
-            for var in list(ds):
-                ds[var].attrs["pyproj_srs"] = ds.attrs["pyproj_srs"]
+
         else:
             # Combining datasets after selecting specified variables and copying projection information
             ds = xr.combine_nested(
@@ -199,8 +199,27 @@ class FWX:
                 concat_dim="time",
                 combine_attrs="drop_conflicts",
             )
-            for var in list(ds):
-                ds[var].attrs["pyproj_srs"] = ds.attrs["pyproj_srs"]
+
+        if add_static == True:
+            static_ds = self.static_ds
+            static_ds.coords["time"] = pd.Series(ds.time.values[0])
+            static_ds = static_ds.reindex(time=ds.time, method="ffill")
+            for var in list(static_ds):
+                ds[var] = static_ds[var]
+
+        for var in list(ds):
+            ds[var].attrs["pyproj_srs"] = ds.attrs["pyproj_srs"]
+
         return ds.sel(
             time=slice(self.date_range[0], self.date_range[-1] + pd.Timedelta(hours=23))
         )
+
+
+# def add_index(static_roi, fire_ds):
+#     static_roi = static_roi.expand_dims("time")
+#     static_roi.coords["time"] = pd.Series(fire_ds.time.values[0])
+#     return static_roi.reindex(time=fire_ds.time, method="ffill")
+
+
+# def add_static(fire_ds, static_ds):
+#     return add_index(fire_ds.salem.transform(static_ds, interp="nearest"), ds)

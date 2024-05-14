@@ -26,3 +26,9 @@ def MBE(y_true, y_pred):
     mbe = diff.mean()
     # print('MBE = ', mbe)
     return mbe
+
+
+def RMSE(target, prediction):
+    return np.sqrt(
+        ((np.array(target) - np.array(prediction)) ** 2).sum() / len(np.array(target))
+    )

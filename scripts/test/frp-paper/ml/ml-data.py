@@ -12,6 +12,7 @@ import xarray as xr
 from pathlib import Path
 from datetime import datetime
 
+from utils.solar_hour import get_solar_hours
 from context import root_dir, data_dir
 import warnings
 
@@ -21,15 +22,52 @@ warnings.filterwarnings("ignore", category=RuntimeWarning)
 
 # https://medium.com/@khadijamahanga/using-latitude-and-longitude-data-in-my-machine-learning-problem-541e2651e08c
 
+# from dask.distributed import LocalCluster, Client
 
-year = "2021"
-method = "hfi"
+# cluster = LocalCluster(
+#     n_workers=2,
+#     # threads_per_worker=4,
+#     memory_limit="16GB",
+#     processes=False,
+# )
+# client = Client(cluster)
+# print(client)
+## # On workstation
+## http://137.82.23.185:8787/status
+## # On personal
+##  http://10.0.0.88:8787/status
+
+year = "2022"
+
+method = "all"
 spatially_averaged = True
-norm_fwi = False
+norm_fwi = True
 file_list = sorted(Path(f"/Volumes/WFRT-Ext23/fire/{method}").glob(year + "*"))
 static_ds = salem.open_xr_dataset(
     str(data_dir) + "/static/static-rave-3km.nc"
 ).drop_vars(["time", "xtime"])
+
+lons, lats = static_ds.salem.grid.ll_coordinates
+lon_sin = np.sin(np.radians(lons))
+lon_cos = np.cos(np.radians(lons))
+lat_sin = np.sin(np.radians(lats))
+lat_cos = np.cos(np.radians(lats))
+
+static_ds["lat_sin"] = (("y", "x"), lat_sin)
+static_ds["lat_cos"] = (("y", "x"), lat_cos)
+static_ds["lon_sin"] = (("y", "x"), lon_sin)
+static_ds["lon_cos"] = (("y", "x"), lon_cos)
+
+
+ASPECT_sin = np.sin(np.radians(static_ds["ASPECT"].values))
+ASPECT_cos = np.cos(np.radians(static_ds["ASPECT"].values))
+static_ds["ASPECT_sin"] = (("y", "x"), ASPECT_sin)
+static_ds["ASPECT_cos"] = (("y", "x"), ASPECT_cos)
+
+SAZ_sin = np.sin(np.radians(static_ds["SAZ"].values))
+SAZ_cos = np.cos(np.radians(static_ds["SAZ"].values))
+static_ds["SAZ_sin"] = (("y", "x"), SAZ_sin)
+static_ds["SAZ_cos"] = (("y", "x"), SAZ_cos)
 
 if norm_fwi == True:
     print("Normalize FWI")
@@ -54,7 +92,6 @@ def add_static(fire_ds, static_ds):
 
 def open_fuels(moi):
     fuel_dir = f"/Volumes/WFRT-Ext23/fuel-characteristics/fuel-load/"
-    # fuels_ds = salem.open_xr_dataset(fuel_dir + f'{moi.strftime("%Y")}/CFUEL_timemean_{moi.strftime("%Y_%m")}.nc').sel(lat = slice(75,20), lon = slice(-170, -50))
     fuels_ds = salem.open_xr_dataset(
         fuel_dir + f'{2021}/CFUEL_timemean_2021{moi.strftime("_%m")}.nc'
     ).sel(lat=slice(75, 20), lon=slice(-170, -50))
@@ -76,7 +113,7 @@ def norm_fwi_ds(ds, fwi_max, fwi_min):
         west_east=slice(float(ds.attrs["min_x"]) - 4, float(ds.attrs["max_x"]) + 4),
     )
     fwi_max_roi = ds.salem.transform(fwi_max_doi, interp="linear")
-    fwi_max_roi = xr.where(fwi_max_roi <= 0, 0.1, fwi_max_roi)
+    fwi_max_roi = xr.where(fwi_max_roi <= 0, 1, fwi_max_roi)
 
     fwi_min_doi = fwi_min.sel(
         dayofyear=dayofyear,
@@ -84,13 +121,19 @@ def norm_fwi_ds(ds, fwi_max, fwi_min):
         west_east=slice(float(ds.attrs["min_x"]) - 4, float(ds.attrs["max_x"]) + 4),
     )
     fwi_min_roi = ds.salem.transform(fwi_min_doi, interp="linear")
-    fwi_min_roi = xr.where(fwi_min_roi < 0, 0, fwi_min_roi)
+    fwi_min_roi = xr.where(fwi_min_roi <= 0, 0.1, fwi_min_roi)
 
-    return (ds["FWI"] - fwi_min_roi) / (fwi_max_roi - fwi_min_roi)
+    norm_fwi = (ds["S"] - fwi_min_roi) / (fwi_max_roi - fwi_min_roi)
+
+    if np.all(np.isinf(norm_fwi.values)) == True:
+        raise ValueError("STOP!! NFWI is INF!")
+
+    return (ds["S"] - fwi_min_roi) / (fwi_max_roi - fwi_min_roi)
 
 
+file_list_len = len(file_list)
 ds_list = []
-for file in file_list:
+for i, file in enumerate(file_list):
     try:
         ds = xr.open_zarr(file)
         if (
@@ -100,6 +143,10 @@ for file in file_list:
         ):
             pass
         else:
+            ds = get_solar_hours(ds)
+            ds["solar_hour"] = xr.where(
+                np.isnan(ds["FRP"].values) == True, np.nan, ds["solar_hour"]
+            )
             static_roi = add_static(ds, static_ds)
             fuel_date_range = pd.date_range(
                 ds.attrs["initialdat"][:-3] + "-01", ds.attrs["finaldate"], freq="MS"
@@ -120,12 +167,37 @@ for file in file_list:
                 )
                 ds[var] = static_roi[var]
 
+            time_shape = ds.time.shape
+            ds["id"] = (("time"), np.full(time_shape, float(ds.attrs["id"])))
+            ds["area_ha"] = (
+                ("time"),
+                np.full(time_shape, float((ds.attrs["area_ha"]))),
+            )
+            ds["burn_time"] = (
+                ("time"),
+                np.full(
+                    time_shape,
+                    float(
+                        (
+                            pd.Timestamp(ds.attrs["finaldate"])
+                            - pd.Timestamp(ds.attrs["initialdat"])
+                        ).total_seconds()
+                        / 3600
+                    ),
+                ),
+            )
+
+            WD_sin = np.sin(np.radians(ds["WD"].values))
+            WD_cos = np.cos(np.radians(ds["WD"].values))
+            ds["WD_sin"] = (("time", "y", "x"), WD_sin)
+            ds["WD_cos"] = (("time", "y", "x"), WD_cos)
+
             for var in list(fuels_roi):
                 fuels_roi[var] = xr.where(
                     np.isnan(ds["FRP"].values) == True, np.nan, fuels_roi[var]
                 )
                 ds[var] = fuels_roi[var]
-            print("Passed")
+            print(f"Passed: {i}/{file_list_len}")
             if spatially_averaged == False:
                 ds_list.append(
                     ds.stack(z=("time", "x", "y"))
@@ -163,35 +235,14 @@ else:
     )
 
 
-save_dir = f"/Volumes/WFRT-Ext23/mlp-data/{year}-fires-ffmc"
-if spatially_averaged == True:
-    save_dir += "-spatially-averaged"
-
-
-if norm_fwi == True:
-    save_dir += "-norm-fwi"
+save_dir = f"/Volumes/WFRT-Ext23/mlp-data/{year}-fires-averaged-fwi-norm.nc"
 print(save_dir)
 final_ds, encoding = compressor(final_ds)
-final_ds.to_netcdf(f"{save_dir}.nc", encoding=encoding, mode="w")
+final_ds.to_netcdf(save_dir, encoding=encoding, mode="w")
+
+# import matplotlib.pyplot as plt
 
 
-# def mod_ds(file):
-#   ds = xr.open_zarr(file)
-#   if (np.all(np.isnan(ds['NDVI'].values)) == True) or ( np.all(np.isnan(ds['LAI'].values)) == True):
-#     pass
-#   else:
-#     print('Passed')
-#     return ds.stack(z=('time','x', 'y')).reset_index('z').dropna('z').to_dataframe()
-
-
-# df = pd.concat([ mod_ds(file) for file in file_list[:15]], axis=0)
-
-# df.to_csv('/Volumes/WFRT-Ext23/mlp-data/2021-fires.csv')
-
-# ds['FRP'].mean('time').plot(cmap = 'jet')
-# ds['NDVI'].mean(('x', 'y')).plot()
-
-# ds_flat = ds.stack(z=('time','x', 'y')).reset_index('z').dropna('z')
-
-
-# def mod_ds(ds):
+# plt.scatter(ds['solar_hour'].mean(("x", "y")), ds['time'].values.astype('datetime64[h]').astype(int)% 24)
+# ds['solar_hour'].mean(("x", "y"))
+# ds['time'].values.astype('datetime64[h]').astype(int)% 24

@@ -1,5 +1,9 @@
 #!/Users/crodell/miniconda3/envs/fwx/bin/python
-
+"""
+Tis script is used to create zarr file for an indivicule fire that occured over north america for the user define date.
+The zarr file contain a subdomain around each fire which includes a sweep of varibles (features) which will be used for training
+and testing a machine learning model to predicte fire radiative power
+"""
 import json
 import context
 import salem

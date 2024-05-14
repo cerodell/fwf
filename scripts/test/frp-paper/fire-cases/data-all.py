@@ -1,57 +1,48 @@
 #!/Users/crodell/miniconda3/envs/fwx/bin/python
-
-import json
+"""
+This script creates a Zarr file for each individual fire that occurred over North America on user-defined dates.
+It extracts a subdomain around each fire, including various variables (features) to be used in training and testing
+a machine learning model aimed at predicting fire radiative power.
+"""
 import context
 import salem
-import dask
 import zarr
 import os
 import gc
 import numpy as np
 import pandas as pd
 import xarray as xr
-from pathlib import Path
 from datetime import datetime
 
-from context import root_dir, data_dir
 from utils.rave import RAVE
 from utils.fwx import FWX
 from utils.viirs import VIIRS
 from utils.firep import FIREP
-from utils.frp import set_axis_postion
-from scipy import stats
-import pandas as pd
 
-import matplotlib.pyplot as plt
-import matplotlib.gridspec as gridspec
-from matplotlib.dates import DateFormatter
-from matplotlib.colors import LinearSegmentedColormap
-
-import matplotlib.dates as mdates
-import cartopy.crs as ccrs
-
-
-from dask.distributed import LocalCluster, Client
-
+from context import data_dir
 import warnings
 
 # Suppress runtime warnings
 warnings.filterwarnings("ignore", category=RuntimeWarning)
 
 
-years = ["2021", "2022"]
+years = ["2023", "2022", "2021"]
+# years = ["2021", "2022", "2023"]
+
+# from dask.distributed import LocalCluster, Client
+
 # cluster = LocalCluster(
-#     n_workers=3,
-#     #    threads_per_worker=,
-#     memory_limit="10GB",
+#     n_workers=2,
+#     # threads_per_worker=4,
+#     memory_limit="16GB",
 #     processes=False,
 # )
 # client = Client(cluster)
-# ### # On workstation
-# ### http://137.82.23.185:8787/status
-# ### # On personal
-# ###  http://10.0.0.88:8787/status
 # print(client)
+## # On workstation
+## http://137.82.23.185:8787/status
+## # On personal
+##  http://10.0.0.88:8787/status
 
 
 def tranform_ds(ds, rave_roi, fire_i, margin):
@@ -59,7 +50,7 @@ def tranform_ds(ds, rave_roi, fire_i, margin):
     ds = rave_roi.salem.transform(
         ds, interp="linear"
     )  # Apply a spatial transform to align datasets
-    ds = ds.salem.roi(shape=fire_i, all_touched=True)
+    # ds = ds.salem.roi(shape=fire_i, all_touched=True)
     try:
         ds = ds.drop_vars("Time")  # Finalize the FWX dataset
     except:
@@ -87,7 +78,7 @@ def add_index(ds, rave_roi):
 
 def create_case_ds(config, fire_i, file_dir):
     FIREloopTime = datetime.now()
-    fire_ID = fire_i["id"].values[0]
+    fire_ID = int(fire_i["id"].values[0])
     print(f"Start {fire_ID}")
     config.update(
         date_range=[
@@ -169,7 +160,7 @@ def create_case_ds(config, fire_i, file_dir):
             }
             bashComand = "rm -rf " + file_dir
             os.system(bashComand)
-            bashComand = "rm -rf /Volumes/WFRT-Ext23/fire/all/._*"
+            bashComand = "rm -rf /Volumes/WFRT-Ext23/fire/full/._*"
             os.system(bashComand)
             zarr_compressor = zarr.Blosc(cname="zstd", clevel=3, shuffle=2)
             encoding = {x: {"compressor": zarr_compressor} for x in final_ds}
@@ -197,8 +188,8 @@ def create_case_ds(config, fire_i, file_dir):
             print(f"FIRE {fire_ID} run time: {datetime.now() - FIREloopTime}")
 
     except:
-        raise ValueError("BAD")
-        # print(f"FAILED: {fire_ID}")
+        # raise ValueError("BAD")
+        print(f"FAILED: {fire_ID}")
     return
 
 
@@ -219,10 +210,10 @@ for year in years:
     for i in range(file_len):
         fire_i = firep_df.iloc[i : i + 1]
         file_dir = (
-            "/Volumes/WFRT-Ext23/fire/all/"
+            "/Volumes/WFRT-Ext23/fire/full/"
             + year
             + "-"
-            + str(fire_i["id"].values[0])
+            + str(int(fire_i["id"].values[0]))
             + ".zarr"
         )
         if os.path.isdir(file_dir) == True:
@@ -248,7 +239,7 @@ for year in years:
                 ("FILE IS BAD CREATE IT")
                 bashComand = "rm -rf " + file_dir
                 os.system(bashComand)
-                bashComand = "rm -rf /Volumes/WFRT-Ext23/fire/all/._*"
+                bashComand = "rm -rf /Volumes/WFRT-Ext23/fire/full/._*"
                 os.system(bashComand)
                 create_case_ds(config, fire_i, file_dir)
         else:

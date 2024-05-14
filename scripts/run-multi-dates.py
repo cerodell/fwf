@@ -34,20 +34,20 @@ warnings.filterwarnings("ignore", category=UserWarning)
 # date_range = pd.date_range("2023-05-13", "2023-05-18")
 # date_range = pd.date_range("2023-05-29", "2023-06-01")
 # date_range = pd.date_range("2004-01-01", "2004-01-02")
-date_range = pd.date_range("2004-12-30", "2004-12-31")
+date_range = pd.date_range("2018-01-02", "2019-07-01")
 
 config = dict(
-    model="adda",
-    domain="d01",
+    model="ecmwf",
+    domain="era5-land",
     trail_name="01",
     initialize=False,
-    initialize_hffmc=False,
+    initialize_hffmc=True,
     overwinter=False,
     fbp_mode=False,
     correctbias=False,
     reanalysis_mode=False,
-    parallel=True,
-    file_formate="zarr",
+    parallel=False,
+    file_formate="netcdf",
 )
 
 if config["model"] == "eccc":
@@ -78,7 +78,7 @@ for date in date_range:
         config=config,
     )
     coeff.daily()
-    coeff.hourly()
+    # coeff.hourly()
     print(f'{date.strftime("%Y%m%d")} run time: ', datetime.now() - date_startTime)
 
 ### Timer
