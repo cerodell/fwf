@@ -35,7 +35,7 @@ import warnings
 warnings.simplefilter(action="ignore", category=FutureWarning)
 
 
-index = 100
+index = 12
 package = "sk"
 model_type = "RF"
 mlp_test_case = "RF_300_10"
@@ -56,7 +56,7 @@ ids = np.array(fire_cases[0].astype(int))
 years = np.array(fire_cases[1].astype(int))
 config["year"] = years[index]
 ID = int(ids[index])
-ID = 24360611  # 25407482 (2022) 25485086 (2022) 24360611 (2021)
+ID = 24360611  # 25407482 (2022) 25485086 (2022) 24360611 (2021) 24564294 (2021)
 config["year"] = "2021"
 
 firep = FIREP(config=config)
@@ -111,11 +111,12 @@ FRP = model.predict(X_new_scaled)
 FRP_FULL = FRP.ravel().reshape(shape)
 FRPend = datetime.now() - startFRP
 print("Time to predict FRP: ", FRPend)
+if config["transform"] == "True":
+    FRP_FULL = np.expm1(FRP_FULL)
 # print(f"Estimated time to predict FRP for 24h on 12km WRF {round(6275016.0/len(FRP) * FRPend.seconds /60,2)} Mins")
 ds["MODELED_FRP"] = (("time", "y", "x"), FRP_FULL)
 for var in list(ds):
     ds[var].attrs = ds.attrs
-# del FRP_FULL, FRP, model, X_new_scaled, scaler, X, df
 print("Time to run FWX: ", datetime.now() - startFWX)
 
 ds = xr.where(ds["FRP"] == 0, np.nan, ds)

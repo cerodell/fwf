@@ -10,6 +10,7 @@ import numpy as np
 import pandas as pd
 import xarray as xr
 from pathlib import Path
+from scipy import stats
 from datetime import datetime
 
 from utils.solar_hour import get_solar_hours
@@ -37,11 +38,11 @@ warnings.filterwarnings("ignore", category=RuntimeWarning)
 ## # On personal
 ##  http://10.0.0.88:8787/status
 
-year = "2022"
+year = "2023"
 
-method = "all"
+method = "full"
 spatially_averaged = True
-norm_fwi = True
+norm_fwi = False
 file_list = sorted(Path(f"/Volumes/WFRT-Ext23/fire/{method}").glob(year + "*"))
 static_ds = salem.open_xr_dataset(
     str(data_dir) + "/static/static-rave-3km.nc"
@@ -143,70 +144,91 @@ for i, file in enumerate(file_list):
         ):
             pass
         else:
-            ds = get_solar_hours(ds)
-            ds["solar_hour"] = xr.where(
-                np.isnan(ds["FRP"].values) == True, np.nan, ds["solar_hour"]
-            )
-            static_roi = add_static(ds, static_ds)
-            fuel_date_range = pd.date_range(
-                ds.attrs["initialdat"][:-3] + "-01", ds.attrs["finaldate"], freq="MS"
-            )
-            fuels_ds = xr.combine_nested(
-                [open_fuels(moi) for moi in fuel_date_range], concat_dim="time"
-            )
-            fuels_roi = ds.salem.transform(fuels_ds, interp="linear")
-            fuels_roi = fuels_roi.reindex(time=ds.time, method="ffill")
-            fuels_roi = xr.where(fuels_roi < 0, 0, fuels_roi)
-            if norm_fwi == True:
-                ds["NFWI"] = norm_fwi_ds(ds, fwi_max, fwi_min)
-                ds = ds.drop_vars("quantile")
-
-            for var in list(static_roi):
-                static_roi[var] = xr.where(
-                    np.isnan(ds["FRP"].values) == True, np.nan, static_roi[var]
+            ds["R"] = xr.where(np.isnan(ds["FRP"].values) == True, np.nan, ds["R"])
+            r_values = stats.pearsonr(
+                ds["FRP"].mean(("x", "y")).dropna("time"),
+                ds["R"].mean(("x", "y")).dropna("time"),
+            )[0]
+            if r_values >= 0.399:
+                print(r_values)
+                ds = get_solar_hours(ds)
+                ds["solar_hour"] = xr.where(
+                    np.isnan(ds["FRP"].values) == True, np.nan, ds["solar_hour"]
                 )
-                ds[var] = static_roi[var]
+                static_roi = add_static(ds, static_ds)
+                fuel_date_range = pd.date_range(
+                    ds.attrs["initialdat"][:-3] + "-01",
+                    ds.attrs["finaldate"],
+                    freq="MS",
+                )
+                fuels_ds = xr.combine_nested(
+                    [open_fuels(moi) for moi in fuel_date_range], concat_dim="time"
+                )
+                fuels_roi = ds.salem.transform(fuels_ds, interp="linear")
+                fuels_roi = fuels_roi.reindex(time=ds.time, method="ffill")
+                fuels_roi = xr.where(fuels_roi < 0, 0, fuels_roi)
+                if norm_fwi == True:
+                    ds["NFWI"] = norm_fwi_ds(ds, fwi_max, fwi_min)
+                    ds = ds.drop_vars("quantile")
 
-            time_shape = ds.time.shape
-            ds["id"] = (("time"), np.full(time_shape, float(ds.attrs["id"])))
-            ds["area_ha"] = (
-                ("time"),
-                np.full(time_shape, float((ds.attrs["area_ha"]))),
-            )
-            ds["burn_time"] = (
-                ("time"),
-                np.full(
-                    time_shape,
-                    float(
-                        (
-                            pd.Timestamp(ds.attrs["finaldate"])
-                            - pd.Timestamp(ds.attrs["initialdat"])
-                        ).total_seconds()
-                        / 3600
+                for var in list(static_roi):
+                    static_roi[var] = xr.where(
+                        np.isnan(ds["FRP"].values) == True, np.nan, static_roi[var]
+                    )
+                    ds[var] = static_roi[var]
+
+                time_shape = ds.time.shape
+                ds["id"] = (("time"), np.full(time_shape, float(ds.attrs["id"])))
+                ds["area_ha"] = (
+                    ("time"),
+                    np.full(time_shape, float((ds.attrs["area_ha"]))),
+                )
+                ds["burn_time"] = (
+                    ("time"),
+                    np.full(
+                        time_shape,
+                        float(
+                            (
+                                pd.Timestamp(ds.attrs["finaldate"])
+                                - pd.Timestamp(ds.attrs["initialdat"])
+                            ).total_seconds()
+                            / 3600
+                        ),
                     ),
-                ),
-            )
-
-            WD_sin = np.sin(np.radians(ds["WD"].values))
-            WD_cos = np.cos(np.radians(ds["WD"].values))
-            ds["WD_sin"] = (("time", "y", "x"), WD_sin)
-            ds["WD_cos"] = (("time", "y", "x"), WD_cos)
-
-            for var in list(fuels_roi):
-                fuels_roi[var] = xr.where(
-                    np.isnan(ds["FRP"].values) == True, np.nan, fuels_roi[var]
                 )
-                ds[var] = fuels_roi[var]
-            print(f"Passed: {i}/{file_list_len}")
-            if spatially_averaged == False:
-                ds_list.append(
-                    ds.stack(z=("time", "x", "y"))
-                    .reset_index("z")
-                    .dropna("z")
-                    .reset_coords()
-                )
-            else:
-                ds_list.append(ds.mean(("x", "y")).dropna("time"))
+
+                WD_sin = np.sin(np.radians(ds["WD"].values))
+                WD_cos = np.cos(np.radians(ds["WD"].values))
+                ds["WD_sin"] = (("time", "y", "x"), WD_sin)
+                ds["WD_cos"] = (("time", "y", "x"), WD_cos)
+
+                for var in list(fuels_roi):
+                    fuels_roi[var] = xr.where(
+                        np.isnan(ds["FRP"].values) == True, np.nan, fuels_roi[var]
+                    )
+                    ds[var] = fuels_roi[var]
+
+                for var in list(ds):
+                    try:
+                        ds[var] = xr.where(
+                            np.isnan(ds["FRP"].values) == True, np.nan, ds[var]
+                        )
+                    except:
+                        pass
+
+                if spatially_averaged == False:
+                    ds_list.append(
+                        ds.stack(z=("time", "x", "y"))
+                        .reset_index("z")
+                        .dropna("z")
+                        .reset_coords()
+                    )
+                else:
+                    ds_mean = ds.mean(("x", "y")).dropna("time").compute()
+                    # r_values = stats.pearsonr(ds_mean['FRP'], ds_mean['R'])[0]
+                    # if r_values >= 0.399:
+                    print(f"Passed: {i}/{file_list_len}")
+                    ds_list.append(ds_mean)
     except:
         pass
 
@@ -235,14 +257,7 @@ else:
     )
 
 
-save_dir = f"/Volumes/WFRT-Ext23/mlp-data/{year}-fires-averaged-fwi-norm.nc"
+save_dir = f"/Users/crodell/fwf/data/ml-data/training-data/{year}-fires-averaged-v2.nc"
 print(save_dir)
 final_ds, encoding = compressor(final_ds)
 final_ds.to_netcdf(save_dir, encoding=encoding, mode="w")
-
-# import matplotlib.pyplot as plt
-
-
-# plt.scatter(ds['solar_hour'].mean(("x", "y")), ds['time'].values.astype('datetime64[h]').astype(int)% 24)
-# ds['solar_hour'].mean(("x", "y"))
-# ds['time'].values.astype('datetime64[h]').astype(int)% 24

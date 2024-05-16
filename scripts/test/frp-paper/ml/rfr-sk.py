@@ -109,20 +109,25 @@ print("Total Run Time: ", datetime.now() - startTime)
 print("-----------------------------------------------------")
 
 
-# # # Plot results
-# plt.scatter(y_out_this_nhn[200:400],y_test.values[200:400])
-# fig, ax = plt.subplots()
-# ax.plot(y_out_this_nhn[200:400], color='tab:red')
-# ax.plot(y_test.values[200:400], color='black')
-# plt.show()
+# # Plot results
+plt.scatter(y_out_this_nhn[200:400], y_test.values[200:400])
+fig, ax = plt.subplots()
+ax.plot(y_out_this_nhn[200:400], color="tab:red")
+ax.plot(y_test.values[200:400], color="black")
+plt.show()
 
 
-# x = 400
-# y = x + 250
-# fig, ax = plt.subplots()
-# ax.plot(y_out_this_nhn[x:y], color='tab:red')
-# ax.plot(y_test.values[x:y], color='black')
-# plt.show()
+fig, ax = plt.subplots()
+ax.plot(y_out_this_nhn, color="tab:red", zorder=10, lw=0.5)
+ax.plot(y_test.values, color="black", zorder=1, lw=0.5)
+plt.show()
+
+x = 0
+y = x + 250
+fig, ax = plt.subplots()
+ax.plot(y_out_this_nhn[x:y], color="tab:red")
+ax.plot(y_test.values[x:y], color="black")
+plt.show()
 
 # fig, ax = plt.subplots()
 # ax.plot(df_test['R'].values[x:y], color='black')

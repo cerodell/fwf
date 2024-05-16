@@ -18,6 +18,7 @@ from utils.rave import RAVE
 from utils.fwx import FWX
 from utils.viirs import VIIRS
 from utils.firep import FIREP
+from utils.compressor import compressor
 
 from context import data_dir
 import warnings
@@ -56,6 +57,15 @@ def tranform_ds(ds, rave_roi, fire_i, margin):
     except:
         pass
     return ds  # .compute()
+
+
+def open_fuels(moi):
+    fuel_dir = f"/Volumes/WFRT-Ext23/fuel-characteristics/fuel-load/"
+    fuels_ds = salem.open_xr_dataset(
+        fuel_dir + f'{2021}/CFUEL_timemean_2021{moi.strftime("_%m")}.nc'
+    ).sel(lat=slice(75, 20), lon=slice(-170, -50))
+    fuels_ds.coords["time"] = moi
+    return fuels_ds
 
 
 def re_index_ds(ds, rave_roi):
@@ -160,12 +170,15 @@ def create_case_ds(config, fire_i, file_dir):
             }
             bashComand = "rm -rf " + file_dir
             os.system(bashComand)
-            bashComand = "rm -rf /Volumes/WFRT-Ext23/fire/full/._*"
+            bashComand = "rm -rf /Volumes/ThunderBay/CRodell/fires/._*"
             os.system(bashComand)
-            zarr_compressor = zarr.Blosc(cname="zstd", clevel=3, shuffle=2)
-            encoding = {x: {"compressor": zarr_compressor} for x in final_ds}
+            # zarr_compressor = zarr.Blosc(cname="zstd", clevel=3, shuffle=2)
+            # encoding = {x: {"compressor": zarr_compressor} for x in final_ds}
+            # print(f"WRITING AT: {datetime.now()}")
+            # final_ds.to_zarr(file_dir, encoding=encoding, mode="w")
+            final_ds, encoding = compressor(final_ds)
             print(f"WRITING AT: {datetime.now()}")
-            final_ds.to_zarr(file_dir, encoding=encoding, mode="w")
+            final_ds.to_netcdf(file_dir, encoding=encoding, mode="w")
             print(f"Wrote: {file_dir}")
 
             del rave
@@ -210,16 +223,16 @@ for year in years:
     for i in range(file_len):
         fire_i = firep_df.iloc[i : i + 1]
         file_dir = (
-            "/Volumes/WFRT-Ext23/fire/full/"
+            "/Volumes/ThunderBay/CRodell/fires/"
             + year
             + "-"
             + str(int(fire_i["id"].values[0]))
-            + ".zarr"
+            + ".nc"
         )
         if os.path.isdir(file_dir) == True:
             print("TESTING FILE")
             try:
-                ds = xr.open_zarr(file_dir)
+                ds = xr.open_dataset(file_dir)
                 if (
                     (np.all(np.isnan(ds["NDVI"].values)) == False)
                     | (np.all(np.isnan(ds["LAI"].values)) == False)
@@ -229,7 +242,7 @@ for year in years:
                         year
                         + "-"
                         + str(fire_i["id"].values[0])
-                        + ".zarr"
+                        + ".nc"
                         + " Is a valid file"
                     )
                 else:
@@ -239,7 +252,7 @@ for year in years:
                 ("FILE IS BAD CREATE IT")
                 bashComand = "rm -rf " + file_dir
                 os.system(bashComand)
-                bashComand = "rm -rf /Volumes/WFRT-Ext23/fire/full/._*"
+                bashComand = "rm -rf /Volumes/ThunderBay/CRodell/fires/._*"
                 os.system(bashComand)
                 create_case_ds(config, fire_i, file_dir)
         else:

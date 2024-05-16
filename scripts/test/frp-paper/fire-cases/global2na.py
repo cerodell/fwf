@@ -23,7 +23,7 @@ from context import root_dir, data_dir
 import geopandas as gpd
 from shapely.geometry import Polygon
 
-year = "2022"
+year = "2021"
 # df_2021 = gpd.read_file(
 #     str(data_dir) + "/fires/North_America/North_America_vs2_2021.shp",
 #     driver="ESRI Shapefile",
@@ -112,9 +112,9 @@ df = df.reset_index()
 
 # fire_i now contains only rows with geometries inside North America
 print(df)
-# df = df.to_crs(fire_i.crs)
+df = df.to_crs(fire_i.crs)
 
-# df.to_file(
-#     str(data_dir) + f"/fires/North_America/North_America_vs1_{year}.shp",
-#     driver="ESRI Shapefile",
-# )
+df.to_file(
+    str(data_dir) + f"/fires/North_America/North_America_vs3_{year}.shp",
+    driver="ESRI Shapefile",
+)

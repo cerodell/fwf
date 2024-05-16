@@ -37,7 +37,7 @@ def file_size(file_path):
 
 def compressor(ds, var_dict=None):
     """
-    this function comresses datasets
+    this function compresses datasets
     """
     # ds = ds.load()
     # ds.attrs["TITLE"] = "FWF MODEL USING OUTPUT FROM WRF V4.2.1 MODEL"

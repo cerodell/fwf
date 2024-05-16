@@ -3,8 +3,13 @@
 <head>
     <title>Wildfire Map</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+    <link rel="stylesheet" href="zoomhome.css" />
+
     <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
     <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjs/9.4.4/math.min.js"></script>
+
+    <!-- <script src="math.js"></script> -->
     <style>
       html, body {
           height: 100%;
@@ -32,6 +37,7 @@
 </head>
 <body>
   <body>
+    <script src="zoomhome.js"></script>
     <div id="map"></div>
     <div id="timeseries">
       <!-- Container div for the top controls -->
@@ -41,6 +47,8 @@
         <button onclick="closeTimeSeries()">&times;</button>
       </div>
       <select id="variableSelector" onchange="changeVariable()" style="margin-top: 20px;">
+        <option value="MODELED_FRP">Forecasted Fire Radiative Power</option>
+        <option value="OBS_FRP">OBS Fire Radiative Power</option>
         <option value="FWI">Fire Weather Index</option>
         <option value="HFI">Head Fire Intensity</option>
         <option value="FFMC">Fine Fuel Moisture Code</option>

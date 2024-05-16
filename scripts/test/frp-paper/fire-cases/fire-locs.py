@@ -2,11 +2,13 @@
 
 import context
 import sys
+import os
 import json
 import joblib
 import logging
 import simplekml
 import numpy as np
+import xarray as xr
 import pandas as pd
 from pathlib import Path
 import geopandas as gpd
@@ -33,25 +35,51 @@ warnings.simplefilter(action="ignore", category=UserWarning)
 #     return [(round(x, precision), round(y, precision)) for x, y in coords]
 
 
-data_dict = {}
+all_dict = {}
 
 # Initialize MLP model and load dataset
-mlD = MLDATA(config={"method": "averaged"})
+mlD = MLDATA(config={"method": "averaged-v2"})
 cases_df = mlD.open_ml_ds()
 for year in ["2021", "2022", "2023"]:
-    # for year in ["2021"]:
     firep = FIREP(config={"year": year})
     firep_df = firep.open_firep()
 
     for ID, group in cases_df.groupby("id"):
-        print("ID:", ID)
-        # ID = 24237018.0
+        fire_dict = {}
         ID = int(ID)
         id_df = firep_df.loc[firep_df["id"] == int(ID)]
-
         if len(id_df) == 0:
             print("No ID")
         else:
+            if os.path.exists(f"/Volumes/ThunderBay/CRodell/fires/{year}-{ID}.nc"):
+                ds = xr.open_dataset(
+                    f"/Volumes/ThunderBay/CRodell/fires/{year}-{ID}.nc"
+                )[["FRP", "MODELED_FRP"]]
+                ds_nan = xr.open_zarr(
+                    f"/Volumes/WFRT-Ext23/fire/full/{year}-{ID}.zarr"
+                )["FRP"].to_dataset()
+                ds = xr.where(np.isnan(ds_nan["FRP"].values) == True, np.nan, ds)
+                ds = ds.salem.roi(shape=id_df, all_touched=True)
+                ds_space_avg = ds.mean(dim=("x", "y"))
+                ds_space_sum = ds.sum(dim=("x", "y"))
+                ds_space_sum = xr.where(
+                    np.isnan(ds_space_avg["FRP"].values) == True, "", ds_space_sum
+                )
+                FRPSUM = list(ds_space_sum["FRP"].values.astype(str))
+                MODELED_FRP_SUM = list(ds_space_sum["MODELED_FRP"].values.astype(str))
+
+                ds_space_avg = xr.where(
+                    np.isnan(ds_space_avg["FRP"].values) == True, "", ds_space_avg
+                )
+                FRP = list(ds_space_avg["FRP"].values.astype(str))
+                MODELED_FRP = list(ds_space_avg["MODELED_FRP"].values.astype(str))
+
+            else:
+                FRP = None
+                MODELED_FRP = None
+                FRPSUM = None
+                MODELED_FRP_SUM = None
+
             kml = simplekml.Kml()
             id_df = id_df.round(2)
             group = group.round(2)
@@ -60,7 +88,45 @@ for year in ["2021", "2022", "2023"]:
             # id_df['geometry'] = id_df['geometry'].simplify(tolerance, preserve_topology=True)
 
             for index, row in id_df.iterrows():
-                data_dict[str(row["id"])] = {
+                fire_dict = {
+                    "fireID": str(int(row["id"])),
+                    "initialdat": row["initialdat"],
+                    "finaldate": row["finaldate"],
+                    "lats": str(np.round(np.mean([id_df["min_y"], id_df["max_y"]]), 2)),
+                    "lons": str(np.round(np.mean([id_df["min_x"], id_df["max_x"]]), 2)),
+                    "area_ha": row["area_ha"],
+                    "local_datetime": list(
+                        pd.to_datetime(group["local_time"])
+                        .dt.strftime("%Y-%m-%dT%H")
+                        .values.astype(str)
+                    ),
+                    "FRP": list(group["FRP"].values.astype(str)),
+                    "FWI": list(group["S"].values.astype(str)),
+                    "HFI": list(group["HFI"].values.astype(str)),
+                    "FFMC": list(group["F"].values.astype(str)),
+                    "ISI": list(group["ISI"].values.astype(str)),
+                    "ROS": list(group["ROS"].values.astype(str)),
+                    "SFC": list(group["SFC"].values.astype(str)),
+                    "TFC": list(group["TFC"].values.astype(str)),
+                    "BUI": list(group["U"].values.astype(str)),
+                    "PM25": list(group["PM25"].values.astype(str)),
+                    "NDVI": list(group["NDVI"].values.astype(str)),
+                    "LAI": list(group["LAI"].values.astype(str)),
+                    "WS": list(group["W"].values.astype(str)),
+                    "WD": list(group["WD"].values.astype(str)),
+                    "RH": list(group["H"].values.astype(str)),
+                    "TEMP": list(group["T"].values.astype(str)),
+                    "PRECIP": list(group["r_o_hourly"].values.astype(str)),
+                    "HGT": list(group["HGT"].values[0].astype(str)),
+                    "GS": list(group["GS"].values[0].astype(str)),
+                    "RH": list(group["H"].values.astype(str)),
+                    "Live_Leaf": list(group["Live_Leaf"].values.astype(str)),
+                    "Dead_Foliage": list(group["Dead_Foliage"].values.astype(str)),
+                    "Live_Wood": list(group["Live_Wood"].values.astype(str)),
+                    "Dead_Wood": list(group["Dead_Wood"].values.astype(str)),
+                }
+
+                all_dict[str(row["id"])] = {
                     "fireID": str(int(row["id"])),
                     "initialdat": row["initialdat"],
                     "finaldate": row["finaldate"],
@@ -68,6 +134,29 @@ for year in ["2021", "2022", "2023"]:
                     "lons": str(np.round(np.mean([id_df["min_x"], id_df["max_x"]]), 2)),
                     "area_ha": row["area_ha"],
                 }
+                if FRP != None:
+                    print("++TEST ID:", ID)
+                    fire_dict["OBS_FRP"] = FRP
+                    fire_dict["MODELED_FRP"] = MODELED_FRP
+                    fire_dict["OBS_FRP_SUM"] = FRPSUM
+                    fire_dict["MODELED_FRP_SUM"] = MODELED_FRP_SUM
+                    all_dict[str(row["id"])]["TYPE"] = "test"
+                    # Writing the dictionary to a file as JSON
+                    with open(
+                        f"/Users/crodell/fwf/scripts/test/frp-paper/fire-cases/web/data/fires-v2/ml-test-fires-info-{int(ID)}.json",
+                        "w",
+                    ) as file:
+                        json.dump(fire_dict, file)
+                else:
+                    print("--TRAIN ID:", ID)
+                    all_dict[str(row["id"])]["TYPE"] = "train"
+                    # Writing the dictionary to a file as JSON
+                    with open(
+                        f"/Users/crodell/fwf/scripts/test/frp-paper/fire-cases/web/data/fires-v2/ml-train-fires-info-{int(ID)}.json",
+                        "w",
+                    ) as file:
+                        json.dump(fire_dict, file)
+
                 geom = row.geometry
                 # Handle Polygon geometries
                 if isinstance(geom, Polygon):
@@ -97,16 +186,16 @@ for year in ["2021", "2022", "2023"]:
                 else:
                     continue  # Skip non-polygon geometries
                 kml.save(
-                    f'/Users/crodell/fwf/scripts/test/frp-paper/fire-cases/web/data/fires/fire_outlines-{int(row["id"])}.kml'
+                    f'/Users/crodell/fwf/scripts/test/frp-paper/fire-cases/web/data/fires-v2/fire_outlines-{int(row["id"])}.kml'
                 )
 
 
-#   # Writing the dictionary to a file as JSON
-# with open(f"/Users/crodell/fwf/scripts/test/frp-paper/fire-cases/web/data/ml-fires-info.json", "w") as file:
-#     json.dump(data_dict, file)
-
-
-# # kml.save('/Users/crodell/fwf/scripts/test/frp-paper/fire-cases/web/data/fire_outlines.kml')
+# Writing the dictionary to a file as JSON
+with open(
+    f"/Users/crodell/fwf/scripts/test/frp-paper/fire-cases/web/data/ml-fires-info-v2.json",
+    "w",
+) as file:
+    json.dump(all_dict, file)
 
 
 # # Initialize MLP model and load dataset

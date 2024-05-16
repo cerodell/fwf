@@ -37,7 +37,7 @@ startTime = datetime.now()
 
 # Configuration parameters
 config = dict(
-    method="averaged",
+    method="averaged-v2",
     keep_vars=[
         "R",
         "U",
@@ -49,11 +49,11 @@ config = dict(
         "hour_cos",
     ],
     scaler_type="standard",  ##robust or standard minmax
-    transform=True,
-    min_fire_size=10000,
+    transform=False,
+    min_fire_size=1000,
     package="tf",
     model_type="MLP",
-    main_cases=True,
+    main_cases=False,
     shuffle_data=True,
 )
 config["n_features"] = len(config["keep_vars"])
@@ -123,6 +123,7 @@ logger.info("Total Run Time: %s", datetime.now() - startTime)
 print("-----------------------------------------------------")
 
 if config["transform"] == True:
+    print(f'transform: {config["transform"]}')
     y_out_this_nhn = np.expm1(y_out_this_nhn)
     y_test = np.expm1(y_test)
 
@@ -132,6 +133,12 @@ if config["transform"] == True:
 # ax.plot(y_out_this_nhn[200:400], color='tab:red')
 # ax.plot(y_test.values[200:400], color='black')
 # plt.show()
+
+
+fig, ax = plt.subplots()
+ax.plot(y_out_this_nhn, color="tab:red", zorder=10, lw=0.5)
+ax.plot(y_test.values, color="black", zorder=1, lw=0.5)
+plt.show()
 
 # x = 00
 # y = x + 250

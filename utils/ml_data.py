@@ -43,7 +43,7 @@ class MLDATA:
         self.scaler_type = config.get("scaler_type", "standard")
         self.main_cases = config.get("main_cases", False)
         self.shuffle_data = config.get("shuffle_data", False)
-        self.model_type = config.get("model_type").lower()
+        self.model_type = config.get("model_type")
         self.package = config.get("package")
 
     def get_ds(self, year):
@@ -73,13 +73,13 @@ class MLDATA:
         df.loc[df["LAI"] < 0, "LAI"] = 0.01
 
         if self.transform == True:
-            pt = PowerTransformer(
-                method="yeo-johnson", standardize=False
-            )  # Yeo-Johnson allows for zero values
-            df["Dead_Wood"] = pt.fit_transform(df[["Dead_Wood"]] + 1)
-            df["Live_Wood"] = pt.fit_transform(df[["Live_Wood"]] + 1)
-            df["Live_Leaf"] = pt.fit_transform(df[["Live_Leaf"]] + 1)
-            df["Dead_Foliage"] = pt.fit_transform(df[["Dead_Foliage"]] + 1)
+            # pt = PowerTransformer(
+            #     method="yeo-johnson", standardize=False
+            # )  # Yeo-Johnson allows for zero values
+            # df["Dead_Wood"] = pt.fit_transform(df[["Dead_Wood"]] + 1)
+            # df["Live_Wood"] = pt.fit_transform(df[["Live_Wood"]] + 1)
+            # df["Live_Leaf"] = pt.fit_transform(df[["Live_Leaf"]] + 1)
+            # df["Dead_Foliage"] = pt.fit_transform(df[["Dead_Foliage"]] + 1)
             df["FRP"] = np.log1p(df["FRP"])
             df["U"] = np.log1p(df["U"])
             df["R"] = np.log1p(df["R"])
@@ -137,6 +137,19 @@ class MLDATA:
         static_roi = self.add_static(ds, static_ds)
         for var in list(static_roi):
             ds[var] = static_roi[var]
+
+        fuel_date_range = pd.date_range(
+            ds.attrs["initialdat"][:-3] + "-01", ds.attrs["finaldate"], freq="MS"
+        )
+        fuels_ds = xr.combine_nested(
+            [self.open_fuels(moi) for moi in fuel_date_range], concat_dim="time"
+        )
+        fuels_roi = ds.salem.transform(fuels_ds, interp="linear")
+        fuels_roi = fuels_roi.reindex(time=ds.time, method="ffill")
+        fuels_roi = xr.where(fuels_roi < 0, 0, fuels_roi)
+        for var in list(fuels_roi):
+            ds[var] = fuels_roi[var]
+
         return ds
 
     def add_index(self, static_roi, fire_ds):
@@ -148,6 +161,15 @@ class MLDATA:
         return self.add_index(
             fire_ds.salem.transform(static_ds, interp="nearest"), fire_ds
         )
+
+    def open_fuels(self, moi):
+        moi = pd.Timestamp(moi)
+        fuel_dir = f"/Volumes/WFRT-Ext23/fuel-characteristics/fuel-load/"
+        fuels_ds = salem.open_xr_dataset(
+            fuel_dir + f'{2021}/CFUEL_timemean_2021{moi.strftime("_%m")}.nc'
+        ).sel(lat=slice(75, 20), lon=slice(-170, -50))
+        fuels_ds.coords["time"] = moi
+        return fuels_ds
 
     def get_training(self):
 
@@ -178,18 +200,20 @@ class MLDATA:
             df_test = df[df["id"].isin(ids)]
 
         df_train = df[~df["id"].isin(ids)]
-        large_fires = df_train.loc[df_train["area_ha"] > 50000]
-        larger_fires = df_train.loc[df_train["area_ha"] > 100000]
-        if self.transform == True:
-            hot_fires = df_train.loc[df_train["FRP"] > np.log1p(1000)]
-            hotter_fires = df_train.loc[df_train["FRP"] > np.log1p(2000)]
-        else:
-            hot_fires = df_train.loc[df_train["FRP"] > 1000]
-            hotter_fires = df_train.loc[df_train["FRP"] > 2000]
-        df_train = pd.concat(
-            [df_train, large_fires, larger_fires, hot_fires, hotter_fires]
-        )
-        df_train.reset_index(drop=True, inplace=True)
+        # large_fires = df_train.loc[df_train["area_ha"] > 50000]
+        # larger_fires = df_train.loc[df_train["area_ha"] > 100000]
+        # if self.transform == True:
+        #     hot_fires = df_train.loc[df_train["FRP"] > np.expm1(1000)]
+        #     hotter_fires = df_train.loc[df_train["FRP"] > np.expm1(2000)]
+        #     hotter_fires = df_train.loc[df_train["FRP"] > np.expm1(2500)]
+        # else:
+        #     hot_fires = df_train.loc[df_train["FRP"] > 1000]
+        #     hotter_fires = df_train.loc[df_train["FRP"] > 2000]
+        #     hottest_fires = df_train.loc[df_train["FRP"] > 2500]
+        # df_train = pd.concat(
+        #     [df_train, large_fires, larger_fires, hot_fires, hotter_fires, hottest_fires]
+        # )
+        # df_train.reset_index(drop=True, inplace=True)
 
         if self.keep_vars:
             X_train = df_train[self.keep_vars]
@@ -257,7 +281,9 @@ class MLDATA:
             "model_config": model_config_info,
             "features_used": self.keep_vars,
             "scaler_type": self.scaler_type,
+            "transform": str(self.transform),
             "scaler_info": str(scaler_path),
+            "model_info": str(model_path),
             "model_info": str(model_path),
         }
         config_path = save_dir / "config.json"
