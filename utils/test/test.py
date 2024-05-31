@@ -24,3 +24,6 @@ static_ds = xr.open_dataset(
 )
 tzone = static_ds.ZoneDT.values
 shape = tzone.shape
+
+wrf_ds = xr.open_dataset(str(data_dir)+ '/wrf/wrfout_d02_2021-02-08_00:00:00')
+pbl = wrf_ds['PBLH'].isel(Time = 0)

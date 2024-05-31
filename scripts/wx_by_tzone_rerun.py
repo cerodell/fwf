@@ -41,7 +41,7 @@ make_dir.mkdir(parents=True, exist_ok=True)
 
 
 date = pd.Timestamp("today")
-date = pd.Timestamp(202, 5, 3)
+date = pd.Timestamp(2023, 7, 31)
 forecast_date = date.strftime("%Y%m%d06")
 obs_date = (date - np.timedelta64(1, "D")).strftime("%Y%m%d")
 obs_date_int = (date - np.timedelta64(14, "D")).strftime("%Y%m%d")

@@ -10,13 +10,13 @@ import xarray as xr
 from pathlib import Path
 from netCDF4 import Dataset
 
-from context import data_dir, fwf_dir, root_dir
+from context import data_dir, root_dir
 from datetime import datetime, date, timedelta
 
 startTime = datetime.now()
 
 domains = ["d02", "d03"]
-date_range = pd.date_range("2022-05-10", "2022-05-10")
+date_range = pd.date_range("2023-07-31", "2023-08-01")
 make_dir = Path(f"/bluesky/archive/fireweather/data/")
 
 
@@ -62,7 +62,7 @@ for date in date_range:
     for domain in domains:
 
         working_daily_dir = (
-            str(fwf_dir) + str("/fwf-daily-") + domain + str(f"-{forecast_date}.nc")
+            str(data_dir) + str("/fwf-data/fwf-daily-") + domain + str(f"-{forecast_date}.nc")
         )
         daily_ds = xr.open_dataset(working_daily_dir)
 
@@ -82,7 +82,7 @@ for date in date_range:
         )
 
         working_hourly_dir = (
-            str(fwf_dir) + str("/fwf-hourly-") + domain + str(f"-{forecast_date}.nc")
+            str(data_dir) + str("/fwf-data/fwf-hourly-") + domain + str(f"-{forecast_date}.nc")
         )
         hourly_ds = xr.open_dataset(working_hourly_dir)
 

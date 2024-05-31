@@ -27,11 +27,25 @@
     <script src="/static/js/fwf-easy-button.js"></script>
     <script src="/static/js/fwf-leaflet-velocity.js"></script>
 
-
-    <!-- <script src="https://unpkg.com/geojson-vt@3.2.0/geojson-vt.js"></script> -->
-
-
-
+    <!-- Matomo -->
+    <script>
+        var _paq = window._paq = window._paq || [];
+        /* tracker methods like "setCustomDimension" should be called before "trackPageView" */
+        _paq.push(["setDocumentTitle", document.domain + "/" + document.title]);
+        _paq.push(["setCookieDomain", "*.firesmoke.ca"]);
+        _paq.push(["setDomains", ["*.firesmoke.ca"]]);
+        _paq.push(['trackPageView']);
+        _paq.push(['enableLinkTracking']);
+        (function() {
+        var u="https://analytics.wfrt.eoas.ubc.ca/";
+        _paq.push(['setTrackerUrl', u+'matomo.php']);
+        _paq.push(['setSiteId', '1']);
+        var d=document, g=d.createElement('script'), s=d.getElementsByTagName('script')[0];
+        g.async=true; g.src=u+'matomo.js'; s.parentNode.insertBefore(g,s);
+        })();
+    </script>
+    <noscript><p><img src="https://analytics.wfrt.eoas.ubc.ca/matomo.php?idsite=1&amp;rec=1" style="border:0;" alt="" /></p></noscript>
+    <!-- End Matomo Code -->
 
 </head>
 <body>
@@ -51,13 +65,10 @@
     <script src='https://api.tiles.mapbox.com/mapbox.js/plugins/leaflet-omnivore/v0.3.1/leaflet-omnivore.min.js'></script>
     <script src="/static/js/fwf-moment.min.js"></script>
     <script src="/static/js/fwf-moment-timezone-with-data.min.js"></script>
-    <script src="static/js/fwf-time-layer-group-0.0.5.js"></script>
+    <script src="/static/js/fwf-time-layer-group-0.0.5.min.js"></script>
     <button id="remove-layers-btn">Remove Layers</button>
-
-
-
     <script>
-        var timeInterval = "2023-05-15T06:00:00Z/2023-05-17T12:00:00Z"
+        var timeInterval = "{%FirstDateTime%}/{%LastDateTime%}"
         let tinital = timeInterval.slice(0,20)
         var endtime = timeInterval.slice(21,)
 
@@ -139,44 +150,32 @@
         }
 
 
-         var json_fwf  = 'data/plot/fwf-gk-2023051506-d03.json';
-         var wxstations = 'data/wx-zone-X-20230514.json';
-         var wx_keys = 'data/wx-keys-20230514.json';
-
-
+        var json_fwf  = 'data/plot/fwf-gk-{%FileDateTime%}06-d03.json';
+        var wxstations = 'data/wx-zone-X-{%FileDateTimeYesterday%}.json';
+        var wx_keys = 'data/wx-keys-{%FileDateTimeYesterday%}.json';
 
     </script>
-    <script src="static/js/fwf-basemaps-0.0.3.min.js"></script>
+    <script src="/static/js/fwf-basemaps-0.0.3.min.js"></script>
     <script src="/static/js/fwf-wxstations-0.0.5.min.js"></script>
     <script src="/static/js/fwf-make-tree-0.0.6.min.js"></script>
-    <script src="static/js/fwf-layer-controler-0.0.5.js"></script>
-    <script src="static/js/fwf-colors-manager-0.0.5.js"></script>
-
+    <script src="/static/js/fwf-layer-controler-0.0.5.min.js"></script>
+    <script src="/static/js/fwf-colors-manager-0.0.5.min.js"></script>
     <script>
-        // var mapContainer = document.getElementsByClassName('mapboxgl-map')[0];
-        // console.log(mapContainer);
-        console.log(gl);
+    // Create the button element
+    var clearButton = L.easyButton('fa-trash', function(){
+    // Get all the layers added to the map
+    var allLayers = map._layers;
+    // Loop through all layers and remove them from the map
+    for (var i in allLayers){
+        // Exclude the base map and layers with the specified URL
+        if (map.hasLayer(allLayers[i]) && allLayers[i].myAttribute !== "basemap"){
+            console.log(allLayers[i]);
 
-                // Get the water layer element
-        // var waterLayer = document.getElementsByClassName('leaflet-pane leaflet-tile-pane')[0];
-
-        // Set the z-index for the water layer
-        // waterLayer.setZIndex(100);
-               // Create the button element
-        var clearButton = L.easyButton('fa-trash', function(){
-        // Get all the layers added to the map
-        var allLayers = map._layers;
-        // Loop through all layers and remove them from the map
-        for (var i in allLayers){
-            // Exclude the base map and layers with the specified URL
-            if (map.hasLayer(allLayers[i]) && allLayers[i].myAttribute !== "basemap"){
-                console.log(allLayers[i]);
-
-                map.removeLayer(allLayers[i]);
-            }
+            map.removeLayer(allLayers[i]);
         }
-        },{position: 'topright'});
-        clearButton.addTo(map);
+    }
+    },{position: 'topright'});
+    clearButton.addTo(map);
     </script>
 
   </body>

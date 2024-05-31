@@ -4,6 +4,8 @@
 # Create a json file  contains XX number of days of wmo weather station observations
 # along with fwf/met model output for comaprison. USed to make plots on website
 # """
+
+# %%
 import context
 import io
 import json
@@ -38,14 +40,14 @@ name_list = list(cmaps)
 
 
 forecast_date = pd.Timestamp("today").strftime("%Y%m%d00")
-# forecast_date = pd.Timestamp(2023, 5, 9).strftime("%Y%m%d00")
+# forecast_date = pd.Timestamp(2023, 7, 31).strftime("%Y%m%d00")
 
 make_dir = Path(f"/bluesky/archive/fireweather/forecasts/{forecast_date}/data/")
 make_dir.mkdir(parents=True, exist_ok=True)
 
 
 date = pd.Timestamp("today")
-# date = pd.Timestamp(2023, 5, 9)
+# date = pd.Timestamp(2023, 7, 31)
 forecast_date = date.strftime("%Y%m%d06")
 obs_date = (date - np.timedelta64(1, "D")).strftime("%Y%m%d")
 obs_date_int = (date - np.timedelta64(14, "D")).strftime("%Y%m%d")
@@ -73,20 +75,52 @@ obs_ds = xr.concat([obs_d2_ds, obs_d3_ds], dim="wmo")
 
 obs_ds = obs_ds.sel(time=slice(obs_date_int, obs_date))
 
-## Open todays datasets of both domains
-hourly_d2_ds = xr.open_dataset(str(data_dir) + str(f"/fwf-data/fwf-hourly-d02-{forecast_date}.nc"))
-daily_d2_ds = xr.open_dataset(str(data_dir) + str(f"/fwf-data/fwf-daily-d02-{forecast_date}.nc"))
+try:
+    ## Open todays datasets of both domains
+    hourly_d2_ds = xr.open_dataset(str(data_dir) + str(f"/fwf-data/fwf-hourly-d02-{forecast_date}.nc"))
+    daily_d2_ds = xr.open_dataset(str(data_dir) + str(f"/fwf-data/fwf-daily-d02-{forecast_date}.nc"))
 
-hourly_d3_ds = xr.open_dataset(str(data_dir) + str(f"/fwf-data/fwf-hourly-d03-{forecast_date}.nc"))
-daily_d3_ds = xr.open_dataset(str(data_dir) + str(f"/fwf-data/fwf-daily-d03-{forecast_date}.nc"))
+    hourly_d3_ds = xr.open_dataset(str(data_dir) + str(f"/fwf-data/fwf-hourly-d03-{forecast_date}.nc"))
+    daily_d3_ds = xr.open_dataset(str(data_dir) + str(f"/fwf-data/fwf-daily-d03-{forecast_date}.nc"))
 
 
-## Open yesterdays datasets of both domains
-hourly_d2_yester_ds = xr.open_dataset(str(data_dir) + str(f"/fwf-data/fwf-hourly-d02-{yesterday_forecast_date}.nc"))
-daily_d2_yester_ds = xr.open_dataset(str(data_dir) + str(f"/fwf-data/fwf-daily-d02-{yesterday_forecast_date}.nc"))
+    ## Open yesterdays datasets of both domains
+    hourly_d2_yester_ds = xr.open_dataset(str(data_dir) + str(f"/fwf-data/fwf-hourly-d02-{yesterday_forecast_date}.nc"))
+    daily_d2_yester_ds = xr.open_dataset(str(data_dir) + str(f"/fwf-data/fwf-daily-d02-{yesterday_forecast_date}.nc"))
 
-hourly_d3_yester_ds = xr.open_dataset(str(data_dir) + str(f"/fwf-data/fwf-hourly-d03-{yesterday_forecast_date}.nc"))
-daily_d3_yester_ds  = xr.open_dataset(str(data_dir) + str(f"/fwf-data/fwf-daily-d03-{yesterday_forecast_date}.nc"))
+    hourly_d3_yester_ds = xr.open_dataset(str(data_dir) + str(f"/fwf-data/fwf-hourly-d03-{yesterday_forecast_date}.nc"))
+    daily_d3_yester_ds  = xr.open_dataset(str(data_dir) + str(f"/fwf-data/fwf-daily-d03-{yesterday_forecast_date}.nc"))
+
+except:
+    try:
+        ## Open todays datasets of both domains
+        hourly_d2_ds = xr.open_dataset(str(data_dir) + str(f"/fwf-data/fwf-hourly-d02-{forecast_date}.nc"))
+        daily_d2_ds = xr.open_dataset(str(data_dir) + str(f"/fwf-data/fwf-daily-d02-{forecast_date}.nc"))
+
+        hourly_d3_ds = xr.open_dataset(str(data_dir) + str(f"/fwf-data/fwf-hourly-d03-{forecast_date}.nc"))
+        daily_d3_ds = xr.open_dataset(str(data_dir) + str(f"/fwf-data/fwf-daily-d03-{forecast_date}.nc"))
+
+        ## Open yesterdays datasets of both domains
+        hourly_d2_yester_ds = xr.open_dataset(f"/bluesky/archive/fireweather/data/fwf-hourly-d02-{yesterday_forecast_date}.nc")
+        daily_d2_yester_ds = xr.open_dataset(f"/bluesky/archive/fireweather/data/fwf-daily-d02-{yesterday_forecast_date}.nc")
+
+        hourly_d3_yester_ds = xr.open_dataset(f"/bluesky/archive/fireweather/data/fwf-hourly-d03-{yesterday_forecast_date}.nc")
+        daily_d3_yester_ds  = xr.open_dataset(f"/bluesky/archive/fireweather/data/fwf-daily-d03-{yesterday_forecast_date}.nc")
+    except:
+        ## Open todays datasets of both domains
+        hourly_d2_ds = xr.open_dataset(f"/bluesky/archive/fireweather/data/fwf-hourly-d02-{forecast_date}.nc")
+        daily_d2_ds = xr.open_dataset(f"/bluesky/archive/fireweather/data/fwf-daily-d02-{forecast_date}.nc")
+
+        hourly_d3_ds = xr.open_dataset(f"/bluesky/archive/fireweather/data/fwf-hourly-d03-{forecast_date}.nc")
+        daily_d3_ds = xr.open_dataset(f"/bluesky/archive/fireweather/data/fwf-daily-d03-{forecast_date}.nc")
+
+        ## Open yesterdays datasets of both domains
+        hourly_d2_yester_ds = xr.open_dataset(f"/bluesky/archive/fireweather/data/fwf-hourly-d02-{yesterday_forecast_date}.nc")
+        daily_d2_yester_ds = xr.open_dataset(f"/bluesky/archive/fireweather/data/fwf-daily-d02-{yesterday_forecast_date}.nc")
+
+        hourly_d3_yester_ds = xr.open_dataset(f"/bluesky/archive/fireweather/data/fwf-hourly-d03-{yesterday_forecast_date}.nc")
+        daily_d3_yester_ds  = xr.open_dataset(f"/bluesky/archive/fireweather/data/fwf-daily-d03-{yesterday_forecast_date}.nc")
+
 
 
 def rechunk(ds):
@@ -306,6 +340,8 @@ for ztu in unique:
         var_name = cmaps[var]["name"].upper()
         fc_array = fianl_hourly_ds[var].values.astype("float64")
         fc_array = np.round(fc_array, decimals=2)
+        where_are_NaNs = np.isnan(fc_array)
+        fc_array[where_are_NaNs] = -99
         fc_array = fc_array.tolist()
         dict_var.update({var_name.lower() + "_fc": str(fc_array)})
 
@@ -318,6 +354,8 @@ for ztu in unique:
 
         pfc_array = wx_obs_ds[var_name + "_day1"].values.astype("float64")
         pfc_array = np.round(pfc_array, decimals=2)
+        where_are_NaNs = np.isnan(pfc_array)
+        pfc_array[where_are_NaNs] = -99
         pfc_array = pfc_array.tolist()
         dict_var.update({var_name.lower() + "_pfc": str(pfc_array)})
 
@@ -340,6 +378,8 @@ for ztu in unique:
 
         pfc_array = wx_obs_ds[var_name + "_day1"].values.astype("float64")
         pfc_array = np.round(pfc_array, decimals=2)
+        where_are_NaNs = np.isnan(pfc_array)
+        pfc_array[where_are_NaNs] = -99
         pfc_array = pfc_array.tolist()
         dict_var.update({var_name.lower() + "_pfc": str(pfc_array)})
 

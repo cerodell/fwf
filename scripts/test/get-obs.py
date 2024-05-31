@@ -15,16 +15,15 @@ from context import data_dir
 
 #################### INPUTS ####################
 ## define date range
-# date_range = pd.date_range("2020-01-01", "2020-01-03")
-date_range = pd.date_range("2020-01-01", "2023-01-01")
+date_range = pd.date_range("2020-01-01", "2024-01-01")
+# date_range = pd.date_range("2023-01-01", "2023-01-01")
 domain = "d03"
-fwf_dir = "/Volumes/WFRT-Data02/FWF-WAN00CG/d02/"
 
 ################## END INPUTS ##################
 
 
 # ds = xr.open_zarr(
-#     str(data_dir) + "/intercomp/" + f"intercomp-d02-20220215-copy.zarr"
+#     str(data_dir) + "/intercomp/" + f"intercomp-{domain}-20230604.zarr"
 # ).load()
 
 
@@ -76,6 +75,8 @@ stations_df = stations_df.drop(stations_df.index[np.where(stations_df["y"] < y1 
 
 
 filein_obs = "/bluesky/fireweather/fwf/data/obs/cwfis_canusfwi2020s.csv"
+filein_obs = "/bluesky/fireweather/fwf/data/obs/cwfis_fwi2020sopEC.csv"
+# filein_obs = "https://cwfis.cfs.nrcan.gc.ca/downloads/fwi_obs/cwfis_canusfwi2020s.csv"
 obs_df_master = pd.read_csv(filein_obs, sep=",", skiprows=0)
 
 ## define list of varibles wanted
@@ -185,6 +186,8 @@ for date in date_range:
         else:
             pass
         ds_list.append(ds_i)
+        print(f"Found internal data on obs_date {obs_date}!")
+
 
     except:
         print(f"No internal data on obs_date {obs_date} getting data from NRCAN")

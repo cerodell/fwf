@@ -50,29 +50,6 @@ var  WAQI_URL    =  "https://tiles.waqi.info/tiles/usepa-pm25/{z}/{x}/{y}.png?to
 var  WAQI_ATTR  =  'Air  Quality  Tiles  &copy;  <a  href="http://waqi.info">waqi.info</a>';
 var  waqiLayer  =  L.tileLayer(WAQI_URL, {bounds: northAmericaBounds, attribution:  WAQI_ATTR});
 
-// var velocityLayer = L.layerGroup();
-
-// fetch("data/map/wd-"+dateTimeFileName(new Date(UTCTimeMap))+".json", { cache: "default" })
-//     .then(function (e) {
-//         return e.json();
-//     })
-//     .then(function (e) {
-//         // console.log('WIND JSON!!!')
-//         console.log('WIND  ' + "data/map/wd-"+dateTimeFileName(new Date(UTCTimeMap))+".json")
-//         console.log(e)
-//         velocityLayer.addLayer(L.velocityLayer({
-//             displayValues: true,
-//             displayOptions: {
-//               velocityType: "Wind",
-//               position: "bottomleft",
-//               emptyString: "No wind data"
-//             },
-//             data: e,
-//             maxVelocity: 15,
-//             colorScale:["#kkk"]
-//           }))
-//         });
-
 
 
 
@@ -245,11 +222,11 @@ var dmcTimeLayer = L.timeDimension.layer.layerGroup(geo_json_dmc, {
     }, {
         label: "Weather Forecast",
         children: [{
-            label: " Temperature (C)",
+            label: " 2m Temperature (C)",
             layer: tempTimeLayer,
             radioGroup: "bc"
         }, {
-            label: " Relative Humidity (%)",
+            label: " 2m Relative Humidity (%)",
             layer: rhTimeLayer,
             radioGroup: "bc"
         },
@@ -266,12 +243,12 @@ var dmcTimeLayer = L.timeDimension.layer.layerGroup(geo_json_dmc, {
             layer: snwTimeLayer,
             radioGroup: "bc"
         }, {
-            label: " Wind Speed (km/hr)",
+            label: " 10m Wind Speed (km/hr)",
             layer: wspTimeLayer,
             radioGroup: "bc"
         },
         {
-            label: " Wind Direction",
+            label: " 10m Wind Direction",
             layer: wdTimeLayer,
             // radioGroup: "bc"
         }
@@ -289,7 +266,7 @@ var dmcTimeLayer = L.timeDimension.layer.layerGroup(geo_json_dmc, {
             layer: radar
         },
         {
-            label: " Air Quality",
+            label: " Air Quality PM2.5",
             layer: waqiLayer
         }
     ]

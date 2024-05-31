@@ -39,7 +39,7 @@ make_dir.mkdir(parents=True, exist_ok=True)
 
 ## redefine forecast ate to get file with spin up
 forecast_date = forecast_date + "06"
-# forecast_date = pd.Timestamp(2021, 2, 9).strftime("%Y%m%d06")
+# forecast_date = pd.Timestamp(2023, 7, 18).strftime("%Y%m%d06")
 
 ### Open color map json
 with open(str(root_dir) + "/json/colormaps-dev.json") as f:

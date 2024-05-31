@@ -1,4 +1,4 @@
-#!/Users/crodell/miniconda3/envs/fwf/bin/python
+#!/bluesky/fireweather/miniconda3/envs/fwf/bin/python
 
 """
 Runs the FWF model for over user defined dates
@@ -15,6 +15,7 @@ from datetime import datetime, timedelta
 from utils.wrf_ import read_wrf
 from utils.eccc import read_eccc
 from utils.era5 import read_era5
+from utils.utils import timer
 
 startTime = datetime.now()
 print("RUN STARTED AT: ", str(startTime))
@@ -30,31 +31,36 @@ __email__ = "crodell@eoas.ubc.ca"
 # ignore RuntimeWarning
 warnings.filterwarnings("ignore", category=RuntimeWarning)
 #  0:01:47.
-date_range = pd.date_range("2021-01-02", "2022-12-31")
+date_range = pd.date_range("2024-02-25", "2024-02-25")
 # date_range = pd.date_range("2021-01-02", "2021-01-05")
 # date_range = pd.date_range("2021-01-01", "2021-01-01")
 
-config = dict(
-    model="wrf",
-    domain="d03",
-    trail_name="02",
-    initialize=False,
-    initialize_hffmc=False,
-    overwinter=False,
-    fbp_mode=False,
-    correctbias=False,
-)
 
 
-for date in date_range:
-    date_startTime = datetime.now()
-    config["doi"] = date
-    coeff = FWF(
-        config=config,
-    )
-    coeff.daily()
-    coeff.hourly()
-    print(f'{date.strftime("%Y%m%d")} run time: ', datetime.now() - date_startTime)
+domains = ["d02","d03"]
+for doi in date_range:
+    for domain in domains:
+        domain_startTime = datetime.now()
+        print(f"start of domain {domain}: ", str(domain_startTime))
+        config = dict(
+            model="wrf",
+            initialize=False,
+            initialize_hffmc=False,
+            overwinter=False,
+            fbp_mode=True,
+            correctbias=False,
+        )
+        config["doi"] = doi
+        config['domain'] = domain
+        coeff = FWF(
+            config=config,
+        )
+        coeff.daily()
+        coeff.hourly()
+        timer(f"Domain {domain} run ", domain_startTime)
 
+### Timer
+timer("Total Run ", startTime)
+print("RUN ENDED: ", str(datetime.now()))
 ### Timer
 print("Total Run Time: ", datetime.now() - startTime)

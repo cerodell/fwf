@@ -2050,8 +2050,9 @@ class FWF:
         # print('HFI', np.max(HFI.values))
         HFI = xr.DataArray(HFI, name="HFI", dims=("time", "south_north", "west_east"))
         hourly_ds["HFI"] = HFI.astype(dtype="float32")
-        print(f"End of FBP with run time of {datetime.now() - FBPloopTime}")
 
+        # Print the time difference
+        self.timer(title = 'FBP run', start_time = FBPloopTime)
         return hourly_ds
 
     """########################################################################"""
@@ -2088,7 +2089,6 @@ class FWF:
 
         ## determine index for looping based on length of time array and initial time
         time_array = int_ds.Time.values
-        print(time_array[0])
         int_time = int(pd.Timestamp(time_array[0]).hour)
         length = len(time_array) + 1
         num_days = [i - 12 for i in range(1, length) if i % 24 == 0]
@@ -2208,9 +2208,9 @@ class FWF:
                 index = [0] + index
                 if (len(ds_subset.time)) < (24 + index[-1] + float(np.max(tzone))):
                     index = index[:-1]
-                print(
-                    f"index of 00Z times {index} with initial time {int_time}Z after backfilling to 00Z with yesterdays forecast \n Makes the first index of time 00Z"
-                )
+                # print(
+                #     f"index of 00Z times {index} with initial time {int_time}Z after backfilling to 00Z with yesterdays forecast \n Makes the first index of time 00Z"
+                # )
             else:
                 print(f"index of 00Z times {index} with initial time {int_time}Z")
 
@@ -2325,7 +2325,7 @@ class FWF:
             ],
             "time",
         )
-        print(f"Hourly loop done, Time: {datetime.now() - loopTime}")
+        self.timer("Hourly loop", loopTime)
         hourly_ds = xr.merge([FFMC, self.hourly_ds])
 
         ISI = self.solve_isi(hourly_ds, hourly_ds.W, fbp=False)
@@ -2401,14 +2401,21 @@ class FWF:
         ds = ds.unify_chunks()
         return ds
 
+    def timer(self, title, start_time):
+        time_diff = datetime.now() - start_time
+        # Extract the hours, minutes, and seconds from the time difference
+        hours = time_diff.seconds // 3600
+        minutes = (time_diff.seconds % 3600) // 60
+        seconds = (time_diff.seconds % 3600) % 60
+        print(f"{title} time: {hours} hours, {minutes} minutes, {seconds} seconds")
+        return
+
     def prepare_ds(self, ds):
         loadTime = datetime.now()
-        print("Start Loading ", datetime.now())
-        ds = ds.load()
+        ds = ds.compute()
         for var in list(ds):
             ds[var].encoding = {}
-        print("Load Time: ", datetime.now() - loadTime)
-
+        self.timer("Compute", loadTime)
         return ds
 
     """#######################################"""
@@ -2458,12 +2465,7 @@ class FWF:
             hourly_ds, self.daily_ds, ["F", "R", "S", "T", "W", "H"]
         )
         noon_ds = self.get_noon(hourly_ds, ["F", "R", "S"], carryover_rain=False)
-        # print('max_ds', list(max_ds))
-        # print('noon_ds', list(noon_ds))
-        # print('self.daily_ds', list(self.daily_ds))
-
         daily_ds = xr.merge([max_ds, self.daily_ds, noon_ds])
-        # print('daily_ds', list(daily_ds))
 
         daily_ds.attrs = self.attrs
         for var in daily_ds.data_vars:
@@ -2471,12 +2473,16 @@ class FWF:
             daily_ds[var].attrs = self.var_dict[var]
             daily_ds[var].attrs["pyproj_srs"] = daily_ds.attrs["pyproj_srs"]
         writeTime = datetime.now()
-        print("Start Write ", datetime.now())
+
         # daily_ds, encoding = compressor(daily_ds, self.var_dict)
         # daily_ds.to_netcdf(make_dir, encoding=encoding, mode="w")
         daily_ds.to_netcdf(make_dir, mode="w")
-        print("Write Time: ", datetime.now() - writeTime)
-        print(f"Wrote working {make_dir}")
+        self.timer(f"Daily write {self.domain}", writeTime)
+        del daily_ds
+        del self.daily_ds
+        del self.hourly_ds
+        del self.int_ds
+
         #############################################################################################
         #############################################################################################
         # # # ## Write and save DataArray (.nc) file
@@ -2487,14 +2493,12 @@ class FWF:
             + str(f"-{file_date}.nc")
         )
         writeTime = datetime.now()
-        print("Start Write ", datetime.now())
         # keep_vars = ["F", "R", "S", "T", "W", "H", "r_o"]
         # hourly_ds = hourly_ds[keep_vars]
         # hourly_ds, encoding = compressor(hourly_ds, self.var_dict)
         # hourly_ds.to_netcdf(make_dir, encoding=encoding, mode="w")
         hourly_ds.to_netcdf(make_dir, mode="w")
-        print("Write Time: ", datetime.now() - writeTime)
-        print(f"Wrote working {make_dir}")
+        self.timer(f"Hourly write {self.domain}", writeTime)
         return
 
     """#######################################"""

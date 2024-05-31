@@ -5,6 +5,7 @@ Builds a dataset of wrfout/fwf model versus all wmo weather station
 observations within model domain. Writes Dataset as zarr with attribute of of wmo.
 
 """
+
 # %%
 import context
 import io
@@ -52,7 +53,7 @@ stations_df_og = stations_df_og.drop(
 )
 
 doi = pd.Timestamp("today")
-# doi = pd.Timestamp(2023, 5, 14)
+# doi = pd.Timestamp(2023, 8, 20)
 day1_obs_date = doi - np.timedelta64(1, "D")
 day1_obs_date = day1_obs_date.strftime("%Y%m%d06")
 day2_obs_date = doi - np.timedelta64(2, "D")
@@ -96,12 +97,18 @@ def get_locs(pyproj_srs, df_obs):
 
 for domain in ["d02", "d03"]:
     stations_df = stations_df_og
-
-    day1_ds = salem.open_xr_dataset(str(data_dir) + f"/fwf-data/fwf-daily-{domain}-{day1_obs_date}.nc").isel(time = 0)
     try:
-        day2_ds = xr.open_dataset(str(data_dir) + f"/fwf-data/fwf-daily-{domain}-{day2_obs_date}.nc").isel(time = 1)
+        day1_ds = salem.open_xr_dataset(str(data_dir) + f"/fwf-data/fwf-daily-{domain}-{day1_obs_date}.nc").isel(time = 0)
+        try:
+            day2_ds = xr.open_dataset(str(data_dir) + f"/fwf-data/fwf-daily-{domain}-{day2_obs_date}.nc").isel(time = 1)
+        except:
+            day2_ds = None
     except:
-         day2_ds = None
+        day1_ds = salem.open_xr_dataset(f"/bluesky/archive/fireweather/data/fwf-daily-{domain}-{day1_obs_date}.nc").isel(time = 0)
+        try:
+            day2_ds = xr.open_dataset(f"/bluesky/archive/fireweather/data/fwf-daily-{domain}-{day2_obs_date}.nc").isel(time = 1)
+        except:
+            day2_ds = None
 
     ### Get a wrf file
     wrf_filein = "/wrf/"

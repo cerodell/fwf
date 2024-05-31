@@ -79,7 +79,7 @@ def read_wrf(doi, model, domain):
         fwf_ds.attrs["pyproj_srs"] = grid_ds.attrs["pyproj_srs"]
     else:
         filein = str(wrf_dir) + f'/{doi.strftime("%Y%m%d00")}/'
-        omp_set_num_threads(8)
+        omp_set_num_threads(6)
         print(f"read files with {omp_get_max_threads()} threads")
         startTime = datetime.now()
         print("begin readwrf: ", str(startTime))

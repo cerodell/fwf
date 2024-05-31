@@ -60,7 +60,7 @@ def solve_W_WD(ds):
 
 
 ds = salem.open_xr_dataset(
-    str(data_dir) + f'/fwf-data/fwf-hourly-d02-{doi.strftime("%Y%m%d06")}.nc'
+    f'/bluesky/archive/fireweather/data/fwf-hourly-d03-{doi.strftime("%Y%m%d06")}.nc'
 )
 
 
@@ -76,7 +76,7 @@ extent = np.round(grid.extent_in_crs(crs=wgs84), 1)
 forecastBounds = [[32.0, -160.0], [70.0, -52.0]]
 
 ## define the desired  grid resolution in degrees
-resolution = .5  # grid cell size in degress
+resolution = .05  # grid cell size in degress
 
 ## make grid based on dataset bounds and resolution
 g_lon = np.arange(

@@ -10,7 +10,7 @@ from datetime import datetime, date, timedelta
 
 startTime = datetime.now()
 
-from context import html_dir, ops_dir
+from context import root_dir, ops_dir
 
 __author__ = "Christopher Rodell"
 __email__ = "crodell@eoas.ubc.ca"
@@ -27,7 +27,7 @@ forecast_end_date = forecast_end_date.strftime("%Y-%m-%dT12:00:00Z")
 
 files_datetime = folderdate
 print(f"{str(datetime.now())} ---> open/read html template")
-fcst_template = str(html_dir) + "/fwf-forecast-template.html"
+fcst_template = str(root_dir) + "/html/fwf-forecast-template.0.1.html"
 with open(fcst_template, "r") as fin:
     fcst = fin.read()
     ## update timedim start and end

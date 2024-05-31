@@ -12,7 +12,7 @@ from netCDF4 import Dataset
 import matplotlib.pyplot as plt
 from wrf import ll_to_xy, xy_to_ll
 from datetime import datetime, date, timedelta
-from utils.fwi import solve_ffmc, solve_isi, solve_fwi
+# from utils.fwi import solve_ffmc, solve_isi, solve_fwi
 
 from context import data_dir, root_dir, fwf_dir
 

@@ -13,9 +13,10 @@ import xarray as xr
 from pathlib import Path
 
 from datetime import datetime, date, timedelta
+from utils.utils import timer
 
 startTime = datetime.now()
-print("RUN STARTED AT: ", str(startTime))
+print("RUN STARTED: ", str(startTime))
 
 from utils.fwf import FWF
 from context import wrf_dir
@@ -52,7 +53,8 @@ for domain in domains:
     )
     coeff.daily()
     coeff.hourly()
-    print(f"Domain {domain} run time: ", datetime.now() - domain_startTime)
+    timer(f"Domain {domain} run ", domain_startTime)
 
 ### Timer
-print("Total Run Time: ", datetime.now() - startTime)
+timer("Total Run ", startTime)
+print("RUN ENDED: ", str(datetime.now()))

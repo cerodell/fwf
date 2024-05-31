@@ -600,7 +600,7 @@ map.on("overlayremove", function (t) {
     t.layer == radar && legend_radar.remove(map);
 }),
 map.on("overlayadd", function (t) {
-    t.layer == waqiLayer.setZIndex(600)
+    t.layer == waqiLayer.setZIndex(1200)
 }),
 map.on("overlayremove", function (t) {
     t.layer == waqiLayer

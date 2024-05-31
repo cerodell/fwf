@@ -79,8 +79,6 @@ grid = ds.salem.grid
 
 extent = np.round(grid.extent_in_crs(crs=wgs84), 1)
 
-forecastBounds = [[32.0, -160.0], [70.0, -52.0]]
-
 ## define the desired  grid resolution in degrees
 resolution = .5  # grid cell size in degress
 

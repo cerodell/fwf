@@ -47,7 +47,7 @@ stations_df_og = stations_df_og.drop(
 )
 
 # date = pd.Timestamp("today")
-date = pd.Timestamp(2022, 8, 8)
+date = pd.Timestamp(2023, 8, 20)
 day1_obs_date = date - np.timedelta64(1, "D")
 day1_obs_date = day1_obs_date.strftime("%Y%m%d06")
 day2_obs_date = date - np.timedelta64(2, "D")

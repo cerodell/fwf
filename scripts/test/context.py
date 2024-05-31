@@ -19,6 +19,7 @@ notebooks_dir = this_dir
 root_dir = notebooks_dir.parents[1]
 data_dir = root_dir / Path("data")
 json_dir = root_dir / Path("json")
+wrf_dir = Path("/bluesky/working/wrf2arl/WAN00CG-01/")
 
 sys.path.insert(0, str(root_dir))
 sep = "*" * 30
