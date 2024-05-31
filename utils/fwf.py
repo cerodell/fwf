@@ -4,6 +4,7 @@
 Class to solve the Fire Weather Indices using output from a numerical weather model
 """
 
+import dask.array
 import context
 import os
 import math
@@ -11,9 +12,11 @@ import json
 import salem
 import dask
 import zarr
+import joblib
 import numpy as np
 import pandas as pd
 import xarray as xr
+from tensorflow.keras.models import load_model
 from dask.distributed import LocalCluster, Client
 
 
@@ -25,6 +28,7 @@ from utils.bias_correct import bias_correct
 from utils.compressor import compressor, file_size
 from utils.era5 import read_era5
 from utils.open import read_dataset
+from utils.solar_hour import get_solar_hours
 
 from context import data_dir, root_dir
 
@@ -118,18 +122,24 @@ class FWF:
         self.int_ds = read_dataset(config)
         ############ Set up dataset and get attributes ################
         self.attrs = self.int_ds.attrs
-        self.model = config["model"]
-        self.domain = config["domain"]
+        self.model = config.get("model")
+        self.domain = config.get("domain")
         self.trail_name = config["trail_name"]
-        self.fbp_mode = config["fbp_mode"]
-        self.overwinter = config["overwinter"]
-        self.initialize = config["initialize"]
-        self.correctbias = config["correctbias"]
-        self.root_dir = config["root_dir"]
-        self.initialize_hffmc = config["initialize_hffmc"]
-        self.reanalysis_mode = config["reanalysis_mode"]
-        self.parallel = config["parallel"]
-        self.file_formate = config["file_formate"]
+        self.fbp_mode = config.get("fbp_mode", False)
+        self.frp_mode = config.get("frp_mode", False)
+        self.overwinter = config.get("overwinter", False)
+        self.initialize = config.get("initialize", False)
+        self.initialize_hffmc = config.get("initialize_hffmc", False)
+        self.correctbias = config.get("correctbias", False)
+        self.reanalysis_mode = config.get("reanalysis_mode", False)
+        self.parallel = config.get("parallel", False)
+        self.root_dir = config.get("root_dir")
+
+        self.iterator_dir = config.get("iterator_dir", str(data_dir) + f"/fwf-data/")
+        self.save_dir = config.get("save_dir", Path(str(data_dir) + f"/fwf-data/"))
+        self.filein_dir = f"{self.root_dir}/{self.model}/{self.domain}"
+
+        self.file_formate = config.get("file_formate", "netcdf")
         if self.file_formate == "netcdf":
             self.file_ext = ".nc"
             self.dataloader = self.open_netcdf
@@ -137,19 +147,19 @@ class FWF:
             self.file_ext = ".zarr"
             self.dataloader = self.open_zarr
 
-        ## NOTE this will be adjusted when made operational
-        if self.reanalysis_mode == True:
-            self.iterator_dir = f"/Volumes/WFRT-Ext23/fwf-data/ecmwf/era5-land/04"
-            self.save_dir = Path(
-                f"/Volumes/WFRT-Ext21/fwf-data/{self.model}/{self.domain}/{self.trail_name}/"
-            )
-            self.filein_dir = f"{self.root_dir}/{self.model}/{self.domain}"
-        else:
-            # self.iterator_dir = f"/Volumes/WFRT-Ext24/fwf-data/{self.model}/{self.domain}/{self.trail_name}/"
-            # self.iterator_dir = f"/Volumes/WFRT-Ext25/fwf-data/{self.model}/{self.domain}/{self.trail_name}/"
-            self.iterator_dir = f"/Volumes/ThunderBay/CRodell/{self.model}/{self.domain}/{self.trail_name}/"
-            self.filein_dir = f"{self.root_dir}/{self.model}/{self.domain}"
-            self.save_dir = Path(self.iterator_dir)
+        # ## NOTE this will be adjusted when made operational
+        # if self.reanalysis_mode == True:
+        #     self.iterator_dir = f"/Volumes/WFRT-Ext23/fwf-data/ecmwf/era5-land/04"
+        #     self.save_dir = Path(
+        #         f"/Volumes/WFRT-Ext21/fwf-data/{self.model}/{self.domain}/{self.trail_name}/"
+        #     )
+        #     self.filein_dir = f"{self.root_dir}/{self.model}/{self.domain}"
+        # else:
+        self.iterator_dir = f"/Volumes/WFRT-Ext24/fwf-data/{self.model}/{self.domain}/{self.trail_name}/"
+        #     # self.iterator_dir = f"/Volumes/WFRT-Ext25/fwf-data/{self.model}/{self.domain}/{self.trail_name}/"
+        #     self.iterator_dir = f"/Volumes/ThunderBay/CRodell/{self.model}/{self.domain}/{self.trail_name}/"
+        #     self.filein_dir = f"{self.root_dir}/{self.model}/{self.domain}"
+        self.save_dir = Path(self.iterator_dir)
         self.save_dir.mkdir(parents=True, exist_ok=True)
 
         ############ Mathematical Constants and UsefulArrays ################
@@ -307,7 +317,8 @@ class FWF:
 
         ## If parallel is True will keep data as lazy loaded dask arrays
         if self.parallel == True:
-            pass
+            self.hourly_ds = self.hourly_ds.chunk("auto")
+            self.daily_ds = self.daily_ds.chunk("auto")
         ## If parallel is False will load data in memory as numpy arrays
         else:
             self.hourly_ds = self.hourly_ds.load()
@@ -1613,93 +1624,103 @@ class FWF:
         ########################################################################
         if hourly == True:
 
-            # ###### Convert daily data to hourly intervals
-            # ## start time for covnertion and get need static varibles
-            # dTOh = datetime.now()
-            # tzone = self.tzone
-            # shape = self.shape
-            # south_north = self.hourly_ds['south_north'].values
-            # west_east = self.hourly_ds['west_east'].values
-            # time_array = self.hourly_ds.Time.values
+            ###### Convert daily data to hourly intervals
+            ## start time for covnertion and get need static varibles
+            dTOh = datetime.now()
+            tzone = self.tzone
+            shape = self.shape
+            south_north = self.hourly_ds["south_north"].values
+            west_east = self.hourly_ds["west_east"].values
+            time_array = self.hourly_ds.Time.values
 
-            # ## correct for places on int dateline
-            # tzone[tzone <= -12] *= -1
+            ## correct for places on int dateline
+            tzone[tzone <= -12] *= -1
 
-            # ## from model int get all indexs that assocaite with 12Z,
-            # ## this is needed to reindex daily to hourly ensuring that all dailys values are on the correct utc time
-            # int_time = int(pd.Timestamp(time_array[0]).hour)
-            # length = len(time_array) + 1
-            # num_days = [i - 12 for i in range(1, length) if i % 24 == 0]
-            # index = [
-            #     i - int_time if 12 - int_time >= 0 else i + 24 - int_time for i in num_days
-            # ]
-            # print(
-            #     f"For NWP with {str(int_time).zfill(2)}Z INT, will use index(s) of {index} as index(s) to represent 12Z"
-            # )
+            ## from model int get all indexs that assocaite with 12Z,
+            ## this is needed to reindex daily to hourly ensuring that all dailys values are on the correct utc time
+            int_time = int(pd.Timestamp(time_array[0]).hour)
+            length = len(time_array) + 1
+            num_days = [i - 12 for i in range(1, length) if i % 24 == 0]
+            index = [
+                i - int_time if 12 - int_time >= 0 else i + 24 - int_time
+                for i in num_days
+            ]
+            print(
+                f"For NWP with {str(int_time).zfill(2)}Z INT, will use index(s) of {index} as index(s) to represent 12Z"
+            )
 
-            # ## make BUI into a np array and make an empty array, U_empty, to populate
-            # U_values = U.values
-            # U_empty = np.full(
-            #     (len(time_array), len(south_north), len(west_east)),
-            #     np.nan,
-            # )
+            ## make BUI into a np array and make an empty array, U_empty, to populate
+            index = np.array(index)
+            U_values = U.values
+            U_empty = np.full(
+                (len(time_array), len(south_north), len(west_east)),
+                np.nan,
+            )
             # ## find all uniuie utc off sets and loop them obtaining BUI values for each time zone and
             # ### fill them in to U_empty at thier accocaited utc offset which represent 1600 local
-            # unique_TZ = np.unique(tzone)
-            # for i in range(len(index)):
-            #     for TZ in unique_TZ:
-            #         idx = np.where(tzone==TZ)
-            #         try:
-            #             U_empty[index[i] + 4 + TZ,idx[0], idx[1]] = U_values[i,idx[0], idx[1]]
-            #         except:
-            #             U_empty[index[i] + TZ,idx[0], idx[1]] = U_values[i,idx[0], idx[1]]
+            unique_TZ = np.unique(tzone)
+            for i in range(len(index)):
+                for TZ in unique_TZ:
+                    idx = np.where(tzone == TZ)
+                    try:
+                        U_empty[index[i] + 4 + TZ, idx[0], idx[1]] = U_values[
+                            i, idx[0], idx[1]
+                        ]
+                    except:
+                        U_empty[index[i] + TZ, idx[0], idx[1]] = U_values[
+                            i, idx[0], idx[1]
+                        ]
 
-            # ## make the quassi popualted U_empty into a dataarray
-            # var = 'U'
-            # U_da = xr.DataArray(
-            #     data=U_empty,
-            #     name=var,
-            #     dims=["time", "south_north", "west_east"],
-            #     coords=dict(
-            #         south_north=south_north,
-            #         west_east=west_east,
-            #         time=time_array,
-            #     ),
-            # )#.chunk('auto')
-            # ## interpolate/extrapolate the quassi popualted U_empty filling all nan values
-            # ##### method = 'nearest' will do what i have written for my ams paper first describing the fwf
-            # U = U_da.interpolate_na(dim = 'time', method = 'linear', fill_value="extrapolate")
-            # self.BUI_H = xr.DataArray(U.values, name="BUI", dims=("time", "south_north", "west_east"))
-            # print('Time to resample daily to hourly:  ', datetime.now()-dTOh)
+            ## make the quassi popualted U_empty into a dataarray
+            var = "U"
+            U_da = xr.DataArray(
+                data=U_empty,
+                name=var,
+                dims=["time", "south_north", "west_east"],
+                coords=dict(
+                    south_north=south_north,
+                    west_east=west_east,
+                    time=time_array,
+                ),
+            )  # .chunk('auto')
+            ## interpolate/extrapolate the quassi popualted U_empty filling all nan values
+            ##### method = 'nearest' will do what i have written for my ams paper first describing the fwf
+            U = U_da.interpolate_na(
+                dim="time", method="linear", fill_value="extrapolate"
+            )
+            self.BUI_H = xr.DataArray(
+                U.values, name="BUI", dims=("time", "south_north", "west_east")
+            )
+            print("Time to resample daily to hourly:  ", datetime.now() - dTOh)
 
-            # ########################################################################
-            # ## (28 & 29) Solve for duff moisture function where U =< 80(f_D_a)
-            # f_D = xr.where(
-            #     U > 80,
-            #     1000 / (25 + 108.64 * np.exp(-0.023 * U)),
-            #     (0.626 * np.power(U, 0.809)) + 2,
-            # )
-            # B = 0.1 * R * f_D
+            ########################################################################
+            ## (28 & 29) Solve for duff moisture function where U =< 80(f_D_a)
+            f_D = xr.where(
+                U > 80,
+                1000 / (25 + 108.64 * np.exp(-0.023 * U)),
+                (0.626 * np.power(U, 0.809)) + 2,
+            )
+            B = 0.1 * R * f_D
 
             #######################################################################
             #################### OLD WAY USED IN FIRST AMS PAPER ##################
             #######################################################################
-            index = [i for i in range(1, len(R) + 1) if i % 24 == 0]
-            # print(index)
-            if len(index) == 1:
-                ### (29a) Solve FWI intermediate form  for day 1(B_a)
-                B = 0.1 * R[:] * f_D[0]
-            elif len(index) == 2:
-                # print("fwi index", index[0])
-                B_a = 0.1 * R[: index[0]] * f_D[0]
-                ### (29b) Solve FWI intermediate form for day 2 (B_b)
-                B_b = 0.1 * R[index[0] :] * f_D[1]
-                ### (29c) COmbine FWI intermediate (B)
-                B = xr.combine_nested([B_a, B_b], "time")
-            else:
-                raise ValueError(
-                    "ERROR: Rodell was lazy and needs to rethink indexing of multi length NWP runs, he will bet better in the next version!"
-                )
+            # index = [i for i in range(1, len(R) + 1) if i % 24 == 0]
+            # # print(index)
+            # if len(index) == 1:
+            #     ### (29a) Solve FWI intermediate form  for day 1(B_a)
+            #     B = 0.1 * R[:] * f_D[0]
+            # elif len(index) == 2:
+            #     # print("fwi index", index[0])
+            #     B_a = 0.1 * R[: index[0]] * f_D[0]
+            #     ### (29b) Solve FWI intermediate form for day 2 (B_b)
+            #     B_b = 0.1 * R[index[0] :] * f_D[1]
+            #     ### (29c) COmbine FWI intermediate (B)
+            #     B = xr.combine_nested([B_a, B_b], "time")
+            # else:
+            #     raise ValueError(
+            #         "ERROR: Rodell was lazy and needs to rethink indexing of multi length NWP runs, he will bet better in the next version!"
+            #     )
         else:
             ########################################################################
             ## (28 & 29) Solve for duff moisture function where U =< 80(f_D_a)
@@ -1760,7 +1781,7 @@ class FWF:
                     - Head Fire Intensity, kW m^{-1}
         """
         FBPloopTime = datetime.now()
-        print("Start of FBP")
+        # print("Start of FBP")
         ## Open fuels converter
         # hourly_ds = self.rechunk(hourly_ds)
         ELV, LAT, LON, FUELS, GS, SAZ, PC = (
@@ -2336,6 +2357,127 @@ class FWF:
 
         return hourly_ds
 
+    def open_fuels(self, moi):
+        fuel_dir = f"/Volumes/WFRT-Ext23/fuel-characteristics/fuel-load/"
+        fuels_ds = salem.open_xr_dataset(
+            fuel_dir + f'{2021}/CFUEL_timemean_2021{moi.strftime("_%m")}.nc'
+        ).sel(lat=slice(90, 10), lon=slice(-180, -30))
+        fuels_ds.coords["time"] = moi
+        return fuels_ds
+
+    def solve_frp(self, hourly_ds):
+        static_ds = self.static_ds
+        fwf_ds = hourly_ds[["R", "U"]].copy()
+        # for var in list(fwf_ds):
+        #     fwf_ds[var].attrs = self.static_ds.attrs
+        # fwf_ds.attrs = self.static_ds.attrs
+        model_dir = (
+            str(data_dir) + f"/mlp/tf/averaged-v2/MLP_64U-Dense_64U-Dense_1U-Dense"
+        )
+        with open(f"{model_dir}/config.json", "r") as json_data:
+            mlp_config = json.load(json_data)
+        startFRP = datetime.now()
+        # print("Start prediction:", startFRP)
+        fuel_date_range = pd.date_range(
+            fwf_ds["Time"].values[0],
+            fwf_ds["Time"].values[-1],
+            freq="MS",
+        )
+        if len(fuel_date_range) == 0:
+            fuel_date_range = [pd.Timestamp(fwf_ds["Time"].values[0])]
+        fuels_ds = xr.combine_nested(
+            [self.open_fuels(moi) for moi in fuel_date_range], concat_dim="time"
+        )
+
+        startTRANSFORM = datetime.now()
+        fuels_ds = self.static_ds.salem.transform(fuels_ds, interp="linear").reindex(
+            time=fwf_ds.Time, method="ffill"
+        )
+        for var in list(fuels_ds):
+            fwf_ds[var] = (("time", "south_north", "west_east"), fuels_ds[var].values)
+        print("Time to transform data: ", datetime.now() - startTRANSFORM)
+
+        fwf_ds = get_solar_hours(fwf_ds)
+        hour_sin = np.sin(2 * np.pi * fwf_ds["solar_hour"] / 24)
+        hour_cos = np.cos(2 * np.pi * fwf_ds["solar_hour"] / 24)
+
+        lat_sin = np.sin(np.radians(fwf_ds.XLAT.values))
+        lat_cos = np.cos(np.radians(fwf_ds.XLAT.values))
+
+        lon_sin = np.sin(np.radians(fwf_ds.XLONG.values))
+        lon_cos = np.cos(np.radians(fwf_ds.XLONG.values))
+
+        fwf_ds["R_hour_sin_Live_Wood"] = fwf_ds["R"] * hour_sin * fwf_ds["Live_Wood"]
+        fwf_ds["R_hour_cos_Live_Wood"] = fwf_ds["R"] * hour_cos * fwf_ds["Live_Wood"]
+        fwf_ds["R_hour_sin_Dead_Wood"] = fwf_ds["R"] * hour_sin * fwf_ds["Dead_Wood"]
+        fwf_ds["R_hour_cos_Dead_Wood"] = fwf_ds["R"] * hour_cos * fwf_ds["Dead_Wood"]
+        fwf_ds["R_hour_sin_Live_Leaf"] = fwf_ds["R"] * hour_sin * fwf_ds["Live_Leaf"]
+        fwf_ds["R_hour_cos_Live_Leaf"] = fwf_ds["R"] * hour_cos * fwf_ds["Live_Leaf"]
+        fwf_ds["R_hour_sin_Dead_Foliage"] = (
+            fwf_ds["R"] * hour_sin * fwf_ds["Dead_Foliage"]
+        )
+        fwf_ds["R_hour_cos_Dead_Foliage"] = (
+            fwf_ds["R"] * hour_cos * fwf_ds["Dead_Foliage"]
+        )
+
+        fwf_ds["U_lat_sin_Live_Wood"] = fwf_ds["U"] * lat_sin * fwf_ds["Live_Wood"]
+        fwf_ds["U_lat_cos_Live_Wood"] = fwf_ds["U"] * lat_cos * fwf_ds["Live_Wood"]
+        fwf_ds["U_lat_sin_Dead_Wood"] = fwf_ds["U"] * lat_sin * fwf_ds["Dead_Wood"]
+        fwf_ds["U_lat_cos_Dead_Wood"] = fwf_ds["U"] * lat_cos * fwf_ds["Dead_Wood"]
+        fwf_ds["U_lat_sin_Live_Leaf"] = fwf_ds["U"] * lat_sin * fwf_ds["Live_Leaf"]
+        fwf_ds["U_lat_cos_Live_Leaf"] = fwf_ds["U"] * lat_cos * fwf_ds["Live_Leaf"]
+        fwf_ds["U_lat_sin_Dead_Foliage"] = (
+            fwf_ds["U"] * lat_sin * fwf_ds["Dead_Foliage"]
+        )
+        fwf_ds["U_lat_cos_Dead_Foliage"] = (
+            fwf_ds["U"] * lat_cos * fwf_ds["Dead_Foliage"]
+        )
+
+        fwf_ds["U_lon_sin_Live_Wood"] = fwf_ds["U"] * lon_sin * fwf_ds["Live_Wood"]
+        fwf_ds["U_lon_cos_Live_Wood"] = fwf_ds["U"] * lon_cos * fwf_ds["Live_Wood"]
+        fwf_ds["U_lon_sin_Dead_Wood"] = fwf_ds["U"] * lon_sin * fwf_ds["Dead_Wood"]
+        fwf_ds["U_lon_cos_Dead_Wood"] = fwf_ds["U"] * lon_cos * fwf_ds["Dead_Wood"]
+        fwf_ds["U_lon_sin_Live_Leaf"] = fwf_ds["U"] * lon_sin * fwf_ds["Live_Leaf"]
+        fwf_ds["U_lon_cos_Live_Leaf"] = fwf_ds["U"] * lon_cos * fwf_ds["Live_Leaf"]
+        fwf_ds["U_lon_sin_Dead_Foliage"] = (
+            fwf_ds["U"] * lon_sin * fwf_ds["Dead_Foliage"]
+        )
+        fwf_ds["U_lon_cos_Dead_Foliage"] = (
+            fwf_ds["U"] * lon_cos * fwf_ds["Dead_Foliage"]
+        )
+
+        shape = fwf_ds["R"].shape
+        df_dict = {}
+        # print(mlp_config["features_used"])
+        for key in mlp_config["features_used"]:
+            try:
+                df_dict[key] = np.ravel(fwf_ds[key].values)
+            except KeyError:
+                df_dict[key] = None
+
+        df = pd.DataFrame(df_dict)
+        X = df[mlp_config["features_used"]]
+
+        # Load the scaler
+        scaler = joblib.load(f"{model_dir}/scaler.joblib")
+        X_new_scaled = scaler.transform(X)
+
+        # Load the model
+        model = load_model(f"{model_dir}/model.keras")
+        FRP = model(X_new_scaled)
+        FRP_FULL = FRP.numpy().ravel().reshape(shape)
+        FRPend = datetime.now() - startFRP
+        print("Time to predict FRP: ", FRPend)
+        hourly_ds["FRP"] = (("time", "south_north", "west_east"), FRP_FULL)
+        hourly_ds["FRP"] = xr.where(hourly_ds["SNOWC"] > 0.5, 0, hourly_ds["FRP"])
+
+        # startTRANSFORM = datetime.now()
+        # print("Start transform:", startTRANSFORM)
+        # fwf_ds = transform_ds(fwf_ds, domain)
+
+        del FRP_FULL, FRP, model, df, fuels_ds, fwf_ds
+        return hourly_ds
+
     """########################################################################"""
     """ ###################### Create Daily Dataset ###########################"""
     """########################################################################"""
@@ -2481,7 +2623,7 @@ class FWF:
             var_dict = {
                 var_list[i]: hourname + var_list[i] for i in range(len(var_list))
             }
-            print(var_dict)
+            # print(var_dict)
             noon_ds = noon_ds.rename(var_dict)
             for var in var_list:
                 noon_ds[hourname + var].attrs = int_ds[var].attrs
@@ -2684,17 +2826,19 @@ class FWF:
         FWI, DSR = self.solve_fwi(hourly=True)
         hourly_ds["S"] = FWI
         hourly_ds["DSR"] = DSR
-        # hourly_ds["U"] = self.BUI_H
+        hourly_ds["U"] = self.BUI_H
         print(f"Hourly FWI loop done, Time: {datetime.now() - loopTime}")
         if self.reanalysis_mode == True:
             hourly_ds["time"] = hourly_ds["Time"]
             hourly_ds = hourly_ds.sel(
                 time=slice(self.int_ds.attrs["FS"], self.int_ds.attrs["FE"])
             )
+
         if self.fbp_mode == True:
             hourly_ds = self.solve_fbp(hourly_ds)
-        else:
-            pass
+
+        if self.frp_mode == True:
+            hourly_ds = self.solve_frp(hourly_ds)
 
         return hourly_ds
 
@@ -2798,7 +2942,7 @@ class FWF:
         hourly_ds = self.hourly_loop()
         hourly_ds.attrs = self.attrs
 
-        keep_vars = ["F", "T", "W", "WD", "r_o", "H", "R", "S"]
+        # keep_vars = ["F", "T", "W", "WD", "r_o", "H", "R", "S", 'FRP']
         # keep_vars = ['F', 'R', 'S']
         # keep_vars =  ['F', 'T', 'W', 'WD', 'r_o', 'H', 'r_o_hourly', 'R', 'S', 'U', 'FMC', 'SFC', 'ISI', 'ROS', 'CFB', 'TFC', 'HFI']
         # if self.reanalysis_mode == True:
@@ -2806,7 +2950,7 @@ class FWF:
         #     hourly_ds = hourly_ds[keep_vars].sel(time=slice(self.int_ds.attrs["FS"] , self.int_ds.attrs["FE"]))
         # else:
         #     hourly_ds = hourly_ds[keep_vars].isel(time=slice(0, 24))
-        hourly_ds = hourly_ds[keep_vars]
+        # hourly_ds = hourly_ds[keep_vars]
         ## change all to float32 and give attributes to variabels
         for var in hourly_ds.data_vars:
             hourly_ds[var] = hourly_ds[var].astype(dtype="float32")

@@ -21,6 +21,7 @@ from sklearn.preprocessing import (
     PowerTransformer,
 )
 from sklearn.utils import shuffle
+from sklearn.linear_model import LinearRegression
 
 from sklearn.inspection import permutation_importance
 from scipy import stats
@@ -39,22 +40,57 @@ startTime = datetime.now()
 config = dict(
     method="averaged-v2",
     keep_vars=[
-        "R",
-        "U",
-        "Live_Wood",
-        "Dead_Wood",
-        "Live_Leaf",
-        "Dead_Foliage",
-        "hour_sin",
-        "hour_cos",
+        # "R",
+        # "U",
+        # "S",
+        "R_hour_sin_Live_Wood",
+        "R_hour_cos_Live_Wood",
+        "R_hour_sin_Dead_Wood",
+        "R_hour_cos_Dead_Wood",
+        "R_hour_sin_Live_Leaf",
+        "R_hour_cos_Live_Leaf",
+        "R_hour_sin_Dead_Foliage",
+        "R_hour_cos_Dead_Foliage",
+        # "U_Live_Wood",
+        # "U_Dead_Wood",
+        # "U_Live_Leaf",
+        # "F_Dead_Foliage",
+        # "F_Dead_Foliage",
+        # "R_hour_sin",
+        # "R_hour_cos",
+        # "R_lat_sin",
+        # "R_lat_cos",
+        # "R_lon_sin",
+        # "R_lon_cos",
+        # "U_lat_sin_total_fuel",
+        # "U_lat_cos_total_fuel",
+        # "U_lon_sin_total_fuel",
+        # "U_lon_cos_total_fuel",
+        "U_lat_sin_Live_Wood",
+        "U_lat_cos_Live_Wood",
+        "U_lon_sin_Live_Wood",
+        "U_lon_cos_Live_Wood",
+        "U_lat_sin_Dead_Wood",
+        "U_lat_cos_Dead_Wood",
+        "U_lon_sin_Dead_Wood",
+        "U_lon_cos_Dead_Wood",
+        "F_lat_sin_Live_Leaf",
+        "F_lat_cos_Live_Leaf",
+        "F_lon_sin_Live_Leaf",
+        "F_lon_cos_Live_Leaf",
+        "F_lat_sin_Dead_Foliage",
+        "F_lat_cos_Dead_Foliage",
+        "F_lon_sin_Dead_Foliage",
+        "F_lon_cos_Dead_Foliage",
     ],
     scaler_type="standard",  ##robust or standard minmax
     transform=False,
     min_fire_size=1000,
     package="tf",
     model_type="MLP",
-    main_cases=False,
+    main_cases=True,
     shuffle_data=True,
+    feature_engineer=True,
 )
 config["n_features"] = len(config["keep_vars"])
 
@@ -64,20 +100,25 @@ mlD = MLDATA(config)
 ## Setup MLP model
 model = Sequential(
     [
-        Dense(32, activation="relu", input_shape=(config["n_features"],)),
+        Dense(64, activation="relu", input_shape=(config["n_features"],)),
         # Dropout(0.2),
-        Dense(32, activation="relu"),
+        Dense(64, activation="relu"),
         # Dropout(0.2),
+        # Dense(64, activation="relu"),
+        # # Dropout(0.2),
+        # Dense(64, activation="relu"),
+        # # Dropout(0.2),
         Dense(1, activation="relu"),  # Output layer
     ]
 )
 
 ## Compile model
-model.compile(optimizer=Adam(learning_rate=0.01), loss="log_cosh")
+model.compile(optimizer=Adam(learning_rate=0.001), loss="log_cosh")
 
 # Prepare directory to save model output and active logging script
 make_dir = (
-    Path(data_dir) / f"{config['model_type'].lower()}/{config['package'].lower()}/"
+    Path(data_dir)
+    / f"{config['model_type'].lower()}/{config['package'].lower()}/{config['method']}/"
 )
 make_dir.mkdir(parents=True, exist_ok=True)
 save_dir, logger = create_model_directory(
@@ -127,25 +168,20 @@ if config["transform"] == True:
     y_out_this_nhn = np.expm1(y_out_this_nhn)
     y_test = np.expm1(y_test)
 
-# # # # Plot results
-# plt.scatter(y_out_this_nhn[200:400],y_test.values[200:400])
-# fig, ax = plt.subplots()
-# ax.plot(y_out_this_nhn[200:400], color='tab:red')
-# ax.plot(y_test.values[200:400], color='black')
-# plt.show()
+
+mbe, rmse = str(np.round(MBE(y_test.values, y_out_this_nhn), 2)), np.round(
+    RMSE(y_test.values, y_out_this_nhn), 2
+)
+r2, r = np.round(r2_score(y_test.values, y_out_this_nhn), 2), np.round(
+    stats.pearsonr(y_test.values, y_out_this_nhn)[0], 2
+)
 
 
-fig, ax = plt.subplots()
-ax.plot(y_out_this_nhn, color="tab:red", zorder=10, lw=0.5)
-ax.plot(y_test.values, color="black", zorder=1, lw=0.5)
-plt.show()
-
-# x = 00
-# y = x + 250
-# fig, ax = plt.subplots()
-# ax.plot(y_out_this_nhn[x:y], color='tab:red')
-# ax.plot(y_test.values[x:y], color='black')
-# plt.show()
-
-# fig, ax = plt.subplots()
-# ax.plot(df_test['R'].values[x:y], color='black')
+fig = plt.figure()
+ax = fig.add_subplot(1, 1, 1)
+ax.scatter(y_out_this_nhn, y_test.values, color="tab:red", s=15)
+ax.set_xlabel("Modeled FRP (MW)")
+ax.set_ylabel("Observed FRP (MW)")
+ax.set_title(f"MBE: {mbe}   RMSE: {rmse}   r2: {r2}   r: {r}")
+ax.axline((0, 0), slope=1, color="k", linestyle="--", lw=0.5)
+fig.savefig(str(save_dir) + "/scatter.png")

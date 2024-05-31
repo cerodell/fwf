@@ -239,3 +239,19 @@ def grid_wrf(model, domain):
     ).isel(Time=0)
     ds_grid = ds.salem.grid.to_dataset()
     return ds_grid
+
+
+def hourly_rain(hourly_ds):
+    zero_full = np.zeros(hourly_ds["XLAT"].values.shape, dtype=float)
+    r_oi = np.array(hourly_ds.r_o)
+    r_o_plus1 = np.dstack((zero_full.T, r_oi.T)).T
+    r_hourly_list = []
+    for i in range(len(hourly_ds.Time)):
+        r_hour = hourly_ds.r_o[i] - r_o_plus1[i]
+        r_hourly_list.append(r_hour)
+    r_hourly = np.stack(r_hourly_list)
+    r_hourly = xr.DataArray(
+        r_hourly, name="r_o_hourly", dims=("time", "south_north", "west_east")
+    )
+    hourly_ds["r_o_hourly"] = r_hourly
+    return hourly_ds

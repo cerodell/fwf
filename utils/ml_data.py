@@ -23,6 +23,7 @@ from scipy import stats
 from utils.stats import MBE, RMSE
 from sklearn.metrics import r2_score
 import matplotlib.pyplot as plt
+from utils.solar_hour import get_solar_hours
 
 from sklearn.utils import shuffle
 
@@ -45,6 +46,7 @@ class MLDATA:
         self.shuffle_data = config.get("shuffle_data", False)
         self.model_type = config.get("model_type")
         self.package = config.get("package")
+        self.feature_engineer = config.get("feature_engineer", False)
 
     def get_ds(self, year):
         """
@@ -57,7 +59,7 @@ class MLDATA:
         """
         Modify the dataset by cleaning and adding new columns.
         """
-
+        print(len(df))
         df = df.loc[df["area_ha"] > self.min_fire_size]
         df = df.loc[df["burn_time"] > 24]
         df.loc[df["HGT"] < 0, "HGT"] = 0
@@ -67,6 +69,8 @@ class MLDATA:
         df["hour"] = df["local_time"].dt.hour
         df["month"] = df["local_time"].dt.month
         df["dayofyear"] = df["local_time"].dt.dayofyear
+        df["dayofyear_sin"] = np.sin(2 * np.pi * df["dayofyear"] / 365)
+        df["dayofyear_cos"] = np.cos(2 * np.pi * df["dayofyear"] / 365)
         df["hour_sin"] = np.sin(2 * np.pi * df["solar_hour"] / 24)
         df["hour_cos"] = np.cos(2 * np.pi * df["solar_hour"] / 24)
         df.loc[df["LAI"] > 7, "LAI"] = 7
@@ -85,7 +89,92 @@ class MLDATA:
             df["R"] = np.log1p(df["R"])
             df["LAI"] = np.log1p(df["LAI"])
 
-        # if self.keep_vars:
+        if self.feature_engineer == True:
+            print(list(df))
+            total_fuel = (
+                df["Live_Wood"] + df["Dead_Wood"] + df["Live_Leaf"] + df["Dead_Foliage"]
+            )
+            df["S_hour_sin"] = df["hour_sin"] * df["S"]
+            df["S_hour_cos"] = df["hour_cos"] * df["S"]
+
+            df["R_hour_sin"] = df["hour_sin"] * df["R"]
+            df["R_hour_cos"] = df["hour_cos"] * df["R"]
+
+            df["U_hour_sin"] = df["hour_sin"] * df["U"]
+            df["U_hour_cos"] = df["hour_cos"] * df["U"]
+
+            df["U_Dead_Wood"] = df["Dead_Wood"] * df["U"]
+            df["U_Live_Wood"] = df["Live_Wood"] * df["U"]
+            df["U_Live_Leaf"] = df["Live_Leaf"] * df["U"]
+            df["U_Dead_Foliage"] = df["Dead_Foliage"] * df["U"]
+
+            df["F_Dead_Wood"] = df["Dead_Wood"] * df["F"]
+            df["F_Live_Wood"] = df["Live_Wood"] * df["F"]
+            df["F_Live_Leaf"] = df["Live_Leaf"] * df["F"]
+            df["F_Dead_Foliage"] = df["Dead_Foliage"] * df["F"]
+
+            df["S_lat_sin"] = df["lat_sin"] * df["S"]
+            df["S_lat_cos"] = df["lat_cos"] * df["S"]
+
+            df["S_lon_sin"] = df["lon_sin"] * df["S"]
+            df["S_lon_cos"] = df["lon_cos"] * df["S"]
+
+            df["R_lat_sin"] = df["lat_sin"] * df["R"]
+            df["R_lat_cos"] = df["lat_cos"] * df["R"]
+
+            df["R_lon_sin"] = df["lon_sin"] * df["R"]
+            df["R_lon_cos"] = df["lon_cos"] * df["R"]
+
+            df["U_lat_sin"] = df["lat_sin"] * df["U"]
+            df["U_lat_cos"] = df["lat_cos"] * df["U"]
+
+            df["U_lon_sin"] = df["lon_sin"] * df["U"]
+            df["U_lon_cos"] = df["lon_cos"] * df["U"]
+
+            df["U_lat_sin_total_fuel"] = df["U"] * df["lat_sin"] * total_fuel
+            df["U_lat_cos_total_fuel"] = df["U"] * df["lat_cos"] * total_fuel
+
+            df["U_lon_sin_total_fuel"] = df["U"] * df["lon_sin"] * total_fuel
+            df["U_lon_cos_total_fuel"] = df["U"] * df["lon_cos"] * total_fuel
+
+            df["R_hour_sin_Live_Wood"] = df["R"] * df["hour_sin"] * df["Live_Wood"]
+            df["R_hour_cos_Live_Wood"] = df["R"] * df["hour_cos"] * df["Live_Wood"]
+
+            df["R_hour_sin_Dead_Wood"] = df["R"] * df["hour_sin"] * df["Dead_Wood"]
+            df["R_hour_cos_Dead_Wood"] = df["R"] * df["hour_cos"] * df["Dead_Wood"]
+
+            df["R_hour_sin_Live_Leaf"] = df["R"] * df["hour_sin"] * df["Live_Leaf"]
+            df["R_hour_cos_Live_Leaf"] = df["R"] * df["hour_cos"] * df["Live_Leaf"]
+
+            df["R_hour_sin_Dead_Foliage"] = (
+                df["R"] * df["hour_sin"] * df["Dead_Foliage"]
+            )
+            df["R_hour_cos_Dead_Foliage"] = (
+                df["R"] * df["hour_cos"] * df["Dead_Foliage"]
+            )
+
+            df["U_lat_sin_Live_Wood"] = df["U"] * df["lat_sin"] * df["Live_Wood"]
+            df["U_lat_cos_Live_Wood"] = df["U"] * df["lat_cos"] * df["Live_Wood"]
+            df["U_lat_sin_Dead_Wood"] = df["U"] * df["lat_sin"] * df["Dead_Wood"]
+            df["U_lat_cos_Dead_Wood"] = df["U"] * df["lat_cos"] * df["Dead_Wood"]
+            df["U_lat_sin_Live_Leaf"] = df["U"] * df["lat_sin"] * df["Live_Leaf"]
+            df["U_lat_cos_Live_Leaf"] = df["U"] * df["lat_cos"] * df["Live_Leaf"]
+            df["U_lat_sin_Dead_Foliage"] = df["U"] * df["lat_sin"] * df["Dead_Foliage"]
+            df["U_lat_cos_Dead_Foliage"] = df["U"] * df["lat_cos"] * df["Dead_Foliage"]
+            df["F_lat_sin_Dead_Foliage"] = df["F"] * df["lat_sin"] * df["Dead_Foliage"]
+            df["F_lat_cos_Dead_Foliage"] = df["F"] * df["lat_cos"] * df["Dead_Foliage"]
+
+            df["U_lon_sin_Live_Wood"] = df["U"] * df["lon_sin"] * df["Live_Wood"]
+            df["U_lon_cos_Live_Wood"] = df["U"] * df["lon_cos"] * df["Live_Wood"]
+            df["U_lon_sin_Dead_Wood"] = df["U"] * df["lon_sin"] * df["Dead_Wood"]
+            df["U_lon_cos_Dead_Wood"] = df["U"] * df["lon_cos"] * df["Dead_Wood"]
+            df["U_lon_sin_Live_Leaf"] = df["U"] * df["lon_sin"] * df["Live_Leaf"]
+            df["U_lon_cos_Live_Leaf"] = df["U"] * df["lon_cos"] * df["Live_Leaf"]
+            df["U_lon_sin_Dead_Foliage"] = df["U"] * df["lon_sin"] * df["Dead_Foliage"]
+            df["U_lon_cos_Dead_Foliage"] = df["U"] * df["lon_cos"] * df["Dead_Foliage"]
+            df["F_lon_sin_Dead_Foliage"] = df["F"] * df["lon_sin"] * df["Dead_Foliage"]
+            df["F_lon_cos_Dead_Foliage"] = df["F"] * df["lon_cos"] * df["Dead_Foliage"]
+            # if self.keep_vars:
         #     df = df[["FRP"] + self.keep_vars]
 
         if self.filter_std:
@@ -171,16 +260,99 @@ class MLDATA:
         fuels_ds.coords["time"] = moi
         return fuels_ds
 
+    def get_eng_features(self, ds):
+        ds = get_solar_hours(ds)
+        hour_sin = np.sin(2 * np.pi * ds["solar_hour"] / 24)
+        hour_cos = np.cos(2 * np.pi * ds["solar_hour"] / 24)
+        total_fuel = (
+            ds["Live_Wood"] + ds["Dead_Wood"] + ds["Live_Leaf"] + ds["Dead_Foliage"]
+        )
+        ds["R_hour_sin"] = hour_sin * ds["R"]
+        ds["R_hour_cos"] = hour_cos * ds["R"]
+        ds["S_hour_sin"] = hour_sin * ds["S"]
+        ds["S_hour_cos"] = hour_cos * ds["S"]
+        ds["U_hour_sin"] = hour_sin * ds["U"]
+        ds["U_hour_cos"] = hour_cos * ds["U"]
+
+        ds["U_Dead_Wood"] = ds["Dead_Wood"] * ds["U"]
+        ds["U_Live_Wood"] = ds["Live_Wood"] * ds["U"]
+        ds["U_Live_Leaf"] = ds["Live_Leaf"] * ds["U"]
+        ds["U_Dead_Foliage"] = ds["Dead_Foliage"] * ds["U"]
+
+        ds["F_Dead_Wood"] = ds["Dead_Wood"] * ds["F"]
+        ds["F_Live_Wood"] = ds["Live_Wood"] * ds["F"]
+        ds["F_Live_Leaf"] = ds["Live_Leaf"] * ds["F"]
+        ds["F_Dead_Foliage"] = ds["Dead_Foliage"] * ds["F"]
+
+        ds["S_lat_sin"] = ds["lat_sin"] * ds["S"]
+        ds["S_lat_cos"] = ds["lat_cos"] * ds["S"]
+
+        ds["S_lon_sin"] = ds["lon_sin"] * ds["S"]
+        ds["S_lon_cos"] = ds["lon_cos"] * ds["S"]
+
+        ds["R_lat_sin"] = ds["lat_sin"] * ds["R"]
+        ds["R_lat_cos"] = ds["lat_cos"] * ds["R"]
+
+        ds["R_lon_sin"] = ds["lon_sin"] * ds["R"]
+        ds["R_lon_cos"] = ds["lon_cos"] * ds["R"]
+
+        ds["U_lat_sin"] = ds["lat_sin"] * ds["U"]
+        ds["U_lat_cos"] = ds["lat_cos"] * ds["U"]
+
+        ds["U_lon_sin"] = ds["lon_sin"] * ds["U"]
+        ds["U_lon_cos"] = ds["lon_cos"] * ds["U"]
+
+        ds["U_lat_sin_total_fuel"] = ds["U"] * ds["lat_sin"] * total_fuel
+        ds["U_lat_cos_total_fuel"] = ds["U"] * ds["lat_cos"] * total_fuel
+
+        ds["U_lon_sin_total_fuel"] = ds["U"] * ds["lon_sin"] * total_fuel
+        ds["U_lon_cos_total_fuel"] = ds["U"] * ds["lon_cos"] * total_fuel
+
+        ds["R_hour_sin_Live_Wood"] = ds["R"] * hour_sin * ds["Live_Wood"]
+        ds["R_hour_cos_Live_Wood"] = ds["R"] * hour_cos * ds["Live_Wood"]
+
+        ds["R_hour_sin_Dead_Wood"] = ds["R"] * hour_sin * ds["Dead_Wood"]
+        ds["R_hour_cos_Dead_Wood"] = ds["R"] * hour_cos * ds["Dead_Wood"]
+
+        ds["R_hour_sin_Live_Leaf"] = ds["R"] * hour_sin * ds["Live_Leaf"]
+        ds["R_hour_cos_Live_Leaf"] = ds["R"] * hour_cos * ds["Live_Leaf"]
+
+        ds["R_hour_sin_Dead_Foliage"] = ds["R"] * hour_sin * ds["Dead_Foliage"]
+        ds["R_hour_cos_Dead_Foliage"] = ds["R"] * hour_cos * ds["Dead_Foliage"]
+
+        ds["U_lat_sin_Live_Wood"] = ds["U"] * ds["lat_sin"] * ds["Live_Wood"]
+        ds["U_lat_cos_Live_Wood"] = ds["U"] * ds["lat_cos"] * ds["Live_Wood"]
+        ds["U_lat_sin_Dead_Wood"] = ds["U"] * ds["lat_sin"] * ds["Dead_Wood"]
+        ds["U_lat_cos_Dead_Wood"] = ds["U"] * ds["lat_cos"] * ds["Dead_Wood"]
+        ds["U_lat_sin_Live_Leaf"] = ds["U"] * ds["lat_sin"] * ds["Live_Leaf"]
+        ds["U_lat_cos_Live_Leaf"] = ds["U"] * ds["lat_cos"] * ds["Live_Leaf"]
+        ds["U_lat_sin_Dead_Foliage"] = ds["U"] * ds["lat_sin"] * ds["Dead_Foliage"]
+        ds["U_lat_cos_Dead_Foliage"] = ds["U"] * ds["lat_cos"] * ds["Dead_Foliage"]
+        ds["F_lat_sin_Dead_Foliage"] = ds["F"] * ds["lat_sin"] * ds["Dead_Foliage"]
+        ds["F_lat_cos_Dead_Foliage"] = ds["F"] * ds["lat_cos"] * ds["Dead_Foliage"]
+
+        ds["U_lon_sin_Live_Wood"] = ds["U"] * ds["lon_sin"] * ds["Live_Wood"]
+        ds["U_lon_cos_Live_Wood"] = ds["U"] * ds["lon_cos"] * ds["Live_Wood"]
+        ds["U_lon_sin_Dead_Wood"] = ds["U"] * ds["lon_sin"] * ds["Dead_Wood"]
+        ds["U_lon_cos_Dead_Wood"] = ds["U"] * ds["lon_cos"] * ds["Dead_Wood"]
+        ds["U_lon_sin_Live_Leaf"] = ds["U"] * ds["lon_sin"] * ds["Live_Leaf"]
+        ds["U_lon_cos_Live_Leaf"] = ds["U"] * ds["lon_cos"] * ds["Live_Leaf"]
+        ds["U_lon_sin_Dead_Foliage"] = ds["U"] * ds["lon_sin"] * ds["Dead_Foliage"]
+        ds["U_lon_cos_Dead_Foliage"] = ds["U"] * ds["lon_cos"] * ds["Dead_Foliage"]
+        ds["F_lon_sin_Dead_Foliage"] = ds["F"] * ds["lon_sin"] * ds["Dead_Foliage"]
+        ds["F_lon_cos_Dead_Foliage"] = ds["F"] * ds["lon_cos"] * ds["Dead_Foliage"]
+        return ds
+
     def get_training(self):
 
         df = self.open_ml_ds()
-
+        print("Number of fires: ", len(np.unique(df["id"].values)))
         if self.main_cases == False:
             ## Sampling dataset for test and training
             IDS = np.unique(df["id"].values)
             sample_size = int(0.1 * len(IDS))
             ids = np.random.choice(IDS, size=sample_size, replace=False)
-            ids = np.append(ids, [25485086, 25407482, 24360611, 24448308])
+            ids = np.append(ids, [25485086, 25407482, 24360611, 24448308, 24450415])
             df_test = df[df["id"].isin(ids)]
             unique_test_df = df_test.drop_duplicates(subset="id", keep="first")
             fires_array = np.stack(
@@ -200,20 +372,29 @@ class MLDATA:
             df_test = df[df["id"].isin(ids)]
 
         df_train = df[~df["id"].isin(ids)]
-        # large_fires = df_train.loc[df_train["area_ha"] > 50000]
-        # larger_fires = df_train.loc[df_train["area_ha"] > 100000]
-        # if self.transform == True:
-        #     hot_fires = df_train.loc[df_train["FRP"] > np.expm1(1000)]
-        #     hotter_fires = df_train.loc[df_train["FRP"] > np.expm1(2000)]
-        #     hotter_fires = df_train.loc[df_train["FRP"] > np.expm1(2500)]
-        # else:
-        #     hot_fires = df_train.loc[df_train["FRP"] > 1000]
-        #     hotter_fires = df_train.loc[df_train["FRP"] > 2000]
-        #     hottest_fires = df_train.loc[df_train["FRP"] > 2500]
-        # df_train = pd.concat(
-        #     [df_train, large_fires, larger_fires, hot_fires, hotter_fires, hottest_fires]
-        # )
-        # df_train.reset_index(drop=True, inplace=True)
+        large_fires = df_train.loc[df_train["area_ha"] > 50000]
+        larger_fires = df_train.loc[df_train["area_ha"] > 100000]
+        if self.transform == True:
+            hot_fires = df_train.loc[df_train["FRP"] > np.expm1(1000)]
+            hotter_fires = df_train.loc[df_train["FRP"] > np.expm1(2000)]
+            hottest_fires = df_train.loc[df_train["FRP"] > np.expm1(2500)]
+        else:
+            warm_fires = df_train.loc[df_train["FRP"] > 1000]
+            hot_fires = df_train.loc[df_train["FRP"] > 1500]
+            hotter_fires = df_train.loc[df_train["FRP"] > 2000]
+            hotter_still_fire = df_train.loc[df_train["FRP"] > 3000]
+            hottest_fires = df_train.loc[df_train["FRP"] > 4000]
+        df_train = pd.concat(
+            [
+                df_train,
+                warm_fires,
+                hot_fires,
+                hotter_fires,
+                hotter_still_fire,
+                hottest_fires,
+            ]
+        )
+        df_train.reset_index(drop=True, inplace=True)
 
         if self.keep_vars:
             X_train = df_train[self.keep_vars]
@@ -284,7 +465,10 @@ class MLDATA:
             "transform": str(self.transform),
             "scaler_info": str(scaler_path),
             "model_info": str(model_path),
-            "model_info": str(model_path),
+            "feature_engineer": str(self.feature_engineer),
+            "scaler_type": str(self.scaler_type),
+            "main_cases": str(self.main_cases),
+            "shuffle_data": str(self.shuffle_data),
         }
         config_path = save_dir / "config.json"
         with open(config_path, "w") as json_file:

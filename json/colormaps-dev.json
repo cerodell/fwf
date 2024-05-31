@@ -171,7 +171,7 @@
              "vmin"  : 0,
              "name"  : "ws",
              "levels" : [0, 10, 20, 24, 28, 32, 36, 40, 44, 48, 52, 56, 60, 64, 68, 72, 76, 80, 81],
-             "title": "Wind Spped (km/hr)",
+             "title": "Wind Speed (km/hr)",
              "sigma": 0.9,
               "paper":{
                "vmax"  : 4,
@@ -182,11 +182,11 @@
           },
    "mW" : {
             "name"  : "mws",
-            "title": "Max Wind Spped (km/hr)"
+            "title": "Max Wind Speed (km/hr)"
          },
    "mWt" : {
       "name"  : "mwst",
-      "title": "Hour of Max Wind Spped (km/hr)"
+      "title": "Hour of Max Wind Speed (km/hr)"
          },
  "WD"  : {
              "colors18": ["#FFFFFF", "#BBBBBB", "#646464", "#1563D3", "#2883F1", "#50A5F5", "#97D3FB", "#0CA10D", "#37D33C", "#97F58D", "#B5FBAB", "#FFE978", "#FFC03D", "#FFA100", "#FF3300", "#C10000", "#960007","#643C32"],

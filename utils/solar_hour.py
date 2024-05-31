@@ -70,7 +70,7 @@ def solve_solar_hour(datetime_utc, longitudes):
     year_start = np.datetime64(f'{date_of_interest.astype("datetime64[Y]")}-01-01')
     day_of_year = (date_of_interest - year_start).astype(int) + 1
 
-    declination = delta(day_of_year)
+    # declination = delta(day_of_year)
     equation_of_time = E(day_of_year)
 
     # Calculate solar time for the whole array at once

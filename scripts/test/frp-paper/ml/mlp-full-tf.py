@@ -39,6 +39,7 @@ save_dir = model_dir
 with open(f"{model_dir}/config.json", "r") as json_data:
     config = json.load(json_data)
 
+
 config["model"] = "wrf"
 config["method"] = "hourly"
 config["trail_name"] = "01"

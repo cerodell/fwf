@@ -43,67 +43,47 @@ warnings.simplefilter(action="ignore", category=RuntimeWarning)
 
 import numpy as np
 
-
-i = 12
-plot_method = "norm"
-ml_pack = "tf"
-mlp_test_case = "MLP_32U-Dense_32U-Dense_1U-Dense"
 startFWX = datetime.now()
-trail = "obs"
-
-model_dir = str(data_dir) + f"/mlp/{ml_pack}/{mlp_test_case}"
-save_dir = model_dir
-with open(f"{model_dir}/config.json", "r") as json_data:
-    config = json.load(json_data)
-
-config["model"] = "wrf"
-config["method"] = "hourly"
-config["trail_name"] = "01"
 
 
-fire_cases = np.loadtxt(f"{model_dir}/test_cases.txt", delimiter=",")
-ids = fire_cases[0].astype(int)
-years = fire_cases[1].astype(int)
+all_fire = True
+ID = 26695902  # 25407482 (2022) 25485086 (2022) 24448308 (2021) 24360611 (2021) 24450415 (2021) 26695902 (2023) 26414629 (2023)
+year = "2023"
+mlp_test_case = "MLP_64U-Dense_64U-Dense_1U-Dense"
+method = "averaged-v2"
+ml_pack = "tf"
+plot_method = "mean"
+persist = False
+dt = 6
 
 
-# ID = int(ids[i])
-ID = 25407482  # 25407482 (2022) 25485086 (2022) 24448308 (2021)
-config["year"] = "2022"
-firep = FIREP(config=config)
-firep_df = firep.open_firep()
-jj = firep_df[firep_df["id"] == ID].index[0]
-fire_i = firep_df.iloc[jj : jj + 1]
+def predict_frp(config):
+    ID = config["ID"]
+    year = config["year"]
+    firep = FIREP(config=config)
+    firep_df = firep.open_firep()
+    jj = firep_df[firep_df["id"] == ID].index[0]
+    fire_i = firep_df.iloc[jj : jj + 1]
 
-
-if os.path.exists(f'/Volumes/ThunderBay/CRodell/fires/{config["year"]}-{ID}.nc'):
-    ds = xr.open_dataset(f'/Volumes/ThunderBay/CRodell/fires/{config["year"]}-{ID}.nc')[
-        ["FRP", "MODELED_FRP"]
-    ]
-    ds_nan = xr.open_zarr(f"/Volumes/WFRT-Ext23/fire/full/{config['year']}-{ID}.zarr")[
-        "FRP"
-    ].to_dataset()
-    # ds_nan["MODELED_FRP"] = (("time", "y", "x"), ds["MODELED_FRP"].values)
-else:
-
-    ds = xr.open_zarr(f"/Volumes/WFRT-Ext23/fire/full/{config['year']}-{ID}.zarr")
+    ds = xr.open_zarr(f"/Volumes/WFRT-Ext23/fire/full/{year}-{ID}.zarr")
     ds_og = ds
-    ds_nan = ds["FRP"].to_dataset()
     ds_attrs = ds.attrs
     ds_attrs["pyproj_srs"] = ds["S"].attrs["pyproj_srs"]
 
     mlD = MLDATA(config=config)
     ds = mlD.get_static(ds)
-    ds = get_solar_hours(ds)
-    ds = xr.where(np.isnan(ds["FRP"].values) == True, 0, ds)
+    ds = mlD.get_eng_features(ds)
 
     shape = ds["F"].shape
-    times = ds["time"].values
-    zero_full = np.empty(shape, dtype="datetime64[ns]")
-    for i in range(shape[0]):
-        times_full = np.full(shape[1:3], times[i])
-        zero_full[i] = times_full
+    # times = ds["time"].values
+    # zero_full = np.empty(shape, dtype="datetime64[ns]")
+    # for i in range(shape[0]):
+    #     times_full = np.full(shape[1:3], times[i])
+    #     zero_full[i] = times_full
 
     df_dict = {}
+    # print(config["features_used"])
+
     for key in config["features_used"]:
         try:
             df_dict[key] = np.ravel(ds[key].values)
@@ -111,17 +91,7 @@ else:
             df_dict[key] = None
 
     df = pd.DataFrame(df_dict)
-    df["solar_hour"] = np.ravel(np.ravel(ds["solar_hour"].values))
-    df["hour_sin"] = np.sin(2 * np.pi * df["solar_hour"] / 24)
-    df["hour_cos"] = np.cos(2 * np.pi * df["solar_hour"] / 24)
 
-    # pt = PowerTransformer(method="yeo-johnson", standardize=False)
-    # df["Dead_Wood"] = pt.fit_transform(df[["Dead_Wood"]] + 1)
-    # df["Live_Wood"] = pt.fit_transform(df[["Live_Wood"]] + 1)
-    # df["Live_Leaf"] = pt.fit_transform(df[["Live_Leaf"]] + 1)
-    # df["Dead_Foliage"] = pt.fit_transform(df[["Dead_Foliage"]] + 1)
-    # df["U"] = np.log1p(df["U"])
-    # df["R"] = np.log1p(df["R"])
     X = df[config["features_used"]]
 
     # Load the scaler
@@ -132,74 +102,51 @@ else:
     model = load_model(f"{model_dir}/model.keras")
 
     startFRP = datetime.now()
-    print("Start prediction:", startFRP)
-    FRP = model.predict(X_new_scaled)
-    FRP_FULL = FRP.ravel().reshape(shape)
+    # print("Start prediction:", startFRP)
+    FRP = model(X_new_scaled)
+    FRP_FULL = FRP.numpy().ravel().reshape(shape)
     FRPend = datetime.now() - startFRP
     print("Time to predict FRP: ", FRPend)
-    # FRP_FULL = np.expm1(FRP_FULL)
     ds["MODELED_FRP"] = (("time", "y", "x"), FRP_FULL)
-    ds_nan["MODELED_FRP"] = (("time", "y", "x"), FRP_FULL)
-    # ds["MODELED_FRP"] = xr.where(ds["FRP"] == 0, 0, ds["MODELED_FRP"])
     for var in list(ds):
         if var == "MODELED_FRP":
             ds[var].attrs = {
                 "description": "MODELED FIRE RADIATIVE POWER",
-                "pyproj_srs": "+proj=longlat +datum=WGS84 +no_defs",
+                "pyproj_srs": ds_attrs["pyproj_srs"],
                 "units": "(MW)",
             }
         else:
             ds[var].attrs = ds_og[var].attrs
     ds.attrs = ds_attrs
-    print("Time to run FWX: ", datetime.now() - startFWX)
-
-    startWRITE = datetime.now()
-    ds, encoding = compressor(ds)
-    file_dir = f"/Volumes/ThunderBay/CRodell/fires/{config['year']}-{ID}.nc"
-    print(f"WRITING AT: {datetime.now()}")
-    ds.to_netcdf(file_dir, encoding=encoding, mode="w")
-    print(f"Wrote: {file_dir}")
-    print("Time to write: ", datetime.now() - startWRITE)
-
-
-ds["MODELED_FRP"] = xr.where(ds["FRP"] == 0, 0, ds["MODELED_FRP"])
-# plot_fire(fire_i, ds, ds_nan, save_dir, method= 'sum')
-# plot_fire(fire_i, ds, ds_nan, save_dir, method= 'mean')
-# plot_fire(fire_i, ds, ds_nan, save_dir, method= 'norm')
-
-ds = xr.where(np.isnan(ds_nan["FRP"].values) == True, np.nan, ds)
+    # print("Time to run FWX: ", datetime.now() - startFWX)
+    # startWRITE = datetime.now()
+    # ds, encoding = compressor(ds)
+    # file_dir = f"/Volumes/ThunderBay/CRodell/fires/v2/{year}-{ID}.nc"
+    # # print(f"WRITING AT: {datetime.now()}")
+    # ds.to_netcdf(file_dir, encoding=encoding, mode="w")
+    # print(f"Wrote: {file_dir}")
+    # print("Time to write: ", datetime.now() - startWRITE)
+    return ds, fire_i
 
 
-ds = ds.salem.roi(shape=fire_i, all_touched=True)
-ds_space_avg = ds.mean(dim=("x", "y"))  # .dropna("time")
-FRP = ds_space_avg["FRP"].values
-MODELED_FRP = ds_space_avg["MODELED_FRP"].values
+model_dir = str(data_dir) + f"/mlp/{ml_pack}/{method}/{mlp_test_case}/"
+save_dir = model_dir
+with open(f"{model_dir}/config.json", "r") as json_data:
+    config = json.load(json_data)
 
-fig = plt.figure()
-ax = fig.add_subplot(1, 1, 1)
-ax.plot(ds_space_avg.time, FRP, color="k")
-ax.plot(ds_space_avg.time, MODELED_FRP, color="tab:red")
+if all_fire == False:
+    config["ID"] = ID
+    config["year"] = year
+    ds, fire_i = predict_frp(config)
 
-
-ds_space_sum = ds.sum(dim=("x", "y")).dropna("time")
-ds_space_sum = xr.where(
-    np.isnan(ds_space_avg["FRP"].values) == True, np.nan, ds_space_sum
-)
-FRPSUM = ds_space_sum["FRP"].values
-MODELED_FRPSUM = ds_space_sum["MODELED_FRP"].values
-
-
-fig = plt.figure()
-ax = fig.add_subplot(1, 1, 1)
-ax.plot(ds_space_sum.time, FRPSUM, color="k")
-ax.plot(ds_space_sum.time, MODELED_FRPSUM, color="tab:red")
-
-
-ds_space_avg = ds.mean(dim=("x", "y"))  # .dropna("time")
-ds_space_sum = xr.where(np.isnan(ds_space_avg["FRP"].values) == True, "", ds_space_sum)
-FRPSUM = list(ds_space_sum["FRP"].values.astype(str))
-MODELED_FRP_SUM = list(ds_space_sum["MODELED_FRP"].values.astype(str))
-
-ds_space_avg = xr.where(np.isnan(ds_space_avg["FRP"].values) == True, "", ds_space_avg)
-FRP = list(ds_space_avg["FRP"].values.astype(str))
-MODELED_FRP = list(ds_space_avg["MODELED_FRP"].values.astype(str))
+elif all_fire == True:
+    fire_cases = np.loadtxt(f"{model_dir}/test_cases.txt", delimiter=",")
+    ids = fire_cases[0].astype(int)
+    years = fire_cases[1].astype(int)
+    for i in range(len(ids)):
+        config["ID"] = int(ids[i])
+        config["year"] = years[i]
+        ds, fire_i = predict_frp(config)
+        ds["MODELED_FRP"] = xr.where(ds["FRP"] == 0, 0, ds["MODELED_FRP"])
+        plot_fire(fire_i, ds, persist, dt, save_dir, "mean")
+        print(ID)

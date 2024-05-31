@@ -37,23 +37,44 @@ early_stopping = True  # True = stop early if validation error begins to rise
 validation_fraction = 0.1  # fraction of training data to use as validation
 save_dir = Path(str(data_dir) + "/images/rave/mlp/features/")
 save_dir.mkdir(parents=True, exist_ok=True)
+# Configuration parameters
 config = dict(
+    method="averaged-v2",
     keep_vars=[
-        "R",
-        "U",
         "Live_Wood",
         "Dead_Wood",
         "Live_Leaf",
         "Dead_Foliage",
-        "hour_sin",
-        "hour_cos",
-    ]
-    # filter_std = 1
+        "R_hour_sin",
+        "R_hour_cos",
+        "R_lat_sin",
+        "R_lat_cos",
+        "R_lon_sin",
+        "R_lon_cos",
+        "U_lat_sin",
+        "U_lat_cos",
+        "U_lon_sin",
+        "U_lon_cos",
+    ],
+    scaler_type="standard",  ##robust or standard minmax
+    transform=False,
+    min_fire_size=1000,
+    package="tf",
+    model_type="MLP",
+    main_cases=True,
+    shuffle_data=True,
+    feature_engineer=True,
 )
+config["n_features"] = len(config["keep_vars"])
+
 
 mlD = MLDATA(config=config)
 df = mlD.open_ml_ds()
 
+
+# df_test = df[df['Live_Wood']<0.01]
+plt.scatter(df["R_hour_sin"] * df["Live_Leaf"], df["FRP"])
+plt.scatter(df["R_hour_sin_Live_Wood"], df["R_hour_cos_Live_Wood"])
 
 y = df["FRP"]
 X = df[config["keep_vars"]]

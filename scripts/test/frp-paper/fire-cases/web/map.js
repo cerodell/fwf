@@ -1,7 +1,4 @@
-// Initialize the map
-// var map = L.map('map').setView([51.0, -106.0], 4);
-
-
+///////////////////  MAP  ///////////////////
 var map = L.map(
     "map",
     {
@@ -29,13 +26,15 @@ var CartoDB_Positron = L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/
 }).addTo(map);
 
 
-// L.control.scale({position:"bottomright"}).addTo(map)
-// map.fullscreenControl.setPosition("topright")
+
 var zoomHome=L.Control.zoomHome({position:"topright"});zoomHome.addTo(map);
 var currentlyDisplayedFireId = null;
 var fireKmlLayer = null; // This will store the currently displayed KML layer
+//////////////////////////////////////////////
 
 
+
+///////////////////  FIRES  ///////////////////
 
 function showFirePerimeter() {
     var kmlUrl = `data/fires-v2/fire_outlines-${currentlyDisplayedFireId}.kml`;
@@ -61,39 +60,6 @@ function showFirePerimeter() {
 
 var activeCircle = null; // This will store the currently active circle
 
-// // Fetch data and plot fires
-// fetch('data/ml-fires-info-v2.json')
-// .then(response => response.json())
-// .then(data => {
-//     Object.values(data).forEach(fire => {
-//         let circle = L.circle([fire.lats, fire.lons], {
-//             radius: Math.sqrt(fire.area_ha / Math.PI) * 100,
-//             weight: 0.8,
-//             color: "black",
-//             fillColor: '#ffff73',
-//             fillOpacity: .5
-//         }).on('click', function () {
-//             if (activeCircle) {
-//                 // Reset the previous active circle's color
-//                 activeCircle.setStyle({
-//                     fillColor: '#ffff73',
-//                     color: 'black'
-//                 });
-//             }
-//             // Set the new active circle
-//             activeCircle = circle;
-//             // Change the color of the new active circle
-//             circle.setStyle({
-//                 fillColor: '#ff0000',  // Red for active
-//                 color: 'red'  // Optional, changes the border color
-//             });
-//             displayTimeSeries(fire.fireID, fire);
-//         }).addTo(map);
-//     });
-// })
-// .catch(error => {
-//     console.error('Error loading fire data:', error);
-// });
 
 // Fetch data and plot fires
 fetch('data/ml-fires-info-v2.json')
@@ -137,16 +103,41 @@ fetch('data/ml-fires-info-v2.json')
     console.error('Error loading fire data:', error);
 });
 
+//////////////////////////////////////////
+
+var datasetMode = 'mean'; // Initial mode set to mean
+
+function toggleDatasetMode() {
+    datasetMode = (datasetMode === 'mean') ? 'sum' : 'mean';
+    updateTitle(); // Update the title based on the new mode
+    updatePlot(); // Refresh the plot with the new mode
+}
+
+function updateTitle() {
+    var titleElement = document.getElementById('timeseries-title');
+    titleElement.textContent = (datasetMode === 'mean') ? 'Mean Values' : 'Sum Values';
+}
+
+function updatePlot() {
+    fetchTimeSeriesData(currentlyDisplayedFireId, currentlyDisplayedFireTYPE, document.getElementById('variableSelector').value, datasetMode);
+}
 
 function displayTimeSeries(fireId, fire) {
     document.getElementById('timeseries').style.display = 'block';
-    currentlyDisplayedFireId = fireId;  // Update the variable with the current fire ID
-    currentlyDisplayedFireTYPE = fire.TYPE;  // Update the variable with the current fire ID
+    currentlyDisplayedFireId = fireId;
+    currentlyDisplayedFireTYPE = fire.TYPE;
+
+    // Show/hide the toggleDataset button based on fire type
+    var toggleDatasetButton = document.getElementById('toggleDataset');
+    if (fire.TYPE === 'test') {
+        toggleDatasetButton.style.display = 'inline';
+    } else {
+        toggleDatasetButton.style.display = 'none';
+    }
 
     // Adjust the options in the variable selector based on the fire TYPE
     var variableSelector = document.getElementById('variableSelector');
-    variableSelector.innerHTML = '';  // Clear existing options
-
+    variableSelector.innerHTML = ''; // Clear existing options
     if (fire.TYPE === 'test') {
         variableSelector.innerHTML += '<option value="MODELED_FRP">Forecasted Fire Radiative Power</option>';
         variableSelector.innerHTML += '<option value="FWI">Fire Weather Index</option>';
@@ -166,8 +157,10 @@ function displayTimeSeries(fireId, fire) {
         variableSelector.innerHTML += '<option value="PM25">PM2.5</option>';
         variableSelector.innerHTML += '<option value="NDVI">Norm. Dif. Veg. Index</option>';
         variableSelector.innerHTML += '<option value="LAI">Leaf Area Index</option>';
-        variableSelector.innerHTML += '<option value="OBS_FRP">OBS Fire Radiative Power</option>';
-    } else {
+
+        } else {
+        variableSelector.innerHTML += '<option value="HFI">Head Fire Intensity</option>';
+        variableSelector.innerHTML += '<option value="FWI">Fire Weather Index</option>';
         variableSelector.innerHTML += '<option value="FWI">Fire Weather Index</option>';
         variableSelector.innerHTML += '<option value="HFI">Head Fire Intensity</option>';
         variableSelector.innerHTML += '<option value="FFMC">Fine Fuel Moisture Code</option>';
@@ -184,8 +177,7 @@ function displayTimeSeries(fireId, fire) {
         variableSelector.innerHTML += '<option value="Dead_Wood">Dead Wood</option>';
         variableSelector.innerHTML += '<option value="PM25">PM2.5</option>';
         variableSelector.innerHTML += '<option value="NDVI">Norm. Dif. Veg. Index</option>';
-        variableSelector.innerHTML += '<option value="LAI">Leaf Area Index</option>';
-    }
+        variableSelector.innerHTML += '<option value="LAI">Leaf Area Index</option>';    }
 
     // Display static fire information
     var fireInfoDiv = document.getElementById('fireInfo');
@@ -195,29 +187,14 @@ function displayTimeSeries(fireId, fire) {
                             <strong>Latitude:</strong> ${fire.lats},
                             <strong>Longitude:</strong> ${fire.lons},
                             <strong>Pearson Correlation:</strong> <span id="correlation"></span>`;
-    fetchTimeSeriesData(fireId, fire.TYPE, document.getElementById('variableSelector').value);
+
+    // Set the initial title based on the current dataset mode
+    updateTitle();
+    fetchTimeSeriesData(fireId, fire.TYPE, document.getElementById('variableSelector').value, datasetMode);
 }
 
-// function displayTimeSeries(fireId, fire) {
-//     document.getElementById('timeseries').style.display = 'block';
-//     currentlyDisplayedFireId = fireId;  // Update the variable with the current fire ID
-//     currentlyDisplayedFireTYPE = fire.TYPE;  // Update the variable with the current fire ID
-
-//     // Display static fire information
-//     var fireInfoDiv = document.getElementById('fireInfo');
-//     fireInfoDiv.innerHTML = `<h3>Fire Information</h3>
-//                             <strong>ID:</strong> ${fire.fireID},
-//                             <strong>Area (ha):</strong> ${fire.area_ha},
-//                             <strong>Latitude:</strong> ${fire.lats},
-//                             <strong>Longitude:</strong> ${fire.lons},
-//                             <strong>Pearson Correlation:</strong> <span id="correlation"></span>`;
-//     fetchTimeSeriesData(fireId, currentlyDisplayedFireTYPE, document.getElementById('variableSelector').value);
-// }
-
-
-
-function fetchTimeSeriesData(fireId, type, variable) {
-    fetch(`data/fires-v2/ml-${type}-fires-info-${fireId}.json`)
+function fetchTimeSeriesData(fireId, type, variable, mode) {
+    fetch(`data/fires-v2/ml-${type}-${mode}-fires-info-${fireId}.json`)
     .then(response => response.json())
     .then(data => {
         var trace1 = {
@@ -233,7 +210,7 @@ function fetchTimeSeriesData(fireId, type, variable) {
             y: data[variable],
             name: variable,
             type: 'scatter',
-            yaxis: (variable === 'MODELED_FRP') ? 'y1' : 'y2',  // Use y1 if variable is MODELED_FRP
+            yaxis: (variable === 'MODELED_FRP') ? 'y1' : 'y2',
             line: {
                 color: (variable === 'MODELED_FRP') ? '#DB3209' : '#ff7f0e'
             }
@@ -268,20 +245,21 @@ function fetchTimeSeriesData(fireId, type, variable) {
 
             var fireInfoDiv = document.getElementById('fireInfo');
             // Clear existing RMSE and MBE values
-            var rmseElement = document.getElementById('rmse');
-            var mbeElement = document.getElementById('mbe');
-            if (rmseElement) rmseElement.remove();
-            if (mbeElement) mbeElement.remove();
+            clearRmseMbe();
 
             // Append new RMSE and MBE values
-            fireInfoDiv.innerHTML += `, <strong>RMSE:</strong> <span id="rmse">${rmse.toFixed(2)}</span>`;
-            fireInfoDiv.innerHTML += `, <strong>MBE:</strong> <span id="mbe">${mbe.toFixed(2)}</span>`;
+            var rmseSpan = document.createElement('span');
+            rmseSpan.id = 'rmse';
+            rmseSpan.innerHTML = `, <strong>RMSE:</strong> ${rmse.toFixed(2)}`;
+            fireInfoDiv.appendChild(rmseSpan);
+
+            var mbeSpan = document.createElement('span');
+            mbeSpan.id = 'mbe';
+            mbeSpan.innerHTML = `, <strong>MBE:</strong> ${mbe.toFixed(2)}`;
+            fireInfoDiv.appendChild(mbeSpan);
         } else {
             // Remove RMSE and MBE if the variable is not MODELED_FRP
-            var rmseElement = document.getElementById('rmse');
-            var mbeElement = document.getElementById('mbe');
-            if (rmseElement) rmseElement.remove();
-            if (mbeElement) mbeElement.remove();
+            clearRmseMbe();
         }
 
     })
@@ -290,27 +268,36 @@ function fetchTimeSeriesData(fireId, type, variable) {
     });
 }
 
-
-function calculatePearsonCorrelation(x, y) {
-    var meanX = math.mean(x);
-    var meanY = math.mean(y);
-
-    var numerator = 0;
-    var denominatorX = 0;
-    var denominatorY = 0;
-
-    for (var i = 0; i < x.length; i++) {
-        var diffX = x[i] - meanX;
-        var diffY = y[i] - meanY;
-        numerator += diffX * diffY;
-        denominatorX += diffX * diffX;
-        denominatorY += diffY * diffY;
-    }
-
-    var denominator = Math.sqrt(denominatorX * denominatorY);
-    if (denominator === 0) return 0;
-    return numerator / denominator;
+function clearRmseMbe() {
+    var rmseElement = document.getElementById('rmse');
+    var mbeElement = document.getElementById('mbe');
+    if (rmseElement) rmseElement.remove();
+    if (mbeElement) mbeElement.remove();
 }
+
+function changeVariable() {
+    if (currentlyDisplayedFireId) {
+        fetchTimeSeriesData(currentlyDisplayedFireId, currentlyDisplayedFireTYPE, document.getElementById('variableSelector').value, datasetMode);
+    } else {
+        console.error("No fire selected for displaying data.");
+    }
+}
+
+function closeTimeSeries() {
+    document.getElementById('timeseries').style.display = 'none';
+    if (fireKmlLayer) {
+        map.removeLayer(fireKmlLayer);
+        fireKmlLayer = null;
+    }
+}
+
+
+
+
+////////////////////////////////////////////////////////
+
+
+///////////////////  Math Functions ///////////////////
 
 function calculateRMSE(observed, modeled) {
     var sumOfSquares = 0;
@@ -331,18 +318,23 @@ function calculateMBE(observed, modeled) {
     return sumOfErrors / observed.length;
 }
 
-function changeVariable() {
-  if (currentlyDisplayedFireId) {
-      fetchTimeSeriesData(currentlyDisplayedFireId, currentlyDisplayedFireTYPE, document.getElementById('variableSelector').value);
-  } else {
-      console.error("No fire selected for displaying data.");
-  }
-}
+function calculatePearsonCorrelation(x, y) {
+    var meanX = math.mean(x);
+    var meanY = math.mean(y);
 
-function closeTimeSeries() {
-    document.getElementById('timeseries').style.display = 'none';
-    if (fireKmlLayer) {
-        map.removeLayer(fireKmlLayer);
-        fireKmlLayer = null;
+    var numerator = 0;
+    var denominatorX = 0;
+    var denominatorY = 0;
+
+    for (var i = 0; i < x.length; i++) {
+        var diffX = x[i] - meanX;
+        var diffY = y[i] - meanY;
+        numerator += diffX * diffY;
+        denominatorX += diffX * diffX;
+        denominatorY += diffY * diffY;
     }
+
+    var denominator = Math.sqrt(denominatorX * denominatorY);
+    if (denominator === 0) return 0;
+    return numerator / denominator;
 }

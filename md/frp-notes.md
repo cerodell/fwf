@@ -71,3 +71,19 @@ also set up a script to tune MLP
 
 
 combing traing of mlp and rf and lst inot functions so its portable to scripts
+
+
+May 17
+We have made a new training datset grabing fires that had moderate and higher corelations with the ISI form the FWI systme. This was to ensure that our training datset was learing from feaures we know that are impornts
+
+Leanring more about FRP and its area depenedinces and that i have trained a model on a 3x3km grid ill also need to alway run the moel on that grid res. (the rave paper says something to the extentent)
+
+goal is to make a 3x3 km domain over the entire 12x12km WRF d02 domain. to do this ill reproject the 4x4km and 12x12 to 3x3km and nest the old 4x4 into the 12x12
+
+i also need tot test the model in an operation way, to do that i will use all active fire grid from the past 24hours as the grid ill sum or average for comaprison to RAVE. this seems most fair as currently i cant model the fire growth
+
+
+
+TODO
+
+add lat dependency also and time of year dependency

@@ -196,7 +196,7 @@ def colormaps(cmaps, var):
     return cmap
 
 
-def get_pyproj_loc(pyproj_srs, df, lat=None, lon=None):
+def get_pyproj_loc(pyproj_srs, lat=None, lon=None):
     if lat == None:
         pass
     else:
@@ -265,15 +265,11 @@ def get_pyproj_loc(pyproj_srs, df, lat=None, lon=None):
 #     return _render_feature_collection(feature_collection, geojson_filepath, strdump, serialize)
 
 
-def make_KDtree(model, domain, lats, lons):
+def make_KDtree(lats, lons, static_ds):
 
-    static_ds = salem.open_xr_dataset(
-        str(data_dir) + f"/static/static-vars-{model}-{domain}.nc"
-    )
-    shape = static_ds.XLAT.shape
-    locs = pd.DataFrame(
-        {"lats": static_ds.XLAT.values.ravel(), "lons": static_ds.XLONG.values.ravel()}
-    )
+    lon, lat = static_ds.salem.grid.ll_coordinates
+    shape = lon.shape
+    locs = pd.DataFrame({"lats": lat.ravel(), "lons": lon.ravel()})
     ## build kdtree
     fwf_tree = KDTree(locs)
     print("Fire KDTree built")

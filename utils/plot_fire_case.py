@@ -5,6 +5,7 @@ import context
 import salem
 import numpy as np
 import xarray as xr
+from pathlib import Path
 
 
 from scipy import stats
@@ -33,13 +34,61 @@ def drop_outside_std(ds_time_avg, arr, num_std=4):
     return float(np.max(filtered_arr))
 
 
-def plot_fire(fire_i, ds, ds_nan, save_dir, method):
+def plot_fire(fire_i, ds, persist, dt, save_dir, plot_method):
     ds_map = ds.rename({"FRP": "OBS_FRP"})[["OBS_FRP", "MODELED_FRP"]].compute()
+
+    nan_space = []
+    nan_time = []
+    for i in range(len(ds_map.time)):
+        nan_array = np.isnan(ds_map["OBS_FRP"].isel(time=i)).values
+        zero_full = np.zeros(nan_array.shape)
+        zero_full[nan_array == False] = 1
+        unique, counts = np.unique(nan_array, return_counts=True)
+        nan_space.append(zero_full)
+        if unique[0] == False:
+            nan_time.append(counts[0])
+        else:
+            nan_time.append(0)
+
+    # ds_map = ds_map.isel(time = slice(0,(len(ds.time)//24)*24))
+
+    if persist == True:
+        ds_active = ds_map.isel(time=slice(0, dt))
+        nan_array = np.isnan(ds_active["OBS_FRP"]).values
+        zero_full = np.zeros(nan_array.shape)
+        zero_full[nan_array == False] = 1
+        nan_space = np.sum(np.stack(zero_full), axis=0)
+        # nan_space = np.stack(zero_full)
+
+        active_list = []
+        nan_time = []
+        for i in range(dt, len(ds_map.time), dt):
+            ds_active = ds_map.isel(time=slice(i, i + dt))
+            nan_array = np.isnan(ds_active["OBS_FRP"]).values
+            ds_active["MODELED_FRP"] = xr.where(
+                nan_space <= 0, np.nan, ds_active["MODELED_FRP"]
+            )
+            # if plot_method== 'sum':
+            ## scale the sum according to the number of time each grid was used, this prevents over counting
+            # ds_active["MODELED_FRP"] = ds_active["MODELED_FRP"] / nan_space
+            zero_full = np.zeros(nan_array.shape)
+            zero_full[nan_array == False] = 1
+            nan_space = np.sum(np.stack(zero_full), axis=0)
+            # nan_space = np.stack(zero_full)
+            active_list.append(ds_active)
+        ds_map = xr.combine_nested(active_list, concat_dim="time")
+    else:
+        ds_map = xr.where(np.isnan(ds_map["OBS_FRP"].values) == True, np.nan, ds_map)
+
     ds_map = ds_map.salem.roi(shape=fire_i, all_touched=True)
 
-    ds_nan = xr.where(np.isnan(ds_nan["FRP"].values) == True, np.nan, ds)
-    ds_nan_map = ds_nan.rename({"FRP": "OBS_FRP"})[["OBS_FRP", "MODELED_FRP"]].compute()
-    ds_nan_map = ds_nan_map.salem.roi(shape=fire_i, all_touched=True)
+    ds_space_avg = ds_map.mean(dim=("x", "y"))
+    ds_space_sum = ds_map.sum(dim=("x", "y"))
+
+    ds_time_avg = ds_map.mean(dim=("time"))
+    ds_time_sum = ds_map.sum(dim=("time"))
+    ds_time_avg = ds_time_avg.salem.roi(shape=fire_i, all_touched=True)
+    ds_time_sum = ds_time_sum.salem.roi(shape=fire_i, all_touched=True)
 
     plt.rcParams.update({"font.size": 16})
 
@@ -52,9 +101,11 @@ def plot_fire(fire_i, ds, ds_nan, save_dir, method):
         y=[fire_i.min_y, fire_i.max_y],
         scale=2,  # scale is for more details
         maptype="satellite",
+        size_x=40,
+        size_y=40,
     )  # try out also: 'terrain'
 
-    if method == "norm":
+    if plot_method == "norm":
         nan_space = []
         nan_time = []
         for i in range(len(ds_map.time)):
@@ -69,38 +120,27 @@ def plot_fire(fire_i, ds, ds_nan, save_dir, method):
                 nan_time.append(0)
 
         nan_space = np.sum(np.stack(nan_space), axis=0)
-        ds_time_avg = ds_map.sum(dim="time") / (nan_space * 9)
-        ds_time_nan = ds_map.mean(dim="time")
-        ds_time_avg = xr.where(np.isnan(ds_time_nan) == True, np.nan, ds_time_avg)
-        ds_space_avg = ds_map.sum(dim=("x", "y")) / (np.array(nan_time) * 9)
-        ds_space_nan = ds_nan_map["OBS_FRP"].mean(dim=("x", "y"))
-        ds_space_avg_modeled = ds_space_avg["MODELED_FRP"]
-        ds_space_avg = xr.where(np.isnan(ds_space_nan) == True, np.nan, ds_space_avg)
-        # ds_time_avg = ds_map.sum(dim="time")/float(fire_i['area_ha'])
-        # ds_space_avg = ds_map.sum(dim=("x", "y"))/float(fire_i['area_ha'])
+        ds_space = ds_space_sum
+        ds_time = ds_time_sum
+        ds_time = ds_time / (nan_space * 9)
+        ds_space = ds_space / (np.array(nan_time) * 9)
         model_title = "MODELED FIRE RADIATIVE POWER NORM. (MW)"
         obs_title = "OBSERVED FIRE RADIATIVE POWER NORM. (MW)"
         vmax = (
-            drop_outside_std(ds_time_avg, ds_time_avg["OBS_FRP"].values)
-            + float(ds_time_avg["MODELED_FRP"].max())
+            drop_outside_std(ds_time, ds_time["OBS_FRP"].values)
+            + float(ds_time["MODELED_FRP"].max())
         ) / 2
 
-    elif method == "sum":
-        ds_time_avg = ds_map.sum(dim="time")
-        ds_time_nan = ds_map.mean(dim="time")
-        ds_time_avg = xr.where(np.isnan(ds_time_nan) == True, np.nan, ds_time_avg)
-        ds_space_avg = ds_map.sum(dim=("x", "y"))
-        ds_space_nan = ds_nan_map["OBS_FRP"].mean(dim=("x", "y"))
-        ds_space_avg_modeled = ds_space_avg["MODELED_FRP"]
-        ds_space_avg = xr.where(np.isnan(ds_space_nan) == True, np.nan, ds_space_avg)
-
+    elif plot_method == "sum":
+        ds_space = ds_space_sum
+        ds_time = ds_time_sum
         model_title = "MODELED FIRE RADIATIVE POWER SUM. (MW)"
         obs_title = "OBSERVED FIRE RADIATIVE POWER SUM. (MW)"
         vmax = (
             (
                 (
-                    drop_outside_std(ds_time_avg, ds_time_avg["OBS_FRP"].values)
-                    + float(ds_time_avg["MODELED_FRP"].max())
+                    drop_outside_std(ds_time, ds_time["OBS_FRP"].values)
+                    + float(ds_time["MODELED_FRP"].max())
                 )
                 / 2
             )
@@ -110,19 +150,16 @@ def plot_fire(fire_i, ds, ds_nan, save_dir, method):
         if vmax > 2000:
             vmax -= 500
 
-    elif method == "mean":
-        ds_time_avg = ds_map.mean(dim="time")
-        ds_space_avg = ds_map.mean(dim=("x", "y"))
-        ds_space_nan = ds_nan_map["OBS_FRP"].mean(dim=("x", "y"))
-        ds_space_avg_modeled = ds_space_avg["MODELED_FRP"]
-        ds_space_avg = xr.where(np.isnan(ds_space_nan) == True, np.nan, ds_space_avg)
+    elif plot_method == "mean":
+        ds_space = ds_space_avg
+        ds_time = ds_time_avg
         model_title = "MODELED FIRE RADIATIVE POWER MEAN (MW)"
         obs_title = "OBSERVED FIRE RADIATIVE POWER MEAN (MW)"
         vmax = (
             (
                 (
-                    drop_outside_std(ds_time_avg, ds_time_avg["OBS_FRP"].values)
-                    + float(ds_time_avg["MODELED_FRP"].max())
+                    drop_outside_std(ds_time, ds_time["OBS_FRP"].values)
+                    + float(ds_time["MODELED_FRP"].max())
                 )
                 / 2
             )
@@ -135,16 +172,15 @@ def plot_fire(fire_i, ds, ds_nan, save_dir, method):
             vmax = 30
 
     for var in list(ds_map):
-        ds_time_avg[var].attrs = ds.attrs
-    ds_time_avg.attrs = ds.attrs
+        ds_time[var].attrs = ds.attrs
+    ds_time.attrs = ds.attrs
 
     # First map on the top left
     ax = fig.add_subplot(gs[0, 0])
     ax.set_title(model_title)
     sm = salem.Map(g.grid, factor=1, countries=False, cmap="YlOrRd", vmax=vmax, vmin=0)
     sm.set_shapefile(fire_i, lw=1.5, color="tab:red")
-    sm.set_data(ds_time_avg["MODELED_FRP"], overplot=True)
-    # sm.set_data(ds.sel(time = doi), overplot=True)
+    sm.set_data(ds_time["MODELED_FRP"], overplot=True)
     sm.set_scale_bar(
         location=(0.88, 0.94),
     )
@@ -156,8 +192,7 @@ def plot_fire(fire_i, ds, ds_nan, save_dir, method):
     ax.set_title(obs_title)
     sm = salem.Map(g.grid, factor=1, countries=False, cmap="YlOrRd", vmax=vmax, vmin=0)
     sm.set_shapefile(fire_i, lw=1.5, color="tab:red")
-    sm.set_data(ds_time_avg["OBS_FRP"], overplot=True)
-    # sm.set_data(rave_roi.sel(time = doi), overplot=True)
+    sm.set_data(ds_time["OBS_FRP"], overplot=True)
     sm.set_scale_bar(location=(0.88, 0.94))
     sm.visualize(ax=ax)
     ax.set_yticklabels([])
@@ -166,23 +201,23 @@ def plot_fire(fire_i, ds, ds_nan, save_dir, method):
     ax = fig.add_subplot(gs[1, :])
 
     ax.plot(
-        ds_space_avg.time,
-        ds_space_avg["OBS_FRP"],
+        ds_space.time,
+        ds_space["OBS_FRP"],
         color="k",
         label="OBSERVED FRP",
         lw=2.5,
         zorder=1,
     )
     ax.plot(
-        ds_space_avg.time,
-        ds_space_avg["MODELED_FRP"],
+        ds_space.time,
+        ds_space["MODELED_FRP"],
         color="tab:red",
         label="MODELED FRP",
         lw=1.85,
         zorder=10,
     )
     # ax.plot(
-    #     ds_space_avg.time,
+    #     ds_space.time,
     #     ds_space_avg_modeled,
     #     color="tab:red",
     #     ls = '--',
@@ -203,7 +238,7 @@ def plot_fire(fire_i, ds, ds_nan, save_dir, method):
     # Rotate date labels for better readability
     plt.setp(ax.get_xticklabels(), rotation=30, ha="right")
 
-    ds_nan_free = ds_space_avg.dropna("time")
+    ds_nan_free = ds_space.dropna("time")
     MODELED_FRP = ds_nan_free["MODELED_FRP"].values
     OBS_FRP = ds_nan_free["OBS_FRP"].values
 
@@ -217,7 +252,19 @@ def plot_fire(fire_i, ds, ds_nan, save_dir, method):
         loc="right",
     )
     # Adjust layout for a better fit
-    fig.tight_layout()
-    fig.savefig(str(save_dir) + f"/img/{int(fire_i['id'].values[0])}-{method}.png")
-    plt.show()
+    save_dir = Path(save_dir + "/img")
+    save_dir.mkdir(parents=True, exist_ok=True)
+
+    if persist == True:
+        fig.tight_layout()
+        fig.savefig(
+            str(save_dir)
+            + f"/{int(fire_i['id'].values[0])}-{plot_method}-persist-{dt}.png"
+        )
+        plt.close()
+    else:
+        fig.tight_layout()
+        fig.savefig(str(save_dir) + f"/{int(fire_i['id'].values[0])}-{plot_method}.png")
+        plt.close()
+
     return

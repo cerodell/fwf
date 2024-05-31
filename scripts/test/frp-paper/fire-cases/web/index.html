@@ -22,7 +22,7 @@
       }
       #timeseries {
           width:  99%;
-          height: 400px;
+          height: 420px;
           position: absolute;  /* Make the timeseries div float above the map */
           bottom: 10px;       /* Position it at the bottom */
           left: 10px;         /* Position it from the left */
@@ -32,6 +32,11 @@
           z-index: 1000;      /* Make sure it's above the map layers */
           display: none;      /* Initially hidden */
       }
+      #timeseries-title {
+          font-size: 18px;
+          font-weight: bold;
+          margin-bottom: 10px;
+      }
   </style>
 
 </head>
@@ -40,9 +45,10 @@
     <script src="zoomhome.js"></script>
     <div id="map"></div>
     <div id="timeseries">
-      <!-- Container div for the top controls -->
+      <div id="timeseries-title"></div> <!-- Add this line for the title -->
       <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
         <div id="fireInfo" style="flex-grow: 1;"></div>
+        <button id="toggleDataset" onclick="toggleDatasetMode()" style="display: none;">Toggle Mean/Sum</button>
         <button id="showFirePerimeter" onclick="showFirePerimeter()">Show Fire Perimeter</button>
         <button onclick="closeTimeSeries()">&times;</button>
       </div>
