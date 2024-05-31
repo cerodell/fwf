@@ -25,6 +25,9 @@ __email__ = "crodell@eoas.ubc.ca"
 
 
 def read_dataset(config):
+    print("---------------------------------------------------")
+    readTime = datetime.now()
+    print("Configure initial dataset from NWP")
     if config["model"] == "eccc":
         int_ds = read_eccc(config["doi"], config["model"], config["domain"])
     elif config["model"] == "ecmwf":
@@ -57,5 +60,6 @@ def read_dataset(config):
         "TMAX",
     ]
     int_ds = int_ds.drop([var for var in list(int_ds) if var not in keep_vars])
-
+    print("Time to configure initial dataset:  ", datetime.now() - readTime)
+    print("---------------------------------------------------")
     return int_ds

@@ -33,7 +33,6 @@ doi = pd.Timestamp("today")
 make_dir = Path(f'/bluesky/archive/fireweather/forecasts/{doi.strftime("%Y%m%d00")}/')
 make_dir.mkdir(parents=True, exist_ok=True)
 
-
 domains = ["d02","d03"]
 for domain in domains:
     domain_startTime = datetime.now()
@@ -44,6 +43,7 @@ for domain in domains:
         initialize_hffmc=False,
         overwinter=False,
         fbp_mode=True,
+        frp_mode=True,
         correctbias=False,
     )
     config["doi"] = doi
