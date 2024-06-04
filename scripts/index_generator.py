@@ -1,4 +1,4 @@
-#!/bluesky/fireweather/miniconda3/envs/fwf/bin/python
+#!/bluesky/fireweather/miniconda3/envs/fwx/bin/python
 
 """
 Creates an index.html (from template in static/html) file for each forecast.

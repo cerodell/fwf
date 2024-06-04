@@ -1,4 +1,4 @@
-#!/bluesky/fireweather/miniconda3/envs/fwf/bin/python
+#!/bluesky/fireweather/miniconda3/envs/fwx/bin/python
 
 """
 Runs the FWF model for each model domain.
@@ -35,6 +35,7 @@ make_dir.mkdir(parents=True, exist_ok=True)
 
 domains = ["d02","d03"]
 for domain in domains:
+    print('---------------------------------------------------')
     domain_startTime = datetime.now()
     print(f"start of domain {domain}: ", str(domain_startTime))
     config = dict(
@@ -54,6 +55,7 @@ for domain in domains:
     coeff.daily()
     coeff.hourly()
     timer(f"Domain {domain} run ", domain_startTime)
+    print('---------------------------------------------------')
 
 ### Timer
 timer("Total Run ", startTime)

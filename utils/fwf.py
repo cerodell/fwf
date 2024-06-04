@@ -1,4 +1,4 @@
-#!/bluesky/fireweather/miniconda3/envs/fwf/bin/python
+#!/bluesky/fireweather/miniconda3/envs/fwx/bin/python
 
 """
 Class to solve the Fire Weather Indices using output from a numerical weather model
@@ -150,7 +150,6 @@ class FWF:
         shape = np.shape(self.int_ds.T[0, :, :])
         self.shape = shape
         self.domain = config["domain"]
-        print("Domain shape:  ", shape)
         self.zero_full = np.zeros(shape, dtype=float)
         self.ones_full = np.full(shape, 1, dtype=float)
 
@@ -197,7 +196,6 @@ class FWF:
         )
         self.static_ds = static_ds
 
-        print(f"FBP Mode {self.fbp_mode}")
         if self.fbp_mode == True:
             (
                 self.ELV,
@@ -1506,72 +1504,76 @@ class FWF:
 
             ###### Convert daily data to hourly intervals
             ## start time for covnertion and get need static varibles
-            dTOh = datetime.now()
-            tzone = self.tzone
-            shape = self.shape
-            south_north = self.hourly_ds["south_north"].values
-            west_east = self.hourly_ds["west_east"].values
-            time_array = self.hourly_ds.Time.values
+            # dTOh = datetime.now()
+            # tzone = self.tzone
+            # shape = self.shape
+            # south_north = self.hourly_ds["south_north"].values
+            # west_east = self.hourly_ds["west_east"].values
+            # time_array = self.hourly_ds.Time.values
 
-            ## correct for places on int dateline
-            tzone[tzone <= -12] *= -1
+            # ## correct for places on int dateline
+            # tzone[tzone <= -12] *= -1
 
-            ## from model int get all indexs that assocaite with 12Z,
-            ## this is needed to reindex daily to hourly ensuring that all dailys values are on the correct utc time
-            int_time = int(pd.Timestamp(time_array[0]).hour)
-            length = len(time_array) + 1
-            num_days = [i - 12 for i in range(1, length) if i % 24 == 0]
-            index = [
-                i - int_time if 12 - int_time >= 0 else i + 24 - int_time
-                for i in num_days
-            ]
-            print(
-                f"For NWP with {str(int_time).zfill(2)}Z INT, will use index(s) of {index} as index(s) to represent 12Z"
-            )
+            # ## from model int get all indexs that assocaite with 12Z,
+            # ## this is needed to reindex daily to hourly ensuring that all dailys values are on the correct utc time
+            # int_time = int(pd.Timestamp(time_array[0]).hour)
+            # length = len(time_array) + 1
+            # num_days = [i - 12 for i in range(1, length) if i % 24 == 0]
+            # index = [
+            #     i - int_time if 12 - int_time >= 0 else i + 24 - int_time
+            #     for i in num_days
+            # ]
+            # print(
+            #     f"For NWP with {str(int_time).zfill(2)}Z INT, will use index(s) of {index} as index(s) to represent 12Z"
+            # )
 
-            ## make BUI into a np array and make an empty array, U_empty, to populate
-            index = np.array(index)
-            U_values = U.values
-            U_empty = np.full(
-                (len(time_array), len(south_north), len(west_east)),
-                np.nan,
-            )
-            # ## find all uniuie utc off sets and loop them obtaining BUI values for each time zone and
-            # ### fill them in to U_empty at thier accocaited utc offset which represent 1600 local
-            unique_TZ = np.unique(tzone)
-            for i in range(len(index)):
-                for TZ in unique_TZ:
-                    idx = np.where(tzone == TZ)
-                    try:
-                        U_empty[index[i] + 4 + TZ, idx[0], idx[1]] = U_values[
-                            i, idx[0], idx[1]
-                        ]
-                    except:
-                        U_empty[index[i] + TZ, idx[0], idx[1]] = U_values[
-                            i, idx[0], idx[1]
-                        ]
+            # ## make BUI into a np array and make an empty array, U_empty, to populate
+            # index = np.array(index)
+            # U_values = U.values
+            # U_empty = np.full(
+            #     (len(time_array), len(south_north), len(west_east)),
+            #     np.nan,
+            # )
+            # # ## find all uniuie utc off sets and loop them obtaining BUI values for each time zone and
+            # # ### fill them in to U_empty at thier accocaited utc offset which represent 1600 local
+            # unique_TZ = np.unique(tzone)
+            # for i in range(len(index)):
+            #     for TZ in unique_TZ:
+            #         idx = np.where(tzone == TZ)
+            #         try:
+            #             U_empty[index[i] + 4 + TZ, idx[0], idx[1]] = U_values[
+            #                 i, idx[0], idx[1]
+            #             ]
+            #         except:
+            #             U_empty[index[i] + TZ, idx[0], idx[1]] = U_values[
+            #                 i, idx[0], idx[1]
+            #             ]
 
-            ## make the quassi popualted U_empty into a dataarray
-            var = "U"
-            U_da = xr.DataArray(
-                data=U_empty,
-                name=var,
-                dims=["time", "south_north", "west_east"],
-                coords=dict(
-                    south_north=south_north,
-                    west_east=west_east,
-                    time=time_array,
-                ),
-            )#.chunk('auto')
-            ## interpolate/extrapolate the quassi popualted U_empty filling all nan values
-            ##### method = 'nearest' will do what i have written for my ams paper first describing the fwf
-            U = U_da.interpolate_na(
-                dim="time", method="linear", fill_value="extrapolate"
-            )
-            self.BUI_H = xr.DataArray(
-                U.values, name="BUI", dims=("time", "south_north", "west_east")
-            )
-            print("Time to resample daily to hourly:  ", datetime.now() - dTOh)
+            # ## make the quassi popualted U_empty into a dataarray
+            # var = "U"
+            # U_da = xr.DataArray(
+            #     data=U_empty,
+            #     name=var,
+            #     dims=["time", "south_north", "west_east"],
+            #     coords=dict(
+            #         south_north=south_north,
+            #         west_east=west_east,
+            #         time=time_array,
+            #     ),
+            # )#.chunk('auto')
+            # ## interpolate/extrapolate the quassi popualted U_empty filling all nan values
+            # ##### method = 'nearest' will do what i have written for my ams paper first describing the fwf
+            # U = U_da.interpolate_na(
+            #     dim="time", method="linear", fill_value="extrapolate"
+            # )
+            # self.BUI_H = xr.DataArray(
+            #     U.values, name="BUI", dims=("time", "south_north", "west_east")
+            # )
+            U['time'] = self.daily_ds.Time
+            U = U.reindex(time=self.hourly_ds.Time, method="ffill")
+            U['time'] = self.hourly_ds.time
+            self.BUI_H = U
+            # self.timer("Resample daily to hourly ", dTOh)
 
             ########################################################################
             ## (28 & 29) Solve for duff moisture function where U =< 80(f_D_a)
@@ -2277,7 +2279,7 @@ class FWF:
         )
         for var in list(fuels_ds):
             fwf_ds[var] = (("time", "south_north", "west_east"), fuels_ds[var].values)
-        print("Time to transform data: ", datetime.now() - startTRANSFORM)
+        self.timer(title = 'Time to transform fuels to wrf projection', start_time = startTRANSFORM)
 
         fwf_ds = get_solar_hours(fwf_ds)
         hour_sin = np.sin(2 * np.pi * fwf_ds["solar_hour"] / 24)
@@ -2346,10 +2348,18 @@ class FWF:
 
         # Load the model
         model = load_model(f"{model_dir}/model.keras")
-        FRP = model(X_new_scaled)
-        FRP_FULL = FRP.numpy().ravel().reshape(shape)
-        FRPend = datetime.now() - startFRP
-        print("Time to predict FRP: ", FRPend)
+        batch_size = 4000
+        predictions = []
+
+        for start in range(0, X_new_scaled.shape[0], batch_size):
+            end = min(start + batch_size, X_new_scaled.shape[0])
+            batch = X_new_scaled[start:end]
+            batch_predictions = model(batch)
+            predictions.extend(batch_predictions.numpy().ravel())
+
+        FRP_FULL = np.array(predictions).reshape(shape)
+
+        # FRP_FULL = FRP.numpy().ravel().reshape(shape)
         hourly_ds["FRP"] = (("time", "south_north", "west_east"), FRP_FULL)
         hourly_ds["FRP"] = xr.where(hourly_ds["SNOWC"] > 0.5, 0, hourly_ds["FRP"])
 
@@ -2357,7 +2367,8 @@ class FWF:
         # print("Start transform:", startTRANSFORM)
         # fwf_ds = transform_ds(fwf_ds, domain)
 
-        del FRP_FULL, FRP, model, df, fuels_ds, fwf_ds
+        del FRP_FULL, model, df, fuels_ds, fwf_ds
+        self.timer(title = 'Predict FRP', start_time = startFRP)
         return hourly_ds
 
     """########################################################################"""
@@ -2426,7 +2437,7 @@ class FWF:
                     dims=("south_north", "west_east"),
                     coords=int_ds.isel(time=i).coords,
                 )
-                var_da["Time"] = day
+                var_da["Time"] = day.astype('datetime64[ns]')
                 mean_da.append(var_da)
             mean_ds = xr.merge(mean_da)
             files_ds.append(mean_ds)
@@ -2505,6 +2516,7 @@ class FWF:
                 f"Invalided carryover_rain option: {carryover_rain}. Only supports boolean inputs \n Please try with True or False :)"
             )
         print("Time to obtain noon local weather data:  ", datetime.now() - dailyTime)
+
         print("---------------------------------------------------")
         return noon_ds
 
@@ -2694,6 +2706,7 @@ class FWF:
         if self.frp_mode == True:
             hourly_ds = self.solve_frp(hourly_ds)
 
+        hourly_ds =  hourly_ds.drop('U')
         return hourly_ds
 
     """#######################################"""
@@ -2710,7 +2723,7 @@ class FWF:
             A xarray DataSet with all the daily FWI codes/indices solved
 
         """
-        print("---------------------------------------------------")
+        # print("---------------------------------------------------")
         dailyTimer = datetime.now()
         length = len(self.daily_ds.time)
         daily_list = []
@@ -2748,7 +2761,7 @@ class FWF:
         else:
             pass
         self.U = U
-        print("Time run solve daily FWY system: ", datetime.now() - dailyTimer)
+        self.timer("Daily loop", dailyTimer)
         return daily_ds
 
     def rechunk(self, ds):
@@ -2778,7 +2791,7 @@ class FWF:
         ds = ds.compute()
         for var in list(ds):
             ds[var].encoding = {}
-        print("Time to prepare Dataset: ", datetime.now() - loadTime)
+        self.timer("Prepare Dataset", loadTime)
         return ds
 
     """#######################################"""
@@ -2861,12 +2874,11 @@ class FWF:
 
         if self.file_formate == "netcdf":
             writeTime = datetime.now()
-            print("Start Write ", datetime.now())
             hourly_ds, encoding = compressor(hourly_ds, self.var_dict)
             hourly_ds.to_netcdf(make_dir, encoding=encoding, mode="w")
-            print("Write Time: ", datetime.now() - writeTime)
             print(f"Wrote working {make_dir}")
-            print("Hourly method run time: ", datetime.now() - hourlyTimer)
+            self.timer(title = 'Write Time', start_time = writeTime)
+            self.timer(title = 'Hourly method run time', start_time = hourlyTimer)
             print("---------------------------------------------------")
         elif self.file_formate == "zarr":
             bashComand = "rm -rf " + str(make_dir)
@@ -2878,13 +2890,12 @@ class FWF:
             # del self.hourly_ds
             # print(hourly_ds_chuncked)
             writeTime = datetime.now()
-            print("Start Write ", datetime.now())
             zarr_compressor = zarr.Blosc(cname="zstd", clevel=3, shuffle=2)
             encoding = {x: {"compressor": zarr_compressor} for x in hourly_ds}
             hourly_ds.to_zarr(make_dir, encoding=encoding, mode="w")
-            print("Write Time: ", datetime.now() - writeTime)
             print(f"Wrote working {make_dir}")
-            print("Hourly method run time: ", datetime.now() - hourlyTimer)
+            self.timer(title = 'Write Time', start_time = writeTime)
+            self.timer(title = 'Hourly method run time', start_time = hourlyTimer)
             print("---------------------------------------------------")
         return
 
@@ -2922,7 +2933,6 @@ class FWF:
 
         daily_ds = self.prepare_ds(daily_ds)
         self.daily_ds = daily_ds
-        print("Daily nc initialized at :", file_date)
 
          # ## Write and save DataArray (.nc) file
         make_dir = Path(
@@ -2934,12 +2944,11 @@ class FWF:
 
         if self.file_formate == "netcdf":
             writeTime = datetime.now()
-            print("Start Write ", datetime.now())
             daily_ds, encoding = compressor(daily_ds, self.var_dict)
             daily_ds.to_netcdf(make_dir, encoding=encoding, mode="w")
-            print("Write Time: ", datetime.now() - writeTime)
             print(f"Wrote working {make_dir}")
-            print("Daily method run time: ", datetime.now() - dailyTimer)
+            self.timer(title = 'Write Time', start_time = writeTime)
+            self.timer(title = 'Daily method run time', start_time = dailyTimer)
             self.daily_ds = daily_ds
             print("---------------------------------------------------")
         elif self.file_formate == "zarr":
@@ -2949,16 +2958,15 @@ class FWF:
             os.system(bashComand)
             writeTime = datetime.now()
             daily_ds = self.rechunk(daily_ds)
-            print("Start Write ", datetime.now())
             zarr_compressor = zarr.Blosc(cname="zstd", clevel=3, shuffle=2)
             daily_ds.to_zarr(
                 make_dir,
                 encoding={x: {"compressor": zarr_compressor} for x in daily_ds},
                 mode="w",
             )
-            print("Write Time: ", datetime.now() - writeTime)
             print(f"Wrote working {make_dir}")
-            print("Daily method run time: ", datetime.now() - dailyTimer)
+            self.timer(title = 'Write Time', start_time = writeTime)
+            self.timer(title = 'Daily method run time', start_time = dailyTimer)
             self.daily_ds = daily_ds
             print("---------------------------------------------------")
 

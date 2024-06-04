@@ -1,4 +1,4 @@
-#!/bluesky/fireweather/miniconda3/envs/fwf/bin/python
+#!/bluesky/fireweather/miniconda3/envs/fwx/bin/python
 
 """
 Creates a time zone mask for each grid point in model domain.

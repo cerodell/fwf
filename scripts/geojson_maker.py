@@ -1,4 +1,4 @@
-#!/bluesky/fireweather/miniconda3/envs/fwf/bin/python
+#!/bluesky/fireweather/miniconda3/envs/fwx/bin/python
 
 """
 Creates geojson files for each fwf forecast prodcut. Used as intermediate step for dispaly on leaflet map.

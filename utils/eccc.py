@@ -1,4 +1,4 @@
-#!/Users/crodell/miniconda3/envs/fwf/bin/python
+#!/bluesky/fireweather/miniconda3/envs/fwx/bin/python
 
 """
 Defines Projection of ECCC Data and matches the variable naming convention used in the FWF class

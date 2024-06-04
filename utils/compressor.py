@@ -1,3 +1,5 @@
+#!/bluesky/fireweather/miniconda3/envs/fwx/bin/python
+
 import context
 import os
 import numpy as np

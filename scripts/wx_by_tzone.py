@@ -1,4 +1,4 @@
-#!/bluesky/fireweather/miniconda3/envs/fwf/bin/python
+#!/bluesky/fireweather/miniconda3/envs/fwx/bin/python
 
 # """
 # Create a json file  contains XX number of days of wmo weather station observations
@@ -298,6 +298,10 @@ for ztu in unique:
 
     wx_hourly_ds["r_o"] = wx_hourly__yester_ds.r_o.values[-1] + wx_hourly_ds.r_o
 
+    try:
+        wx_hourly__yester_ds = wx_hourly__yester_ds.drop('XTIME')
+    except:
+        pass
     fianl_hourly_ds = xr.combine_nested(
         [wx_hourly__yester_ds, wx_hourly_ds], concat_dim="time"
     )

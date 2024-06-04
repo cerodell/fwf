@@ -256,5 +256,9 @@
   "FS_days": {
     "description": "NUMBER OF DAYS A EITHER SUMMER OR WINTER ARE ONGOING",
     "units": "day"
+  },
+  "FRP": {
+    "description": "FIRE RADIATIVE POWER",
+    "units": "MW"
   }
 }
