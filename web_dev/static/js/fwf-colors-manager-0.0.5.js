@@ -421,7 +421,7 @@ function geo_json_styler_rh(t, d) {
 function geo_json_styler_qpf(t, d) {
     switch (t.fill) {
         case "#ffffff":
-            return { color: "#ffffff", opacity: 1, fillColor: "#ffffff", fillOpacity: 1, weight: 0.2, fill: !0 };
+            return { color: "", opacity: 0, fillColor: "", fillOpacity: 0, weight: 0.2, fill: !0 };
         case "#a9a5a5":
             return { color: "#a9a5a5", opacity: 1, fillColor: "#a9a5a5", fillOpacity: 1, weight: 0.2, fill: !0 };
         case "#6e6e6e":
@@ -464,7 +464,7 @@ function geo_json_styler_qpf(t, d) {
 function geo_json_styler_frp(t, d) {
     switch (t.fill) {
         case "#ffffff":
-            return { color: "#ffffff", opacity: 1, fillColor: "#ffffff", fillOpacity: 1, weight: 0.2, fill: !0 };
+            return { color: "", opacity: 0, fillColor: "", fillOpacity: 0, weight: 0.2, fill: !0 };
         case "#fff8ba":
             return { color: "#fff8ba", opacity: 1, fillColor: "#fff8ba", fillOpacity: 1, weight: 0.2, fill: !0 };
         case "#fff0a7":
@@ -505,7 +505,7 @@ function geo_json_styler_frp(t, d) {
 function geo_json_styler_snw(t, d) {
     switch (t.fill) {
         case "#ffffff":
-            return { color: "#ffffff", opacity: 1, fillColor: "#ffffff", fillOpacity: 1, weight: 0.2, fill: !0 };
+            return { color: "", opacity: 0, fillColor: "", fillOpacity: 0, weight: 0.2, fill: !0 };
         case "#bdbdbd":
             return { color: "#bdbdbd", opacity: 1, fillColor: "#bdbdbd", fillOpacity: 1, weight: 0.2, fill: !0 };
         case "#979797":
