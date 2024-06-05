@@ -18,7 +18,7 @@ from datetime import datetime, date, timedelta
 from wrf import getvar, smooth2d
 
 
-def mycontourf_to_geojson(cmaps, var, da, folderdate, domain, timestamp):
+def mycontourf_to_geojson(cmaps, var, da, folderdate, timestamp):
     """
     This makes a geojson file from a matplot lib countourf
 
@@ -62,7 +62,7 @@ def mycontourf_to_geojson(cmaps, var, da, folderdate, domain, timestamp):
         cmaps[var]["sigma"],
     )
 
-    geojson_filepath = str(name + "-" + timestamp + "-" + domain)
+    geojson_filepath = str(name + "-merge-" + timestamp)
     levels = cmaps[var]["levels"]
     Cnorm = matplotlib.colors.Normalize(vmin=vmin, vmax=vmax + 1)
     contourf = plt.contourf(
@@ -89,9 +89,9 @@ def mycontourf_to_geojson(cmaps, var, da, folderdate, domain, timestamp):
         geojson_filepath=f"/bluesky/fireweather/fwf/data/geojson/{folderdate}/{geojson_filepath}.geojson",
     )
 
-    # print(
-    #     f"wrote geojson to: /bluesky/fireweather/fwf/data/geojson/{folderdate}/{geojson_filepath}.geojson"
-    # )
+    print(
+        f"wrote geojson to: /bluesky/fireweather/fwf/data/geojson/{folderdate}/{geojson_filepath}.geojson"
+    )
 
     return
 

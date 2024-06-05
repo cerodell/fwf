@@ -31,7 +31,7 @@ __email__ = "crodell@eoas.ubc.ca"
 # ignore RuntimeWarning
 warnings.filterwarnings("ignore", category=RuntimeWarning)
 #  0:01:47.
-date_range = pd.date_range("2024-02-25", "2024-02-25")
+date_range = pd.date_range("2024-06-04", "2024-06-04")
 # date_range = pd.date_range("2021-01-02", "2021-01-05")
 # date_range = pd.date_range("2021-01-01", "2021-01-01")
 
@@ -48,6 +48,7 @@ for doi in date_range:
             initialize_hffmc=False,
             overwinter=False,
             fbp_mode=True,
+            frp_mode=True,
             correctbias=False,
         )
         config["doi"] = doi

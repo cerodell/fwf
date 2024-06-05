@@ -9,6 +9,7 @@ The json files are boxes (or subdomains) of grided fwf data for geocraphic locat
 import context
 import json
 import bson
+import salem
 import numpy as np
 import pandas as pd
 import xarray as xr
@@ -60,6 +61,12 @@ def rechunk(ds):
     #     ds[var].encoding = {}
     return ds
 
+def open_fuels(moi):
+    fuels_ds = salem.open_xr_dataset(
+        str(data_dir) + f'/fuel-load/{2021}/CFUEL_timemean_2021{moi.strftime("_%m")}.nc'
+    ).sel(lat=slice(90, 10), lon=slice(-180, -30))
+    fuels_ds.coords["time"] = moi
+    return fuels_ds
 
 ## loop both domains
 domains = ["d02", "d03"]
@@ -83,6 +90,22 @@ for domain in domains:
     daily_ds = daily_ds.round(2)
     # hourly_ds = rechunk(hourly_ds)
     # daily_ds = rechunk(daily_ds)
+
+    # print("Start prediction:", startFRP)
+    fuel_date_range = pd.date_range(
+        daily_ds["Time"].values[0],
+        daily_ds["Time"].values[-1],
+        freq="MS",
+    )
+    if len(fuel_date_range) == 0:
+        fuel_date_range = [pd.Timestamp(daily_ds["Time"].values[0])]
+    fuels_ds = xr.combine_nested(
+        [open_fuels(moi) for moi in fuel_date_range], concat_dim="time"
+    ).isel(time =0)
+
+    fuels_ds = static_ds.salem.transform(fuels_ds, interp="linear").reindex(
+        time=daily_ds.Time, method="ffill"
+    ).round(2)
 
     ## get array of time and day
     time = np.array(hourly_ds.Time.dt.strftime("%Y-%m-%dT%H"), dtype="<U13")
@@ -118,7 +141,7 @@ for domain in domains:
 
     ## define variables for ploting from houlry dataset
     hourly_var_list =  [
-        'TD',
+        'FRP',
         'HFI',
         'R',
         'ROS',
@@ -126,18 +149,15 @@ for domain in domains:
         'F',
         'W',
         'TFC',
-        'SFC',
         'WD',
-        'SNW',
         'S',
-        'DSR',
         'T',
         'CFB',
         'r_o'
         ]
 
     ## define variables for ploting from daily dataset
-    daily_var_list =  ['TD', 'U', 'D', 'P', 'DSR', 'S']
+    daily_var_list =  ['U', 'D', 'P', 'DSR', 'S']
 
 
     ## get array of lats and longs remove bad boundary conditions and flatten
@@ -145,11 +165,19 @@ for domain in domains:
     xlon = daily_ds.XLONG.values[y1:-y2, x1:-x2]
     tzon = static_ds.ZoneDT.values[y1:-y2, x1:-x2]
     fuel = static_ds.FUELS_D.values[y1:-y2, x1:-x2]
+    live_wood = fuels_ds['Live_Wood'].values[y1:-y2, x1:-x2]
+    dead_wood = fuels_ds['Dead_Wood'].values[y1:-y2, x1:-x2]
+    live_leaf = fuels_ds['Live_Leaf'].values[y1:-y2, x1:-x2]
+    dead_leaf = fuels_ds['Dead_Foliage'].values[y1:-y2, x1:-x2]
 
     xlat = np.round(xlat.flatten(), 5)
     xlon = np.round(xlon.flatten(), 5)
     tzon = tzon.flatten()
     fuel = fuel.flatten()
+    live_wood = live_wood.flatten()
+    dead_wood = dead_wood.flatten()
+    live_leaf = live_leaf.flatten()
+    dead_leaf = dead_leaf.flatten()
 
     ## build dictionary with removed bad boundary conditions fro each variable in dataset
     ## also reshape into (time, (flatten XLAT/XLONG))
@@ -198,13 +226,25 @@ for domain in domains:
         tzon_array = tzon_array.astype("<U2")
         fuel_array = fuel[inds[0]]
         fuel_array = fuel_array.astype("<U2")
-
+        live_wood_array = live_wood[inds[0]]
+        live_wood_array = live_wood_array.astype("<U8")
+        dead_wood_array = dead_wood[inds[0]]
+        dead_wood_array = dead_wood_array.astype("<U8")
+        live_leaf_array = live_leaf[inds[0]]
+        live_leaf_array = live_leaf_array.astype("<U8")
+        dead_leaf_array = dead_leaf[inds[0]]
+        dead_leaf_array = dead_leaf_array.astype("<U8")
         dict_file.update(
             {
                 "XLAT": xlat_array.tolist(),
                 "XLONG": xlon_array.tolist(),
                 "TZONE": tzon_array.tolist(),
                 "FUEL": fuel_array.tolist(),
+                "LIVE_WOOD": live_wood_array.tolist(),
+                "DEAD_WOOD": dead_wood_array.tolist(),
+                "LIVE_LEAF": live_leaf_array.tolist(),
+                "DEAD_LEAF": dead_leaf_array.tolist(),
+
             }
         )
 

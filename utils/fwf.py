@@ -2362,6 +2362,10 @@ class FWF:
         # FRP_FULL = FRP.numpy().ravel().reshape(shape)
         hourly_ds["FRP"] = (("time", "south_north", "west_east"), FRP_FULL)
         hourly_ds["FRP"] = xr.where(hourly_ds["SNOWC"] > 0.5, 0, hourly_ds["FRP"])
+        fuel = fuels_ds.isel(time = 0)
+        total_fuel = fuel['Live_Wood'] + fuel['Dead_Wood'] + fuel['Live_Leaf'] + fuel['Dead_Foliage']
+        hourly_ds["FRP"] = xr.where(total_fuel <= 0.01, 0, hourly_ds["FRP"])
+        hourly_ds["FRP"] = xr.where(self.static_ds['FUELS'] == 17, 0, hourly_ds["FRP"])
 
         # startTRANSFORM = datetime.now()
         # print("Start transform:", startTRANSFORM)

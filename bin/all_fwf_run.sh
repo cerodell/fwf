@@ -77,3 +77,5 @@ ln -sv ../../data/fwf-hourly-d02-$(date '+%Y%m%d06').nc
 ln -sv ../../data/fwf-daily-d03-$(date '+%Y%m%d06').nc
 ln -sv ../../data/fwf-hourly-d03-$(date '+%Y%m%d06').nc
 echo "$(date) ---> symlinks to nc files created"
+
+# cp -r /bluesky/archive/fireweather/forecasts/current/* /bluesky/fireweather/fwf/web_dev/

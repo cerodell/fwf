@@ -13,20 +13,20 @@
   "sources": {
     "openmaptiles": {
       "type": "vector",
-      "url": "https://api.maptiler.com/tiles/v3/tiles.json?key=PquYEjaZQgGOArfxeoCO"
+      "url": "https://api.maptiler.com/tiles/v3/tiles.json?key=EiEE1yuU1YmMWWDJ96tg"
     },
     "contours": {
       "type": "vector",
-      "url": "https://api.maptiler.com/tiles/contours/tiles.json?key=PquYEjaZQgGOArfxeoCO"
+      "url": "https://api.maptiler.com/tiles/contours/tiles.json?key=EiEE1yuU1YmMWWDJ96tg"
     },
     "hillshades": {
       "type": "raster",
-      "url": "https://api.maptiler.com/tiles/hillshades/tiles.json?key=PquYEjaZQgGOArfxeoCO",
+      "url": "https://api.maptiler.com/tiles/hillshades/tiles.json?key=EiEE1yuU1YmMWWDJ96tg",
       "tileSize": 256
     }
   },
   "sprite": "https://api.maptiler.com/maps/topo/sprite",
-  "glyphs": "https://api.maptiler.com/fonts/{fontstack}/{range}.pbf?key=PquYEjaZQgGOArfxeoCO",
+  "glyphs": "https://api.maptiler.com/fonts/{fontstack}/{range}.pbf?key=EiEE1yuU1YmMWWDJ96tg",
   "layers": [
     {
       "id": "contour_index",
@@ -191,8 +191,7 @@
       "minzoom": 0,
       "filter": ["all", ["!=", "intermittent", ""], ["!=", "brunnel", ""]],
       "layout": {"visibility": "visible"},
-      "paint": {"fill-color": "rgba(66, 119, 147, 1)"},
-      "setZIndex": 100
+      "paint": {"fill-color": "rgba(66, 119, 147, 1)"}
     },
     {
       "id": "water_intermittent",
