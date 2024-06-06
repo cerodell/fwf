@@ -7,7 +7,7 @@ function style(t) {
 var legend_radar = L.control({ position: "bottomright" });
 legend_radar.onAdd = function (t) {
     var d = L.DomUtil.create("div", "info legend");
-    return (d.innerHTML += '<img src="https://geo.weather.gc.ca/geomet?version=1.3.0&service=WMS&request=GetLegendGraphic&sld_version=1.1.0&layer=RADAR_1KM_RRAI&format=image/png&STYLE=RADARURPPRECIPR14-LINEAR" alt="Legend">'), d;
+    return (d.innerHTML += '<img src="https://geo.weather.gc.ca/geomet?version=1.3.0&service=WMS&request=GetLegendGraphic&sld_version=11.0&layer=RADAR_1KM_RRAI&format=image/png&STYLE=RADARURPPRECIPR14-LINEAR" alt="Legend">'), d;
 };
 var legend_wx = L.control({ position: "bottomright" });
 legend_wx.onAdd = function (t) {
@@ -102,7 +102,7 @@ color_map_frp.onAdd = function (t) {
     var d = L.DomUtil.create("div", "fcst-legend leaflet-bar leaflet-control");
     return (
         (d.innerHTML =
-            '<table id="values"><tr id="colours"><td style="background:#ffffff; width:10px; border-left:none;"></td><td style="background:#fff8ba;"></td><td style="background:#fff0a7;"></td><td style="background:#ffe794;"></td><td style="background:#fede81;"></td><td style="background:#fed16d;"></td><td style="background:#fec05b;"></td><td style="background:#feaf4b;"></td><td style="background:#fd9e44;"></td><td style="background:#fd8d3c;"></td><td style="background:#fd7134;"></td><td style="background:#fc552c;"></td><td style="background:#f43d25;"></td><td style="background:#e9261f;"></td><td style="background:#da141e;"></td><td style="background:#c90823;"></td><td style="background:#b60026;"></td><td style="background:#9b0026;"></td></tr><tr id="ticks"><td style="width:10px; border-left:none;"></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr></table><table id="labels"><tr><td width="2px">0</td><td width="10px"></td><td width="10px">50</td><td width="13px"></td><td width="10px">150</td><td width="11px"></td><td width="10px">250</td><td width="9px"></td><td width="9px">400</td><td width="10px"></td><td width="12px">600</td><td width="6px"></td><td width="6px">1000</td><td width="6px"></td><td width="6px">1800</td><td width="4px"></td><td width="4px">2500</td><td width="1px"></td><td width="1px">3000+</td></tr></table><div class="legend-title">Potential Fire Radiative Power (MW)</div>'),
+            '<table id="values"><tr id="colours"><td style="background:#ffffff; width:10px; border-left:none;"></td><td style="background:#fefec7;"></td><td style="background:#fcfc8f;"></td><td style="background:#fbfb57;"></td><td style="background:#faec2e;"></td><td style="background:#fac41f;"></td><td style="background:#fa9e11;"></td><td style="background:#fa7803;"></td><td style="background:#fb5b00;"></td><td style="background:#fd3e00;"></td><td style="background:#fe2300;"></td><td style="background:#f80d00;"></td><td style="background:#d80900;"></td><td style="background:#b80500;"></td><td style="background:#960100;"></td><td style="background:#9e0c24;"></td><td style="background:#bb1f5d;"></td><td style="background:#d83295;"></td></tr><tr id="ticks"><td style="width:10px; border-left:none;"></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr></table><table id="labels"><tr><td width="2px">0</td><td width="10px"></td><td width="10px">30</td><td width="13px"></td><td width="10px">100</td><td width="11px"></td><td width="10px">150</td><td width="9px"></td><td width="9px">250</td><td width="10px"></td><td width="12px">350</td><td width="10px"></td><td width="9px">500</td><td width="6px"></td><td width="6px">1000</td><td width="4px"></td><td width="4px">2000</td><td width="1px"></td><td width="1px">2500+</td></tr></table><div class="legend-title">Potential Fire Radiative Power (MW)</div>'),
         d
     );
 };
@@ -240,44 +240,45 @@ function geo_json_styler_hfi(t, d) {
             return { color: "#8b0000", opacity: 1, fillColor: "#8b0000", fillOpacity: 1, weight: 0.2, fill: !0 };
     }
 }
+const wsp_op = 1
 function geo_json_styler_wsp(t, d) {
     switch (t.fill) {
         case "#ffffff":
             return { color: "#ffffff", opacity: 1, fillColor: "#ffffff", fillOpacity: 1, weight: 0.2, fill: !0 };
         case "#bbbbbb":
-            return { color: "#bbbbbb", opacity: 1, fillColor: "#bbbbbb", fillOpacity: 1, weight: 0.2, fill: !0 };
+            return { color: "#bbbbbb", opacity:wsp_op, fillColor: "#bbbbbb", fillOpacity: wsp_op, weight: 0.2, fill: !0 };
         case "#646464":
-            return { color: "#646464", opacity: 1, fillColor: "#646464", fillOpacity: 1, weight: 0.2, fill: !0 };
+            return { color: "#646464", opacity: wsp_op, fillColor: "#646464", fillOpacity: wsp_op, weight: 0.2, fill: !0 };
         case "#1563d3":
-            return { color: "#1563d3", opacity: 1, fillColor: "#1563d3", fillOpacity: 1, weight: 0.2, fill: !0 };
+            return { color: "#1563d3", opacity: wsp_op, fillColor: "#1563d3", fillOpacity: wsp_op, weight: 0.2, fill: !0 };
         case "#2883f1":
-            return { color: "#2883f1", opacity: 1, fillColor: "#2883f1", fillOpacity: 1, weight: 0.2, fill: !0 };
+            return { color: "#2883f1", opacity: wsp_op, fillColor: "#2883f1", fillOpacity: wsp_op, weight: 0.2, fill: !0 };
         case "#50a5f5":
-            return { color: "#50a5f5", opacity: 1, fillColor: "#50a5f5", fillOpacity: 1, weight: 0.2, fill: !0 };
+            return { color: "#50a5f5", opacity: wsp_op, fillColor: "#50a5f5", fillOpacity: wsp_op, weight: 0.2, fill: !0 };
         case "#97d3fb":
-            return { color: "#97d3fb", opacity: 1, fillColor: "#97d3fb", fillOpacity: 1, weight: 0.2, fill: !0 };
+            return { color: "#97d3fb", opacity: wsp_op, fillColor: "#97d3fb", fillOpacity: wsp_op, weight: 0.2, fill: !0 };
         case "#0ca10d":
-            return { color: "#0ca10d", opacity: 1, fillColor: "#0ca10d", fillOpacity: 1, weight: 0.2, fill: !0 };
+            return { color: "#0ca10d", opacity: wsp_op, fillColor: "#0ca10d", fillOpacity: wsp_op, weight: 0.2, fill: !0 };
         case "#37d33c":
-            return { color: "#37d33c", opacity: 1, fillColor: "#37d33c", fillOpacity: 1, weight: 0.2, fill: !0 };
+            return { color: "#37d33c", opacity: wsp_op, fillColor: "#37d33c", fillOpacity: wsp_op, weight: 0.2, fill: !0 };
         case "#97f58d":
-            return { color: "#97f58d", opacity: 1, fillColor: "#97f58d", fillOpacity: 1, weight: 0.2, fill: !0 };
+            return { color: "#97f58d", opacity: wsp_op, fillColor: "#97f58d", fillOpacity: wsp_op, weight: 0.2, fill: !0 };
         case "#b5fbab":
-            return { color: "#b5fbab", opacity: 1, fillColor: "#b5fbab", fillOpacity: 1, weight: 0.2, fill: !0 };
+            return { color: "#b5fbab", opacity: wsp_op, fillColor: "#b5fbab", fillOpacity: wsp_op, weight: 0.2, fill: !0 };
         case "#ffe978":
-            return { color: "#ffe978", opacity: 1, fillColor: "#ffe978", fillOpacity: 1, weight: 0.2, fill: !0 };
+            return { color: "#ffe978", opacity: wsp_op, fillColor: "#ffe978", fillOpacity: wsp_op, weight: 0.2, fill: !0 };
         case "#ffc03d":
-            return { color: "#ffc03d", opacity: 1, fillColor: "#ffc03d", fillOpacity: 1, weight: 0.2, fill: !0 };
+            return { color: "#ffc03d", opacity: wsp_op, fillColor: "#ffc03d", fillOpacity: wsp_op, weight: 0.2, fill: !0 };
         case "#ffa100":
-            return { color: "#ffa100", opacity: 1, fillColor: "#ffa100", fillOpacity: 1, weight: 0.2, fill: !0 };
+            return { color: "#ffa100", opacity: wsp_op, fillColor: "#ffa100", fillOpacity: wsp_op, weight: 0.2, fill: !0 };
         case "#ff3300":
-            return { color: "#ff3300", opacity: 1, fillColor: "#ff3300", fillOpacity: 1, weight: 0.2, fill: !0 };
+            return { color: "#ff3300", opacity: wsp_op, fillColor: "#ff3300", fillOpacity: wsp_op, weight: 0.2, fill: !0 };
         case "#c10000":
-            return { color: "#c10000", opacity: 1, fillColor: "#c10000", fillOpacity: 1, weight: 0.2, fill: !0 };
+            return { color: "#c10000", opacity: wsp_op, fillColor: "#c10000", fillOpacity: wsp_op, weight: 0.2, fill: !0 };
         case "#960007":
-            return { color: "#960007", opacity: 1, fillColor: "#960007", fillOpacity: 1, weight: 0.2, fill: !0 };
+            return { color: "#960007", opacity: wsp_op, fillColor: "#960007", fillOpacity: wsp_op, weight: 0.2, fill: !0 };
         default:
-            return { color: "#643C32", opacity: 1, fillColor: "#643C32", fillOpacity: 1, weight: 0.2, fill: !0 };
+            return { color: "#643C32", opacity: wsp_op, fillColor: "#643C32", fillOpacity: wsp_op, weight: 0.2, fill: !0 };
     }
 }
 function geo_json_styler_temp(t, d) {
@@ -421,7 +422,7 @@ function geo_json_styler_rh(t, d) {
 function geo_json_styler_qpf(t, d) {
     switch (t.fill) {
         case "#ffffff":
-            return { color: "", opacity: 0, fillColor: "", fillOpacity: 0, weight: 0.2, fill: !0 };
+            return { color: "#ffffff", opacity: 1, fillColor: "#ffffff", fillOpacity: 1, weight: 0.2, fill: !0 };
         case "#a9a5a5":
             return { color: "#a9a5a5", opacity: 1, fillColor: "#a9a5a5", fillOpacity: 1, weight: 0.2, fill: !0 };
         case "#6e6e6e":
@@ -464,48 +465,48 @@ function geo_json_styler_qpf(t, d) {
 function geo_json_styler_frp(t, d) {
     switch (t.fill) {
         case "#ffffff":
-            return { color: "", opacity: 0, fillColor: "", fillOpacity: 0, weight: 0.2, fill: !0 };
-        case "#fff8ba":
-            return { color: "#fff8ba", opacity: 1, fillColor: "#fff8ba", fillOpacity: 1, weight: 0.2, fill: !0 };
-        case "#fff0a7":
-            return { color: "#fff0a7", opacity: 1, fillColor: "#fff0a7", fillOpacity: 1, weight: 0.2, fill: !0 };
-        case "#ffe794":
-            return { color: "#ffe794", opacity: 1, fillColor: "#ffe794", fillOpacity: 1, weight: 0.2, fill: !0 };
-        case "#fede81":
-            return { color: "#fede81", opacity: 1, fillColor: "#fede81", fillOpacity: 1, weight: 0.2, fill: !0 };
-        case "#fed16d":
-            return { color: "#fed16d", opacity: 1, fillColor: "#fed16d", fillOpacity: 1, weight: 0.2, fill: !0 };
-        case "#fec05b":
-            return { color: "#fec05b", opacity: 1, fillColor: "#fec05b", fillOpacity: 1, weight: 0.2, fill: !0 };
-        case "#feaf4b":
-            return { color: "#feaf4b", opacity: 1, fillColor: "#feaf4b", fillOpacity: 1, weight: 0.2, fill: !0 };
-        case "#fd9e44":
-            return { color: "#fd9e44", opacity: 1, fillColor: "#fd9e44", fillOpacity: 1, weight: 0.2, fill: !0 };
-        case "#fd8d3c":
-            return { color: "#fd8d3c", opacity: 1, fillColor: "#fd8d3c", fillOpacity: 1, weight: 0.2, fill: !0 };
-        case "#fd7134":
-            return { color: "#fd7134", opacity: 1, fillColor: "#fd7134", fillOpacity: 1, weight: 0.2, fill: !0 };
-        case "#fc552c":
-            return { color: "#fc552c", opacity: 1, fillColor: "#fc552c", fillOpacity: 1, weight: 0.2, fill: !0 };
-        case "#f43d25":
-            return { color: "#f43d25", opacity: 1, fillColor: "#f43d25", fillOpacity: 1, weight: 0.2, fill: !0 };
-        case "#e9261f":
-            return { color: "#e9261f", opacity: 1, fillColor: "#e9261f", fillOpacity: 1, weight: 0.2, fill: !0 };
-        case "#da141e":
-            return { color: "#da141e", opacity: 1, fillColor: "#da141e", fillOpacity: 1, weight: 0.2, fill: !0 };
-        case "#c90823":
-            return { color: "#c90823", opacity: 1, fillColor: "#c90823", fillOpacity: 1, weight: 0.2, fill: !0 };
-        case "#b60026":
-            return { color: "#b60026", opacity: 1, fillColor: "#b60026", fillOpacity: 1, weight: 0.2, fill: !0 };
+            return { color: "#ffffff", opacity: 1, fillColor: "#ffffff", fillOpacity: 1, weight: 0.2, fill: !0 };
+        case "#fefec7":
+            return { color: "#fefec7", opacity: 1, fillColor: "#fefec7", fillOpacity: 1, weight: 0.2, fill: !0 };
+        case "#fcfc8f":
+            return { color: "#fcfc8f", opacity: 1, fillColor: "#fcfc8f", fillOpacity: 1, weight: 0.2, fill: !0 };
+        case "#fbfb57":
+            return { color: "#fbfb57", opacity: 1, fillColor: "#fbfb57", fillOpacity: 1, weight: 0.2, fill: !0 };
+        case "#faec2e":
+            return { color: "#faec2e", opacity: 1, fillColor: "#faec2e", fillOpacity: 1, weight: 0.2, fill: !0 };
+        case "#fac41f":
+            return { color: "#fac41f", opacity: 1, fillColor: "#fac41f", fillOpacity: 1, weight: 0.2, fill: !0 };
+        case "#fa9e11":
+            return { color: "#fa9e11", opacity: 1, fillColor: "#fa9e11", fillOpacity: 1, weight: 0.2, fill: !0 };
+        case "#fa7803":
+            return { color: "#fa7803", opacity: 1, fillColor: "#fa7803", fillOpacity: 1, weight: 0.2, fill: !0 };
+        case "#fb5b00":
+            return { color: "#fb5b00", opacity: 1, fillColor: "#fb5b00", fillOpacity: 1, weight: 0.2, fill: !0 };
+        case "#fd3e00":
+            return { color: "#fd3e00", opacity: 1, fillColor: "#fd3e00", fillOpacity: 1, weight: 0.2, fill: !0 };
+        case "#fe2300":
+            return { color: "#fe2300", opacity: 1, fillColor: "#fe2300", fillOpacity: 1, weight: 0.2, fill: !0 };
+        case "#f80d00":
+            return { color: "#f80d00", opacity: 1, fillColor: "#f80d00", fillOpacity: 1, weight: 0.2, fill: !0 };
+        case "#d80900":
+            return { color: "#d80900", opacity: 1, fillColor: "#d80900", fillOpacity: 1, weight: 0.2, fill: !0 };
+        case "#b80500":
+            return { color: "#b80500", opacity: 1, fillColor: "#b80500", fillOpacity: 1, weight: 0.2, fill: !0 };
+        case "#960100":
+            return { color: "#960100", opacity: 1, fillColor: "#960100", fillOpacity: 1, weight: 0.2, fill: !0 };
+        case "#9e0c24":
+            return { color: "#9e0c24", opacity: 1, fillColor: "#9e0c24", fillOpacity: 1, weight: 0.2, fill: !0 };
+        case "#bb1f5d":
+            return { color: "#bb1f5d", opacity: 1, fillColor: "#bb1f5d", fillOpacity: 1, weight: 0.2, fill: !0 };
         default:
-            return { color: "#9b0026", opacity: 1, fillColor: "#9b0026", fillOpacity: 1, weight: 0.2, fill: !0 };
+            return { color: "#d83295", opacity: 1, fillColor: "#d83295", fillOpacity: 1, weight: 0.2, fill: !0 };
     }
 }
 
 function geo_json_styler_snw(t, d) {
     switch (t.fill) {
         case "#ffffff":
-            return { color: "", opacity: 0, fillColor: "", fillOpacity: 0, weight: 0.2, fill: !0 };
+            return { color: "#ffffff", opacity: 1, fillColor: "#ffffff", fillOpacity: 1, weight: 0.2, fill: !0 };
         case "#bdbdbd":
             return { color: "#bdbdbd", opacity: 1, fillColor: "#bdbdbd", fillOpacity: 1, weight: 0.2, fill: !0 };
         case "#979797":

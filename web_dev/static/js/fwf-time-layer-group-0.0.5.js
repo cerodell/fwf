@@ -188,6 +188,7 @@ function formatPlotDate(e, t, r) {
                     })
                     .then(function (e) {
                         r.addLayer(L.vectorGrid.slicer(e, { minZoom: 2, maxZoom: 18, rendererFactory: L.canvas.tile, vectorTileLayerStyles: { wsp: geo_json_styler_wsp } }).setZIndex(500));
+
                     }),
             "temp" == this._thisVar &&
                 fetch(t, { cache: "default" })

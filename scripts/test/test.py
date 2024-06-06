@@ -14,24 +14,48 @@ import string
 from context import data_dir, wrf_dir
 from datetime import datetime, date, timedelta
 
+import matplotlib.pyplot as plt
+import matplotlib.gridspec as gridspec
+import matplotlib.colors
+
+from matplotlib.colors import LinearSegmentedColormap, BoundaryNorm
+
+
 startTime = datetime.now()
 # import dask
 # from dask.distributed import Client
 # client = Client(memory_limit='20GB',n_workers=3)
 # client.close()
-# ds = salem.open_xr_dataset("/bluesky/fireweather/fwf/data/fwf-data/fwf-daily-d03-2023073106.nc")
+ds = salem.open_xr_dataset("/bluesky/fireweather/fwf/data/fwf-data/fwf-hourly-d02-2024060406.nc")
 
-domain = 'd03'
-doi = pd.Timestamp("2023-11-17")
 
-filein = str(wrf_dir) + f'/{doi.strftime("%Y%m%d00")}/'
-startTime = datetime.now()
-print("begin readwrf: ", str(startTime))
-pathlist = sorted(Path(filein).glob(f"wrfout_{domain}_*00"))
-if domain == "d02":
-    pathlist = pathlist[6:61]
-else:
-    pathlist = pathlist[6:]
+
+
+frp_i = ds.isel(time=18)
+
+fig = plt.figure(figsize=(12, 8))
+ax = fig.add_subplot(1, 1, 1)
+var = "FRP"
+# vmin, vmax = cmaps[var]["vmin"], cmaps[var]["vmax"]
+# levels = cmaps[var]["levels"]
+vmin, vmax = 0, 3000
+levels = [0,15,50,100,150,200,250,300,400,500,600,700,1000,1400,1800,2200,2500,3000]
+# title, colors = str(cmaps[var]["title"]), cmaps[var]["colors"]
+# custom_cmap = LinearSegmentedColormap.from_list(
+#     "custom_cmap", [matplotlib.colors.hex2color(color) for color in colors]
+# )
+colors = np.vstack(
+    ([1, 1, 1, 1], plt.get_cmap("inferno")(np.linspace(0, 1, 256)))
+)  # Add white at the start
+custom_cmap = LinearSegmentedColormap.from_list("custom_YlOrRd", colors)
+
+custom_cmap = LinearSegmentedColormap.from_list('custom_cmap', ['#FFFFFF','#FFFF32', '#db6400', '#9f0000'])
+
+
+norm = BoundaryNorm(levels, custom_cmap.N)
+frp_i[var].attrs["units"] = ""
+frp_i[var].salem.quick_map(cmap=custom_cmap, ax=ax, norm=norm,extend='max')
+ax.set_title(f"Fire Radiative Power (MW) \n")
 
 
 # model = "wrf"

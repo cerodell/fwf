@@ -79,3 +79,4 @@ ln -sv ../../data/fwf-hourly-d03-$(date '+%Y%m%d06').nc
 echo "$(date) ---> symlinks to nc files created"
 
 # cp -r /bluesky/archive/fireweather/forecasts/current/data /bluesky/fireweather/fwf/web_dev/
+cp -r /bluesky/archive/fireweather/forecasts/2024060400/data/map/frp-merge-* /bluesky/fireweather/fwf/web_dev/data/map/
