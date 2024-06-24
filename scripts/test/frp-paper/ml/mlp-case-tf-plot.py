@@ -43,10 +43,10 @@ warnings.simplefilter(action="ignore", category=RuntimeWarning)
 import numpy as np
 
 
-ID = 26415153  # 25407482 (2022) 25485086 (2022) 24448308 (2021) 24360611 (2021) 24450415 (2021) 26695902 (2023)
-year = "2023"
-mlp_test_case = "MLP_64U-Dense_64U-Dense_1U-Dense"
-method = "averaged-v2"
+ID = 24448308  # 25407482 (2022) 25485086 (2022) 24448308 (2021) 24360611 (2021) 24450415 (2021) 26695902 (2023)
+year = "2021"
+mlp_test_case = "MLP_64U-Dense_64U-Dense_2U-Dense"
+method = "averaged-v5"
 ml_pack = "tf"
 plot_method = "mean"
 persist = False
@@ -67,9 +67,9 @@ jj = firep_df[firep_df["id"] == ID].index[0]
 fire_i = firep_df.iloc[jj : jj + 1]
 
 # %%
-ds = xr.open_dataset(f'/Volumes/ThunderBay/CRodell/fires/v2/{config["year"]}-{ID}.nc')
+ds = xr.open_dataset(f'/Volumes/ThunderBay/CRodell/fires/v3/{config["year"]}-{ID}.nc')
 
 
-ds["MODELED_FRP"] = xr.where(ds["FRP"] == 0, 0, ds["MODELED_FRP"])
+# ds["MODELED_FRP"] = xr.where(ds["FRP"] == 0, 0, ds["MODELED_FRP"])
 
 plot_fire(fire_i, ds, persist, dt, save_dir, "mean")

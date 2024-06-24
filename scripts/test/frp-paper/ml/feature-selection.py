@@ -39,45 +39,82 @@ save_dir = Path(str(data_dir) + "/images/rave/mlp/features/")
 save_dir.mkdir(parents=True, exist_ok=True)
 # Configuration parameters
 config = dict(
-    method="averaged-v2",
-    keep_vars=[
+    method="averaged-v5",
+    feature_vars=[
+        "FRP",
+        "FRE",
+        "R",
+        # "NISI",
         "Live_Wood",
         "Dead_Wood",
         "Live_Leaf",
         "Dead_Foliage",
-        "R_hour_sin",
-        "R_hour_cos",
-        "R_lat_sin",
-        "R_lat_cos",
-        "R_lon_sin",
-        "R_lon_cos",
-        "U_lat_sin",
-        "U_lat_cos",
-        "U_lon_sin",
-        "U_lon_cos",
+        "R-hour_sin-Live_Wood",
+        "R-hour_cos",
+        # "R-lat_sin",
+        # "R-lat_cos",
+        # "R-lon_sin",
+        # "R-lon_cos",
+        # "U-lat_sin",
+        # "U-lat_cos",
+        # "U-lon_sin",
+        # "U-lon_cos",
     ],
     scaler_type="standard",  ##robust or standard minmax
     transform=False,
-    min_fire_size=1000,
+    min_fire_size=0,
     package="tf",
     model_type="MLP",
     main_cases=True,
     shuffle_data=True,
     feature_engineer=True,
 )
-config["n_features"] = len(config["keep_vars"])
+# config["n_features"] = len(config["keep_vars"])
 
 
 mlD = MLDATA(config=config)
 df = mlD.open_ml_ds()
 
+# dfs = df
+# feature_names=[
+#     # "Live_Wood",
+#     # "Dead_Wood",
+#     # "Live_Leaf",
+#     # "Dead_Foliage",
+#     "R-hour_sin-Live_Wood",
+#     "R-hour_cos-Live_Wood"
+#     # "R-lat_sin",
+#     # "R-lat_cos",
+#     # "R-lon_sin",
+#     # "R-lon_cos",
+#     # "U-lat_sin",
+#     # "U-lat_cos",
+#     # "U-lon_sin",
+#     # "U-lon_cos",
+# ]
 
-# df_test = df[df['Live_Wood']<0.01]
-plt.scatter(df["R_hour_sin"] * df["Live_Leaf"], df["FRP"])
-plt.scatter(df["R_hour_sin_Live_Wood"], df["R_hour_cos_Live_Wood"])
+
+# for feature in feature_names:
+#     # Split the feature name to identify the components
+#     components = feature.split('-')
+
+#     components_array  =[]
+#     for comp in components:
+#         components_array.append(dfs[comp].values)
+
+#     # Assign the new feature to the dataset
+#     dfs[feature] = np.prod(components_array, axis = 0)
+
+# test = dfs[feature].values
+# test2 = dfs['R'].values * dfs['hour_cos'].values * dfs['Live_Wood'].values
+
+
+# # df_test = df[df['Live_Wood']<0.01]
+# plt.scatter(df["R-hour_sin"] * df["Live_Leaf"], df["FRP"])
+# plt.scatter(df["R-hour_sin_Live_Wood"], df["R-hour_cos_Live_Wood"])
 
 y = df["FRP"]
-X = df[config["keep_vars"]]
+df = df[config["keep_vars"]]
 
 # %%
 if cor_test == True:
@@ -97,12 +134,12 @@ if cor_test == True:
     )
 
 
-if dist_test == True:
-    plt.figure(figsize=(20, 20))
-    sns.pairplot(df, diag_kind="kde")
-    plt.savefig(
-        str(save_dir) + "/distributions.png", dpi=300, format="png", bbox_inches="tight"
-    )
+# if dist_test == True:
+#     plt.figure(figsize=(20, 20))
+#     sns.pairplot(df, diag_kind="kde")
+#     plt.savefig(
+#         str(save_dir) + "/distributions.png", dpi=300, format="png", bbox_inches="tight"
+#     )
 
 
 # # %%

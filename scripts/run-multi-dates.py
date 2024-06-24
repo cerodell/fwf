@@ -32,23 +32,23 @@ warnings.filterwarnings("ignore", category=RuntimeWarning)
 warnings.filterwarnings("ignore", category=UserWarning)
 # date_range = pd.date_range("1990-01-01", "1990-01-01")
 # date_range = pd.date_range("2023-05-13", "2023-05-18")
-date_range = pd.date_range("2023-05-15", "2023-05-15")
-# date_range = pd.date_range("2004-01-01", "2004-01-02")
+# date_range = pd.date_range("2023-05-15", "2023-05-15")
+date_range = pd.date_range("2006-01-06", "2007-01-01")
 # date_range = pd.date_range("2018-01-02", "2019-07-01")
 
 config = dict(
-    model="wrf",
-    domain="d02",
-    trail_name="04",
+    model="adda",
+    domain="d01",
+    trail_name="01",
     initialize=False,
     initialize_hffmc=True,
     overwinter=False,
-    fbp_mode=False,
-    frp_mode=True,
+    # fbp_mode=True,
+    # frp_mode=True,
     correctbias=False,
     reanalysis_mode=False,
     parallel=False,
-    file_formate="netcdf",
+    file_formate="zarr",
 )
 
 if config["model"] == "eccc":
@@ -64,7 +64,7 @@ elif config["model"] == "wrf":
     else:
         config["root_dir"] = "/Volumes/Scratch/fwf-data"
 elif config["model"] == "adda":
-    config["root_dir"] = "/Volumes/ThunderBay/CRodell/ADDA_V2/"
+    config["root_dir"] = "/Volumes/WFRT-Ext20/ADDA_V2/"
 else:
     raise ValueError(
         "YIKES! Sorry this model is not supported yet, you'll need to run /tools/build-static-ds.py"

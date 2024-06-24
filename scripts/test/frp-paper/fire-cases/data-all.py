@@ -12,6 +12,7 @@ import gc
 import numpy as np
 import pandas as pd
 import xarray as xr
+import dask.array as da
 from datetime import datetime
 
 from utils.rave import RAVE
@@ -24,11 +25,12 @@ from context import data_dir
 import warnings
 
 # Suppress runtime warnings
-warnings.filterwarnings("ignore", category=RuntimeWarning)
+# warnings.filterwarnings("ignore", category=RuntimeWarning)
 
+warnings.filterwarnings("ignore")
 
-years = ["2023", "2022", "2021"]
-# years = ["2021", "2022", "2023"]
+# years = ["2023"]
+years = ["2021", "2022", "2023"]
 
 # from dask.distributed import LocalCluster, Client
 
@@ -87,40 +89,51 @@ def add_index(ds, rave_roi):
 
 
 def create_case_ds(config, fire_i, file_dir):
-    FIREloopTime = datetime.now()
-    fire_ID = int(fire_i["id"].values[0])
-    print(f"Start {fire_ID}")
-    config.update(
-        date_range=[
-            fire_i["initialdat"].to_list()[0],
-            fire_i["finaldate"].to_list()[0],
-        ],
-        fire_i=fire_i,
-    )
-    print(f"{i}/{file_len}")
-
     try:
+        # fire_i["finaldate"] = (pd.Timestamp(fire_i["finaldate"].to_list()[0]) + pd.Timedelta(1, 'day')).strftime('%Y-%m-%d')
+        # fire_i["initialdat"] = (pd.Timestamp(fire_i["initialdat"].to_list()[0]) - pd.Timedelta(1, 'day')).strftime('%Y-%m-%d')
+        FIREloopTime = datetime.now()
+        fire_ID = int(fire_i["id"].values[0])
+        print(f"Start {fire_ID}")
+        config.update(
+            date_range=[
+                fire_i["initialdat"].to_list()[0],
+                fire_i["finaldate"].to_list()[0],
+            ],
+            fire_i=fire_i,
+        )
+        print(f"{i}/{file_len}")
+        # try:
         rave = RAVE(config=config)
-        rave_ds = rave.open_rave(var_list=["FRP_MEAN", "PM25"])
+        rave_ds = rave.open_rave(var_list=["FRP_MEAN", "PM25", "FRE", "FRP_SD", "QA"])
 
-        fwx = FWX(config=config)
-        fwx_ds = fwx.open_fwx()
-
-        viirs = VIIRS(config=config)
-        ndvi_ds = viirs.open_ndvi()
-        lai_ds = viirs.open_lai()
         ### Subset the datasets for the region of interest (ROI) and compute the result
         rave_roi = rave_ds.salem.subset(shape=fire_i, margin=1, all_touched=True)
 
-        rave_roi = rave_roi.salem.roi(shape=fire_i, all_touched=True).compute()
-        if np.all(np.isnan(rave_roi["FRP_MEAN"].values)) == True:
+        rave_roi = rave_roi.salem.roi(shape=fire_i, all_touched=True)
+        rave_roi = xr.where(rave_roi == 0, np.nan, rave_roi).rename({"FRP_MEAN": "FRP"})
+        if rave_roi["FRP"].isnull().all().compute().values == True:
             print(f"NO FRP FOR: {fire_ID}")
+            bashComand = "rm -rf " + file_dir
+            os.system(bashComand)
+            bashComand = "rm -rf /Volumes/ThunderBay/CRodell/fires/._*"
+            os.system(bashComand)
+            del rave
+            del rave_ds
+            del rave_roi
+            del fire_i
+            gc.collect()
+
         else:
             print(f"HAS FRP FOR: {fire_ID}")
-            # static_roi = static_ds.salem.subset(shape=fire_i, margin=10, all_touched=True)
-            # static_roi = static_roi.salem.roi(shape=fire_i, all_touched=True).drop_vars(['time', 'xtime'])
-            # rave_roi = rave_roi.compute()
-            # static_roi = add_index(static_roi, rave_roi)
+
+            fwx = FWX(config=config)
+            fwx_ds = fwx.open_fwx()
+
+            viirs = VIIRS(config=config)
+            ndvi_ds = viirs.open_ndvi()
+            lai_ds = viirs.open_lai()
+
             fwx_roi = tranform_ds(fwx_ds, rave_roi, fire_i, margin=2)
             ndvi_roi = re_index_ds(
                 tranform_ds(ndvi_ds["NDVI"], rave_roi, fire_i, margin=10), rave_roi
@@ -129,18 +142,9 @@ def create_case_ds(config, fire_i, file_dir):
                 tranform_ds(lai_ds["LAI"], rave_roi, fire_i, margin=20), rave_roi
             )
 
-            # fwx_roi = xr.where(fwx_roi<0, 0, fwx_roi)
             lai_roi = xr.where(lai_roi < 0, 0, lai_roi)
             ndvi_roi = xr.where(ndvi_roi < -1, -1, ndvi_roi)
             ndvi_roi = xr.where(ndvi_roi > 1, 1, ndvi_roi)
-
-            # # static_roi = xr.where(rave_roi == 0, np.nan, static_roi)
-            # fwx_roi = xr.where(rave_roi == 0, np.nan, fwx_roi).rename('FWI')
-            # ndvi_roi = xr.where(rave_roi == 0, np.nan, ndvi_roi).rename('NDVI')
-            # lai_roi = xr.where(rave_roi == 0, np.nan, lai_roi).rename('LAI')
-            rave_roi = xr.where(rave_roi == 0, np.nan, rave_roi).rename(
-                {"FRP_MEAN": "FRP"}
-            )
 
             first_valid_index = (
                 rave_roi["FRP"]
@@ -149,15 +153,15 @@ def create_case_ds(config, fire_i, file_dir):
                 .argmax("time")
             )
 
-            # final_ds = static_roi
-            # final_ds['FWI'] = fwx_roi
             final_ds = fwx_roi  # .rename({'S':'FWI', 'F': 'FFMC'})
             final_ds["NDVI"] = ndvi_roi.rename("NDVI")
             final_ds["LAI"] = lai_roi.rename("LAI")
-            for var in rave_roi:
+            for var in list(rave_roi):
                 final_ds[var] = rave_roi[var]
+                print(f"add {var}")
 
             final_ds = final_ds.isel(time=slice(first_valid_index.values, None))
+
             final_ds.attrs = {
                 "area_ha": str(fire_i["area_ha"].values[0]),
                 "initialdat": str(fire_i["initialdat"].values[0]),
@@ -176,10 +180,27 @@ def create_case_ds(config, fire_i, file_dir):
             # encoding = {x: {"compressor": zarr_compressor} for x in final_ds}
             # print(f"WRITING AT: {datetime.now()}")
             # final_ds.to_zarr(file_dir, encoding=encoding, mode="w")
-            final_ds, encoding = compressor(final_ds)
+            # final_ds, encoding = compressor(final_ds)
             print(f"WRITING AT: {datetime.now()}")
-            final_ds.to_netcdf(file_dir, encoding=encoding, mode="w")
+            final_ds = final_ds.compute()
+            final_ds.to_netcdf(file_dir, mode="w")
             print(f"Wrote: {file_dir}")
+
+            # try:
+            #     # Attempt to save using the default engine
+            #     final_ds.to_netcdf(file_dir, mode="w")
+            #     print(f"Dataset successfully saved to {file_dir}")
+            #     print(f"FIRE {fire_ID} run time: {datetime.now() - FIREloopTime}")
+            # except Exception as e:
+            #     print(f"Failed to save dataset: {e}")
+
+            #     # Try saving with a different engine
+            #     try:
+            #         final_ds.to_netcdf(file_dir, mode="w", engine='h5netcdf')
+            #         print(f"Dataset successfully saved to {file_dir} using h5netcdf engine")
+            #         print(f"FIRE {fire_ID} run time: {datetime.now() - FIREloopTime}")
+            #     except Exception as e2:
+            #         print(f"Failed to save dataset with h5netcdf engine: {e2}")
 
             del rave
             del fwx
@@ -201,8 +222,8 @@ def create_case_ds(config, fire_i, file_dir):
             print(f"FIRE {fire_ID} run time: {datetime.now() - FIREloopTime}")
 
     except:
-        # raise ValueError("BAD")
         print(f"FAILED: {fire_ID}")
+
     return
 
 
@@ -221,6 +242,7 @@ for year in years:
     firep_df = firep.open_firep()
     file_len = len(firep_df)
     for i in range(file_len):
+        print(i)
         fire_i = firep_df.iloc[i : i + 1]
         file_dir = (
             "/Volumes/ThunderBay/CRodell/fires/"
@@ -229,32 +251,40 @@ for year in years:
             + str(int(fire_i["id"].values[0]))
             + ".nc"
         )
-        if os.path.isdir(file_dir) == True:
+        if os.path.isfile(file_dir) == True:
             print("TESTING FILE")
             try:
                 ds = xr.open_dataset(file_dir)
-                if (
-                    (np.all(np.isnan(ds["NDVI"].values)) == False)
-                    | (np.all(np.isnan(ds["LAI"].values)) == False)
-                    | (np.all(np.isnan(ds["FRP"].values)) == False)
+                if np.all(np.isnan(ds["FRP"].values) == False) | (
+                    np.nanmax(ds["FRP"].values) > 0.0
                 ):
+                    print(np.nanmax(ds["FRP"].values))
                     print(
                         year
                         + "-"
-                        + str(fire_i["id"].values[0])
+                        + str(int(fire_i["id"].values[0]))
                         + ".nc"
                         + " Is a valid file"
                     )
                 else:
-                    print("FAILED FILE TEST")
+                    ds.close()
+                    print("FILE IS BAD CREATE IT")
+                    bashComand = "rm -rf " + file_dir
+                    os.system(bashComand)
+                    bashComand = "rm -rf /Volumes/ThunderBay/CRodell/fires/._*"
+                    os.system(bashComand)
+                    print("FAILED FILE TEST TRYING TO CREATE")
                     create_case_ds(config, fire_i, file_dir)
             except:
-                ("FILE IS BAD CREATE IT")
+                print("FILE IS BAD CREATE IT")
                 bashComand = "rm -rf " + file_dir
                 os.system(bashComand)
                 bashComand = "rm -rf /Volumes/ThunderBay/CRodell/fires/._*"
                 os.system(bashComand)
                 create_case_ds(config, fire_i, file_dir)
         else:
-            ("NO FILE WILL CREATE IT")
+            print("NO FILE WILL CREATE IT")
             create_case_ds(config, fire_i, file_dir)
+
+        # del fire_i
+        # gc.collect()

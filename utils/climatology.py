@@ -11,11 +11,11 @@ from datetime import datetime
 from context import root_dir
 
 
-def get_daily_files(fwf, method, start, stop):
+def get_daily_files(fwf, method, start, stop, domain, model):
     if fwf == True:
         ## get all fwf data derived from era5-land
         pathlist = sorted(
-            Path("/Volumes/WFRT-Ext23/fwf-data/ecmwf/era5-land/04/").glob(
+            Path(f"/Volumes/WFRT-Ext24/fwf-data/{model}/{domain}/04/").glob(
                 f"fwf-{method}*"
             )
         )
@@ -35,7 +35,6 @@ def get_daily_files(fwf, method, start, stop):
 
         pathlist = sorted(daily_files)
         x, y = "longitude", "latitude"
-
     date_range = pd.date_range(str(pathlist[0])[-13:-5], str(pathlist[-1])[-13:-5])
     pathlist = pathlist[
         int(np.where(date_range == start)[0][0]) : int(
@@ -55,38 +54,57 @@ def get_daily_files(fwf, method, start, stop):
 #     return x.groupby("time.hour").mean(dim="time", engine='flox',method='cohorts', skipna = False)
 
 
-def hour_qunt(x):
-    """
-    function groups time to hourly and solves hourly mean
-
-    """
-    return x.groupby("time.hour").std(
-        dim="time", engine="flox", method="cohorts", skipna=False
-    )
-
-
 # def hour_qunt(x):
 #     """
 #     function groups time to hourly and solves hourly mean
 
 #     """
-#     # x = rechunk(x)
-#     x = x.chunk({"time": -1})
-#     return x.groupby("time.hour").quantile(
-#         [0, 0.25, 0.5, 0.75, 0.9, 0.95, 0.99, 1],
-#         dim="time",
-#         skipna=False,
+#     return x.groupby("time.hour").std(
+#         dim="time", engine="flox", method="cohorts", skipna=False
 #     )
 
 
-def open_ds(path, var, x, y):
-    ds = (
-        xr.open_dataset(path)[var]
-        .drop(["XLAT", "XLONG"])
-        .chunk(chunks={y: 237, x: 517})
+def hour_qunt(x):
+    """
+    function groups time to hourly and solves hourly mean
+
+    """
+    # x = rechunk(x)
+    x = x.chunk({"time": -1})
+    return x.groupby("time.hour").quantile(
+        [0, 0.99, 1],
+        dim="time",
+        skipna=False,
     )
-    ds["time"] = ds["Time"]
-    ds = ds.drop(["Time"])
+
+
+def open_ds(path, var, x, y):
+    try:
+        ds = (
+            xr.open_dataset(path)[var]
+            .drop(["XLAT", "XLONG"])
+            .chunk("auto")
+            # .chunk(chunks={y: 237, x: 517})
+        )
+    except:
+        print("NO max in daily")
+        print(path)
+        ds = (
+            xr.open_dataset(path)
+            .rename({"R": var})[var]
+            .drop(["XLAT", "XLONG"])
+            .chunk("auto")
+            # .chunk(chunks={y: 237, x: 517})
+        )
+    try:
+        ds["time"] = ds["Time"]
+    except:
+        ds["time"] = [ds["Time"].values]
+    ds = ds.drop_vars("Time")
+    try:
+        ds = ds.drop_vars("XTIME")
+    except:
+        pass
     return ds
 
 

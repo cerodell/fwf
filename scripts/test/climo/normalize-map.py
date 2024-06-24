@@ -48,16 +48,16 @@ fwf_ds = salem.open_xr_dataset(
     var
 ]  # .isel(time=slice(0,24))
 
-try:
-    wrf_ds = salem.open_xr_dataset(
-        f"/Volumes/Scratch/fwf-data/wrf/{domain}/{doi.strftime('%Y%m')}/fwf-hourly-{domain}-{doi.strftime('%Y%m%d06')}.nc"
-    )  # .isel(time=slice(0,24))
-except:
-    wrf_ds = salem.open_xr_dataset(
-        f"/Volumes/WFRT-Ext23/fwf-data/wrf/{domain}/{doi.strftime('%Y%m')}/fwf-hourly-{domain}-{doi.strftime('%Y%m%d06')}.nc"
-    )  # .isel(time=slice(0,24))
+# try:
+#     wrf_ds = salem.open_xr_dataset(
+#         f"/Volumes/Scratch/fwf-data/wrf/{domain}/{doi.strftime('%Y%m')}/fwf-hourly-{domain}-{doi.strftime('%Y%m%d06')}.nc"
+#     )  # .isel(time=slice(0,24))
+# except:
+#     wrf_ds = salem.open_xr_dataset(
+#         f"/Volumes/WFRT-Ext23/fwf-data/wrf/{domain}/{doi.strftime('%Y%m')}/fwf-hourly-{domain}-{doi.strftime('%Y%m%d06')}.nc"
+#     )  # .isel(time=slice(0,24))
 
-fwf_ds = fwf_ds.where(wrf_ds["SNOWC"].values < 0.5, 0)
+# fwf_ds = fwf_ds.where(wrf_ds["SNOWC"].values < 0.5, 0)
 
 ### Open color map json
 with open(str(root_dir) + "/json/colormaps-dev.json") as f:
@@ -91,6 +91,7 @@ hours = xr.DataArray(date_range.hour, dims="time", coords=dict(time=date_range))
 #     .isel(hour=hours)
 # )
 maxS = climo_ds.sel(dayofyear=dayofyear, hour=hours, quantile=1)
+maxS = xr.where(maxS < 1, 1, maxS)
 minS = climo_ds.sel(dayofyear=dayofyear, hour=hours, quantile=0)
 
 # fig = plt.figure(figsize=(14, 8))
@@ -155,12 +156,12 @@ if save_fig == True:
     plt.savefig(str(data_dir) + f"/images/norm/{var}-sub-{doi.strftime('%Y%m%d')}-test")
 
 
-### Open color map json
-with open(str(root_dir) + "/json/colormaps-dev.json") as f:
-    cmaps = json.load(f)
+# ### Open color map json
+# with open(str(root_dir) + "/json/colormaps-dev.json") as f:
+#     cmaps = json.load(f)
 
 
-cmap = cmaps[var]["colors"]
-levels = cmaps[var]["levels"][:-1]
-vmin = cmaps[var]["vmin"]
-vmax = cmaps[var]["vmax"]
+# cmap = cmaps[var]["colors"]
+# levels = cmaps[var]["levels"][:-1]
+# vmin = cmaps[var]["vmin"]
+# vmax = cmaps[var]["vmax"]

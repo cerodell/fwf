@@ -38,61 +38,58 @@ startTime = datetime.now()
 
 # Configuration parameters
 config = dict(
-    method="averaged-v2",
-    keep_vars=[
-        # "R",
-        # "U",
-        # "S",
-        "R_hour_sin_Live_Wood",
-        "R_hour_cos_Live_Wood",
-        "R_hour_sin_Dead_Wood",
-        "R_hour_cos_Dead_Wood",
-        "R_hour_sin_Live_Leaf",
-        "R_hour_cos_Live_Leaf",
-        "R_hour_sin_Dead_Foliage",
-        "R_hour_cos_Dead_Foliage",
-        # "U_Live_Wood",
-        # "U_Dead_Wood",
-        # "U_Live_Leaf",
-        # "F_Dead_Foliage",
-        # "F_Dead_Foliage",
-        # "R_hour_sin",
-        # "R_hour_cos",
-        # "R_lat_sin",
-        # "R_lat_cos",
-        # "R_lon_sin",
-        # "R_lon_cos",
-        # "U_lat_sin_total_fuel",
-        # "U_lat_cos_total_fuel",
-        # "U_lon_sin_total_fuel",
-        # "U_lon_cos_total_fuel",
-        "U_lat_sin_Live_Wood",
-        "U_lat_cos_Live_Wood",
-        "U_lon_sin_Live_Wood",
-        "U_lon_cos_Live_Wood",
-        "U_lat_sin_Dead_Wood",
-        "U_lat_cos_Dead_Wood",
-        "U_lon_sin_Dead_Wood",
-        "U_lon_cos_Dead_Wood",
-        "F_lat_sin_Live_Leaf",
-        "F_lat_cos_Live_Leaf",
-        "F_lon_sin_Live_Leaf",
-        "F_lon_cos_Live_Leaf",
-        "F_lat_sin_Dead_Foliage",
-        "F_lat_cos_Dead_Foliage",
-        "F_lon_sin_Dead_Foliage",
-        "F_lon_cos_Dead_Foliage",
+    method="averaged-v5",
+    years=["2021", "2022", "2023"],
+    feature_vars=[
+        # "SAZ_sin-hour_sin-Total_Fuel_Load",
+        # "SAZ_cos-hour_sin-Total_Fuel_Load",
+        # "S-hour_sin-lat_cos-Total_Fuel_Load",
+        # "S-hour_cos-lat_cos-Total_Fuel_Load",
+        # "S-hour_sin-lat_sin-Total_Fuel_Load",
+        # "S-hour_cos-lat_sin-Total_Fuel_Load",
+        # "S-hour_sin-lon_cos-Total_Fuel_Load",
+        # "S-hour_cos-lon_cos-Total_Fuel_Load",
+        # "S-hour_sin-lon_sin-Total_Fuel_Load",
+        # "S-hour_cos-lon_sin-Total_Fuel_Load",
+        "R-hour_sin-Live_Wood",
+        "R-hour_cos-Live_Wood",
+        "R-hour_sin-Dead_Wood",
+        "R-hour_cos-Dead_Wood",
+        "R-hour_sin-Live_Leaf",
+        "R-hour_cos-Live_Leaf",
+        "R-hour_sin-Dead_Foliage",
+        "R-hour_cos-Dead_Foliage",
+        "U-lat_sin-Live_Wood",
+        "U-lat_cos-Live_Wood",
+        "U-lon_sin-Live_Wood",
+        "U-lon_cos-Live_Wood",
+        "U-lat_sin-Dead_Wood",
+        "U-lat_cos-Dead_Wood",
+        "U-lon_sin-Dead_Wood",
+        "U-lon_cos-Dead_Wood",
+        "U-lat_sin-Live_Leaf",
+        "U-lat_cos-Live_Leaf",
+        "U-lon_sin-Live_Leaf",
+        "U-lon_cos-Live_Leaf",
+        "U-lat_sin-Dead_Foliage",
+        "U-lat_cos-Dead_Foliage",
+        "U-lon_sin-Dead_Foliage",
+        "U-lon_cos-Dead_Foliage",
     ],
-    scaler_type="standard",  ##robust or standard minmax
-    transform=False,
-    min_fire_size=1000,
+    target_vars=["FRP", "FRE"],
+    feature_scaler_type="standard",  ##robust or standard minmax
+    target_scaler_type=None,  ##robust or standard minmax
+    transform=True,
     package="tf",
     model_type="MLP",
     main_cases=True,
     shuffle_data=True,
     feature_engineer=True,
+    min_fire_size=1000,  ## hectors,
+    filter_std=False,
 )
-config["n_features"] = len(config["keep_vars"])
+config["n_features"] = len(config["feature_vars"])
+config["n_targets"] = len(config["target_vars"])
 
 ## Initialize MLP model and load dataset
 mlD = MLDATA(config)
@@ -105,10 +102,10 @@ model = Sequential(
         Dense(64, activation="relu"),
         # Dropout(0.2),
         # Dense(64, activation="relu"),
-        # # Dropout(0.2),
+        # Dropout(0.2),
         # Dense(64, activation="relu"),
         # # Dropout(0.2),
-        Dense(1, activation="relu"),  # Output layer
+        Dense(config["n_targets"], activation="relu"),  # Output layer
     ]
 )
 
@@ -118,7 +115,7 @@ model.compile(optimizer=Adam(learning_rate=0.001), loss="log_cosh")
 # Prepare directory to save model output and active logging script
 make_dir = (
     Path(data_dir)
-    / f"{config['model_type'].lower()}/{config['package'].lower()}/{config['method']}/"
+    / f"{config['model_type'].lower()}/{config['package'].lower()}/{config['method']}/{'_'.join(config['target_vars'])}/"
 )
 make_dir.mkdir(parents=True, exist_ok=True)
 save_dir, logger = create_model_directory(
@@ -154,7 +151,7 @@ model.fit(
 
 ## Predict using the trained model
 y_out_this_nhn = model.predict(X_test)
-y_out_this_nhn = y_out_this_nhn.ravel()
+
 
 ## Save model
 mlD.save_model(model, y_out_this_nhn, save_dir, logger)
@@ -163,25 +160,5 @@ mlD.save_model(model, y_out_this_nhn, save_dir, logger)
 logger.info("Total Run Time: %s", datetime.now() - startTime)
 print("-----------------------------------------------------")
 
-if config["transform"] == True:
-    print(f'transform: {config["transform"]}')
-    y_out_this_nhn = np.expm1(y_out_this_nhn)
-    y_test = np.expm1(y_test)
 
-
-mbe, rmse = str(np.round(MBE(y_test.values, y_out_this_nhn), 2)), np.round(
-    RMSE(y_test.values, y_out_this_nhn), 2
-)
-r2, r = np.round(r2_score(y_test.values, y_out_this_nhn), 2), np.round(
-    stats.pearsonr(y_test.values, y_out_this_nhn)[0], 2
-)
-
-
-fig = plt.figure()
-ax = fig.add_subplot(1, 1, 1)
-ax.scatter(y_out_this_nhn, y_test.values, color="tab:red", s=15)
-ax.set_xlabel("Modeled FRP (MW)")
-ax.set_ylabel("Observed FRP (MW)")
-ax.set_title(f"MBE: {mbe}   RMSE: {rmse}   r2: {r2}   r: {r}")
-ax.axline((0, 0), slope=1, color="k", linestyle="--", lw=0.5)
-fig.savefig(str(save_dir) + "/scatter.png")
+print(config)

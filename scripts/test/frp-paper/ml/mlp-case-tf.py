@@ -46,11 +46,11 @@ import numpy as np
 startFWX = datetime.now()
 
 
-all_fire = True
-ID = 26695902  # 25407482 (2022) 25485086 (2022) 24448308 (2021) 24360611 (2021) 24450415 (2021) 26695902 (2023) 26414629 (2023)
-year = "2023"
-mlp_test_case = "MLP_64U-Dense_64U-Dense_1U-Dense"
-method = "averaged-v2"
+all_fire = False
+ID = 24360611  # 25407482 (2022) 25485086 (2022) 24448308 (2021) 24360611 (2021) 24450415 (2021) 26695902 (2023) 26414629 (2023)
+year = "2021"
+mlp_test_case = "MLP_64U-Dense_64U-Dense_2U-Dense"
+method = "averaged-v5"
 ml_pack = "tf"
 plot_method = "mean"
 persist = False
@@ -65,7 +65,7 @@ def predict_frp(config):
     jj = firep_df[firep_df["id"] == ID].index[0]
     fire_i = firep_df.iloc[jj : jj + 1]
 
-    ds = xr.open_zarr(f"/Volumes/WFRT-Ext23/fire/full/{year}-{ID}.zarr")
+    ds = xr.open_dataset(f"/Volumes/ThunderBay/CRodell/fires/{year}-{ID}.nc")
     ds_og = ds
     ds_attrs = ds.attrs
     ds_attrs["pyproj_srs"] = ds["S"].attrs["pyproj_srs"]
@@ -82,9 +82,9 @@ def predict_frp(config):
     #     zero_full[i] = times_full
 
     df_dict = {}
-    # print(config["features_used"])
+    # print(config["feature_vars"])
 
-    for key in config["features_used"]:
+    for key in config["feature_vars"]:
         try:
             df_dict[key] = np.ravel(ds[key].values)
         except KeyError:
@@ -92,10 +92,10 @@ def predict_frp(config):
 
     df = pd.DataFrame(df_dict)
 
-    X = df[config["features_used"]]
+    X = df[config["feature_vars"]]
 
     # Load the scaler
-    scaler = joblib.load(f"{model_dir}/scaler.joblib")
+    scaler = joblib.load(f"{model_dir}/feature-scaler.joblib")
     X_new_scaled = scaler.transform(X)
 
     # Load the model
@@ -103,33 +103,46 @@ def predict_frp(config):
 
     startFRP = datetime.now()
     # print("Start prediction:", startFRP)
-    FRP = model(X_new_scaled)
-    FRP_FULL = FRP.numpy().ravel().reshape(shape)
+    y_out_this_nhn = model(X_new_scaled).numpy()
+    # if config['target_scaler_type'] != None:
+    #     y_out_this_nhn = target_scaler.inverse_transform(y_out_this_nhn)
+    if config["transform"] == "True":
+        y_out_this_nhn = np.expm1(y_out_this_nhn)
+
+    FRP_FULL = y_out_this_nhn[:, 0].ravel().reshape(shape)
+    FRE_FULL = y_out_this_nhn[:, 1].ravel().reshape(shape)
     FRPend = datetime.now() - startFRP
     print("Time to predict FRP: ", FRPend)
     ds["MODELED_FRP"] = (("time", "y", "x"), FRP_FULL)
+    ds["MODELED_FRE"] = (("time", "y", "x"), FRE_FULL)
     for var in list(ds):
         if var == "MODELED_FRP":
             ds[var].attrs = {
-                "description": "MODELED FIRE RADIATIVE POWER",
+                "description": "MEAN FIRE RADIATIVE POWER",
                 "pyproj_srs": ds_attrs["pyproj_srs"],
                 "units": "(MW)",
+            }
+        elif var == "MODELED_FRE":
+            ds[var].attrs = {
+                "description": "FIRE ENERGY POWER",
+                "pyproj_srs": ds_attrs["pyproj_srs"],
+                "units": "(MJ)",
             }
         else:
             ds[var].attrs = ds_og[var].attrs
     ds.attrs = ds_attrs
-    # print("Time to run FWX: ", datetime.now() - startFWX)
-    # startWRITE = datetime.now()
-    # ds, encoding = compressor(ds)
-    # file_dir = f"/Volumes/ThunderBay/CRodell/fires/v2/{year}-{ID}.nc"
-    # # print(f"WRITING AT: {datetime.now()}")
-    # ds.to_netcdf(file_dir, encoding=encoding, mode="w")
-    # print(f"Wrote: {file_dir}")
-    # print("Time to write: ", datetime.now() - startWRITE)
+    print("Time to run FWX: ", datetime.now() - startFWX)
+    startWRITE = datetime.now()
+    ds, encoding = compressor(ds)
+    file_dir = f"/Volumes/ThunderBay/CRodell/fires/v3/{year}-{ID}.nc"
+    # print(f"WRITING AT: {datetime.now()}")
+    ds.to_netcdf(file_dir, encoding=encoding, mode="w")
+    print(f"Wrote: {file_dir}")
+    print("Time to write: ", datetime.now() - startWRITE)
     return ds, fire_i
 
 
-model_dir = str(data_dir) + f"/mlp/{ml_pack}/{method}/{mlp_test_case}/"
+model_dir = str(data_dir) + f"/mlp/{ml_pack}/{method}/{mlp_test_case}"
 save_dir = model_dir
 with open(f"{model_dir}/config.json", "r") as json_data:
     config = json.load(json_data)
@@ -138,6 +151,7 @@ if all_fire == False:
     config["ID"] = ID
     config["year"] = year
     ds, fire_i = predict_frp(config)
+    plot_fire(fire_i, ds, persist, dt, save_dir, "mean")
 
 elif all_fire == True:
     fire_cases = np.loadtxt(f"{model_dir}/test_cases.txt", delimiter=",")
@@ -147,6 +161,6 @@ elif all_fire == True:
         config["ID"] = int(ids[i])
         config["year"] = years[i]
         ds, fire_i = predict_frp(config)
-        ds["MODELED_FRP"] = xr.where(ds["FRP"] == 0, 0, ds["MODELED_FRP"])
-        plot_fire(fire_i, ds, persist, dt, save_dir, "mean")
+        # ds["MODELED_FRP"] = xr.where(ds["FRP"] == 0, 0, ds["MODELED_FRP"])
+        # plot_fire(fire_i, ds, persist, dt, save_dir, "mean")
         print(ID)

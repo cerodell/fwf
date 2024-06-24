@@ -8,6 +8,10 @@ from pathlib import Path
 from netCDF4 import Dataset
 from wrf import ll_to_xy, xy_to_ll
 
+
+import zarr
+
+
 from context import data_dir, root_dir
 
 __author__ = "Christopher Rodell"

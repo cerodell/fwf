@@ -19,14 +19,16 @@ from context import data_dir
 # TD2_2003-06-19_09.nc
 
 
-doi, model, domain, trial = pd.Timestamp("2004-07-10T22"), "adda", "d01", "01"
-adda_dir = f"/Volumes/WFRT-Ext20/ADDA_V2/TD2/{doi.strftime('%Y')}/"
+doi, model, domain, trial = pd.Timestamp("2006-05-16T04"), "adda", "d01", "01"
+adda_dir = f"/Volumes/WFRT-Ext20/ADDA_V2/{doi.strftime('%Y')}/"
 
 
-td_1 = xr.open_dataset(
-    adda_dir + f"TD2_{(doi-pd.Timedelta(hours=1)).strftime('%Y-%m-%d_%H')}.nc"
-)
-td_1.to_netcdf(adda_dir + f"TD2_{(doi).strftime('%Y-%m-%d_%H')}.nc")
+ds
+
+# td_1 = xr.open_dataset(
+#     adda_dir + f"TD2_{(doi-pd.Timedelta(hours=1)).strftime('%Y-%m-%d_%H')}.nc"
+# )
+# td_1.to_netcdf(adda_dir + f"TD2_{(doi).strftime('%Y-%m-%d_%H')}.nc")
 # for doi in pd.date_range("2004-04-01T00", "2004-04-02T00", freq='h'):
 #   # print(xr.open_dataset(adda_dir + f"TD2_{(doi).strftime('%Y-%m-%d_%H')}.nc").dims)
 #   print((doi).strftime('%Y-%m-%d_%H'))

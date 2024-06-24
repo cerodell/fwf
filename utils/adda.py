@@ -20,7 +20,8 @@ def read_adda(config):
     doi, model, domain = config["doi"], config["model"], config["domain"]
 
     filein = f'/Volumes/WFRT-Ext21/fwf-data/{model}/{domain}/trial/fwf-hourly-{domain}-{doi.strftime("%Y%m%d00")}.nc'
-    adda_dir_all = "/Volumes/ThunderBay/CRodell/ADDA_V2/"
+    # adda_dir_all = "/Volumes/ThunderBay/CRodell/ADDA_V2/"
+    adda_dir_all = "/Volumes/WFRT-Ext20/ADDA_V2/"
     adda_dir_TD2 = "/Volumes/WFRT-Ext20/ADDA_V2/TD2/"
 
     if os.path.isfile(filein) == True:

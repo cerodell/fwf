@@ -12,6 +12,8 @@ import xarray as xr
 from pathlib import Path
 from scipy import stats
 from datetime import datetime
+from scipy.signal import savgol_filter
+import matplotlib.pyplot as plt
 
 from utils.solar_hour import get_solar_hours
 from context import root_dir, data_dir
@@ -19,31 +21,17 @@ import warnings
 
 # Suppress runtime warnings
 warnings.filterwarnings("ignore", category=RuntimeWarning)
-
-
 # https://medium.com/@khadijamahanga/using-latitude-and-longitude-data-in-my-machine-learning-problem-541e2651e08c
 
-# from dask.distributed import LocalCluster, Client
 
-# cluster = LocalCluster(
-#     n_workers=2,
-#     # threads_per_worker=4,
-#     memory_limit="16GB",
-#     processes=False,
-# )
-# client = Client(cluster)
-# print(client)
-## # On workstation
-## http://137.82.23.185:8787/status
-## # On personal
-##  http://10.0.0.88:8787/status
-
+counter = 0
 # year = "2023"
 for year in ["2021", "2022", "2023"]:
-    method = "full"
+    # for year in ["2021"]:
+    # method = "full"
     spatially_averaged = True
-    norm_fwi = False
-    file_list = sorted(Path(f"/Volumes/WFRT-Ext23/fire/{method}").glob(year + "*"))
+    norm_fwi = True
+    file_list = sorted(Path(f"/Volumes/ThunderBay/CRodell/fires/").glob(year + "*"))
     static_ds = salem.open_xr_dataset(
         str(data_dir) + "/static/static-rave-3km.nc"
     ).drop_vars(["time", "xtime"])
@@ -53,6 +41,9 @@ for year in ["2021", "2022", "2023"]:
     lon_cos = np.cos(np.radians(lons))
     lat_sin = np.sin(np.radians(lats))
     lat_cos = np.cos(np.radians(lats))
+
+    static_ds["lats"] = (("y", "x"), lats)
+    static_ds["lons"] = (("y", "x"), lons)
 
     static_ds["lat_sin"] = (("y", "x"), lat_sin)
     static_ds["lat_cos"] = (("y", "x"), lat_cos)
@@ -71,13 +62,24 @@ for year in ["2021", "2022", "2023"]:
 
     if norm_fwi == True:
         print("Normalize FWI")
-        fwi_climo_ds = xr.open_zarr(
-            f"/Volumes/WFRT-Ext23/ecmwf/era5-land/S-hourly-climatology-19910101-20201231-compressed.zarr"
-        )[
-            "S"
-        ]  # .sel(dayofyear=int(doi.strftime("%j")) - 1, hour=int(doi.strftime("%H")))
-        fwi_max = fwi_climo_ds.sel(quantile=1).max("hour")
-        fwi_min = fwi_climo_ds.sel(quantile=0).min("hour")
+
+        # fwi_max = salem.open_xr_dataset('/Volumes/ThunderBay/CRodell/climo/SMAX-rave-3km-climatology-19910101-20201231.zarr')
+        # fwi_min = salem.open_xr_dataset('/Volumes/ThunderBay/CRodell/climo/SMIN-rave-3km-climatology-19910101-20201231.zarr')
+
+        fwi_max = salem.open_xr_dataset(
+            "/Volumes/ThunderBay/CRodell/climo/SMAX-rave-3km-climatology-20210101-20231031.zarr"
+        )
+        fwi_min = 0.01
+        isi_max = salem.open_xr_dataset(
+            "/Volumes/ThunderBay/CRodell/climo/RMAX-rave-3km-climatology-20210101-20231031.zarr"
+        )
+        isi_min = 0.01
+        bui_max = salem.open_xr_dataset(
+            "/Volumes/ThunderBay/CRodell/climo/UMAX-rave-3km-climatology-20210101-20231031.zarr"
+        )
+        bui_min = salem.open_xr_dataset(
+            "/Volumes/ThunderBay/CRodell/climo/UMIN-rave-3km-climatology-20210101-20231031.zarr"
+        )
 
     def add_index(static_roi, fire_ds):
         static_roi = static_roi.expand_dims("time")
@@ -88,67 +90,135 @@ for year in ["2021", "2022", "2023"]:
         return add_index(fire_ds.salem.transform(static_ds, interp="nearest"), fire_ds)
 
     def open_fuels(moi):
-        fuel_dir = f"/Volumes/WFRT-Ext23/fuel-characteristics/fuel-load/"
+        fuel_dir = f"/Volumes/ThunderBay/CRodell/ecmwf/fuel-load/"
         fuels_ds = salem.open_xr_dataset(
             fuel_dir + f'{2021}/CFUEL_timemean_2021{moi.strftime("_%m")}.nc'
         ).sel(lat=slice(75, 20), lon=slice(-170, -50))
         fuels_ds.coords["time"] = moi
         return fuels_ds
 
-    def norm_fwi_ds(ds, fwi_max, fwi_min):
+    # def norm_fwi_ds(ds, fwi_max, fwi_min):
+    #     fwi_date_range = pd.to_datetime(ds.time)
+    #     dayofyear = xr.DataArray(
+    #         fwi_date_range.dayofyear, dims="time", coords=dict(time=fwi_date_range)
+    #     )
+    #     hours = xr.DataArray(
+    #         fwi_date_range.hour, dims="time", coords=dict(time=fwi_date_range)
+    #     )
+    #     fwi_max_roi = fwi_max.sel(
+    #         dayofyear=dayofyear,
+    #         x=ds.x,
+    #         y=ds.y,
+    #     )
+    #     fwi_max_roi = xr.where(fwi_max_roi <= 1, 1, fwi_max_roi)
+
+    #     fwi_min_roi = fwi_min.sel(
+    #         dayofyear=dayofyear,
+    #         x=ds.x,
+    #         y=ds.y,
+    #     )
+    #     fwi_min_roi = xr.where(fwi_min_roi <= 0, 0.01, fwi_min_roi)
+
+    #     norm_fwi = ((ds["S"] - fwi_min_roi) / (fwi_max_roi - fwi_min_roi)).rename({'S':'NFWI'})
+
+    #     if np.all(np.isinf(norm_fwi['NFWI'].values)) == True:
+    #         raise ValueError("STOP!! NFWI is INF!")
+
+    #     return norm_fwi['NFWI']
+
+    def norm_fwi_ds(
+        ds,
+        fwi_max,
+        fwi_min,
+        isi_max,
+        isi_min,
+        bui_max,
+        bui_min,
+    ):
         fwi_date_range = pd.to_datetime(ds.time)
-        dayofyear = xr.DataArray(
-            fwi_date_range.dayofyear, dims="time", coords=dict(time=fwi_date_range)
+        month = xr.DataArray(
+            fwi_date_range.month, dims="time", coords=dict(time=fwi_date_range)
         )
-        hours = xr.DataArray(
-            fwi_date_range.hour, dims="time", coords=dict(time=fwi_date_range)
-        )
-        fwi_max_doi = fwi_max.sel(
-            dayofyear=dayofyear,
-            south_north=slice(
-                float(ds.attrs["max_y"]) + 4, float(ds.attrs["min_y"]) - 4
-            ),
-            west_east=slice(float(ds.attrs["min_x"]) - 4, float(ds.attrs["max_x"]) + 4),
-        )
-        fwi_max_roi = ds.salem.transform(fwi_max_doi, interp="linear")
-        fwi_max_roi = xr.where(fwi_max_roi <= 0, 1, fwi_max_roi)
 
-        fwi_min_doi = fwi_min.sel(
-            dayofyear=dayofyear,
-            south_north=slice(
-                float(ds.attrs["max_y"]) + 4, float(ds.attrs["min_y"]) - 4
-            ),
-            west_east=slice(float(ds.attrs["min_x"]) - 4, float(ds.attrs["max_x"]) + 4),
+        fwi_max_roi = fwi_max.sel(
+            month=month,
+            x=ds.x,
+            y=ds.y,
         )
-        fwi_min_roi = ds.salem.transform(fwi_min_doi, interp="linear")
-        fwi_min_roi = xr.where(fwi_min_roi <= 0, 0.1, fwi_min_roi)
+        fwi_max_roi = xr.where(fwi_max_roi <= 1, 1, fwi_max_roi)
 
-        norm_fwi = (ds["S"] - fwi_min_roi) / (fwi_max_roi - fwi_min_roi)
+        fwi_min_roi = fwi_min
+        norm_fwi = ((ds["S"] - fwi_min_roi) / (fwi_max_roi - fwi_min_roi)).rename(
+            {"S": "NFWI"}
+        )
 
-        if np.all(np.isinf(norm_fwi.values)) == True:
+        if np.all(np.isinf(norm_fwi["NFWI"].values)) == True:
             raise ValueError("STOP!! NFWI is INF!")
 
-        return (ds["S"] - fwi_min_roi) / (fwi_max_roi - fwi_min_roi)
+        ds["NFWI"] = norm_fwi["NFWI"]
+        ################################################
+
+        isi_max = isi_max.sel(
+            month=month,
+            x=ds.x,
+            y=ds.y,
+        )
+        isi_max_roi = xr.where(isi_max <= 1, 1, isi_max)
+
+        isi_min_roi = isi_min
+        norm_isi = ((ds["R"] - isi_min_roi) / (isi_max_roi - isi_min_roi)).rename(
+            {"R": "NISI"}
+        )
+        ds["NISI"] = norm_isi["NISI"]
+
+        if np.all(np.isinf(norm_isi["NISI"].values)) == True:
+            raise ValueError("STOP!! NISI is INF!")
+        ################################################
+        bui_max = bui_max.sel(
+            month=month,
+            x=ds.x,
+            y=ds.y,
+        )
+        bui_max_roi = xr.where(bui_max <= 1, 1, bui_max)
+
+        bui_min_roi = bui_min.sel(
+            month=month,
+            x=ds.x,
+            y=ds.y,
+        )
+        norm_bui = ((ds["U"] - bui_min_roi) / (bui_max_roi - bui_min_roi)).rename(
+            {"U": "NBUI"}
+        )
+        ds["NBUI"] = norm_bui["NBUI"]
+        if np.all(np.isinf(norm_bui["NBUI"].values)) == True:
+            raise ValueError("STOP!! NBUI is INF!")
+
+        return ds
 
     file_list_len = len(file_list)
     ds_list = []
+    good_files = []
+    bad_files = []
     for i, file in enumerate(file_list):
         try:
-            ds = xr.open_zarr(file)
+            # ds = xr.open_zarr(file)
+            ds = xr.open_dataset(file)
             if (
-                (np.all(np.isnan(ds["FRP"].values)) == True)
-                or (np.all(np.isnan(ds["NDVI"].values)) == True)
-                or (np.all(np.isnan(ds["LAI"].values)) == True)
+                np.all(np.isnan(ds["FRP"].values))
+                == True
+                # or (np.all(np.isnan(ds["NDVI"].values)) == True)
+                # or (np.all(np.isnan(ds["LAI"].values)) == True)
             ):
-                pass
+                bad_files.append(file)
+                print("BAD!")
             else:
                 ISI = xr.where(np.isnan(ds["FRP"].values) == True, np.nan, ds["R"])
                 r_values = stats.pearsonr(
                     ds["FRP"].mean(("x", "y")).dropna("time"),
                     ISI.mean(("x", "y")).dropna("time"),
                 )[0]
-                if r_values >= 0.399:
-                    print(r_values)
+                if r_values >= 0.39:
+                    print(np.round(r_values, 2))
                     ds = get_solar_hours(ds)
                     # ds["solar_hour"] = xr.where(
                     #     np.isnan(ds["FRP"].values) == True, np.nan, ds["solar_hour"]
@@ -179,8 +249,11 @@ for year in ["2021", "2022", "2023"]:
                     fuels_roi = fuels_roi.reindex(time=ds.time, method="ffill")
                     fuels_roi = xr.where(fuels_roi < 0, 0, fuels_roi)
                     if norm_fwi == True:
-                        ds["NFWI"] = norm_fwi_ds(ds, fwi_max, fwi_min)
-                        ds = ds.drop_vars("quantile")
+                        # ds["NFWI"] = norm_fwi_ds(ds, fwi_max, fwi_min)
+                        ds = norm_fwi_ds(
+                            ds, fwi_max, fwi_min, isi_max, isi_min, bui_max, bui_min
+                        )
+                        # ds = ds.drop_vars("quantile")
 
                     for var in list(static_roi):
                         # static_roi[var] = xr.where(
@@ -220,13 +293,13 @@ for year in ["2021", "2022", "2023"]:
                         # )
                         ds[var] = fuels_roi[var]
 
-                    # for var in list(ds):
-                    #     try:
-                    #         ds[var] = xr.where(
-                    #             np.isnan(ds["FRP"].values) == True, np.nan, ds[var]
-                    #         )
-                    #     except:
-                    #         pass
+                    for var in list(ds):
+                        try:
+                            ds[var] = xr.where(
+                                np.isnan(ds["FRP"].values) == True, np.nan, ds[var]
+                            )
+                        except:
+                            pass
 
                     if spatially_averaged == False:
                         print(f"Passed: {i}/{file_list_len}")
@@ -238,13 +311,34 @@ for year in ["2021", "2022", "2023"]:
                         )
                     else:
                         ds_mean = ds.mean(("x", "y")).dropna("time").compute()
+                        ds_mean["FRP_MAX"] = (
+                            ds["FRP"].max(("x", "y")).dropna("time").compute()
+                        )  # .rename({'FRP': 'FRP_MAX'})
+                        ds_mean["FRE_MAX"] = (
+                            ds["FRE"].max(("x", "y")).dropna("time").compute()
+                        )  # .rename({'FRE': 'FRE_MAX'})
+
+                        ds_mean["FRP_MIN"] = (
+                            ds["FRP"].min(("x", "y")).dropna("time").compute()
+                        )  # .rename({'FRP': 'FRP_MIN'})
+                        ds_mean["FRE_MIN"] = (
+                            ds["FRE"].min(("x", "y")).dropna("time").compute()
+                        )  # .rename({'FRE': 'FRE_MIN'})
+
+                        # window_length = 6  # Choose a window length (must be odd)
+                        # polyorder = 2  # Choose the order of the polynomial
+                        # ds_mean['FRP_smooth'] = ('time',savgol_filter(ds_mean['FRP'], window_length, polyorder))
                         # ds_mean = ds.mean(("x", "y")).compute()
                         # r_values = stats.pearsonr(ds_mean['FRP'], ds_mean['R'])[0]
                         # if r_values >= 0.399:
                         print(f"Passed: {i}/{file_list_len}")
+                        counter += 1
                         ds_list.append(ds_mean)
+                        good_files.append(file)
+                else:
+                    print("Didnt pass r test: ", np.round(r_values, 2))
         except:
-            pass
+            print(f"DID NOT RUN!! {file}")
 
     def compressor(ds, var_dict=None):
         """
@@ -271,8 +365,50 @@ for year in ["2021", "2022", "2023"]:
         )
 
     save_dir = (
-        f"/Users/crodell/fwf/data/ml-data/training-data/{year}-fires-averaged-v3.nc"
+        f"/Users/crodell/fwf/data/ml-data/training-data/{year}-fires-averaged-v6.nc"
     )
     print(save_dir)
     final_ds, encoding = compressor(final_ds)
     final_ds.to_netcdf(save_dir, encoding=encoding, mode="w")
+
+
+# print('--------------------------------')
+
+# print(stats.pearsonr(
+#            final_ds['FRE'],
+#            final_ds['R'],
+#         )[0])
+# print('--------------------------------')
+
+# print(stats.pearsonr(
+#            final_ds['FRE'],
+#            final_ds['S'],
+#         )[0])
+# print('--------------------------------')
+
+# print(stats.pearsonr(
+#            final_ds['FRE'],
+#            final_ds['NFWI'],
+#         )[0])
+
+# print('--------------------------------')
+
+# print((counter/(len(good_files)+len(bad_files)))*100)
+
+# quant_ds = ds['FRP'].quantile(
+#         [0, 0.5, 1],
+#         dim=("x", "y"),
+#         skipna=True,
+#     )#.dropna("time")
+
+# std_ds = ds['FRP'].std(
+#         dim=("x", "y"),
+#         skipna=True,
+#     ).dropna("time")
+
+# fig = plt.figure(figsize=(8,4))
+# ax = fig.add_subplot(1,1,1)
+# # ax.plot(std_ds['time'], std_ds)
+# ax.plot(quant_ds['time'], quant_ds.isel(quantile=0))
+# ax.plot(quant_ds['time'], quant_ds.isel(quantile=1)+std_ds)
+# ax.plot(quant_ds['time'], quant_ds.isel(quantile=2))

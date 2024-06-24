@@ -17,8 +17,8 @@ from utils.era5 import read_era5
 from context import data_dir, root_dir
 
 
-plt.rc("font", family="sans-serif")
-plt.rc("text", usetex=True)
+# plt.rc("font", family="sans-serif")
+# plt.rc("text", usetex=True)
 plt.rcParams.update({"font.size": 14})
 
 

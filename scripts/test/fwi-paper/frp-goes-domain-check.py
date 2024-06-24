@@ -2,28 +2,14 @@
 
 import context
 import json
-import salem
-import os
 
 import numpy as np
 import xarray as xr
 import pandas as pd
-import geopandas as gpd
-from scipy import stats
 from pathlib import Path
 
-import plotly.express as px
-from plotly.subplots import make_subplots
-import plotly.graph_objects as go
-from sklearn.neighbors import KDTree
-
 import cartopy.crs as ccrs
-import matplotlib.colors
 import matplotlib.pyplot as plt
-import matplotlib.dates as mdates
-from mpl_toolkits.axes_grid1 import make_axes_locatable
-from netCDF4 import Dataset
-from wrf import ll_to_xy
 
 from context import data_dir, root_dir
 

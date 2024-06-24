@@ -33,28 +33,35 @@ from joblib import parallel_backend
 startTime = datetime.now()
 
 # Configuration parameters
-# Configuration parameters
 config = dict(
-    method="averaged",
-    keep_vars=[
-        "R",
-        "U",
-        "Live_Wood",
-        "Dead_Wood",
-        "Live_Leaf",
-        "Dead_Foliage",
-        "hour_sin",
-        "hour_cos",
+    method="averaged-v5",
+    years=["2021", "2022", "2023"],
+    feature_vars=[
+        "SAZ_sin-Total_Fuel_Load",
+        "SAZ_cos-Total_Fuel_Load",
+        "S-hour_sin-lat_cos-Total_Fuel_Load",
+        "S-hour_cos-lat_cos-Total_Fuel_Load",
+        "S-hour_sin-lat_sin-Total_Fuel_Load",
+        "S-hour_cos-lat_sin-Total_Fuel_Load",
+        "S-hour_sin-lon_cos-Total_Fuel_Load",
+        "S-hour_cos-lon_cos-Total_Fuel_Load",
+        "S-hour_sin-lon_sin-Total_Fuel_Load",
+        "S-hour_cos-lon_sin-Total_Fuel_Load",
     ],
-    scaler_type="standard",  ##robust or standard minmax
+    target_vars=["FRP", "FRE"],
+    feature_scaler_type="robust",  ##robust or standard minmax
+    target_scaler_type=None,  ##robust or standard minmax
     transform=True,
-    min_fire_size=10000,
     package="sk",
     model_type="RF",
     main_cases=True,
     shuffle_data=True,
+    feature_engineer=True,
+    min_fire_size=500,  ## hectors,
+    filter_std=True,
 )
-config["n_features"] = len(config["keep_vars"])
+config["n_features"] = len(config["feature_vars"])
+config["n_targets"] = len(config["target_vars"])
 
 ## Initialize MLP model and load dataset
 mlD = MLDATA(config)
@@ -62,8 +69,8 @@ mlD = MLDATA(config)
 # Define and compile RF model
 model = RandomForestRegressor(
     verbose=True,
-    max_depth=10,
-    n_estimators=300,
+    max_depth=20,
+    n_estimators=350,
     max_features="sqrt",
     min_samples_leaf=4,
     min_samples_split=10,
@@ -105,29 +112,25 @@ if config["transform"] == True:
     y_test = np.expm1(y_test)
 
 
-print("Total Run Time: ", datetime.now() - startTime)
-print("-----------------------------------------------------")
-
-
 # # Plot results
-plt.scatter(y_out_this_nhn[200:400], y_test.values[200:400])
-fig, ax = plt.subplots()
-ax.plot(y_out_this_nhn[200:400], color="tab:red")
-ax.plot(y_test.values[200:400], color="black")
-plt.show()
+# plt.scatter(y_out_this_nhn[200:400], y_test.values[200:400])
+# fig, ax = plt.subplots()
+# ax.plot(y_out_this_nhn[400:1200,0], color="tab:red")
+# ax.plot(y_test['FRP'].values[400:1200], color="black")
+# plt.show()
 
 
-fig, ax = plt.subplots()
-ax.plot(y_out_this_nhn, color="tab:red", zorder=10, lw=0.5)
-ax.plot(y_test.values, color="black", zorder=1, lw=0.5)
-plt.show()
+# fig, ax = plt.subplots()
+# ax.plot(y_out_this_nhn, color="tab:red", zorder=10, lw=0.5)
+# ax.plot(y_test.values, color="black", zorder=1, lw=0.5)
+# plt.show()
 
-x = 0
-y = x + 250
-fig, ax = plt.subplots()
-ax.plot(y_out_this_nhn[x:y], color="tab:red")
-ax.plot(y_test.values[x:y], color="black")
-plt.show()
+# x = 0
+# y = x + 250
+# fig, ax = plt.subplots()
+# ax.plot(y_out_this_nhn[x:y], color="tab:red")
+# ax.plot(y_test.values[x:y], color="black")
+# plt.show()
 
 # fig, ax = plt.subplots()
 # ax.plot(df_test['R'].values[x:y], color='black')

@@ -313,5 +313,15 @@
            "title": "Sea Level Pressure",
            "sigma": 0.8
 
-        }
+        },
+   "FRP" : {
+      "colors18": ["#ffffff", "#fff8ba", "#fff0a7", "#ffe794", "#fede81", "#fed16d", "#fec05b", "#feaf4b", "#fd9e44", "#fd8d3c", "#fd7134", "#fc552c", "#f43d25", "#e9261f", "#da141e", "#c90823", "#b60026", "#9b0026"],
+      "vmax"  : 3000,
+      "vmin"  : 0,
+      "name"  : "frp",
+      "levels" : [0,15,50,100,150,200,250,300,400,500,600,700,1000,1400,1800,2200,2500,3000],
+      "title": "Fire Radiative Power",
+      "units": "MW",
+      "sigma": 0.4
+   }
 }
