@@ -60,7 +60,7 @@ config = dict(
         # "U-lon_sin",
         # "U-lon_cos",
     ],
-    scaler_type="standard",  ##robust or standard minmax
+    scaler_type="minmax",  ##robust or standard minmax
     transform=False,
     min_fire_size=0,
     package="tf",

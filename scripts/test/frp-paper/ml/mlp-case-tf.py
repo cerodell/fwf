@@ -47,14 +47,20 @@ startFWX = datetime.now()
 
 
 all_fire = False
-ID = 24360611  # 25407482 (2022) 25485086 (2022) 24448308 (2021) 24360611 (2021) 24450415 (2021) 26695902 (2023) 26414629 (2023)
+ID = 24448308  # 24450415 (2022) 25485086 (2021) 24448308 (2021) 24360611 (2021) 24450415 (2021)
 year = "2021"
-mlp_test_case = "MLP_64U-Dense_64U-Dense_2U-Dense"
-method = "averaged-v5"
+mlp_test_case = "MLP_64U-Dense_64U-Dense_64U-Dense_64U-Dense_2U-Dense-Decent"
+method = "averaged-v7"
 ml_pack = "tf"
+target_vars = "FRP_FRE"
 plot_method = "mean"
 persist = False
 dt = 6
+model_dir = str(data_dir) + f"/mlp/{ml_pack}/{method}/{target_vars}/{mlp_test_case}"
+
+fire_cases = np.loadtxt(f"{model_dir}/test_cases.txt", delimiter=",")
+# ID = fire_cases[0].astype(int)[10]
+# year = fire_cases[1].astype(int)[10]
 
 
 def predict_frp(config):
@@ -106,9 +112,10 @@ def predict_frp(config):
     y_out_this_nhn = model(X_new_scaled).numpy()
     # if config['target_scaler_type'] != None:
     #     y_out_this_nhn = target_scaler.inverse_transform(y_out_this_nhn)
-    if config["transform"] == "True":
+    if config["transform"] == True:
         y_out_this_nhn = np.expm1(y_out_this_nhn)
 
+    # FRP_FULL = y_out_this_nhn.ravel().reshape(shape)
     FRP_FULL = y_out_this_nhn[:, 0].ravel().reshape(shape)
     FRE_FULL = y_out_this_nhn[:, 1].ravel().reshape(shape)
     FRPend = datetime.now() - startFRP
@@ -134,18 +141,17 @@ def predict_frp(config):
     print("Time to run FWX: ", datetime.now() - startFWX)
     startWRITE = datetime.now()
     ds, encoding = compressor(ds)
-    file_dir = f"/Volumes/ThunderBay/CRodell/fires/v3/{year}-{ID}.nc"
-    # print(f"WRITING AT: {datetime.now()}")
+    file_dir = f"/Volumes/ThunderBay/CRodell/fires/v7/{year}-{ID}.nc"
+    print(f"WRITING AT: {datetime.now()}")
     ds.to_netcdf(file_dir, encoding=encoding, mode="w")
     print(f"Wrote: {file_dir}")
     print("Time to write: ", datetime.now() - startWRITE)
     return ds, fire_i
 
 
-model_dir = str(data_dir) + f"/mlp/{ml_pack}/{method}/{mlp_test_case}"
 save_dir = model_dir
 with open(f"{model_dir}/config.json", "r") as json_data:
-    config = json.load(json_data)
+    config = json.load(json_data)["user_config"]
 
 if all_fire == False:
     config["ID"] = ID

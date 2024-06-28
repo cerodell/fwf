@@ -17,7 +17,8 @@ from sklearn.preprocessing import (
     MinMaxScaler,
     PowerTransformer,
 )
-from utils.tf import activate_logging, create_model_directory
+
+# from utils.tf import activate_logging, create_model_directory
 from sklearn.inspection import permutation_importance
 
 from scipy import stats
@@ -50,7 +51,7 @@ class MLDATA:
         self.min_fire_size = config.get("min_fire_size", 0)
         self.transform = str_to_bool(config.get("transform", False))
         self.feature_scaler_type = config.get("feature_scaler_type", "standard")
-        self.target_scaler_type = config.get("target_scaler_type", None)
+        self.target_scaler_type = config.get("target_scaler_type", False)
         self.main_cases = str_to_bool(config.get("main_cases", False))
         self.shuffle_data = str_to_bool(config.get("shuffle_data", False))
         self.model_type = config.get("model_type")
@@ -67,7 +68,7 @@ class MLDATA:
         path = f"{self.filein}{year}-fires-{self.method}.nc"
         return xr.open_dataset(path).to_dataframe().reset_index()
 
-    def add_engineered_features(self, dfs, feature_names):
+    def add_engineered_features(self, dfs, feature_names, wrf):
         for feature in feature_names:
             # Split the feature name to identify the components
             components = feature.split("-")
@@ -79,7 +80,16 @@ class MLDATA:
             try:
                 dfs[feature] = np.prod(components_array, axis=0)
             except:
-                dfs[feature] = (("time", "y", "x"), np.prod(components_array, axis=0))
+                if wrf == False:
+                    dfs[feature] = (
+                        ("time", "y", "x"),
+                        np.prod(components_array, axis=0),
+                    )
+                elif wrf == True:
+                    dfs[feature] = (
+                        ("time", "south_north", "west_east"),
+                        np.prod(components_array, axis=0),
+                    )
 
         return dfs
 
@@ -102,8 +112,10 @@ class MLDATA:
         # df["hour_cos"] = np.cos(2 * np.pi * df["solar_hour"] / 24)
         phi_sin = -np.pi
         # Compute hour_sin and hour_cos with the phase shift
-        df["hour_sin"] = np.sin((2 * np.pi * df["solar_hour"] / 24) + phi_sin)
-        df["hour_cos"] = np.cos((2 * np.pi * df["solar_hour"] / 24) + phi_sin)
+        # df["hour_sin"] = 0.1 + (np.sin((2 * np.pi * df["solar_hour"] / 24) + phi_sin) + 1) * 0.45
+        # df["hour_cos"] = 0.1 + (np.cos((2 * np.pi * df["solar_hour"] / 24) + phi_sin) + 1) * 0.45
+        df["hour_sin"] = np.sin(np.pi * df["solar_hour"] / 24) + phi_sin
+        df["hour_cos"] = np.cos(np.pi * df["solar_hour"] / 24) + phi_sin
         df.loc[df["LAI"] > 7, "LAI"] = 7
         df.loc[df["LAI"] < 0, "LAI"] = 0.01
         # df["R"] = df['R'] / 50
@@ -112,21 +124,26 @@ class MLDATA:
         )
 
         if self.transform == True:
+            # df["Total_Fuel_Load"] = df["Total_Fuel_Load"]/34
+            # df["R"] = df["R"]/50
+            # df["F"] = df["F"]/101
             # pt = PowerTransformer(
             #     method="yeo-johnson", standardize=False
             # )  # Yeo-Johnson allows for zero values
-            df["Total_Fuel_Load"] = np.log1p(df["Total_Fuel_Load"])
+            # df["Total_Fuel_Load"] = np.log1p(df["Total_Fuel_Load"])
             # df["Live_Wood"] = pt.fit_transform(df[["Live_Wood"]] + 1)
             # df["Live_Leaf"] = pt.fit_transform(df[["Live_Leaf"]] + 1)
             # df["Dead_Foliage"] = pt.fit_transform(df[["Dead_Foliage"]] + 1)
             df["FRP"] = np.log1p(df["FRP"])
             df["FRE"] = np.log1p(df["FRE"])
+            df["FRP_MAX"] = np.log1p(df["FRP_MAX"])
+            df["FRE_MAX"] = np.log1p(df["FRE_MAX"])
             # df["U"] = np.log1p(df["U"])
             # df["R"] = np.log1p(df["R"])
-            # df["S"] = np.log1p(df["S"])
+            # df["F"] = np.log1p(df["F"])
             # df["LAI"] = np.log1p(df["LAI"])
         if self.feature_engineer == True:
-            df = self.add_engineered_features(df, self.feature_vars)
+            df = self.add_engineered_features(df, self.feature_vars, wrf=False)
         if self.filter_std:
             ################ FRE ###################
             # df["FRE_raw"] = np.expm1(df["FRE"])
@@ -214,60 +231,83 @@ class MLDATA:
             pd.concat([self.get_ds(year) for year in self.years], ignore_index=True)
         )
 
-    def get_static(self, ds):
-        static_ds = salem.open_xr_dataset(
-            str(data_dir) + "/static/static-rave-3km.nc"
-        ).drop_vars(["time", "xtime"])
-        lons, lats = static_ds.salem.grid.ll_coordinates
+    def get_static(self, ds, static=None):
+        if static != None:
+            # print('Static_ds has been given')
+            static_ds = static
+            y, x = "south_north", "west_east"
+            lons, lats = static_ds["XLONG"].values, static_ds["XLAT"].values
+        else:
+            static_ds = salem.open_xr_dataset(
+                str(data_dir) + "/static/static-rave-3km.nc"
+            ).drop_vars(["time", "xtime"])
+            y, x = "y", "x"
+            lons, lats = static_ds.salem.grid.ll_coordinates
         lon_sin = np.sin(np.radians(lons))
         lon_cos = np.cos(np.radians(lons))
         lat_sin = np.sin(np.radians(lats))
         lat_cos = np.cos(np.radians(lats))
 
-        static_ds["lat_sin"] = (("y", "x"), lat_sin)
-        static_ds["lat_cos"] = (("y", "x"), lat_cos)
-        static_ds["lon_sin"] = (("y", "x"), lon_sin)
-        static_ds["lon_cos"] = (("y", "x"), lon_cos)
+        static_ds["lat_sin"] = ((y, x), lat_sin)
+        static_ds["lat_cos"] = ((y, x), lat_cos)
+        static_ds["lon_sin"] = ((y, x), lon_sin)
+        static_ds["lon_cos"] = ((y, x), lon_cos)
 
-        static_ds["lats"] = (("y", "x"), lats)
-        static_ds["lons"] = (("y", "x"), lons)
+        static_ds["lats"] = ((y, x), lats)
+        static_ds["lons"] = ((y, x), lons)
 
         ASPECT_sin = np.sin(np.radians(static_ds["ASPECT"].values))
         ASPECT_cos = np.cos(np.radians(static_ds["ASPECT"].values))
-        static_ds["ASPECT_sin"] = (("y", "x"), ASPECT_sin)
-        static_ds["ASPECT_cos"] = (("y", "x"), ASPECT_cos)
+        static_ds["ASPECT_sin"] = ((y, x), ASPECT_sin)
+        static_ds["ASPECT_cos"] = ((y, x), ASPECT_cos)
 
         SAZ_sin = np.sin(np.radians(static_ds["SAZ"].values))
         SAZ_cos = np.cos(np.radians(static_ds["SAZ"].values))
-        static_ds["SAZ_sin"] = (("y", "x"), SAZ_sin)
-        static_ds["SAZ_cos"] = (("y", "x"), SAZ_cos)
+        static_ds["SAZ_sin"] = ((y, x), SAZ_sin)
+        static_ds["SAZ_cos"] = ((y, x), SAZ_cos)
 
-        static_roi = self.add_static(ds, static_ds)
+        if static != None:
+            # print('Static_ds has been given')
+            static_roi = static_ds.expand_dims("time")
+            static_roi.coords["time"] = pd.Series(ds.time.values[0])
+            static_roi = static_roi.reindex(time=ds.time, method="ffill")
+            fuel_date_range = pd.DatetimeIndex(ds["Time"].values)
+            fuel_date_range = pd.date_range(
+                ds["Time"].values[0], ds["Time"].values[-1], freq="MS"
+            )
+            if len(fuel_date_range) == 0:
+                fuel_date_range = [pd.Timestamp(ds["Time"].values[0])]
+
+        else:
+            static_roi = self.add_static(ds, static_ds)
+            fuel_date_range = pd.date_range(
+                ds.attrs["initialdat"][:-3] + "-01", ds.attrs["finaldate"], freq="MS"
+            )
+
         for var in list(static_roi):
             ds[var] = static_roi[var]
 
-        fuel_date_range = pd.date_range(
-            ds.attrs["initialdat"][:-3] + "-01", ds.attrs["finaldate"], freq="MS"
-        )
         fuels_ds = xr.combine_nested(
             [self.open_fuels(moi) for moi in fuel_date_range], concat_dim="time"
         )
         fuels_roi = ds.salem.transform(fuels_ds, interp="linear")
         fuels_roi = fuels_roi.reindex(time=ds.time, method="ffill")
         fuels_roi = xr.where(fuels_roi < 0, 0, fuels_roi)
+
         for var in list(fuels_roi):
             ds[var] = fuels_roi[var]
         ds["Total_Fuel_Load"] = (
             ds["Dead_Wood"] + ds["Live_Wood"] + ds["Live_Leaf"] + ds["Dead_Foliage"]
         )
-        if self.transform == True:
-            pt = PowerTransformer(
-                method="yeo-johnson", standardize=False
-            )  # Yeo-Johnson allows for zero values
-            TFL = np.log1p(ds["Total_Fuel_Load"].values)
-            # print(TFL)
-            # print(TFL.shape)
-            ds["Total_Fuel_Load"] = (("time", "y", "x"), TFL)
+
+        # if self.transform == True:
+        #     ds["Total_Fuel_Load"] = ds["Total_Fuel_Load"]/34
+        #     ds["R"] = ds["R"]/50
+        #     ds["F"] = ds["F"]/101
+        #     TFL = np.log1p(ds["Total_Fuel_Load"].values)
+        #     ds["R"] = np.log1p(ds["R"])
+        #     ds["F"] = np.log1p(ds["F"])
+        #     ds["Total_Fuel_Load"] = (("time", y, x), TFL)
 
         return ds
 
@@ -290,13 +330,15 @@ class MLDATA:
         fuels_ds.coords["time"] = moi
         return fuels_ds
 
-    def get_eng_features(self, ds):
+    def get_eng_features(self, ds, wrf=False):
         ds = get_solar_hours(ds)
         phi_sin = -np.pi
         # Compute hour_sin and hour_cos with the phase shift
-        ds["hour_sin"] = np.sin((2 * np.pi * ds["solar_hour"] / 24) + phi_sin)
-        ds["hour_cos"] = np.cos((2 * np.pi * ds["solar_hour"] / 24) + phi_sin)
-        ds = self.add_engineered_features(ds, self.feature_vars)
+        # ds["hour_sin"] = 0.1 + (np.sin((2 * np.pi * ds["solar_hour"] / 24) + phi_sin) + 1) * 0.45
+        # ds["hour_cos"] = 0.1 + (np.cos((2 * np.pi * ds["solar_hour"] / 24) + phi_sin) + 1) * 0.45
+        ds["hour_sin"] = np.sin(np.pi * ds["solar_hour"] / 24) + phi_sin
+        ds["hour_cos"] = np.cos(np.pi * ds["solar_hour"] / 24) + phi_sin
+        ds = self.add_engineered_features(ds, self.feature_vars, wrf)
 
         return ds
 
@@ -316,12 +358,67 @@ class MLDATA:
         ######==================================+####################
 
         print("Number of fires: ", len(np.unique(df["id"].values)))
+        self.user_config["num_fire"] = str(len(np.unique(df["id"].values)))
         if self.main_cases == False:
             ## Sampling dataset for test and training
             IDS = np.unique(df["id"].values)
-            sample_size = int(0.15 * len(IDS))
+            sample_size = int(0.12 * len(IDS))
             ids = np.random.choice(IDS, size=sample_size, replace=False)
-            ids = np.append(ids, [25485086, 25407482, 24360611, 24448308, 24450415])
+            # ids = np.append(ids, [25485086, 25407482, 24360611, 24448308, 24450415, 26695902, 25282348])
+            ids = np.append(
+                ids,
+                [
+                    25485086,
+                    25282348,
+                    25584809,
+                    24359928,
+                    24565483,
+                    24296232,
+                    24450415,
+                    24296232,
+                    24359300,
+                    24359787,
+                    24360611,
+                    24448285,
+                    24448308,
+                    24449463,
+                    24452554,
+                    24453236,
+                    24564607,
+                    25407482,
+                    25408581,
+                    25490483,
+                    25490527,
+                    25585271,
+                    25589765,
+                    26352132,
+                    26414901,
+                    26415153,
+                    26415924,
+                    26418444,
+                    26479269,
+                    26480614,
+                    26480912,
+                    26481445,
+                    26563583,
+                    26564768,
+                    26565481,
+                    26565517,
+                    26567513,
+                    26568336,
+                    26568545,
+                    26574540,
+                    26574808,
+                    26691139,
+                    26692849,
+                    26695902,
+                    26703460,
+                    26815399,
+                    26418468,
+                    26418461,
+                ],
+            )
+
             df_test = df[df["id"].isin(ids)]
             unique_test_df = df_test.drop_duplicates(subset="id", keep="first")
             fires_array = np.stack(
@@ -342,7 +439,9 @@ class MLDATA:
 
         df_train = df[~df["id"].isin(ids)]
         print("Number of training fires: ", len(np.unique(df_train["id"].values)))
+        self.user_config["num_fire_train"] = str(len(np.unique(df_train["id"].values)))
         print("Number of testing fires: ", len(np.unique(df_test["id"].values)))
+        self.user_config["num_fire_test"] = str(len(np.unique(df_train["id"].values)))
         # large_fires = df_train.loc[df_train["area_ha"] > 50000]
         # larger_fires = df_train.loc[df_train["area_ha"] > 100000]
         if self.transform == True:
@@ -364,6 +463,8 @@ class MLDATA:
         df_train = pd.concat(
             [
                 df_train,
+                # large_fires,
+                # larger_fires,
                 cold_fires,
                 cool_fires,
                 warm_fires,
@@ -383,7 +484,8 @@ class MLDATA:
             X_test = df_test[1:].copy()
 
         if self.smoothing == True:
-            y_train = df_train[["FRP_smooth", "FRE"]]
+            print("Will use smoother max frp/fre for training")
+            y_train = df_train[["FRP_MAX", "FRE_MAX"]]
             y_test = df_test[["FRP", "FRE"]]
         else:
             y_train = df_train[self.target_vars]
@@ -400,17 +502,31 @@ class MLDATA:
         elif self.feature_scaler_type == "minmax":
             feature_scaler = MinMaxScaler().fit(X_train)
 
+        if self.target_scaler_type == True:
+            self.MAXFRP = 6000
+            self.MAXFRE = 2e7
+            y_train["FRP"] = (y_train["FRP"] - np.log1p(0)) / (
+                np.log1p(self.MAXFRP) - np.log1p(0)
+            )
+            y_train["FRE"] = (y_train["FRE"] - np.log1p(0)) / (
+                np.log1p(self.MAXFRE) - np.log1p(0)
+            )
         # Scale targets
-        if self.target_scaler_type != None:
-            if self.target_scaler_type == "standard":
-                target_scaler = StandardScaler().fit(y_train)
-            elif self.feature_scaler_type == "robust":
-                target_scaler = RobustScaler().fit(y_train)
-            elif self.feature_scaler_type == "minmax":
-                target_scaler = MinMaxScaler().fit(y_train)
-            y_train = target_scaler.transform(y_train)
-        else:
-            target_scaler = "None"
+        # print(self.target_scaler_type)
+        # if self.target_scaler_type == "standard":
+        #     print('Using standard scaler for features')
+        #     target_scaler = StandardScaler().fit(y_train)
+        # elif self.feature_scaler_type == "robust":
+        #     print('Using robust scaler for features')
+        #     target_scaler = RobustScaler().fit(y_train)
+        # elif self.feature_scaler_type == "minmax":
+
+        # print('Using min max scaler for features')
+        # target_scaler = MinMaxScaler().fit(y_train)
+        # print(target_scaler)
+        # y_train = target_scaler.transform(y_train)
+        # else:
+        target_scaler = "None"
 
         X_train = feature_scaler.transform(X_train)
         X_test = feature_scaler.transform(X_test)
@@ -425,11 +541,14 @@ class MLDATA:
         self.df_test = df_test
 
         print("Percent of data used for testing: ", (len(y_test) / len(df)) * 100)
+        self.user_config["percent_data_fore_test"] = str((len(y_test) / len(df)) * 100)
         return y_train, X_train, y_test, X_test
 
-    def save_model_tunning(self, model, y_out_this_nhn, save_dir, logger, history):
-        if self.target_scaler_type != None:
-            y_out_this_nhn = self.target_scaler.inverse_transform(y_out_this_nhn)
+    def save_model(self, model, y_out_this_nhn, save_dir, logger):
+        if self.target_scaler_type == True:
+            # print("self.target_scaler_type is: ", self.target_scaler_type)
+            y_out_this_nhn[:, 0] = y_out_this_nhn[:, 0] * np.log1p(self.MAXFRP)
+            y_out_this_nhn[:, 1] = y_out_this_nhn[:, 1] * np.log1p(self.MAXFRE)
 
         if self.transform == True:
             y_out_this_nhn = np.expm1(y_out_this_nhn)
@@ -438,6 +557,155 @@ class MLDATA:
             y_test = self.y_test
             X_test = self.X_test
 
+        # Save model and scaler
+        if self.package == "tf":
+            model_path = save_dir / "model.keras"
+            model.save(model_path)
+            model_config_info = model.get_config()
+        else:
+            model_path = save_dir / "model.joblib"
+            joblib.dump(model, model_path)
+            model_config_info = model.get_params()
+
+        model_path = save_dir / "model.joblib"
+        joblib.dump(model, model_path)
+        feature_scaler_path = save_dir / "feature-scaler.joblib"
+        joblib.dump(self.feature_scaler, feature_scaler_path)
+        np.savetxt(
+            save_dir / "test_cases.txt", self.fires_array, fmt="%d", delimiter=","
+        )
+
+        # Save model configuration and statistics
+        model_config = {
+            "user_config": self.user_config,
+            "model_config": model_config_info,
+            "feature_scaler_info": str(feature_scaler_path),
+            "model_info": str(model_path),
+        }
+        config_path = save_dir / "config.json"
+        with open(config_path, "w") as json_file:
+            json.dump(model_config, json_file, indent=4)
+
+        def solve_stats(y_test, y_out_this_nhn, target, stats_dict=None):
+            if stats_dict is None:
+                stats_dict = {}
+
+            if target.lower() == "fre":
+                try:
+                    y_nhn = y_out_this_nhn[:, 1].ravel()
+                except:
+                    y_nhn = y_out_this_nhn.ravel()
+                y_t = y_test["FRE"].values
+                units = "(MJ)"
+            elif target.lower() == "frp":
+                try:
+                    y_nhn = y_out_this_nhn[:, 0].ravel()
+                except:
+                    y_nhn = y_out_this_nhn.ravel()
+                y_t = y_test["FRP"].values
+                units = "(MW)"
+
+            mbe = str(np.round(MBE(y_t, y_nhn), 2))
+            rmse = np.round(RMSE(y_t, y_nhn), 2)
+            r2 = np.round(r2_score(y_t, y_nhn), 2)
+            r = np.round(stats.pearsonr(y_t, y_nhn)[0], 2)
+
+            stats_dict[target] = {
+                "rmse": str(rmse),
+                "mbe": str(mbe),
+                "r2_score": str(r2),
+                "pearson_r": str(r),
+                "length_of_training": str(self.length_of_training),
+            }
+            self.df_test["model"] = y_nhn
+            self.df_test["obs"] = y_t
+            self.df_test = self.df_test.round(1)
+
+            fig = plt.figure()
+            ax = fig.add_subplot(1, 1, 1)
+            ax.scatter(y_nhn, y_t, color="tab:red", s=15)
+            ax.set_xlabel(f"Modeled {target.upper()} {units}")
+            ax.set_ylabel(f"Observed {target.upper()} {units}")
+            ax.set_title(f"MBE: {mbe}   RMSE: {rmse}   r2: {r2}   r: {r}")
+            ax.axline((0, 0), slope=1, color="k", linestyle="--", lw=0.5)
+            fig.savefig(str(save_dir) + f"/{target}-scatter.png")
+            return stats_dict
+
+        targets = self.user_config["target_vars"]
+        stats_dict = None
+        for target in targets:
+            stats_dict = solve_stats(y_test, y_out_this_nhn, target, stats_dict)
+
+        for key, value in stats_dict.items():
+            print(f"{key}: {value}")
+
+        # Save statistics
+        stats_path = save_dir / "stats.json"
+        with open(stats_path, "w") as json_file:
+            json.dump(stats_dict, json_file, indent=4)
+
+        logger.info("Model name: %s", str(feature_scaler_path).split("/")[-2])
+        print("Model name: ", str(feature_scaler_path).split("/")[-2])
+
+        if self.model_type == "rf":
+            result = permutation_importance(
+                model, X_test, y_test, n_repeats=10, random_state=42, n_jobs=-1
+            )
+
+            # Display importance
+            feature = self.feature_vars
+            for i in range(len(feature)):
+                print(
+                    f"Feature {feature[i]}: Importance {result.importances_mean[i]:.4f} ± {result.importances_std[i]:.4f}"
+                )
+                stats_dict[feature[i]] = (
+                    f"importances_mean {result.importances_mean[i]}",
+                    f"importances_std: {result.importances_std[i]}",
+                )
+
+            # Save statistics
+            stats_path = save_dir / "stats.json"
+            with open(stats_path, "w") as json_file:
+                json.dump(stats_dict, json_file, indent=4)
+
+            # Get feature importances
+            importances = model.feature_importances_
+
+            # Convert the importances into a more readable format
+            feature_importances = pd.DataFrame(
+                importances, index=feature, columns=["importance"]
+            ).sort_values("importance", ascending=False)
+
+            # Display the feature importances
+            print(feature_importances)
+
+            # Plotting the feature importances
+            plt.figure(figsize=(12, 8))
+            feature_importances.plot(kind="bar")
+            plt.title("Feature Importance")
+            plt.savefig(save_dir / "feature_importance.png")
+            plt.close()
+
+        return
+
+    def save_model_tunning(self, model, y_out_this_nhn, save_dir, logger, history):
+        if self.target_scaler_type == True:
+            # print("self.target_scaler_type is: ", self.target_scaler_type)
+            y_out_this_nhn[:, 0] = y_out_this_nhn[:, 0] * np.log1p(self.MAXFRP)
+            y_out_this_nhn[:, 1] = y_out_this_nhn[:, 1] * np.log1p(self.MAXFRE)
+            # y_out_this_nhn = self.target_scaler.inverse_transform(y_out_this_nhn)
+
+        if self.transform == True:
+            # print("self.transform is: ", self.transform)
+            y_out_this_nhn = np.expm1(y_out_this_nhn)
+            y_test = np.expm1(self.y_test)
+        else:
+            y_test = self.y_test
+            X_test = self.X_test
+
+        # if self.target_scaler_type == True:
+        #     y_out_this_nhn[:,0] = y_out_this_nhn[:,0] * np.log1p(4000)
+        #     y_out_this_nhn[:,1] = y_out_this_nhn[:,1] * np.log1p(1.131e7)
         # Save model and scaler
         if self.package == "tf":
             model_path = save_dir / "model.keras"
@@ -544,161 +812,6 @@ class MLDATA:
             ax.axline((0, 0), slope=1, color="k", linestyle="--", lw=0.5)
             fig.savefig(str(save_dir) + f"/{target}-scatter.png")
             plt.close()
-            return stats_dict
-
-        stats_dict = solve_stats(y_test, y_out_this_nhn, "frp")
-        stats_dict = solve_stats(y_test, y_out_this_nhn, "fre", stats_dict)
-
-        for key, value in stats_dict.items():
-            print(f"{key}: {value}")
-
-        # Save statistics
-        stats_path = save_dir / "stats.json"
-        with open(stats_path, "w") as json_file:
-            json.dump(stats_dict, json_file, indent=4)
-
-        logger.info("Model name: %s", str(feature_scaler_path).split("/")[-2])
-        print("Model name: ", str(feature_scaler_path).split("/")[-2])
-
-        if self.model_type == "rf":
-            result = permutation_importance(
-                model, X_test, y_test, n_repeats=10, random_state=42, n_jobs=-1
-            )
-
-            # Display importance
-            feature = self.feature_vars
-            for i in range(len(feature)):
-                print(
-                    f"Feature {feature[i]}: Importance {result.importances_mean[i]:.4f} ± {result.importances_std[i]:.4f}"
-                )
-                stats_dict[feature[i]] = (
-                    f"importances_mean {result.importances_mean[i]}",
-                    f"importances_std: {result.importances_std[i]}",
-                )
-
-            # Save statistics
-            stats_path = save_dir / "stats.json"
-            with open(stats_path, "w") as json_file:
-                json.dump(stats_dict, json_file, indent=4)
-
-            # Get feature importances
-            importances = model.feature_importances_
-
-            # Convert the importances into a more readable format
-            feature_importances = pd.DataFrame(
-                importances, index=feature, columns=["importance"]
-            ).sort_values("importance", ascending=False)
-
-            # Display the feature importances
-            print(feature_importances)
-
-            # Plotting the feature importances
-            plt.figure(figsize=(12, 8))
-            feature_importances.plot(kind="bar")
-            plt.title("Feature Importance")
-            plt.savefig(save_dir / "feature_importance.png")
-            plt.close()
-
-        return
-
-    def save_model(self, model, y_out_this_nhn, save_dir, logger):
-        if self.target_scaler_type != None:
-            y_out_this_nhn = self.target_scaler.inverse_transform(y_out_this_nhn)
-
-        if self.transform == True:
-            y_out_this_nhn = np.expm1(y_out_this_nhn)
-            y_test = np.expm1(self.y_test)
-        else:
-            y_test = self.y_test
-            X_test = self.X_test
-
-        # Save model and scaler
-        if self.package == "tf":
-            model_path = save_dir / "model.keras"
-            model.save(model_path)
-            model_config_info = model.get_config()
-        else:
-            model_path = save_dir / "model.joblib"
-            joblib.dump(model, model_path)
-            model_config_info = model.get_params()
-
-        model_path = save_dir / "model.joblib"
-        joblib.dump(model, model_path)
-        feature_scaler_path = save_dir / "feature-scaler.joblib"
-        joblib.dump(self.feature_scaler, feature_scaler_path)
-        np.savetxt(
-            save_dir / "test_cases.txt", self.fires_array, fmt="%d", delimiter=","
-        )
-
-        # Save model configuration and statistics
-        model_config = {
-            "user_config": self.user_config,
-            "model_config": model_config_info,
-            "feature_scaler_info": str(feature_scaler_path),
-            "model_info": str(model_path),
-        }
-        config_path = save_dir / "config.json"
-        with open(config_path, "w") as json_file:
-            json.dump(model_config, json_file, indent=4)
-
-        def solve_stats(y_test, y_out_this_nhn, target, stats_dict=None):
-            if stats_dict is None:
-                stats_dict = {}
-
-            if target == "fre":
-                y_nhn = y_out_this_nhn[:, 1].ravel()
-                y_t = y_test["FRE"].values
-                units = "(MJ)"
-            elif target == "frp":
-                y_nhn = y_out_this_nhn[:, 0].ravel()
-                y_t = y_test["FRP"].values
-                units = "(MW)"
-
-            mbe = str(np.round(MBE(y_t, y_nhn), 2))
-            rmse = np.round(RMSE(y_t, y_nhn), 2)
-            r2 = np.round(r2_score(y_t, y_nhn), 2)
-            r = np.round(stats.pearsonr(y_t, y_nhn)[0], 2)
-
-            stats_dict[target] = {
-                "rmse": str(rmse),
-                "mbe": str(mbe),
-                "r2_score": str(r2),
-                "pearson_r": str(r),
-                "length_of_training": str(self.length_of_training),
-            }
-            self.df_test["model"] = y_nhn
-            self.df_test["obs"] = y_t
-            test = self.df_test.loc[self.df_test["id"] == 26564768]
-            self.df_test = self.df_test.round(1)
-            # # Create the scatter plot
-            # fig = px.scatter(
-            #     self.df_test,
-            #     x='model',
-            #     y='obs',
-            #     color='R',  # Color points by category
-            #     # size='z',  # Size points by z
-            #     hover_data=['model', 'obs', 'id','R', 'U', ] + self.feature_vars # Information to display on hover
-            # )
-
-            # # Update layout for better visibility
-            # fig.update_layout(
-            #     title='Scatter Plot with Hover Information',
-            #     xaxis_title='X Axis',
-            #     yaxis_title='Y Axis',
-            #     template='plotly_white'
-            # )
-
-            # # Show the plot
-            # fig.show()
-
-            fig = plt.figure()
-            ax = fig.add_subplot(1, 1, 1)
-            ax.scatter(y_nhn, y_t, color="tab:red", s=15)
-            ax.set_xlabel(f"Modeled {target.upper()} {units}")
-            ax.set_ylabel(f"Observed {target.upper()} {units}")
-            ax.set_title(f"MBE: {mbe}   RMSE: {rmse}   r2: {r2}   r: {r}")
-            ax.axline((0, 0), slope=1, color="k", linestyle="--", lw=0.5)
-            fig.savefig(str(save_dir) + f"/{target}-scatter.png")
             return stats_dict
 
         stats_dict = solve_stats(y_test, y_out_this_nhn, "frp")

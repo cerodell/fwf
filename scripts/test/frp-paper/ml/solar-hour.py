@@ -25,13 +25,13 @@ config = dict(
     model="wrf",
     trail_name="01",
     method="hourly",
-    date_range=pd.date_range("2023-06-06", "2023-06-06", freq="h"),
+    date_range=pd.date_range("2023-06-06", "2023-06-08", freq="h"),
     domain="d02",
 )
 
 
 fwx = FWX(config=config)
-fwx_roi = fwx.open_fwx(var_list=["S", "F", "HFI"])
+fwx_roi = fwx.open_fwx(var_list=["S", "R", "F", "HFI"])
 static_roi = salem.open_xr_dataset(
     str(data_dir) + f'/static/static-vars-wrf-{config["domain"]}.nc'
 ).expand_dims("time")
@@ -99,6 +99,7 @@ XLONG = fwx_roi["XLONG"].values
 
 # all_hours = np.stack([solve_solar_hour(t,XLONG) for t in times])
 
+
 fwx_roi["solar_hour"] = (
     ("time", "south_north", "west_east"),
     np.stack([solve_solar_hour(t, XLONG) for t in times]),
@@ -107,7 +108,72 @@ for var in list(fwx_roi):
     fwx_roi[var].attrs = static_roi.attrs
 fwx_roi.attrs = static_roi.attrs
 
+solar_hours = fwx_roi["solar_hour"].round(0)
+
 fig = plt.figure(figsize=(10, 4))
 ax = fig.add_subplot(1, 1, 1)
-fwx_roi["solar_hour"].isel(time=20).salem.quick_map(ax=ax)
+solar_hours.isel(time=20).salem.quick_map(ax=ax)
+
+shape = solar_hours.shape
+
+df_curve = pd.read_csv(str(data_dir) + "/frp/FRP_diurnal_climatology.csv")
+df_curve.columns = [
+    "Land Cover",
+    "Ecoregion",
+    "hh00",
+    "hh01",
+    "hh02",
+    "hh03",
+    "hh04",
+    "hh05",
+    "hh06",
+    "hh07",
+    "hh08",
+    "hh09",
+    "hh10",
+    "hh11",
+    "hh12",
+    "hh13",
+    "hh14",
+    "hh15",
+    "hh16",
+    "hh17",
+    "hh18",
+    "hh19",
+    "hh20",
+    "hh21",
+    "hh22",
+    "hh23",
+]
+df_curve = (
+    df_curve.drop(0)
+    .drop(columns=["Land Cover", "Ecoregion"])
+    .dropna()
+    .reset_index(drop=True)
+    .astype(float)
+)
+df_curve = df_curve.mean()
+
+curve_array = df_curve.values
+
+curve_values = []
+for i in range(len(solar_hours.time)):
+    curve_values.append(curve_array[solar_hours.isel(time=i).values.astype(int) - 1])
+
+# new_3d_array_broadcast = curve_array[:, np.newaxis, np.newaxis] * np.ones(shape)
+fwx_roi["new_3d_array_broadcast"] = (
+    ("time", "south_north", "west_east"),
+    np.stack(curve_values),
+)
+fwx_roi["F"] = fwx_roi["F"] / 101
+fwx_roi["R-CURVE"] = fwx_roi["new_3d_array_broadcast"] * fwx_roi["F"]
+for var in list(fwx_roi):
+    fwx_roi[var].attrs = static_roi.attrs
+fwx_roi.attrs = static_roi.attrs
+
+fig = plt.figure(figsize=(10, 4))
+ax = fig.add_subplot(1, 1, 1)
+fwx_roi["R-CURVE"].isel(time=20).salem.quick_map(ax=ax)
+
+
 # ax.set_title('UTC time = ' +str(datetime_utc))

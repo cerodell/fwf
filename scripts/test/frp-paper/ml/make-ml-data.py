@@ -14,6 +14,7 @@ from scipy import stats
 from datetime import datetime
 from scipy.signal import savgol_filter
 import matplotlib.pyplot as plt
+from scipy.ndimage import gaussian_filter1d
 
 from utils.solar_hour import get_solar_hours
 from context import root_dir, data_dir
@@ -26,8 +27,8 @@ warnings.filterwarnings("ignore", category=RuntimeWarning)
 
 counter = 0
 # year = "2023"
-for year in ["2021", "2022", "2023"]:
-    # for year in ["2021"]:
+# for year in ["2021", "2022", "2023"]:
+for year in ["2021"]:
     # method = "full"
     spatially_averaged = True
     norm_fwi = True
@@ -199,7 +200,7 @@ for year in ["2021", "2022", "2023"]:
     ds_list = []
     good_files = []
     bad_files = []
-    for i, file in enumerate(file_list):
+    for i, file in enumerate(file_list[:2]):
         try:
             # ds = xr.open_zarr(file)
             ds = xr.open_dataset(file)
@@ -217,7 +218,7 @@ for year in ["2021", "2022", "2023"]:
                     ds["FRP"].mean(("x", "y")).dropna("time"),
                     ISI.mean(("x", "y")).dropna("time"),
                 )[0]
-                if r_values >= 0.39:
+                if r_values >= -1:
                     print(np.round(r_values, 2))
                     ds = get_solar_hours(ds)
                     # ds["solar_hour"] = xr.where(
@@ -310,27 +311,26 @@ for year in ["2021", "2022", "2023"]:
                             .reset_coords()
                         )
                     else:
+                        # sigma = 0.5
+
                         ds_mean = ds.mean(("x", "y")).dropna("time").compute()
-                        ds_mean["FRP_MAX"] = (
-                            ds["FRP"].max(("x", "y")).dropna("time").compute()
-                        )  # .rename({'FRP': 'FRP_MAX'})
-                        ds_mean["FRE_MAX"] = (
-                            ds["FRE"].max(("x", "y")).dropna("time").compute()
-                        )  # .rename({'FRE': 'FRE_MAX'})
 
-                        ds_mean["FRP_MIN"] = (
-                            ds["FRP"].min(("x", "y")).dropna("time").compute()
-                        )  # .rename({'FRP': 'FRP_MIN'})
-                        ds_mean["FRE_MIN"] = (
-                            ds["FRE"].min(("x", "y")).dropna("time").compute()
-                        )  # .rename({'FRE': 'FRE_MIN'})
+                        # ds_mean["FRP_MAX"] = (
+                        #     ds["FRP"].max(("x", "y")).dropna("time").compute()
+                        # )
+                        # ds_mean["FRP_MAX"] = ('time', gaussian_filter1d(ds_mean["FRP_MAX"], sigma = sigma))
+                        # ds_mean["FRE_MAX"] = (
+                        #     ds["FRE"].max(("x", "y")).dropna("time").compute()
+                        # )
+                        # ds_mean["FRE_MAX"] = ('time', gaussian_filter1d(ds_mean["FRE_MAX"], sigma = sigma))
 
-                        # window_length = 6  # Choose a window length (must be odd)
-                        # polyorder = 2  # Choose the order of the polynomial
-                        # ds_mean['FRP_smooth'] = ('time',savgol_filter(ds_mean['FRP'], window_length, polyorder))
-                        # ds_mean = ds.mean(("x", "y")).compute()
-                        # r_values = stats.pearsonr(ds_mean['FRP'], ds_mean['R'])[0]
-                        # if r_values >= 0.399:
+                        # ds_mean["FRP_MIN"] = (
+                        #     ds["FRP"].min(("x", "y")).dropna("time").compute()
+                        # )
+                        # ds_mean["FRE_MIN"] = (
+                        #     ds["FRE"].min(("x", "y")).dropna("time").compute()
+                        # )
+
                         print(f"Passed: {i}/{file_list_len}")
                         counter += 1
                         ds_list.append(ds_mean)
@@ -364,12 +364,12 @@ for year in ["2021", "2022", "2023"]:
             .reset_coords()
         )
 
-    save_dir = (
-        f"/Users/crodell/fwf/data/ml-data/training-data/{year}-fires-averaged-v6.nc"
-    )
-    print(save_dir)
-    final_ds, encoding = compressor(final_ds)
-    final_ds.to_netcdf(save_dir, encoding=encoding, mode="w")
+    # save_dir = (
+    #     f"/Users/crodell/fwf/data/ml-data/training-data/{year}-fires-averaged-v7.nc"
+    # )
+    # print(save_dir)
+    # final_ds, encoding = compressor(final_ds)
+    # final_ds.to_netcdf(save_dir, encoding=encoding, mode="w")
 
 
 # print('--------------------------------')
@@ -396,19 +396,22 @@ for year in ["2021", "2022", "2023"]:
 # print((counter/(len(good_files)+len(bad_files)))*100)
 
 # quant_ds = ds['FRP'].quantile(
-#         [0, 0.5, 1],
+#         [0, 0.5, 0.95, 1],
 #         dim=("x", "y"),
 #         skipna=True,
 #     )#.dropna("time")
 
-# std_ds = ds['FRP'].std(
-#         dim=("x", "y"),
-#         skipna=True,
-#     ).dropna("time")
+# # std_ds = ds['FRP'].std(
+# #         dim=("x", "y"),
+# #         skipna=True,
+# #     ).dropna("time")
 
 # fig = plt.figure(figsize=(8,4))
 # ax = fig.add_subplot(1,1,1)
+# ds_mean["FRP"].plot.scatter(ax = ax)
+# ds_mean["FRP_MAX"].plot.scatter(ax = ax)
 # # ax.plot(std_ds['time'], std_ds)
 # ax.plot(quant_ds['time'], quant_ds.isel(quantile=0))
-# ax.plot(quant_ds['time'], quant_ds.isel(quantile=1)+std_ds)
+# ax.plot(quant_ds['time'], quant_ds.isel(quantile=1))
 # ax.plot(quant_ds['time'], quant_ds.isel(quantile=2))
+# ax.plot(quant_ds['time'], quant_ds.isel(quantile=3))

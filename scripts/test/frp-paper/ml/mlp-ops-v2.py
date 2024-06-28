@@ -463,231 +463,231 @@ frp_i[var].salem.quick_map(
 )
 ax.set_title(f"Fire Radiative Power (MW) \n")
 
-import matplotlib.colors as mcolors
+# import matplotlib.colors as mcolors
 
 
-def get_hex_colors_from_colormap(colormap_name, num_colors):
-    cmap = plt.get_cmap(colormap_name)
-    colors = [cmap(i / num_colors) for i in range(num_colors)]
-    hex_colors = [mcolors.to_hex(color) for color in colors]
-    return hex_colors
+# def get_hex_colors_from_colormap(colormap_name, num_colors):
+#     cmap = plt.get_cmap(colormap_name)
+#     colors = [cmap(i / num_colors) for i in range(num_colors)]
+#     hex_colors = [mcolors.to_hex(color) for color in colors]
+#     return hex_colors
 
 
-# Example: Get 18 colors from the 'viridis' colormap
-hex_colors = get_hex_colors_from_colormap(custom_cmap, 18)
+# # Example: Get 18 colors from the 'viridis' colormap
+# hex_colors = get_hex_colors_from_colormap(custom_cmap, 18)
 
 
-vtimes = pd.Timestamp(frp_i.time.values)
-itime = pd.Timestamp(frp_da_small.time.values[0]) - pd.Timedelta("6h")
+# vtimes = pd.Timestamp(frp_i.time.values)
+# itime = pd.Timestamp(frp_da_small.time.values[0]) - pd.Timedelta("6h")
 
 
-def setBold(txt):
-    return r"$\bf{" + str(txt) + "}$"
+# def setBold(txt):
+#     return r"$\bf{" + str(txt) + "}$"
 
 
-def add_time_label(ax):
-    ax.set_title(f"Init: {itime.strftime('%HZ %a %d %b %Y')}", loc="left", fontsize=8)
-    ax.set_title(
-        f"{setBold('Valid')}: {vtimes.strftime('%HZ %a %d %b %Y')}",
-        fontsize=8,
-        loc="right",
-    )
-    return
+# def add_time_label(ax):
+#     ax.set_title(f"Init: {itime.strftime('%HZ %a %d %b %Y')}", loc="left", fontsize=8)
+#     ax.set_title(
+#         f"{setBold('Valid')}: {vtimes.strftime('%HZ %a %d %b %Y')}",
+#         fontsize=8,
+#         loc="right",
+#     )
+#     return
 
 
-# %%
-plt.rcParams.update({"font.size": 10})
+# # %%
+# plt.rcParams.update({"font.size": 10})
 
-fig = plt.figure(figsize=(24, 12))
-ax = fig.add_subplot(3, 4, 1)
-frp_i["MODELED_FRP"].attrs["units"] = "(MW)"
-colors = np.vstack(
-    ([1, 1, 1, 1], plt.get_cmap("YlOrRd")(np.linspace(0, 1, 256)))
-)  # Add white at the start
-custom_cmap = LinearSegmentedColormap.from_list("custom_YlOrRd", colors)
-frp_i["MODELED_FRP"].salem.quick_map(
-    cmap=custom_cmap, vmin=10, vmax=1000, ax=ax, oceans=True, lakes=True
-)
-# ax.set_title(f'Fire Radiative Power (MW) \n {str(frp_i.time.values)[:13]}')
-ax.set_title(f"Fire Radiative Power (MW) \n")
-add_time_label(ax)
+# fig = plt.figure(figsize=(24, 12))
+# ax = fig.add_subplot(3, 4, 1)
+# frp_i["MODELED_FRP"].attrs["units"] = "(MW)"
+# colors = np.vstack(
+#     ([1, 1, 1, 1], plt.get_cmap("YlOrRd")(np.linspace(0, 1, 256)))
+# )  # Add white at the start
+# custom_cmap = LinearSegmentedColormap.from_list("custom_YlOrRd", colors)
+# frp_i["MODELED_FRP"].salem.quick_map(
+#     cmap=custom_cmap, vmin=10, vmax=1000, ax=ax, oceans=True, lakes=True
+# )
+# # ax.set_title(f'Fire Radiative Power (MW) \n {str(frp_i.time.values)[:13]}')
+# ax.set_title(f"Fire Radiative Power (MW) \n")
+# add_time_label(ax)
 
-ax = fig.add_subplot(3, 4, 2)
-var = "R"
-vmin, vmax = cmaps[var]["vmin"], cmaps[var]["vmax"]
-title, colors = str(cmaps[var]["title"]), cmaps[var]["colors18"]
-custom_cmap = LinearSegmentedColormap.from_list(
-    "custom_cmap", [matplotlib.colors.hex2color(color) for color in colors]
-)
-norm = BoundaryNorm(cmaps[var]["levels"], custom_cmap.N)
-frp_i[var].attrs["units"] = ""
-frp_i[var].salem.quick_map(cmap=custom_cmap, ax=ax, norm=norm, oceans=True, lakes=True)
-ax.set_title(title + "\n")
-add_time_label(ax)
+# ax = fig.add_subplot(3, 4, 2)
+# var = "R"
+# vmin, vmax = cmaps[var]["vmin"], cmaps[var]["vmax"]
+# title, colors = str(cmaps[var]["title"]), cmaps[var]["colors18"]
+# custom_cmap = LinearSegmentedColormap.from_list(
+#     "custom_cmap", [matplotlib.colors.hex2color(color) for color in colors]
+# )
+# norm = BoundaryNorm(cmaps[var]["levels"], custom_cmap.N)
+# frp_i[var].attrs["units"] = ""
+# frp_i[var].salem.quick_map(cmap=custom_cmap, ax=ax, norm=norm, oceans=True, lakes=True)
+# ax.set_title(title + "\n")
+# add_time_label(ax)
 
-ax = fig.add_subplot(3, 4, 3)
-var = "U"
-vmin, vmax = cmaps[var]["vmin"], cmaps[var]["vmax"]
-title, colors = str(cmaps[var]["title"]), cmaps[var]["colors18"]
-custom_cmap = LinearSegmentedColormap.from_list(
-    "custom_cmap", [matplotlib.colors.hex2color(color) for color in colors]
-)
-norm = BoundaryNorm(cmaps[var]["levels"], custom_cmap.N)
-frp_i[var].attrs["units"] = ""
-frp_i[var].salem.quick_map(cmap=custom_cmap, ax=ax, norm=norm, oceans=True, lakes=True)
-ax.set_title(title + "\n")
-add_time_label(ax)
-
-
-ax = fig.add_subplot(3, 4, 4)
-var = "S"
-vmin, vmax = cmaps[var]["vmin"], cmaps[var]["vmax"]
-title, colors = str(cmaps[var]["title"]), cmaps[var]["colors18"]
-custom_cmap = LinearSegmentedColormap.from_list(
-    "custom_cmap", [matplotlib.colors.hex2color(color) for color in colors]
-)
-norm = BoundaryNorm(cmaps[var]["levels"], custom_cmap.N)
-frp_i[var].attrs["units"] = ""
-frp_i[var].salem.quick_map(cmap=custom_cmap, ax=ax, norm=norm, oceans=True, lakes=True)
-ax.set_title(title + "\n")
-add_time_label(ax)
+# ax = fig.add_subplot(3, 4, 3)
+# var = "U"
+# vmin, vmax = cmaps[var]["vmin"], cmaps[var]["vmax"]
+# title, colors = str(cmaps[var]["title"]), cmaps[var]["colors18"]
+# custom_cmap = LinearSegmentedColormap.from_list(
+#     "custom_cmap", [matplotlib.colors.hex2color(color) for color in colors]
+# )
+# norm = BoundaryNorm(cmaps[var]["levels"], custom_cmap.N)
+# frp_i[var].attrs["units"] = ""
+# frp_i[var].salem.quick_map(cmap=custom_cmap, ax=ax, norm=norm, oceans=True, lakes=True)
+# ax.set_title(title + "\n")
+# add_time_label(ax)
 
 
-ax = fig.add_subplot(3, 4, 5)
-var = "T"
-vmin, vmax = cmaps[var]["vmin"], cmaps[var]["vmax"]
-title, colors = str(cmaps[var]["title"]), cmaps[var]["colors"]
-custom_cmap = LinearSegmentedColormap.from_list(
-    "custom_cmap", [matplotlib.colors.hex2color(color) for color in colors]
-)
-norm = BoundaryNorm(cmaps[var]["levels"], custom_cmap.N)
-frp_i[var].attrs["units"] = ""
-frp_i[var].salem.quick_map(cmap=custom_cmap, ax=ax, norm=norm, oceans=True, lakes=True)
-ax.set_title(title + "\n")
-add_time_label(ax)
-
-ax = fig.add_subplot(3, 4, 6)
-var = "H"
-vmin, vmax = cmaps[var]["vmin"], cmaps[var]["vmax"]
-title, colors = str(cmaps[var]["title"]), cmaps[var]["colors18"]
-custom_cmap = LinearSegmentedColormap.from_list(
-    "custom_cmap", [matplotlib.colors.hex2color(color) for color in colors]
-)
-norm = BoundaryNorm(cmaps[var]["levels"], custom_cmap.N)
-frp_i[var].attrs["units"] = ""
-frp_i[var].salem.quick_map(cmap=custom_cmap, ax=ax, norm=norm, oceans=True, lakes=True)
-ax.set_title(title + "\n")
-add_time_label(ax)
-
-ax = fig.add_subplot(3, 4, 7)
-var = "W"
-vmin, vmax = cmaps[var]["vmin"], cmaps[var]["vmax"]
-title, colors = str(cmaps[var]["title"]), cmaps[var]["colors18"]
-custom_cmap = LinearSegmentedColormap.from_list(
-    "custom_cmap", [matplotlib.colors.hex2color(color) for color in colors]
-)
-norm = BoundaryNorm(cmaps[var]["levels"], custom_cmap.N)
-frp_i[var].attrs["units"] = ""
-frp_i[var].salem.quick_map(cmap=custom_cmap, ax=ax, norm=norm, oceans=True, lakes=True)
-ax.set_title(title + "\n")
-add_time_label(ax)
-
-ax = fig.add_subplot(3, 4, 8)
-var = "r_o"
-vmin, vmax = cmaps[var]["vmin"], cmaps[var]["vmax"]
-title, colors = str(cmaps[var]["title"]), cmaps[var]["colors18"]
-custom_cmap = LinearSegmentedColormap.from_list(
-    "custom_cmap", [matplotlib.colors.hex2color(color) for color in colors]
-)
-norm = BoundaryNorm(cmaps[var]["levels"], custom_cmap.N)
-frp_i[var].attrs["units"] = ""
-frp_i[var].salem.quick_map(cmap=custom_cmap, ax=ax, norm=norm, oceans=True, lakes=True)
-ax.set_title(title + "\n")
-add_time_label(ax)
+# ax = fig.add_subplot(3, 4, 4)
+# var = "S"
+# vmin, vmax = cmaps[var]["vmin"], cmaps[var]["vmax"]
+# title, colors = str(cmaps[var]["title"]), cmaps[var]["colors18"]
+# custom_cmap = LinearSegmentedColormap.from_list(
+#     "custom_cmap", [matplotlib.colors.hex2color(color) for color in colors]
+# )
+# norm = BoundaryNorm(cmaps[var]["levels"], custom_cmap.N)
+# frp_i[var].attrs["units"] = ""
+# frp_i[var].salem.quick_map(cmap=custom_cmap, ax=ax, norm=norm, oceans=True, lakes=True)
+# ax.set_title(title + "\n")
+# add_time_label(ax)
 
 
-ax = fig.add_subplot(3, 4, 9)
-var = "Live_Wood"
-frp_i[var].attrs["units"] = ""
-frp_i[var].salem.quick_map(cmap="Greens", ax=ax, oceans=True, lakes=True)
-ax.set_title("Live Wood Fuel Load" + "\n")
-add_time_label(ax)
+# ax = fig.add_subplot(3, 4, 5)
+# var = "T"
+# vmin, vmax = cmaps[var]["vmin"], cmaps[var]["vmax"]
+# title, colors = str(cmaps[var]["title"]), cmaps[var]["colors"]
+# custom_cmap = LinearSegmentedColormap.from_list(
+#     "custom_cmap", [matplotlib.colors.hex2color(color) for color in colors]
+# )
+# norm = BoundaryNorm(cmaps[var]["levels"], custom_cmap.N)
+# frp_i[var].attrs["units"] = ""
+# frp_i[var].salem.quick_map(cmap=custom_cmap, ax=ax, norm=norm, oceans=True, lakes=True)
+# ax.set_title(title + "\n")
+# add_time_label(ax)
+
+# ax = fig.add_subplot(3, 4, 6)
+# var = "H"
+# vmin, vmax = cmaps[var]["vmin"], cmaps[var]["vmax"]
+# title, colors = str(cmaps[var]["title"]), cmaps[var]["colors18"]
+# custom_cmap = LinearSegmentedColormap.from_list(
+#     "custom_cmap", [matplotlib.colors.hex2color(color) for color in colors]
+# )
+# norm = BoundaryNorm(cmaps[var]["levels"], custom_cmap.N)
+# frp_i[var].attrs["units"] = ""
+# frp_i[var].salem.quick_map(cmap=custom_cmap, ax=ax, norm=norm, oceans=True, lakes=True)
+# ax.set_title(title + "\n")
+# add_time_label(ax)
+
+# ax = fig.add_subplot(3, 4, 7)
+# var = "W"
+# vmin, vmax = cmaps[var]["vmin"], cmaps[var]["vmax"]
+# title, colors = str(cmaps[var]["title"]), cmaps[var]["colors18"]
+# custom_cmap = LinearSegmentedColormap.from_list(
+#     "custom_cmap", [matplotlib.colors.hex2color(color) for color in colors]
+# )
+# norm = BoundaryNorm(cmaps[var]["levels"], custom_cmap.N)
+# frp_i[var].attrs["units"] = ""
+# frp_i[var].salem.quick_map(cmap=custom_cmap, ax=ax, norm=norm, oceans=True, lakes=True)
+# ax.set_title(title + "\n")
+# add_time_label(ax)
+
+# ax = fig.add_subplot(3, 4, 8)
+# var = "r_o"
+# vmin, vmax = cmaps[var]["vmin"], cmaps[var]["vmax"]
+# title, colors = str(cmaps[var]["title"]), cmaps[var]["colors18"]
+# custom_cmap = LinearSegmentedColormap.from_list(
+#     "custom_cmap", [matplotlib.colors.hex2color(color) for color in colors]
+# )
+# norm = BoundaryNorm(cmaps[var]["levels"], custom_cmap.N)
+# frp_i[var].attrs["units"] = ""
+# frp_i[var].salem.quick_map(cmap=custom_cmap, ax=ax, norm=norm, oceans=True, lakes=True)
+# ax.set_title(title + "\n")
+# add_time_label(ax)
 
 
-ax = fig.add_subplot(3, 4, 10)
-var = "Dead_Wood"
-frp_i[var].attrs["units"] = ""
-frp_i[var].salem.quick_map(cmap="Oranges", ax=ax, oceans=True, lakes=True)
-ax.set_title("Dead Wood Fuel Load" + "\n")
-add_time_label(ax)
+# ax = fig.add_subplot(3, 4, 9)
+# var = "Live_Wood"
+# frp_i[var].attrs["units"] = ""
+# frp_i[var].salem.quick_map(cmap="Greens", ax=ax, oceans=True, lakes=True)
+# ax.set_title("Live Wood Fuel Load" + "\n")
+# add_time_label(ax)
 
 
-ax = fig.add_subplot(3, 4, 11)
-var = "Live_Leaf"
-frp_i[var].attrs["units"] = ""
-frp_i[var].salem.quick_map(cmap="Greens", ax=ax, oceans=True, lakes=True)
-ax.set_title("Live Leaf Fuel Load" + "\n")
-add_time_label(ax)
+# ax = fig.add_subplot(3, 4, 10)
+# var = "Dead_Wood"
+# frp_i[var].attrs["units"] = ""
+# frp_i[var].salem.quick_map(cmap="Oranges", ax=ax, oceans=True, lakes=True)
+# ax.set_title("Dead Wood Fuel Load" + "\n")
+# add_time_label(ax)
 
 
-ax = fig.add_subplot(3, 4, 12)
-var = "Dead_Foliage"
-frp_i[var].attrs["units"] = ""
-frp_i[var].salem.quick_map(cmap="Oranges", ax=ax, oceans=True, lakes=True)
-ax.set_title("Dead Leaf Fuel Load" + "\n")
-add_time_label(ax)
-
-fig.tight_layout()
-fig.savefig(
-    str(model_dir) + "/img/frp-rain.pdf",
-    bbox_inches="tight",
-    pad_inches=0.1,
-    orientation="landscape",
-)
+# ax = fig.add_subplot(3, 4, 11)
+# var = "Live_Leaf"
+# frp_i[var].attrs["units"] = ""
+# frp_i[var].salem.quick_map(cmap="Greens", ax=ax, oceans=True, lakes=True)
+# ax.set_title("Live Leaf Fuel Load" + "\n")
+# add_time_label(ax)
 
 
-# %%
-# # Parameters for the plot
-# ncol = 6
-# nrow = (len(frp_da_small.time) + ncol - 1) // ncol
+# ax = fig.add_subplot(3, 4, 12)
+# var = "Dead_Foliage"
+# frp_i[var].attrs["units"] = ""
+# frp_i[var].salem.quick_map(cmap="Oranges", ax=ax, oceans=True, lakes=True)
+# ax.set_title("Dead Leaf Fuel Load" + "\n")
+# add_time_label(ax)
 
-# fig, axes = plt.subplots(nrow, ncol, figsize=(18, 9))
+# fig.tight_layout()
+# fig.savefig(
+#     str(model_dir) + "/img/frp-rain.pdf",
+#     bbox_inches="tight",
+#     pad_inches=0.1,
+#     orientation="landscape",
+# )
 
-# # Flatten axes for easy iteration
-# axes = axes.flatten()
 
-# # Generate subplots
-# for i, t in enumerate(frp_da_small.time):
-#     ax = axes[i]
-#     smap = frp_da_small['MODELED_FRP'].sel(time=t).salem.get_map(cmap="YlOrRd", vmin=0, vmax=600)
-#     smap.set_data(frp_da_small['MODELED_FRP'].sel(time=t).values)
-#     smap.visualize(ax=ax, addcbar=False)  # Do not add color bar here
-#     ax.set_title(f'{str(t.values)[:13]}')
+# # %%
+# # # Parameters for the plot
+# # ncol = 6
+# # nrow = (len(frp_da_small.time) + ncol - 1) // ncol
 
-#     # Hide x and y labels for all but the leftmost and bottommost subplots
-#     if i % ncol != 0:  # Not the leftmost column
-#         ax.set_yticklabels([])
-#     if i // ncol != nrow - 1:  # Not the bottommost row
-#         ax.set_xticklabels([])
-#     # else:
-#     #     ax.set_xticklabels(fontsize =14)
+# # fig, axes = plt.subplots(nrow, ncol, figsize=(18, 9))
 
-# # Turn off unused subplots
-# for j in range(i + 1, len(axes)):
-#     fig.delaxes(axes[j])
+# # # Flatten axes for easy iteration
+# # axes = axes.flatten()
 
-# # Add borders to each subplot
-# for ax in axes:
-#     for spine in ax.spines.values():
-#         spine.set_edgecolor('black')
-#         spine.set_linewidth(1.5)
+# # # Generate subplots
+# # for i, t in enumerate(frp_da_small.time):
+# #     ax = axes[i]
+# #     smap = frp_da_small['MODELED_FRP'].sel(time=t).salem.get_map(cmap="YlOrRd", vmin=0, vmax=600)
+# #     smap.set_data(frp_da_small['MODELED_FRP'].sel(time=t).values)
+# #     smap.visualize(ax=ax, addcbar=False)  # Do not add color bar here
+# #     ax.set_title(f'{str(t.values)[:13]}')
 
-# # Adjust layout
-# fig.tight_layout(rect=[0, 0, 0.94, 1])  # Leave space for colorbar on the right
+# #     # Hide x and y labels for all but the leftmost and bottommost subplots
+# #     if i % ncol != 0:  # Not the leftmost column
+# #         ax.set_yticklabels([])
+# #     if i // ncol != nrow - 1:  # Not the bottommost row
+# #         ax.set_xticklabels([])
+# #     # else:
+# #     #     ax.set_xticklabels(fontsize =14)
 
-# # Add a single color bar
-# cbar_ax = fig.add_axes([0.938, 0.1, 0.02, 0.8])  # [left, bottom, width, height]
-# sm = plt.cm.ScalarMappable(cmap="YlOrRd", norm=plt.Normalize(vmin=0, vmax=600))
-# cbar = fig.colorbar(sm, cax=cbar_ax, extend = 'max' )
-# cbar.set_label('FRP (MW)', fontsize =18)
-# # fig.savefig('frp_times.png')
+# # # Turn off unused subplots
+# # for j in range(i + 1, len(axes)):
+# #     fig.delaxes(axes[j])
+
+# # # Add borders to each subplot
+# # for ax in axes:
+# #     for spine in ax.spines.values():
+# #         spine.set_edgecolor('black')
+# #         spine.set_linewidth(1.5)
+
+# # # Adjust layout
+# # fig.tight_layout(rect=[0, 0, 0.94, 1])  # Leave space for colorbar on the right
+
+# # # Add a single color bar
+# # cbar_ax = fig.add_axes([0.938, 0.1, 0.02, 0.8])  # [left, bottom, width, height]
+# # sm = plt.cm.ScalarMappable(cmap="YlOrRd", norm=plt.Normalize(vmin=0, vmax=600))
+# # cbar = fig.colorbar(sm, cax=cbar_ax, extend = 'max' )
+# # cbar.set_label('FRP (MW)', fontsize =18)
+# # # fig.savefig('frp_times.png')
