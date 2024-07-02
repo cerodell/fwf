@@ -43,9 +43,9 @@ warnings.simplefilter(action="ignore", category=RuntimeWarning)
 import numpy as np
 
 
-ID = 24448308  #  25485086 (2022) 24448308 (2021) 24360611 (2021) 24450415 (2021)
-year = "2021"
-mlp_test_case = "MLP_64U-Dense_64U-Dense_64U-Dense_64U-Dense_2U-Dense-Decent"
+ID = 26418461  #  25485086 (2022) 24448308 (2021) 24360611 (2021) 24450415 (2021) 26418461 (2023)
+year = "2023"
+mlp_test_case = "MLP_64U-Dense_64U-Dense_64U-Dense_2U-Dense"
 version = "v7"
 method = f"averaged-{version}"
 ml_pack = "tf"
@@ -122,7 +122,21 @@ ds_map = xr.where(np.isnan(ds_map["FRP"].values) == True, np.nan, ds_map)
 ds_map = ds_map.salem.roi(shape=fire_i, all_touched=True)
 
 # ds_space_avg = ds_map.isel(time = slice(72,128)).mean(dim=("x", "y"))
-# ds_space_avg = ds_map.sel(time = slice('2021-07-08','2021-07-20')).mean(dim=("x", "y"))
+test = ds_map.sel(time=slice("2023-06-03-T00", "2023-06-03-T23"))
+test["FRP"].isel(time=slice(0, 24, 4)).plot(
+    x="x", y="y", col="time", col_wrap=3, cmap="YlOrRd"
+)
+
+fig = plt.figure(figsize=(12, 4))
+ax = fig.add_subplot(1, 1, 1)
+test.mean(dim=("x", "y"))["FRP"].plot(ax=ax, color="tab:orange")
+fig.savefig(
+    str(data_dir) + f"/images/frp-paper/{ID}-time-series-frp-only.png",
+    bbox_inches="tight",
+    dpi=240,
+)
+
+
 ds_space_avg = ds_map.mean(dim=("x", "y"))
 FRP = ds_space_avg["FRP"].values
 MODELED_FRP = ds_space_avg["MODELED_FRP"].values
@@ -135,6 +149,11 @@ frp_1300s = FRP[over_pass_viirs]  # [FRP[idx] for idx in over_pass_viirs]
 frp_1300s = replace_nan_with_previous(frp_1300s)
 frp_1300s = np.roll(frp_1300s, 1)
 frp_1300s[0] = 0
+
+
+bias = MODELED_FRP[over_pass_viirs[1]] - frp_1300s[1]
+# MODELED_FRP = MODELED_FRP - bias
+
 
 # start_hour = pd.Timestamp(LOCAL_TIME[0]).hour
 frp_curve = df_curve.values
@@ -157,6 +176,14 @@ ds_space_avg = xr.where(
     np.isnan(ds_space_avg["FRP"].values) == True, np.nan, ds_space_avg
 )
 FRP_PRE = ds_space_avg["FRP_PRE"].values
+
+
+# ds_slice = ds_space_avg.sel(time=slice('2021-07-13', '2021-08-05'))
+# FRP = ds_slice["FRP"].values
+# MODELED_FRP = ds_slice["MODELED_FRP"].values
+# FRP_PRE = ds_slice["FRP_PRE"].values
+# LOCAL_TIME = ds_slice.time.values - pd.Timedelta(hours=utc_offset)
+
 # [scale_frp(FRP[i], frp_curve[i], frp_curve) for i in over_pass_viirs]
 
 # duplicated_array = np.tile(frp_curve, len(LOCAL_TIME) // len(frp_curve) + 1)[:len(LOCAL_TIME)]
@@ -170,52 +197,78 @@ FRP_PRE = ds_space_avg["FRP_PRE"].values
 # FRP_NORM = ds_space_avg['FRP'] / ds_space_avg['FRP'].dropna("time").values.max()
 # MODELED_FRP_NORM = ds_space_avg['MODELED_FRP'] /  ds_space_avg['FRP'].dropna("time").values.max()
 
-fig = plt.figure(figsize=(6, 6))
-ax = fig.add_subplot(1, 1, 1)
-ax.scatter(FRP_PRE, FRP)
-ax.scatter(MODELED_FRP, FRP)
+# fig = plt.figure(figsize=(6, 6))
+# ax = fig.add_subplot(1, 1, 1)
+# ax.scatter(FRP_PRE, FRP)
+# ax.scatter(MODELED_FRP, FRP)
+# ax.set_xlim(-10,3000)
+# ax.set_ylim(-10,3000)
 
 
-fig = plt.figure(figsize=(14, 6))
+# ds_slice = ds_space_avg.sel(time=slice('2021-07-01', '2021-08-01'))
+# FRP = ds_slice["FRP"].values
+# MODELED_FRP = ds_slice["MODELED_FRP"].values
+# FRP_PRE = ds_slice["FRP_PRE"].values
+# LOCAL_TIME = ds_slice.time.values - pd.Timedelta(hours=utc_offset)
+
+# %%
+plt.rcParams.update({"font.size": 14})
+fig = plt.figure(figsize=(12, 4))
 ax = fig.add_subplot(1, 1, 1)
-ax.plot(LOCAL_TIME, FRP, color="k", lw=1.2, zorder=1, label="OBS")
-ax.plot(LOCAL_TIME, MODELED_FRP, color="tab:green", label="MLP")
-ax.plot(LOCAL_TIME, FRP_PRE, color="tab:orange", label="CLIMO")
+ax.plot(LOCAL_TIME, FRP, color="k", lw=1.4, zorder=1, label="OBS")
+ax.plot(LOCAL_TIME, MODELED_FRP, color="tab:green", label="MLP", lw=1, zorder=10)
+ax.plot(LOCAL_TIME, FRP_PRE, color="tab:orange", label="CLIMO", lw=1, zorder=5)
 ax.legend(
     ncol=3,
     fancybox=True,
     shadow=True,
     # bbox_to_anchor=(0.38, 1.25),
 )
+plt.gca().xaxis.set_major_formatter(mdates.DateFormatter("%m-%d"))
+# plt.gca().set_xticks(hourly_ds.time.values.astype("datetime64[D]"))
+# plt.gca().xaxis.set_major_formatter()
+ax.set_xlabel(f"Local DateTime (MM-DD)", fontsize=18)
+ax.set_ylabel(f"FRP (MW)", fontsize=18)
+
 ds_space_nan = ds_space_avg.dropna("time").isel(time=slice(24, None))
 FRP_NAN = ds_space_nan["FRP"].values
 MODELED_FRP_NAN = ds_space_nan["MODELED_FRP"].values
 FRP_PRE_NAN = ds_space_nan["FRP_PRE"].values
 
 print("MODELED FRP V OBS FRP")
-print(
-    "pearsonr: "
+ax.set_title(
+    "Modeled vs Observed "
+    + "\n pearsonr: "
     + str(np.round(stats.pearsonr(FRP_NAN, MODELED_FRP_NAN)[0], 2))
-    + "\n r2_score: "
-    + str(np.round(r2_score(FRP_NAN, MODELED_FRP_NAN), 2))
+    # + "\n r2_score: "
+    # + str(np.round(r2_score(FRP_NAN, MODELED_FRP_NAN), 2))
     + "\n mbe: "
     + str(np.round(MBE(FRP_NAN, MODELED_FRP_NAN), 2))
     + "\n rmse: "
-    + str(np.round(RMSE(FRP_NAN, MODELED_FRP_NAN), 2))
+    + str(np.round(RMSE(FRP_NAN, MODELED_FRP_NAN), 2)),
+    loc="left",
+    color="tab:green",
 )
 print("===============================================")
 print("PERSISTED FRP V OBS FRP")
-print(
-    "pearsonr: "
+ax.set_title(
+    "Persisted vs Observed"
+    + "\n pearsonr: "
     + str(np.round(stats.pearsonr(FRP_NAN, FRP_PRE_NAN)[0], 2))
-    + "\n r2_score: "
-    + str(np.round(r2_score(FRP_NAN, FRP_PRE_NAN), 2))
+    # + "\n r2_score: "
+    # + str(np.round(r2_score(FRP_NAN, FRP_PRE_NAN), 2))
     + "\n mbe: "
     + str(np.round(MBE(FRP_NAN, FRP_PRE_NAN), 2))
     + "\n rmse: "
-    + str(np.round(RMSE(FRP_NAN, FRP_PRE_NAN), 2))
+    + str(np.round(RMSE(FRP_NAN, FRP_PRE_NAN), 2)),
+    loc="right",
+    color="tab:orange",
 )
-
+fig.savefig(
+    str(data_dir) + f"/images/frp-paper/{ID}-time-series.png",
+    bbox_inches="tight",
+    dpi=240,
+)
 
 # ds_time_avg = ds_time_avg.salem.roi(shape=fire_i, all_touched=True)
 

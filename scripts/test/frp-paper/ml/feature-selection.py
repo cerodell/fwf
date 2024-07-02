@@ -9,15 +9,15 @@ import seaborn as sns
 import matplotlib.pyplot as plt
 from pathlib import Path
 
-from sklearn.neural_network import MLPRegressor
-from sklearn.preprocessing import StandardScaler
-from sklearn.inspection import permutation_importance
-from sklearn.model_selection import train_test_split
-from sklearn.feature_selection import SelectKBest, f_regression
+import matplotlib.pyplot as plt
+import cartopy.crs as crs
+import cartopy.feature as cfeature
+from cartopy.mpl.gridliner import LONGITUDE_FORMATTER, LATITUDE_FORMATTER
+import matplotlib.ticker as mticker
+from netCDF4 import Dataset
+from wrf import getvar, get_cartopy
 
-from sklearn.metrics import r2_score
-from scipy import stats
-from utils.stats import MBE
+
 from utils.ml_data import MLDATA
 from context import data_dir, root_dir
 
@@ -39,18 +39,24 @@ save_dir = Path(str(data_dir) + "/images/rave/mlp/features/")
 save_dir.mkdir(parents=True, exist_ok=True)
 # Configuration parameters
 config = dict(
-    method="averaged-v5",
+    method="averaged-v7",
     feature_vars=[
-        "FRP",
-        "FRE",
-        "R",
-        # "NISI",
-        "Live_Wood",
-        "Dead_Wood",
-        "Live_Leaf",
-        "Dead_Foliage",
-        "R-hour_sin-Live_Wood",
-        "R-hour_cos",
+        "SAZ_sin",
+        "SAZ_cos",
+        "ASPECT_sin",
+        "ASPECT_cos",
+        "HGT",
+        "GS",
+        # "U-lat_sin",
+        "U-lat_sin-Total_Fuel_Load",
+        "U-lat_cos-Total_Fuel_Load",
+        "U-lon_sin-Total_Fuel_Load",
+        "U-lon_cos-Total_Fuel_Load",
+        # "U",
+        # "Total_Fuel_Load",
+        "R-hour_sin-Total_Fuel_Load",
+        "R-hour_cos-Total_Fuel_Load",
+        # "R-hour_cos",
         # "R-lat_sin",
         # "R-lat_cos",
         # "R-lon_sin",
@@ -60,20 +66,91 @@ config = dict(
         # "U-lon_sin",
         # "U-lon_cos",
     ],
-    scaler_type="minmax",  ##robust or standard minmax
-    transform=False,
-    min_fire_size=0,
+    scaler_type="standard",  ##robust or standard minmax
+    transform=True,
+    min_fire_size=1000,
     package="tf",
     model_type="MLP",
     main_cases=True,
     shuffle_data=True,
     feature_engineer=True,
+    filter_std=False,
 )
 # config["n_features"] = len(config["keep_vars"])
 
 
 mlD = MLDATA(config=config)
 df = mlD.open_ml_ds()
+df_unique = df.groupby("id").first().reset_index()
+
+
+# Open the NetCDF file
+ncfile = Dataset(str(data_dir) + f"/wrf/wrfout_d01_2023-04-20_00:00:00")
+# Get the sea level pressure
+slp = getvar(ncfile, "slp")
+# Get the cartopy mapping object
+cart_proj = get_cartopy(slp)
+
+
+## bring in state/prov boundaries
+states_provinces = cfeature.NaturalEarthFeature(
+    category="cultural",
+    name="admin_1_states_provinces_shp",
+    scale="50m",
+    facecolor="none",
+)
+
+
+# %%
+
+
+lat, lon, area_ha = [], [], []
+for ID, group in df.groupby("id"):
+    lat.append(float(group["lats"].iloc[0]))
+    lon.append(float(group["lons"].iloc[0]))
+    area_ha.append(float(group["area_ha"].iloc[0]))
+
+from sklearn.preprocessing import MinMaxScaler
+
+# Normalize sizes to a specified range (e.g., 20 to 200)
+scaler = MinMaxScaler(feature_range=(2, 400))
+normalized_sizes = scaler.fit_transform(np.array(area_ha).reshape(-1, 1)).flatten()
+
+
+# Create a figure
+fig = plt.figure(figsize=(14, 8))
+# Set the GeoAxes to the projection used by WRF
+ax = plt.axes(projection=cart_proj)
+
+ax.add_feature(cfeature.OCEAN, color="white", zorder=2)
+ax.add_feature(states_provinces, linewidth=0.5, edgecolor="black", zorder=5)
+ax.coastlines("50m", linewidth=0.8, zorder=5)
+
+## plot wx stations locations
+sc = ax.scatter(
+    lon,
+    lat,
+    cmap="viridis",
+    vmin=0,
+    vmax=1,
+    zorder=10,
+    alpha=1,
+    s=normalized_sizes,
+    transform=crs.PlateCarree(),
+    linewidth=0.4,
+    edgecolors="black",
+)
+
+
+# norm_vars_list = ['R', 'U', 'S', 'Live_Wood', 'Dead_Wood', 'Dead_Foliage','Total_Fuel_Load', 'HGT', 'GS']
+# df_i = df[norm_vars_list]
+# var_maxs = np.ceil(df_i.max())
+# var_mins = np.floor(df_i.min())
+# for var in norm_vars_list:
+#     config.update({var+'_max': int(var_maxs[var])})
+#     config.update({var+'_min': int(var_mins[var])})
+#     df[var] = (df[var] - var_mins[var]) / (var_maxs[var] - var_mins[var])
+
 
 # dfs = df
 # feature_names=[

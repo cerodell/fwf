@@ -47,9 +47,9 @@ startFWX = datetime.now()
 
 
 all_fire = False
-ID = 24448308  # 24450415 (2022) 25485086 (2021) 24448308 (2021) 24360611 (2021) 24450415 (2021)
-year = "2021"
-mlp_test_case = "MLP_64U-Dense_64U-Dense_64U-Dense_64U-Dense_2U-Dense-Decent"
+ID = 26418461  #  25485086 (2022) 24448308 (2021) 24360611 (2021) 24450415 (2021) 26418461 (2023)
+year = "2023"
+mlp_test_case = "MLP_64U-Dense_64U-Dense_64U-Dense_2U-Dense"
 method = "averaged-v7"
 ml_pack = "tf"
 target_vars = "FRP_FRE"
@@ -103,6 +103,7 @@ def predict_frp(config):
     # Load the scaler
     scaler = joblib.load(f"{model_dir}/feature-scaler.joblib")
     X_new_scaled = scaler.transform(X)
+    # X_new_scaled = X.to_numpy()
 
     # Load the model
     model = load_model(f"{model_dir}/model.keras")
@@ -147,6 +148,11 @@ def predict_frp(config):
     print(f"Wrote: {file_dir}")
     print("Time to write: ", datetime.now() - startWRITE)
     return ds, fire_i
+
+
+# for var in list(ds):
+#     if np.any(np.isinf(ds[var].values)) == True:
+#         print(var)
 
 
 save_dir = model_dir

@@ -19,7 +19,7 @@ from context import data_dir
 
 domain = "d02"
 doi = pd.Timestamp("2023-06-06")
-mlp_test_case = "MLP_64U-Dense_64U-Dense_64U-Dense_64U-Dense_2U-Dense-Decent"
+mlp_test_case = "MLP_64U-Dense_64U-Dense_64U-Dense_2U-Dense"
 model_dir = str(data_dir) + f"/mlp/tf/averaged-v7/FRP_FRE/{mlp_test_case}"
 ### Open model config
 with open(f"{model_dir}/config.json", "r") as json_data:
@@ -86,10 +86,9 @@ ds_i["R"].plot(ax=isi, color="tab:green")
 set_axis_postion_full_fwx(isi, "right", 0, "ISI")
 isi.set_title("")
 
-
 ds_i["R-hour_sin-Live_Wood"].plot(ax=isi_hs, color="tab:red")
 set_axis_postion_full_fwx(isi_hs, "left", 120, "ISI x Sin(Solar Hour) \n x Live Wood")
-y_min, y_max = isi_hs.get_ylim()
+# y_min, y_max = isi_hs.get_ylim()
 # if abs(y_min) > abs(y_max):
 #     higher_abs_value = abs(y_min)
 # else:
@@ -162,7 +161,9 @@ ds_space["Live_Wood"].salem.quick_map(
 )
 ax.set_title(r"Live Wood Fuel Load ($kg$ $m^{-2}$)")
 fig.tight_layout()
-# plt.savefig(str(data_dir) + '/images/frp-paper/feature-eng-map-bui-lat-sin-load.png', dpi = 250)
+plt.savefig(
+    str(data_dir) + "/images/frp-paper/feature-eng-map-bui-lat-sin-load.png", dpi=250
+)
 
 
 # # # %%

@@ -9,6 +9,7 @@ import pandas as pd
 import xarray as xr
 from pathlib import Path
 from datetime import datetime
+import matplotlib.pyplot as plt
 
 from context import data_dir
 
@@ -48,6 +49,7 @@ def read_binary_data(hdr_file_path, binary_file_path):
 
     # Determine the numpy dtype
     dtype_map = {
+        "0": np.uint8,
         "1": np.uint8,
         "2": np.int16,
         "3": np.int32,
@@ -57,6 +59,7 @@ def read_binary_data(hdr_file_path, binary_file_path):
         "13": np.uint32,
         "14": np.int64,
         "15": np.uint64,
+        "16": np.uint64,
     }
 
     np_dtype = dtype_map[dtype]
@@ -99,10 +102,10 @@ ds["eco1"] = (
 ds["eco1"].attrs = ds.attrs  # Copy attributes
 data[::-1, :, 1] = np.where(data[::-1, :, 1] == 255, np.nan, data[::-1, :, 1])
 data[::-1, :, 1] = np.where(data[::-1, :, 1] == 30, np.nan, data[::-1, :, 1])
-data[::-1, :, 1] = np.where(data[::-1, :, 1] == 16, np.nan, data[::-1, :, 1])
-data[::-1, :, 1] = np.where(data[::-1, :, 1] == 15, np.nan, data[::-1, :, 1])
+# data[::-1, :, 1] = np.where(data[::-1, :, 1] == 16, np.nan, data[::-1, :, 1])
+# data[::-1, :, 1] = np.where(data[::-1, :, 1] == 15, np.nan, data[::-1, :, 1])
 # data[::-1,:,1] = np.where(data[::-1,:,1] == 14, np.nan, data[::-1,:,1])
-data[::-1, :, 1] = np.where(data[::-1, :, 1] == 1, np.nan, data[::-1, :, 1])
+# data[::-1, :, 1] = np.where(data[::-1, :, 1] == 1, np.nan, data[::-1, :, 1])
 # data[::-1,:,1] = np.where(data[::-1,:,1] == 2, np.nan, data[::-1,:,1])
 
 ds["eco2"] = (
@@ -120,12 +123,39 @@ ds = ds.sel(x=slice(-170, -50), y=slice(25, 75))  # Select a specific spatial re
 
 
 ds_cali = ds.sel(
-    x=slice(-128, -109), y=slice(32, 53)
+    x=slice(-128, -95), y=slice(32, 58)
 )  # Select a specific spatial region
-ds_cali["eco2"].salem.quick_map(levels=np.arange(2, 13, 1))
+
+import cartopy
+
+fig = plt.figure(figsize=(14, 4))
+ax = fig.add_subplot(1, 1, 1, projection=ds.salem.cartopy())
+ds["eco2"].plot.pcolormesh(levels=np.unique(ds["eco2"]), ax=ax, cmap="tab20c")
+ax.coastlines()
+ax.add_feature(cartopy.feature.BORDERS)
+# save as png
+# fig.savefig(
+#     str(data_dir) + f"/images/frp-paper/map-eco.png",
+#     bbox_inches="tight",
+#     dpi=240,
+# )
 
 
-{}
+import cartopy
+
+fig = plt.figure(figsize=(14, 4))
+ax = fig.add_subplot(1, 1, 1, projection=ds.salem.cartopy())
+ds["eco1"].plot.pcolormesh(levels=np.unique(ds["eco1"]), ax=ax, cmap="tab20c")
+ax.coastlines()
+ax.add_feature(cartopy.feature.BORDERS)
+# save as png
+# fig.savefig(
+#     str(data_dir) + f"/images/frp-paper/map-land-cover.png",
+#     bbox_inches="tight",
+#     dpi=240,
+# )
+
+
 # df_curve = pd.read_csv(str(data_dir) + "/frp/FRP_diurnal_climatology.csv")
 
 # # # Clean the header row
@@ -137,4 +167,4 @@ ds_cali["eco2"].salem.quick_map(levels=np.arange(2, 13, 1))
 # df_curve = df_curve.mean()
 # grouped_df = df.groupby(['Land Cover'])['Forest']
 
-crop_curve = pd.read_csv(str(data_dir) + "/frp/cropland_frp_curve.csv")
+# crop_curve = pd.read_csv(str(data_dir) + "/frp/cropland_frp_curve.csv")

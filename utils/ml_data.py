@@ -112,46 +112,29 @@ class MLDATA:
         # df["hour_cos"] = np.cos(2 * np.pi * df["solar_hour"] / 24)
         phi_sin = -np.pi
         # Compute hour_sin and hour_cos with the phase shift
-        # df["hour_sin"] = 0.1 + (np.sin((2 * np.pi * df["solar_hour"] / 24) + phi_sin) + 1) * 0.45
-        # df["hour_cos"] = 0.1 + (np.cos((2 * np.pi * df["solar_hour"] / 24) + phi_sin) + 1) * 0.45
-        df["hour_sin"] = np.sin(np.pi * df["solar_hour"] / 24) + phi_sin
-        df["hour_cos"] = np.cos(np.pi * df["solar_hour"] / 24) + phi_sin
+        df["hour_sin"] = (
+            0.2 + (np.sin((2 * np.pi * df["solar_hour"] / 24) + phi_sin) + 1) * 0.35
+        ) * 100
+        df["hour_cos"] = (
+            0.2 + (np.cos((2 * np.pi * df["solar_hour"] / 24) + phi_sin) + 1) * 0.35
+        ) * 100
+
+        # df["hour_sin"] =  np.sin((2 * np.pi * df["solar_hour"] / 24) + phi_sin)
+        # df["hour_cos"] =  np.cos((2 * np.pi * df["solar_hour"] / 24) + phi_sin)
+
         df.loc[df["LAI"] > 7, "LAI"] = 7
         df.loc[df["LAI"] < 0, "LAI"] = 0.01
         # df["R"] = df['R'] / 50
         df["Total_Fuel_Load"] = (
             df["Dead_Wood"] + df["Live_Wood"] + df["Live_Leaf"] + df["Dead_Foliage"]
         )
-
-        if self.transform == True:
-            # df["Total_Fuel_Load"] = df["Total_Fuel_Load"]/34
-            # df["R"] = df["R"]/50
-            # df["F"] = df["F"]/101
-            # pt = PowerTransformer(
-            #     method="yeo-johnson", standardize=False
-            # )  # Yeo-Johnson allows for zero values
-            # df["Total_Fuel_Load"] = np.log1p(df["Total_Fuel_Load"])
-            # df["Live_Wood"] = pt.fit_transform(df[["Live_Wood"]] + 1)
-            # df["Live_Leaf"] = pt.fit_transform(df[["Live_Leaf"]] + 1)
-            # df["Dead_Foliage"] = pt.fit_transform(df[["Dead_Foliage"]] + 1)
-            df["FRP"] = np.log1p(df["FRP"])
-            df["FRE"] = np.log1p(df["FRE"])
-            df["FRP_MAX"] = np.log1p(df["FRP_MAX"])
-            df["FRE_MAX"] = np.log1p(df["FRE_MAX"])
-            # df["U"] = np.log1p(df["U"])
-            # df["R"] = np.log1p(df["R"])
-            # df["F"] = np.log1p(df["F"])
-            # df["LAI"] = np.log1p(df["LAI"])
-        if self.feature_engineer == True:
-            df = self.add_engineered_features(df, self.feature_vars, wrf=False)
         if self.filter_std:
-            ################ FRE ###################
-            # df["FRE_raw"] = np.expm1(df["FRE"])
-            # print(len(df[df['FRE_raw'] > 20000000]))
-
-            # print('MAX FRE: ', df['FRE_raw'].max())
-            # mean_frp = df['FRE'].mean()
-            # std_frp = df['FRE'].std()
+            ################ FRP ###################
+            # df["FRP_raw"] = np.expm1(df["FRP"])
+            # print(len(df[df["FRP_raw"] > 4000]))
+            # print("MAX FRP: ", df["FRP_raw"].max())
+            # mean_frp = df["FRP"].mean()
+            # std_frp = df["FRP"].std()
             # threshold = 3
 
             # # Define the lower and upper bounds
@@ -159,66 +142,38 @@ class MLDATA:
             # upper_bound = mean_frp + threshold * std_frp
 
             # # Filter the DataFrame
-            # df = df[(df['FRE'] >= lower_bound) & (df['FRE'] <= upper_bound)]
-            # print('NEW MAX FRE: ', df['FRE_raw'].max())
-            # print(len(df[df['FRE_raw'] > 20000000]))
-
-            ################ FRP ###################
-            df["FRP_raw"] = np.expm1(df["FRP"])
-            print(len(df[df["FRP_raw"] > 4000]))
-            print("MAX FRP: ", df["FRP_raw"].max())
-            mean_frp = df["FRP"].mean()
-            std_frp = df["FRP"].std()
-            threshold = 3
-
-            # Define the lower and upper bounds
-            lower_bound = mean_frp - threshold * std_frp
-            upper_bound = mean_frp + threshold * std_frp
-
-            # Filter the DataFrame
-            df = df[(df["FRP"] >= lower_bound) & (df["FRP"] <= upper_bound)]
-            print("NEW MAX FRP: ", df["FRP_raw"].max())
-            print(len(df[df["FRP_raw"] > 4000]))
-            # print('NEW MAX FRE: ', df['FRE_raw'].max())
-            # print(len(df[df['FRE_raw'] > 20000000]))
+            # df = df[(df["FRP"] >= lower_bound) & (df["FRP"] <= upper_bound)]
+            # print("NEW MAX FRP: ", df["FRP_raw"].max())
+            # print(len(df[df["FRP_raw"] > 4000]))
 
             ################ ISI ###################
-            # df["R_raw"] = np.expm1(df["R"])
-            # print(len(df[df['R_raw'] > 100]))
-
-            # print('MAX ISI: ', df['R_raw'].max())
             mean_frp = df["R"].mean()
             std_frp = df["R"].std()
             threshold = 3
-
             # Define the lower and upper bounds
             lower_bound = mean_frp - threshold * std_frp
             upper_bound = mean_frp + threshold * std_frp
-
             # Filter the DataFrame
             df = df[(df["R"] >= lower_bound) & (df["R"] <= upper_bound)]
-            # print('NEW MAX ISI: ', df['R_raw'].max())
-            # print(len(df[df['R_raw'] > 100]))
 
-            ####### R-hour_sin-Total_Fuel_Load#######
-            try:
-                # print('MAX ISI: ', df['R_raw'].max())
-                mean_frp = df["R-hour_sin-Total_Fuel_Load"].mean()
-                std_frp = df["R-hour_sin-Total_Fuel_Load"].std()
-                threshold = 3
+            ################ ISI ###################
+            mean_frp = df["U"].mean()
+            std_frp = df["U"].std()
+            threshold = 3
+            # Define the lower and upper bounds
+            lower_bound = mean_frp - threshold * std_frp
+            upper_bound = mean_frp + threshold * std_frp
+            # Filter the DataFrame
+            df = df[(df["U"] >= lower_bound) & (df["U"] <= upper_bound)]
 
-                # Define the lower and upper bounds
-                lower_bound = mean_frp - threshold * std_frp
-                upper_bound = mean_frp + threshold * std_frp
+        if self.transform == True:
+            df["FRP"] = np.log1p(df["FRP"])
+            df["FRE"] = np.log1p(df["FRE"])
+            df["FRP_MAX"] = np.log1p(df["FRP_MAX"])
+            df["FRE_MAX"] = np.log1p(df["FRE_MAX"])
 
-                # Filter the DataFrame
-                df = df[
-                    (df["R-hour_sin-Total_Fuel_Load"] >= lower_bound)
-                    & (df["R-hour_sin-Total_Fuel_Load"] <= upper_bound)
-                ]
-                # print('NEW MAX ISI: ', df['R_raw'].max())
-            except:
-                pass
+        if self.feature_engineer == True:
+            df = self.add_engineered_features(df, self.feature_vars, wrf=False)
 
         print("Length of dataframe: ", len(df))
         return df
@@ -334,10 +289,15 @@ class MLDATA:
         ds = get_solar_hours(ds)
         phi_sin = -np.pi
         # Compute hour_sin and hour_cos with the phase shift
-        # ds["hour_sin"] = 0.1 + (np.sin((2 * np.pi * ds["solar_hour"] / 24) + phi_sin) + 1) * 0.45
-        # ds["hour_cos"] = 0.1 + (np.cos((2 * np.pi * ds["solar_hour"] / 24) + phi_sin) + 1) * 0.45
-        ds["hour_sin"] = np.sin(np.pi * ds["solar_hour"] / 24) + phi_sin
-        ds["hour_cos"] = np.cos(np.pi * ds["solar_hour"] / 24) + phi_sin
+        ds["hour_sin"] = (
+            0.2 + (np.sin((2 * np.pi * ds["solar_hour"] / 24) + phi_sin) + 1) * 0.35
+        ) * 100
+        ds["hour_cos"] = (
+            0.2 + (np.cos((2 * np.pi * ds["solar_hour"] / 24) + phi_sin) + 1) * 0.35
+        ) * 100
+
+        # ds["hour_sin"] =  np.sin((2 * np.pi * ds["solar_hour"] / 24) + phi_sin)
+        # ds["hour_cos"] =  np.cos((2 * np.pi * ds["solar_hour"] / 24) + phi_sin)
         ds = self.add_engineered_features(ds, self.feature_vars, wrf)
 
         return ds
@@ -416,6 +376,7 @@ class MLDATA:
                     26815399,
                     26418468,
                     26418461,
+                    26418423,
                 ],
             )
 
@@ -516,10 +477,10 @@ class MLDATA:
         # if self.target_scaler_type == "standard":
         #     print('Using standard scaler for features')
         #     target_scaler = StandardScaler().fit(y_train)
-        # elif self.feature_scaler_type == "robust":
+        # elif self.target_scaler_type == "robust":
         #     print('Using robust scaler for features')
         #     target_scaler = RobustScaler().fit(y_train)
-        # elif self.feature_scaler_type == "minmax":
+        # elif self.target_scaler_type == "minmax":
 
         # print('Using min max scaler for features')
         # target_scaler = MinMaxScaler().fit(y_train)

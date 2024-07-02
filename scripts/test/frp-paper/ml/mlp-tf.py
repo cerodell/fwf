@@ -41,7 +41,7 @@ startTime = datetime.now()
 
 # Configuration parameters
 config = dict(
-    method="averaged-v7",
+    method="averaged-v6",
     years=["2021", "2022", "2023"],
     feature_vars=[
         "SAZ_sin",
@@ -59,7 +59,7 @@ config = dict(
         # "Total_Fuel_Load",
         "R-hour_sin-Total_Fuel_Load",
         "R-hour_cos-Total_Fuel_Load",
-        # "R-hour_cos-Total_Fuel_Load",
+        "R-hour_cos-Total_Fuel_Load",
         # "U"
         # "S-hour_sin-lat_cos-Total_Fuel_Load",
         # "S-hour_cos-lat_cos-Total_Fuel_Load",
@@ -117,7 +117,7 @@ config = dict(
     package="tf",
     model_type="MLP",
     smoothing=False,
-    main_cases=False,
+    main_cases=True,
     shuffle_data=True,
     feature_engineer=True,
     min_fire_size=0,  ## hectors,
@@ -181,7 +181,7 @@ model.fit(
     X_train,
     y_train,
     epochs=400,
-    batch_size=32,
+    batch_size=24,
     verbose=1,
     validation_split=0.1,
     callbacks=[early_stopping, reduce_lr],
