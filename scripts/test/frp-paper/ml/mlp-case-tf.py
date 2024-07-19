@@ -47,12 +47,12 @@ startFWX = datetime.now()
 
 
 all_fire = False
-ID = 26418461  #  25485086 (2022) 24448308 (2021) 24360611 (2021) 24450415 (2021) 26418461 (2023)
-year = "2023"
-mlp_test_case = "MLP_64U-Dense_64U-Dense_64U-Dense_2U-Dense"
-method = "averaged-v7"
+ID = 24564038
+year = 2021
+mlp_test_case = "MLP_64U-Dense_64U-Dense_1U-Dense"
+method = "averaged-v11"
 ml_pack = "tf"
-target_vars = "FRP_FRE"
+target_vars = "FRP"
 plot_method = "mean"
 persist = False
 dt = 6
@@ -75,6 +75,28 @@ def predict_frp(config):
     ds_og = ds
     ds_attrs = ds.attrs
     ds_attrs["pyproj_srs"] = ds["S"].attrs["pyproj_srs"]
+
+    curves_ds = salem.open_xr_dataset(str(data_dir) + "/static/curves-rave-3km.nc")
+    curves_ds["CLIMO_FRP"] = curves_ds["OFFSET_NORM"] * curves_ds["MAX"]
+    curves_roi = ds.salem.transform(curves_ds, interp="nearest")
+    fire_time = ds.time.values
+    hour_one = pd.Timestamp(fire_time[0]).hour
+    curves_roi = curves_roi.roll(time=-hour_one, roll_coords=True)
+
+    # curves_roi['time'] = fire_time[:24]
+    OFFSET_NORM = curves_roi["OFFSET_NORM"].values
+    N = len(fire_time)
+    ds["OFFSET_NORM"] = (
+        ("time", "y", "x"),
+        np.tile(OFFSET_NORM, (N // 24 + 1, 1, 1))[:N, :, :],
+    )
+
+    CLIMO_FRP = curves_roi["CLIMO_FRP"].values
+    N = len(fire_time)
+    ds["CLIMO_FRP"] = (
+        ("time", "y", "x"),
+        np.tile(CLIMO_FRP, (N // 24 + 1, 1, 1))[:N, :, :],
+    )
 
     mlD = MLDATA(config=config)
     ds = mlD.get_static(ds)
@@ -111,18 +133,19 @@ def predict_frp(config):
     startFRP = datetime.now()
     # print("Start prediction:", startFRP)
     y_out_this_nhn = model(X_new_scaled).numpy()
-    # if config['target_scaler_type'] != None:
-    #     y_out_this_nhn = target_scaler.inverse_transform(y_out_this_nhn)
+    if config["target_scaler_type"] != None:
+        # y_out_this_nhn = target_scaler.inverse_transform(y_out_this_nhn)
+        y_out_this_nhn = y_out_this_nhn * config["FRP_MAX"]
     if config["transform"] == True:
         y_out_this_nhn = np.expm1(y_out_this_nhn)
 
-    # FRP_FULL = y_out_this_nhn.ravel().reshape(shape)
-    FRP_FULL = y_out_this_nhn[:, 0].ravel().reshape(shape)
-    FRE_FULL = y_out_this_nhn[:, 1].ravel().reshape(shape)
+    FRP_FULL = y_out_this_nhn.ravel().reshape(shape)
+    # FRP_FULL = y_out_this_nhn[:, 0].ravel().reshape(shape)
+    # FRE_FULL = y_out_this_nhn[:, 1].ravel().reshape(shape)
     FRPend = datetime.now() - startFRP
     print("Time to predict FRP: ", FRPend)
     ds["MODELED_FRP"] = (("time", "y", "x"), FRP_FULL)
-    ds["MODELED_FRE"] = (("time", "y", "x"), FRE_FULL)
+    # ds["MODELED_FRE"] = (("time", "y", "x"), FRE_FULL)
     for var in list(ds):
         if var == "MODELED_FRP":
             ds[var].attrs = {
@@ -142,7 +165,7 @@ def predict_frp(config):
     print("Time to run FWX: ", datetime.now() - startFWX)
     startWRITE = datetime.now()
     ds, encoding = compressor(ds)
-    file_dir = f"/Volumes/ThunderBay/CRodell/fires/v7/{year}-{ID}.nc"
+    file_dir = f"/Volumes/ThunderBay/CRodell/fires/v9/{year}-{ID}.nc"
     print(f"WRITING AT: {datetime.now()}")
     ds.to_netcdf(file_dir, encoding=encoding, mode="w")
     print(f"Wrote: {file_dir}")
@@ -174,5 +197,5 @@ elif all_fire == True:
         config["year"] = years[i]
         ds, fire_i = predict_frp(config)
         # ds["MODELED_FRP"] = xr.where(ds["FRP"] == 0, 0, ds["MODELED_FRP"])
-        # plot_fire(fire_i, ds, persist, dt, save_dir, "mean")
-        print(ID)
+        plot_fire(fire_i, ds, persist, dt, save_dir, "mean")
+        # print(ID)

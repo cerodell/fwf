@@ -37,7 +37,7 @@ var fireKmlLayer = null; // This will store the currently displayed KML layer
 ///////////////////  FIRES  ///////////////////
 
 function showFirePerimeter() {
-    var kmlUrl = `data/fires-v2/fire_outlines-${currentlyDisplayedFireId}.kml`;
+    var kmlUrl = `data/fires-v8/fire_outlines-${currentlyDisplayedFireId}.kml`;
     if (fireKmlLayer) {
         // If the layer is already displayed, remove it
         map.removeLayer(fireKmlLayer);
@@ -62,7 +62,7 @@ var activeCircle = null; // This will store the currently active circle
 
 
 // Fetch data and plot fires
-fetch('data/ml-fires-info-v2.json')
+fetch('data/ml-fires-info-v8.json')
 .then(response => response.json())
 .then(data => {
     Object.values(data).forEach(fire => {
@@ -161,7 +161,7 @@ function displayTimeSeries(fireId, fire) {
         } else {
         variableSelector.innerHTML += '<option value="HFI">Head Fire Intensity</option>';
         variableSelector.innerHTML += '<option value="FWI">Fire Weather Index</option>';
-        variableSelector.innerHTML += '<option value="FWI">Fire Weather Index</option>';
+        variableSelector.innerHTML += '<option value="OFFSET_NORM">FRP Climatology Normalized</option>';
         variableSelector.innerHTML += '<option value="HFI">Head Fire Intensity</option>';
         variableSelector.innerHTML += '<option value="FFMC">Fine Fuel Moisture Code</option>';
         variableSelector.innerHTML += '<option value="ISI">Initial Spread Index</option>';
@@ -194,7 +194,7 @@ function displayTimeSeries(fireId, fire) {
 }
 
 function fetchTimeSeriesData(fireId, type, variable, mode) {
-    fetch(`data/fires-v2/ml-${type}-${mode}-fires-info-${fireId}.json`)
+    fetch(`data/fires-v8/ml-${type}-${mode}-fires-info-${fireId}.json`)
     .then(response => response.json())
     .then(data => {
         var trace1 = {

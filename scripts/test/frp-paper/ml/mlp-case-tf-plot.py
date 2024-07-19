@@ -46,7 +46,7 @@ import numpy as np
 ID = 26418461  #  25485086 (2022) 24448308 (2021) 24360611 (2021) 24450415 (2021) 26418461 (2023)
 year = "2023"
 mlp_test_case = "MLP_64U-Dense_64U-Dense_64U-Dense_2U-Dense"
-version = "v7"
+version = "v11"
 method = f"averaged-{version}"
 ml_pack = "tf"
 target_vars = "FRP_FRE"
@@ -62,43 +62,6 @@ firep_df = firep.open_firep()
 jj = firep_df[firep_df["id"] == ID].index[0]
 fire_i = firep_df.iloc[jj : jj + 1]
 
-df_curve = pd.read_csv(str(data_dir) + "/frp/FRP_diurnal_climatology.csv")
-df_curve.columns = [
-    "Land Cover",
-    "Ecoregion",
-    "hh00",
-    "hh01",
-    "hh02",
-    "hh03",
-    "hh04",
-    "hh05",
-    "hh06",
-    "hh07",
-    "hh08",
-    "hh09",
-    "hh10",
-    "hh11",
-    "hh12",
-    "hh13",
-    "hh14",
-    "hh15",
-    "hh16",
-    "hh17",
-    "hh18",
-    "hh19",
-    "hh20",
-    "hh21",
-    "hh22",
-    "hh23",
-]
-df_curve = (
-    df_curve.drop(0)
-    .drop(columns=["Land Cover", "Ecoregion"])
-    .dropna()
-    .reset_index(drop=True)
-    .astype(float)
-)
-df_curve = df_curve.mean()
 
 # %%
 ds = xr.open_dataset(f"/Volumes/ThunderBay/CRodell/fires/{version}/{year}-{ID}.nc")
@@ -122,10 +85,26 @@ ds_map = xr.where(np.isnan(ds_map["FRP"].values) == True, np.nan, ds_map)
 ds_map = ds_map.salem.roi(shape=fire_i, all_touched=True)
 
 # ds_space_avg = ds_map.isel(time = slice(72,128)).mean(dim=("x", "y"))
-test = ds_map.sel(time=slice("2023-06-03-T00", "2023-06-03-T23"))
-test["FRP"].isel(time=slice(0, 24, 4)).plot(
+test = ds_map.sel(time=slice("2023-06-03-T00", "2023-06-06-T23"))
+test["FRP"].isel(time=slice(0, 72, 4)).plot(
     x="x", y="y", col="time", col_wrap=3, cmap="YlOrRd"
 )
+quant_ds = test["FRP"].quantile(
+    [0, 0.25, 0.5, 0.75, 0.90, 0.95, 1],
+    dim=("x", "y"),
+    skipna=True,
+)  # .dropna("time")
+
+fig = plt.figure(figsize=(8, 4))
+ax = fig.add_subplot(1, 1, 1)
+ax.plot(quant_ds["time"], quant_ds.isel(quantile=0), label="0")
+ax.plot(quant_ds["time"], quant_ds.isel(quantile=1), label="25")
+ax.plot(quant_ds["time"], quant_ds.isel(quantile=2), label="50")
+ax.plot(quant_ds["time"], quant_ds.isel(quantile=3), label="75")
+ax.plot(quant_ds["time"], quant_ds.isel(quantile=4), label="90")
+ax.plot(quant_ds["time"], quant_ds.isel(quantile=5), label="95")
+ax.plot(quant_ds["time"], quant_ds.isel(quantile=6), label="100")
+ax.legend()
 
 fig = plt.figure(figsize=(12, 4))
 ax = fig.add_subplot(1, 1, 1)
@@ -149,8 +128,6 @@ frp_1300s = FRP[over_pass_viirs]  # [FRP[idx] for idx in over_pass_viirs]
 frp_1300s = replace_nan_with_previous(frp_1300s)
 frp_1300s = np.roll(frp_1300s, 1)
 frp_1300s[0] = 0
-
-
 bias = MODELED_FRP[over_pass_viirs[1]] - frp_1300s[1]
 # MODELED_FRP = MODELED_FRP - bias
 
@@ -264,11 +241,11 @@ ax.set_title(
     loc="right",
     color="tab:orange",
 )
-fig.savefig(
-    str(data_dir) + f"/images/frp-paper/{ID}-time-series.png",
-    bbox_inches="tight",
-    dpi=240,
-)
+# fig.savefig(
+#     str(data_dir) + f"/images/frp-paper/{ID}-time-series.png",
+#     bbox_inches="tight",
+#     dpi=240,
+# )
 
 # ds_time_avg = ds_time_avg.salem.roi(shape=fire_i, all_touched=True)
 

@@ -68,7 +68,7 @@ config = dict(
     ],
     scaler_type="standard",  ##robust or standard minmax
     transform=True,
-    min_fire_size=1000,
+    min_fire_size=0,
     package="tf",
     model_type="MLP",
     main_cases=True,
@@ -81,8 +81,27 @@ config = dict(
 
 mlD = MLDATA(config=config)
 df = mlD.open_ml_ds()
+df["FRP"] = np.expm1(df["FRP"])
+print(len(df[df["FRP"] > 4000]))
+print("MAX FRP: ", df["FRP"].max())
+mean_frp = df["FRP"].mean()
+std_frp = df["FRP"].std()
+threshold = 12
+
+# Define the lower and upper bounds
+lower_bound = mean_frp - threshold * std_frp
+upper_bound = mean_frp + threshold * std_frp
+
+# Filter the DataFrame
+df_test = df[(df["FRP"] >= lower_bound) & (df["FRP"] <= upper_bound)]
+# print("NEW MAX FRP: ", df_test["FRP"].max())
+# print(len(df_test[df_test["FRP"] > 4000]))
+# df_test['FRP'].plot.hist(bins =300)
+
+
 df_unique = df.groupby("id").first().reset_index()
 
+np.unique(pd.to_datetime(df_unique["time"]).dt.month)
 
 # Open the NetCDF file
 ncfile = Dataset(str(data_dir) + f"/wrf/wrfout_d01_2023-04-20_00:00:00")

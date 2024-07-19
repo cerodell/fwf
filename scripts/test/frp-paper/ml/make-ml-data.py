@@ -27,15 +27,29 @@ warnings.filterwarnings("ignore", category=RuntimeWarning)
 
 counter = 0
 # year = "2023"
-# for year in ["2021", "2022", "2023"]:
-for year in ["2021"]:
+for year in ["2021", "2022", "2023"]:
+    # for year in ["2021"]:
     # method = "full"
     spatially_averaged = True
-    norm_fwi = True
+    norm_fwi = False
     file_list = sorted(Path(f"/Volumes/ThunderBay/CRodell/fires/").glob(year + "*"))
     static_ds = salem.open_xr_dataset(
         str(data_dir) + "/static/static-rave-3km.nc"
     ).drop_vars(["time", "xtime"])
+
+    curves_ds = salem.open_xr_dataset(str(data_dir) + "/static/curves-rave-3km.nc")
+    curves_ds["CLIMO_FRP"] = curves_ds["OFFSET_NORM"] * curves_ds["MAX"]
+
+    rave_ds = xr.open_dataset(
+        "/Volumes/ThunderBay/CRodell/rave/2023/10/RAVE-HrlyEmiss-3km_v2r0_blend_s202310310000000_e202310312359590_c202312011700470.nc"
+    )
+
+    grid_ds = salem.open_xr_dataset(str(data_dir) + "/static/static-rave-3km-grid.nc")
+    grid_ds["area"] = (
+        ("y", "x"),
+        np.nan_to_num(rave_ds["area"].data[::-1]),
+    )  # Invert and fill NaN values
+    grid_ds["area"].attrs = grid_ds.attrs
 
     lons, lats = static_ds.salem.grid.ll_coordinates
     lon_sin = np.sin(np.radians(lons))
@@ -89,6 +103,9 @@ for year in ["2021"]:
 
     def add_static(fire_ds, static_ds):
         return add_index(fire_ds.salem.transform(static_ds, interp="nearest"), fire_ds)
+
+    def add_curves(fire_ds, curves_ds):
+        return
 
     def open_fuels(moi):
         fuel_dir = f"/Volumes/ThunderBay/CRodell/ecmwf/fuel-load/"
@@ -200,10 +217,11 @@ for year in ["2021"]:
     ds_list = []
     good_files = []
     bad_files = []
-    for i, file in enumerate(file_list[:2]):
+    for ii, file in enumerate(file_list):
         try:
             # ds = xr.open_zarr(file)
             ds = xr.open_dataset(file)
+            ds = ds.drop_vars(["FRP_SD", "PM25", "QA"])
             if (
                 np.all(np.isnan(ds["FRP"].values))
                 == True
@@ -214,129 +232,215 @@ for year in ["2021"]:
                 print("BAD!")
             else:
                 ISI = xr.where(np.isnan(ds["FRP"].values) == True, np.nan, ds["R"])
+                frp_vals = ds["FRP"].mean(("x", "y")).dropna("time")
                 r_values = stats.pearsonr(
                     ds["FRP"].mean(("x", "y")).dropna("time"),
                     ISI.mean(("x", "y")).dropna("time"),
                 )[0]
-                if r_values >= -1:
-                    print(np.round(r_values, 2))
-                    ds = get_solar_hours(ds)
-                    # ds["solar_hour"] = xr.where(
-                    #     np.isnan(ds["FRP"].values) == True, np.nan, ds["solar_hour"]
-                    # )
+                print(np.round(r_values, 2))
+                ds = get_solar_hours(ds)
+                # ds["solar_hour"] = xr.where(
+                #     np.isnan(ds["FRP"].values) == True, np.nan, ds["solar_hour"]
+                # )
 
-                    # nan_space = []
-                    nan_time = []
-                    for i in range(len(ds.time)):
-                        nan_array = np.isnan(ds["FRP"].isel(time=i)).values
-                        # zero_full = np.zeros(nan_array.shape)
-                        # zero_full[nan_array == False] = 1
-                        unique, counts = np.unique(nan_array, return_counts=True)
-                        # nan_space.append(zero_full)
-                        if unique[0] == False:
-                            nan_time.append(counts[0])
-                        else:
-                            nan_time.append(0)
-                    static_roi = add_static(ds, static_ds)
-                    fuel_date_range = pd.date_range(
-                        ds.attrs["initialdat"][:-3] + "-01",
-                        ds.attrs["finaldate"],
-                        freq="MS",
-                    )
-                    fuels_ds = xr.combine_nested(
-                        [open_fuels(moi) for moi in fuel_date_range], concat_dim="time"
-                    )
-                    fuels_roi = ds.salem.transform(fuels_ds, interp="linear")
-                    fuels_roi = fuels_roi.reindex(time=ds.time, method="ffill")
-                    fuels_roi = xr.where(fuels_roi < 0, 0, fuels_roi)
-                    if norm_fwi == True:
-                        # ds["NFWI"] = norm_fwi_ds(ds, fwi_max, fwi_min)
-                        ds = norm_fwi_ds(
-                            ds, fwi_max, fwi_min, isi_max, isi_min, bui_max, bui_min
-                        )
-                        # ds = ds.drop_vars("quantile")
-
-                    for var in list(static_roi):
-                        # static_roi[var] = xr.where(
-                        #     np.isnan(ds["FRP"].values) == True, np.nan, static_roi[var]
-                        # )
-                        ds[var] = static_roi[var]
-
-                    time_shape = ds.time.shape
-                    ds["id"] = (("time"), np.full(time_shape, float(ds.attrs["id"])))
-                    ds["area_ha"] = (
-                        ("time"),
-                        np.full(time_shape, float((ds.attrs["area_ha"]))),
-                    )
-                    ds["burn_time"] = (
-                        ("time"),
-                        np.full(
-                            time_shape,
-                            float(
-                                (
-                                    pd.Timestamp(ds.attrs["finaldate"])
-                                    - pd.Timestamp(ds.attrs["initialdat"])
-                                ).total_seconds()
-                                / 3600
-                            ),
-                        ),
-                    )
-
-                    WD_sin = np.sin(np.radians(ds["WD"].values))
-                    WD_cos = np.cos(np.radians(ds["WD"].values))
-                    ds["WD_sin"] = (("time", "y", "x"), WD_sin)
-                    ds["WD_cos"] = (("time", "y", "x"), WD_cos)
-                    ds["AF"] = (("time"), np.array(nan_time))
-
-                    for var in list(fuels_roi):
-                        # fuels_roi[var] = xr.where(
-                        #     np.isnan(ds["FRP"].values) == True, np.nan, fuels_roi[var]
-                        # )
-                        ds[var] = fuels_roi[var]
-
-                    for var in list(ds):
-                        try:
-                            ds[var] = xr.where(
-                                np.isnan(ds["FRP"].values) == True, np.nan, ds[var]
-                            )
-                        except:
-                            pass
-
-                    if spatially_averaged == False:
-                        print(f"Passed: {i}/{file_list_len}")
-                        ds_list.append(
-                            ds.stack(z=("time", "x", "y"))
-                            .reset_index("z")
-                            .dropna("z")
-                            .reset_coords()
-                        )
+                nan_space = []
+                nan_time = []
+                for i in range(len(ds.time)):
+                    nan_array = np.isnan(ds["FRP"].isel(time=i)).values
+                    zero_full = np.zeros(nan_array.shape)
+                    zero_full[nan_array == False] = 1
+                    unique, counts = np.unique(nan_array, return_counts=True)
+                    nan_space.append(zero_full)
+                    if unique[0] == False:
+                        nan_time.append(counts[0])
                     else:
-                        # sigma = 0.5
+                        nan_time.append(0)
+                static_roi = add_static(ds, static_ds)
+                curves_roi = ds.salem.transform(curves_ds, interp="nearest")
+                fire_time = ds.time.values
+                hour_one = pd.Timestamp(fire_time[0]).hour
+                curves_roi = curves_roi.roll(time=-hour_one, roll_coords=True)
 
-                        ds_mean = ds.mean(("x", "y")).dropna("time").compute()
+                grid_roi = add_static(ds, grid_ds)
+                ds["area"] = grid_roi["area"]
 
-                        # ds_mean["FRP_MAX"] = (
-                        #     ds["FRP"].max(("x", "y")).dropna("time").compute()
-                        # )
-                        # ds_mean["FRP_MAX"] = ('time', gaussian_filter1d(ds_mean["FRP_MAX"], sigma = sigma))
-                        # ds_mean["FRE_MAX"] = (
-                        #     ds["FRE"].max(("x", "y")).dropna("time").compute()
-                        # )
-                        # ds_mean["FRE_MAX"] = ('time', gaussian_filter1d(ds_mean["FRE_MAX"], sigma = sigma))
+                # curves_roi['time'] = fire_time[:24]
+                OFFSET_NORM = curves_roi["OFFSET_NORM"].values
+                N = len(fire_time)
+                ds["OFFSET_NORM"] = (
+                    ("time", "y", "x"),
+                    np.tile(OFFSET_NORM, (N // 24 + 1, 1, 1))[:N, :, :],
+                )
 
-                        # ds_mean["FRP_MIN"] = (
-                        #     ds["FRP"].min(("x", "y")).dropna("time").compute()
-                        # )
-                        # ds_mean["FRE_MIN"] = (
-                        #     ds["FRE"].min(("x", "y")).dropna("time").compute()
-                        # )
+                CLIMO_FRP = curves_roi["CLIMO_FRP"].values
+                N = len(fire_time)
+                ds["CLIMO_FRP"] = (
+                    ("time", "y", "x"),
+                    np.tile(CLIMO_FRP, (N // 24 + 1, 1, 1))[:N, :, :],
+                )
 
-                        print(f"Passed: {i}/{file_list_len}")
-                        counter += 1
-                        ds_list.append(ds_mean)
-                        good_files.append(file)
+                fuel_date_range = pd.date_range(
+                    ds.attrs["initialdat"][:-3] + "-01",
+                    ds.attrs["finaldate"],
+                    freq="MS",
+                )
+                fuels_ds = xr.combine_nested(
+                    [open_fuels(moi) for moi in fuel_date_range], concat_dim="time"
+                )
+                fuels_roi = ds.salem.transform(fuels_ds, interp="linear")
+                fuels_roi = fuels_roi.reindex(time=ds.time, method="ffill")
+                fuels_roi = xr.where(fuels_roi < 0, 0, fuels_roi)
+                fuels_roi["Total_Fuel_Load"] = (
+                    fuels_roi["Live_Leaf"]
+                    + fuels_roi["Live_Wood"]
+                    + fuels_roi["Dead_Foliage"]
+                    + fuels_roi["Dead_Wood"]
+                )
+
+                if norm_fwi == True:
+                    # ds["NFWI"] = norm_fwi_ds(ds, fwi_max, fwi_min)
+                    ds = norm_fwi_ds(
+                        ds, fwi_max, fwi_min, isi_max, isi_min, bui_max, bui_min
+                    )
+                    # ds = ds.drop_vars("quantile")
+
+                for var in list(static_roi):
+                    # static_roi[var] = xr.where(
+                    #     np.isnan(ds["FRP"].values) == True, np.nan, static_roi[var]
+                    # )
+                    ds[var] = static_roi[var]
+
+                time_shape = ds.time.shape
+                ds["id"] = (("time"), np.full(time_shape, float(ds.attrs["id"])))
+                ds["area_ha"] = (
+                    ("time"),
+                    np.full(time_shape, float((ds.attrs["area_ha"]))),
+                )
+                ds["burn_time"] = (
+                    ("time"),
+                    np.full(
+                        time_shape,
+                        float(
+                            (
+                                pd.Timestamp(ds.attrs["finaldate"])
+                                - pd.Timestamp(ds.attrs["initialdat"])
+                            ).total_seconds()
+                            / 3600
+                        ),
+                    ),
+                )
+
+                WD_sin = np.sin(np.radians(ds["WD"].values))
+                WD_cos = np.cos(np.radians(ds["WD"].values))
+                ds["WD_sin"] = (("time", "y", "x"), WD_sin)
+                ds["WD_cos"] = (("time", "y", "x"), WD_cos)
+                ds["AF"] = (("time"), np.array(nan_time))
+
+                for var in list(fuels_roi):
+                    ds[var] = fuels_roi[var]
+
+                ds["R"] = np.log1p(ds["R"])
+                ds["U"] = np.log1p(ds["U"])
+                ds["Total_Fuel_Load"] = np.log1p(ds["Total_Fuel_Load"])
+                for var in list(ds):
+                    try:
+                        ds[var] = xr.where(
+                            np.isnan(ds["FRP"].values) == True, np.nan, ds[var]
+                        )
+                    except:
+                        pass
+
+                if spatially_averaged == False:
+                    print(f"Passed: {ii}/{file_list_len}")
+                    ds_list.append(
+                        ds.stack(z=("time", "x", "y"))
+                        .reset_index("z")
+                        .dropna("z")
+                        .reset_coords()
+                    )
                 else:
-                    print("Didnt pass r test: ", np.round(r_values, 2))
+                    ds_mean = ds.mean(("x", "y"), skipna=True)
+                    # Create a mask of the original non-null values
+                    # original_non_null_mask = ds['FRP'].notnull()
+
+                    # # Forward fill along the time dimension
+                    # forward_filled = ds['FRP'].ffill(dim='time')
+
+                    # # Backward fill along the time dimension
+                    # backward_filled = forward_filled.bfill(dim='time')
+
+                    # # Combine the original non-null values with the forward/backward filled values
+                    # filled_data = ds['FRP'].where(original_non_null_mask, other=backward_filled)
+
+                    # for var in ['FRP']:
+                    # #     if (var == 'FRP') or (var=='FRE'):
+                    # #         frp_mean = ds[var].quantile(
+                    # #                 [0.75],
+                    # #                 dim=("x", "y"),
+                    # #                 skipna=True,
+                    # #             ).isel(quantile=0).drop_vars('quantile')
+                    # #     else:
+                    #     # frp_mean = ds[var].mean(("x", "y"),  skipna=True)
+                    #     plt.figure()
+                    #     ds[var].mean(("x", "y"),  skipna=True).plot()
+
+                    #     frp_mean = ds[var].sum(("x", "y"),  skipna=True) / ds['area'].sum(("x", "y"),  skipna=True)
+                    #     frp_mean_series = frp_mean.to_series()
+
+                    #     # Identify the missing data (NaNs)
+                    #     missing_data = frp_mean_series.isna()
+
+                    #     # Calculate the length of each gap
+                    #     gap_lengths = missing_data.groupby((missing_data != missing_data.shift()).cumsum()).transform('size') * missing_data
+
+                    #     # Set a threshold for filling gaps (e.g., 6 hours)
+                    #     threshold = 6
+
+                    #     # Fill gaps that are under the threshold
+                    #     filled_frp_mean_series = frp_mean_series.copy()
+                    #     for gap_length in range(1, threshold + 1):
+                    #         filled_frp_mean_series = filled_frp_mean_series.where(gap_lengths != gap_length, filled_frp_mean_series.interpolate(method='cubic'))
+
+                    #     filled_frp_mean_series = filled_frp_mean_series.clip(lower=0)
+
+                    #     # # Apply Gaussian smoothing while preserving original nulls
+                    #     sigma = 2  # Define the standard deviation for Gaussian kernel
+
+                    #     # # Create a mask of non-null values
+                    #     non_null_mask = ~filled_frp_mean_series.isna()
+
+                    #     # # Perform Gaussian smoothing only on non-null values
+                    #     smoothed_frp_mean_series = filled_frp_mean_series.copy()
+                    #     smoothed_values = gaussian_filter1d(filled_frp_mean_series[non_null_mask], sigma=sigma)
+                    #     smoothed_frp_mean_series[non_null_mask] = smoothed_values
+
+                    #     # Convert the smoothed Series back to an xarray DataArray
+                    #     smoothed_frp_mean = xr.DataArray(smoothed_frp_mean_series, coords=frp_mean.coords, dims=frp_mean.dims)
+                    #     # ds[var] =
+                    #     # # Plot everything on the same figure
+                    #     # plt.figure(figsize=(12, 6))
+                    #     # plt.plot(frp_mean_series, label=f'Original {var} Mean', linestyle='--', marker='o')
+                    #     # plt.plot(filled_frp_mean_series, label=f'Interpolated {var} Mean', linestyle='-', marker='x')
+                    #     # plt.plot(smoothed_frp_mean_series, label=f'Smoothed {var} Mean', linestyle='-', marker='.')
+
+                    #     # plt.title(f'{var} Mean Time Series')
+                    #     # plt.xlabel('Time')
+                    #     # plt.ylabel(f'{var} Mean')
+                    #     # plt.legend()
+                    #     # plt.grid(True)
+                    #     # plt.show()
+
+                    #     ds_mean[var] = smoothed_frp_mean
+                    #     plt.figure()
+                    #     ds_mean[var].plot()
+
+                    ds_mean = ds_mean.dropna("time")
+
+                    print(f"Passed: {ii}/{file_list_len}")
+                    print("Length of data: ", len(ds_mean.time))
+                    counter += 1
+                    ds_list.append(ds_mean)
+                    good_files.append(file)
         except:
             print(f"DID NOT RUN!! {file}")
 
@@ -364,21 +468,23 @@ for year in ["2021"]:
             .reset_coords()
         )
 
-    # save_dir = (
-    #     f"/Users/crodell/fwf/data/ml-data/training-data/{year}-fires-averaged-v7.nc"
-    # )
-    # print(save_dir)
-    # final_ds, encoding = compressor(final_ds)
-    # final_ds.to_netcdf(save_dir, encoding=encoding, mode="w")
+    save_dir = (
+        f"/Users/crodell/fwf/data/ml-data/training-data/{year}-fires-averaged-v12.nc"
+    )
+    print(save_dir)
+    final_ds, encoding = compressor(final_ds)
+    final_ds.to_netcdf(save_dir, encoding=encoding, mode="w")
 
 
 # print('--------------------------------')
 
-# print(stats.pearsonr(
-#            final_ds['FRE'],
-#            final_ds['R'],
-#         )[0])
-# print('--------------------------------')
+print(
+    stats.pearsonr(
+        final_ds["FRP"],
+        final_ds["R"],
+    )[0]
+)
+print("--------------------------------")
 
 # print(stats.pearsonr(
 #            final_ds['FRE'],
@@ -396,22 +502,18 @@ for year in ["2021"]:
 # print((counter/(len(good_files)+len(bad_files)))*100)
 
 # quant_ds = ds['FRP'].quantile(
-#         [0, 0.5, 0.95, 1],
+#         [0, 0.25, 0.5, 0.75, .90, 0.95, 1],
 #         dim=("x", "y"),
 #         skipna=True,
 #     )#.dropna("time")
 
-# # std_ds = ds['FRP'].std(
-# #         dim=("x", "y"),
-# #         skipna=True,
-# #     ).dropna("time")
-
 # fig = plt.figure(figsize=(8,4))
 # ax = fig.add_subplot(1,1,1)
-# ds_mean["FRP"].plot.scatter(ax = ax)
-# ds_mean["FRP_MAX"].plot.scatter(ax = ax)
-# # ax.plot(std_ds['time'], std_ds)
-# ax.plot(quant_ds['time'], quant_ds.isel(quantile=0))
-# ax.plot(quant_ds['time'], quant_ds.isel(quantile=1))
-# ax.plot(quant_ds['time'], quant_ds.isel(quantile=2))
-# ax.plot(quant_ds['time'], quant_ds.isel(quantile=3))
+# ax.plot(quant_ds['time'], quant_ds.isel(quantile=0), label = '0')
+# ax.plot(quant_ds['time'], quant_ds.isel(quantile=1), label = '25')
+# ax.plot(quant_ds['time'], quant_ds.isel(quantile=2), label = '50')
+# ax.plot(quant_ds['time'], quant_ds.isel(quantile=3), label = '75')
+# ax.plot(quant_ds['time'], quant_ds.isel(quantile=4), label = '90')
+# ax.plot(quant_ds['time'], quant_ds.isel(quantile=5), label = '95')
+# ax.plot(quant_ds['time'], quant_ds.isel(quantile=6), label = '100')
+# ax.legend()

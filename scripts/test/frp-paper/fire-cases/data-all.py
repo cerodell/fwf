@@ -29,8 +29,8 @@ import warnings
 
 warnings.filterwarnings("ignore")
 
-# years = ["2023"]
-years = ["2021", "2022", "2023"]
+years = ["2021"]
+# years = ["2021", "2022", "2023"]
 
 # from dask.distributed import LocalCluster, Client
 
@@ -62,7 +62,7 @@ def tranform_ds(ds, rave_roi, fire_i, margin):
 
 
 def open_fuels(moi):
-    fuel_dir = f"/Volumes/WFRT-Ext23/fuel-characteristics/fuel-load/"
+    fuel_dir = f"/Volumes/ThunderBay/CRodell/ecmwf/fuel-load/"
     fuels_ds = salem.open_xr_dataset(
         fuel_dir + f'{2021}/CFUEL_timemean_2021{moi.strftime("_%m")}.nc'
     ).sel(lat=slice(75, 20), lon=slice(-170, -50))
@@ -241,9 +241,19 @@ for year in years:
     firep = FIREP(config=config)
     firep_df = firep.open_firep()
     file_len = len(firep_df)
-    for i in range(file_len):
+    for i in [
+        24240109.0,
+        24240255.0,
+        24240274.0,
+        24240295.0,
+        24240333.0,
+        24240345.0,
+        24240435.0,
+    ]:
+        # for i in range(file_len):
         print(i)
-        fire_i = firep_df.iloc[i : i + 1]
+        # fire_i = firep_df.iloc[i : i + 1]
+        fire_i = firep_df[firep_df["id"] == int(i)]
         file_dir = (
             "/Volumes/ThunderBay/CRodell/fires/"
             + year

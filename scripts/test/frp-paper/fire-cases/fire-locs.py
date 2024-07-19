@@ -16,9 +16,10 @@ from shapely.geometry import Polygon, MultiPolygon
 
 import matplotlib.pyplot as plt
 import plotly.express as px
-import dash
-from dash import dcc, html
-from dash.dependencies import Input, Output
+
+# import dash
+# from dash import dcc, html
+# from dash.dependencies import Input, Output
 
 from datetime import datetime
 from utils.ml_data import MLDATA
@@ -35,11 +36,11 @@ warnings.simplefilter(action="ignore", category=FutureWarning)
 # def reduce_precision(coords, precision=2):
 #     return [(round(x, precision), round(y, precision)) for x, y in coords]
 
-
+ml_ver = "v8"
 all_dict = {}
 save_dir = "/Users/crodell/fwf/scripts/test/frp-paper/fire-cases/web/data"
 # Initialize MLP model and load dataset
-mlD = MLDATA(config={"method": "averaged-v2-nans"})
+mlD = MLDATA(config={"method": f"averaged-{ml_ver}"})
 cases_df = mlD.open_ml_ds()
 for year in ["2021", "2022", "2023"]:
     firep = FIREP(config={"year": year})
@@ -53,9 +54,11 @@ for year in ["2021", "2022", "2023"]:
         if len(id_df) == 0:
             print("No ID")
         else:
-            if os.path.exists(f"/Volumes/ThunderBay/CRodell/fires/v2/{year}-{ID}.nc"):
+            if os.path.exists(
+                f"/Volumes/ThunderBay/CRodell/fires/{ml_ver}/{year}-{ID}.nc"
+            ):
                 ds = xr.open_dataset(
-                    f"/Volumes/ThunderBay/CRodell/fires/v2/{year}-{ID}.nc"
+                    f"/Volumes/ThunderBay/CRodell/fires/{ml_ver}/{year}-{ID}.nc"
                 )
                 ds_nan = xr.open_zarr(
                     f"/Volumes/WFRT-Ext23/fire/full/{year}-{ID}.zarr"
@@ -166,6 +169,7 @@ for year in ["2021", "2022", "2023"]:
                     "Dead_Foliage": list(group["Dead_Foliage"].values.astype(str)),
                     "Live_Wood": list(group["Live_Wood"].values.astype(str)),
                     "Dead_Wood": list(group["Dead_Wood"].values.astype(str)),
+                    "OFFSET_NORM": list(group["OFFSET_NORM"].values.astype(str)),
                 }
 
                 all_dict[str(row["id"])] = {
@@ -194,7 +198,7 @@ for year in ["2021", "2022", "2023"]:
                     sum_fire_dict["area_ha"] = row["area_ha"]
                     sum_fire_dict["local_datetime"] = local_time
                     with open(
-                        f"{save_dir}/fires-v2/ml-test-sum-fires-info-{int(ID)}.json",
+                        f"{save_dir}/fires-{ml_ver}/ml-test-sum-fires-info-{int(ID)}.json",
                         "w",
                     ) as file:
                         json.dump(sum_fire_dict, file)
@@ -204,7 +208,7 @@ for year in ["2021", "2022", "2023"]:
                     all_dict[str(row["id"])]["TYPE"] = "train"
                     # Writing the dictionary to a file as JSON
                     with open(
-                        f"{save_dir}/fires-v2/ml-train-mean-fires-info-{int(ID)}.json",
+                        f"{save_dir}/fires-{ml_ver}/ml-train-mean-fires-info-{int(ID)}.json",
                         "w",
                     ) as file:
                         json.dump(mean_fire_dict, file)
@@ -237,12 +241,14 @@ for year in ["2021", "2022", "2023"]:
 
                 else:
                     continue  # Skip non-polygon geometries
-                kml.save(f'{save_dir}/fires-v2/fire_outlines-{int(row["id"])}.kml')
+                kml.save(
+                    f'{save_dir}/fires-{ml_ver}/fire_outlines-{int(row["id"])}.kml'
+                )
 
 
 # Writing the dictionary to a file as JSON
 with open(
-    f"{save_dir}/ml-fires-info-v2.json",
+    f"{save_dir}/ml-fires-info-{ml_ver}.json",
     "w",
 ) as file:
     json.dump(all_dict, file)

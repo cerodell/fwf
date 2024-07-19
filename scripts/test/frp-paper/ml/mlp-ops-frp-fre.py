@@ -40,8 +40,11 @@ warnings.simplefilter(action="ignore", category=FutureWarning)
 
 domain = "d02"
 doi = pd.Timestamp("2023-06-06")
-mlp_test_case = "MLP_64U-Dense_64U-Dense_64U-Dense_64U-Dense_2U-Dense-Decent"
-model_dir = str(data_dir) + f"/mlp/tf/averaged-v7/FRP_FRE/{mlp_test_case}"
+mlp_test_case = "MLP_64U-Dense_64U-Dense_1U-Dense-Main"
+method = "averaged-v12"
+ml_pack = "tf"
+target_vars = "FRP"
+model_dir = str(data_dir) + f"/mlp/tf/{method}/{target_vars}/{mlp_test_case}"
 
 
 ### Open color map json
@@ -111,12 +114,24 @@ with open(f"{model_dir}/config.json", "r") as json_data:
 mlD = MLDATA(config)
 # print("Start prediction:", startFRP)
 fwf_ds = open_fwf(doi, domain)  # .isel(time = slice(0,24))
+ds = fwf_ds
+curves_ds = salem.open_xr_dataset(str(data_dir) + "/static/curves-wrf-d02.nc")
+fire_time = ds.time.values
+hour_one = pd.Timestamp(fire_time[0]).hour
+curves_ds = curves_ds.roll(time=-hour_one, roll_coords=True)
+for var in list(curves_ds):
+    CURVES_VAR = curves_ds[var].values
+    N = len(fire_time)
+    ds[var] = (
+        ("time", "south_north", "west_east"),
+        np.tile(CURVES_VAR, (N + 1, 1, 1))[:N, :, :],
+    )
+    ds[var].attrs = ds.attrs
 
 fwf_ds = mlD.get_static(fwf_ds, static=target_grid)
 fwf_ds = mlD.get_eng_features(fwf_ds, wrf=True)
 
 shape = fwf_ds["S"].shape
-
 df_dict = {}
 print(config["feature_vars"])
 for key in config["feature_vars"]:
@@ -131,24 +146,30 @@ X = df[config["feature_vars"]]
 # Load the scaler
 feature_scaler = joblib.load(f"{model_dir}/feature-scaler.joblib")
 X_new_scaled = feature_scaler.transform(X)
+df_scaled = pd.DataFrame(X_new_scaled, columns=config["feature_vars"])
+for var in config["feature_vars"]:
+    fwf_ds[var] = (
+        ("time", "south_north", "west_east"),
+        df_scaled[var].values.reshape(shape),
+    )
+    fwf_ds[var].attrs = fwf_ds.attrs
 
 # Load the model
 model = load_model(f"{model_dir}/model.keras")
 y_out_this_nhn = model(X_new_scaled).numpy()
 
+
+if config["target_scaler_type"] == True:
+    # print("self.target_scaler_type is: ", self.target_scaler_type)
+    # y_out_this_nhn = self.target_scaler.inverse_transform(y_out_this_nhn)
+    y_out_this_nhn = y_out_this_nhn * config["FRP_MAX"]
+
+
 if config["transform"] == True:
     y_out_this_nhn = np.expm1(y_out_this_nhn)
 
-FRP_FULL = y_out_this_nhn[:, 0].ravel().reshape(shape)
-FRE_FULL = y_out_this_nhn[:, 1].ravel().reshape(shape)
-
+FRP_FULL = y_out_this_nhn.ravel().reshape(shape)
 fwf_ds["FRP"] = (("time", "south_north", "west_east"), FRP_FULL)
-fwf_ds["FRE"] = (("time", "south_north", "west_east"), FRE_FULL)
-
-# fwf_ds["MODELED_FRP"] = xr.where(fwf_ds["SNOWC"] > 0.5, 0, fwf_ds["MODELED_FRP"])
-# fwf_ds["MODELED_FRE"] = xr.where(fwf_ds["SNOWC"] > 0.5, 0, fwf_ds["MODELED_FRE"])
-# fwf_ds["MODELED_FRP"] = xr.where(fwf_ds["MODELED_FRP"] <= 0.0, 0, fwf_ds["MODELED_FRP"])
-# fwf_ds["MODELED_FRE"] = xr.where(fwf_ds["Total_Fuel_Load"] <= 0.0, 0, fwf_ds["MODELED_FRE"])
 
 for var in list(fwf_ds):
     if var == "FRP":
@@ -156,12 +177,6 @@ for var in list(fwf_ds):
             "description": "MEAN FIRE RADIATIVE POWER",
             "pyproj_srs": target_grid.attrs["pyproj_srs"],
             "units": "(MW)",
-        }
-    elif var == "FRE":
-        fwf_ds[var].attrs = {
-            "description": "FIRE ENERGY POWER",
-            "pyproj_srs": target_grid.attrs["pyproj_srs"],
-            "units": "(MJ)",
         }
     else:
         fwf_ds[var].attrs["pyproj_srs"] = target_grid.attrs["pyproj_srs"]
@@ -172,17 +187,17 @@ print("Time to predict FRP: ", FRPend)
 
 # fwf_ds['R-diurnal_curve-Total_Fuel_Load'] = fwf_ds['R']  * fwf_ds['diurnal_curve']  * fwf_ds['Total_Fuel_Load']
 
-fwf_ds["FRP"].isel(time=18).salem.quick_map(vmin=0, vmax=2500)
-fwf_ds["R"].isel(time=18).salem.quick_map()
+np.expm1(fwf_ds["R"]).isel(time=18).salem.quick_map()
+fwf_ds["CLIMO_FRP"].isel(time=18).salem.quick_map()
 
 # fwf_ds = predict_frp(doi, domain, model_dir)
 
 test = pd.DatetimeIndex(fwf_ds["Time"].values)
-# print(float(fwf_ds["MODELED_FRP"].max()))
+# print(float(fwf_ds["FRP"].max()))
 
 y, x = make_KDtree(49.01554, -76.43027, target_grid)
 # y, x = make_KDtree(57.47797,-121.16833, target_grid)
-# y, x = make_KDtree(27.92145, -81.09624, target_grid)
+y, x = make_KDtree(27.92145, -81.09624, target_grid)
 # y, x = make_KDtree(62.21035,-113.32549, target_grid)
 # y, x = make_KDtree(37.307,-113.571, target_grid)
 # y, x = make_KDtree(40,-140, target_grid)
@@ -193,33 +208,216 @@ frp_interp = fwf_ds.isel(west_east=x, south_north=y)
 
 fig = plt.figure(figsize=(10, 3))
 ax = fig.add_subplot(1, 1, 1)
-frp_interp[""].plot(ax=ax)
-# # plt.savefig('MODELED_FRP.png')
+frp_interp["FRP"].plot(ax=ax)
+# # plt.savefig('FRP.png')
 fig = plt.figure(figsize=(10, 3))
 ax = fig.add_subplot(1, 1, 1)
-# frp_interp["Total_Fuel_Load"].plot(ax=ax)
+np.expm1(frp_interp["R"]).plot(ax=ax)
 
-# for var in config["feature_vars"]:
-#     fig = plt.figure(figsize=(10, 3))
-#     ax = fig.add_subplot(1, 1, 1)
-#     frp_interp[var].plot(ax=ax)
+for var in config["feature_vars"]:
+    fig = plt.figure(figsize=(10, 3))
+    ax = fig.add_subplot(1, 1, 1)
+    frp_interp[var].plot(ax=ax)
 
 # # fig = plt.figure(figsize=(10,3))
 # # ax = fig.add_subplot(1,1,1)
 # # frp_interp['U'].plot(ax =ax)
 
-# fig = plt.figure(figsize=(10, 3))
-# ax = fig.add_subplot(1, 1, 1)
-# frp_interp["r_o"].plot(ax=ax)
+fig = plt.figure(figsize=(10, 3))
+ax = fig.add_subplot(1, 1, 1)
+frp_interp["r_o"].plot(ax=ax)
 # # plt.savefig('S.png')
 
+
 # %%
-# frp_da_small = fwf_ds.isel(time=slice(0, 24))
-# frp_i = hourly_rain(frp_da_small)
 
-# frp_i = frp_da_small.isel(time=18)
-# # frp_i["MODELED_FRP"] = xr.where(frp_i["Live_Wood"]<0.05,0, frp_i["MODELED_FRP"])
 
-# for var in list(frp_i):
-#     frp_i[var].attrs = target_grid.attrs
-# frp_i.attrs = target_grid.attrs
+frp_i = fwf_ds.isel(time=18)
+ax.set_title(f"Fire Radiative Power (MW) \n")
+
+import matplotlib.colors as mcolors
+
+
+def get_hex_colors_from_colormap(colormap_name, num_colors):
+    cmap = plt.get_cmap(colormap_name)
+    colors = [cmap(i / num_colors) for i in range(num_colors)]
+    hex_colors = [mcolors.to_hex(color) for color in colors]
+    return hex_colors
+
+
+vtimes = pd.Timestamp(frp_i.time.values)
+itime = pd.Timestamp(fwf_ds.time.values[0]) - pd.Timedelta("6h")
+
+
+def setBold(txt):
+    return r"$\bf{" + str(txt) + "}$"
+
+
+def add_time_label(ax):
+    ax.set_title(f"Init: {itime.strftime('%HZ %a %d %b %Y')}", loc="left", fontsize=8)
+    ax.set_title(
+        f"{setBold('Valid')}: {vtimes.strftime('%HZ %a %d %b %Y')}",
+        fontsize=8,
+        loc="right",
+    )
+    return
+
+
+plt.rcParams.update({"font.size": 10})
+
+fig = plt.figure(figsize=(24, 12))
+ax = fig.add_subplot(3, 4, 1)
+frp_i["FRP"].attrs["units"] = "(MW)"
+colors = np.vstack(
+    ([1, 1, 1, 1], plt.get_cmap("YlOrRd")(np.linspace(0, 1, 256)))
+)  # Add white at the start
+custom_cmap = LinearSegmentedColormap.from_list("custom_YlOrRd", colors)
+frp_i["FRP"].salem.quick_map(
+    cmap=custom_cmap, vmin=10, vmax=1000, ax=ax, oceans=True, lakes=True
+)
+# ax.set_title(f'Fire Radiative Power (MW) \n {str(frp_i.time.values)[:13]}')
+ax.set_title(f"Fire Radiative Power (MW) \n")
+add_time_label(ax)
+
+ax = fig.add_subplot(3, 4, 2)
+var = "R"
+vmin, vmax = cmaps[var]["vmin"], cmaps[var]["vmax"]
+title, colors = str(cmaps[var]["title"]), cmaps[var]["colors18"]
+custom_cmap = LinearSegmentedColormap.from_list(
+    "custom_cmap", [matplotlib.colors.hex2color(color) for color in colors]
+)
+norm = BoundaryNorm(cmaps[var]["levels"], custom_cmap.N)
+frp_i[var].attrs["units"] = ""
+np.expm1(frp_i[var]).salem.quick_map(
+    cmap=custom_cmap, ax=ax, norm=norm, oceans=True, lakes=True
+)
+ax.set_title(title + "\n")
+add_time_label(ax)
+
+ax = fig.add_subplot(3, 4, 3)
+var = "U"
+vmin, vmax = cmaps[var]["vmin"], cmaps[var]["vmax"]
+title, colors = str(cmaps[var]["title"]), cmaps[var]["colors18"]
+custom_cmap = LinearSegmentedColormap.from_list(
+    "custom_cmap", [matplotlib.colors.hex2color(color) for color in colors]
+)
+norm = BoundaryNorm(cmaps[var]["levels"], custom_cmap.N)
+frp_i[var].attrs["units"] = ""
+np.expm1(frp_i[var]).salem.quick_map(
+    cmap=custom_cmap, ax=ax, norm=norm, oceans=True, lakes=True
+)
+ax.set_title(title + "\n")
+add_time_label(ax)
+
+
+ax = fig.add_subplot(3, 4, 4)
+var = "S"
+vmin, vmax = cmaps[var]["vmin"], cmaps[var]["vmax"]
+title, colors = str(cmaps[var]["title"]), cmaps[var]["colors18"]
+custom_cmap = LinearSegmentedColormap.from_list(
+    "custom_cmap", [matplotlib.colors.hex2color(color) for color in colors]
+)
+norm = BoundaryNorm(cmaps[var]["levels"], custom_cmap.N)
+frp_i[var].attrs["units"] = ""
+np.expm1(frp_i[var]).salem.quick_map(
+    cmap=custom_cmap, ax=ax, norm=norm, oceans=True, lakes=True
+)
+ax.set_title(title + "\n")
+add_time_label(ax)
+
+
+ax = fig.add_subplot(3, 4, 5)
+var = "T"
+vmin, vmax = cmaps[var]["vmin"], cmaps[var]["vmax"]
+title, colors = str(cmaps[var]["title"]), cmaps[var]["colors"]
+custom_cmap = LinearSegmentedColormap.from_list(
+    "custom_cmap", [matplotlib.colors.hex2color(color) for color in colors]
+)
+norm = BoundaryNorm(cmaps[var]["levels"], custom_cmap.N)
+frp_i[var].attrs["units"] = ""
+frp_i[var].salem.quick_map(cmap=custom_cmap, ax=ax, norm=norm, oceans=True, lakes=True)
+ax.set_title(title + "\n")
+add_time_label(ax)
+
+ax = fig.add_subplot(3, 4, 6)
+var = "H"
+vmin, vmax = cmaps[var]["vmin"], cmaps[var]["vmax"]
+title, colors = str(cmaps[var]["title"]), cmaps[var]["colors18"]
+custom_cmap = LinearSegmentedColormap.from_list(
+    "custom_cmap", [matplotlib.colors.hex2color(color) for color in colors]
+)
+norm = BoundaryNorm(cmaps[var]["levels"], custom_cmap.N)
+frp_i[var].attrs["units"] = ""
+frp_i[var].salem.quick_map(cmap=custom_cmap, ax=ax, norm=norm, oceans=True, lakes=True)
+ax.set_title(title + "\n")
+add_time_label(ax)
+
+ax = fig.add_subplot(3, 4, 7)
+var = "W"
+vmin, vmax = cmaps[var]["vmin"], cmaps[var]["vmax"]
+title, colors = str(cmaps[var]["title"]), cmaps[var]["colors18"]
+custom_cmap = LinearSegmentedColormap.from_list(
+    "custom_cmap", [matplotlib.colors.hex2color(color) for color in colors]
+)
+norm = BoundaryNorm(cmaps[var]["levels"], custom_cmap.N)
+frp_i[var].attrs["units"] = ""
+frp_i[var].salem.quick_map(cmap=custom_cmap, ax=ax, norm=norm, oceans=True, lakes=True)
+ax.set_title(title + "\n")
+add_time_label(ax)
+
+ax = fig.add_subplot(3, 4, 8)
+var = "r_o"
+vmin, vmax = cmaps[var]["vmin"], cmaps[var]["vmax"]
+title, colors = str(cmaps[var]["title"]), cmaps[var]["colors18"]
+custom_cmap = LinearSegmentedColormap.from_list(
+    "custom_cmap", [matplotlib.colors.hex2color(color) for color in colors]
+)
+norm = BoundaryNorm(cmaps[var]["levels"], custom_cmap.N)
+frp_i[var].attrs["units"] = ""
+frp_i[var].salem.quick_map(cmap=custom_cmap, ax=ax, norm=norm, oceans=True, lakes=True)
+ax.set_title(title + "\n")
+add_time_label(ax)
+
+
+ax = fig.add_subplot(3, 4, 9)
+var = "Total_Fuel_Load"
+frp_i[var].attrs["units"] = "kg m^-2"
+np.expm1(frp_i[var]).salem.quick_map(cmap="Greens", ax=ax, oceans=True, lakes=True)
+ax.set_title("Total Fuel Load (kg m^-2)" + "\n")
+add_time_label(ax)
+
+
+ax = fig.add_subplot(3, 4, 10)
+var = "R-hour_sin-Total_Fuel_Load"
+frp_i[var].attrs["units"] = ""
+frp_i[var].salem.quick_map(cmap="jet", ax=ax, oceans=True, lakes=True, vmin=0, vmax=1)
+ax.set_title("log(ISI) x Sine(Solar Hour) x log(Total Fuel Load)" + "\n")
+add_time_label(ax)
+
+
+ax = fig.add_subplot(3, 4, 11)
+var = "U-lat_sin-Total_Fuel_Load"
+frp_i[var].attrs["units"] = ""
+frp_i[var].salem.quick_map(cmap="jet", ax=ax, oceans=True, lakes=True, vmin=0, vmax=1)
+ax.set_title("Live Leaf Fuel Load" + "\n")
+ax.set_title("log(BUI) x Sine(Latitude) x log(Total Fuel Load)" + "\n")
+add_time_label(ax)
+
+
+ax = fig.add_subplot(3, 4, 12)
+# var = "SAZ_sin-Total_Fuel_Load"
+# frp_i[var].attrs["units"] = ""
+# frp_i[var].salem.quick_map(cmap="gist_ncar", ax=ax, oceans=True, lakes=True, vmin=0,vmax =1)
+# ax.set_title("Sine(Solar Azimuthal) x log(Total Fuel Load)" + "\n")
+# add_time_label(ax)
+
+fig.tight_layout()
+fig.savefig(
+    str(model_dir) + "/img/test-all-vars.pdf",
+    bbox_inches="tight",
+    pad_inches=0.1,
+    orientation="landscape",
+)
+
+
+# %%

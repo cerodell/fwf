@@ -265,6 +265,6 @@ def plot_fire(fire_i, ds, persist, dt, save_dir, plot_method):
     else:
         fig.tight_layout()
         fig.savefig(str(save_dir) + f"/{int(fire_i['id'].values[0])}-{plot_method}.png")
-        plt.show()
+        # plt.show()
 
     return

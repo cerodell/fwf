@@ -484,7 +484,6 @@ ax.set_title(f"Fire Radiative Power (MW) \n")
 # def setBold(txt):
 #     return r"$\bf{" + str(txt) + "}$"
 
-
 # def add_time_label(ax):
 #     ax.set_title(f"Init: {itime.strftime('%HZ %a %d %b %Y')}", loc="left", fontsize=8)
 #     ax.set_title(

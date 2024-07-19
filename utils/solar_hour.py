@@ -107,50 +107,50 @@ def get_solar_hours(fire_ds):
             np.stack([solve_solar_hour(t, longitudes) for t in times]),
         )
 
-    shape = longitudes.shape
+    # shape = longitudes.shape
 
-    df_curve = pd.read_csv(str(data_dir) + "/frp/FRP_diurnal_climatology.csv")
-    df_curve.columns = [
-        "Land Cover",
-        "Ecoregion",
-        "hh00",
-        "hh01",
-        "hh02",
-        "hh03",
-        "hh04",
-        "hh05",
-        "hh06",
-        "hh07",
-        "hh08",
-        "hh09",
-        "hh10",
-        "hh11",
-        "hh12",
-        "hh13",
-        "hh14",
-        "hh15",
-        "hh16",
-        "hh17",
-        "hh18",
-        "hh19",
-        "hh20",
-        "hh21",
-        "hh22",
-        "hh23",
-    ]
-    df_curve = (
-        df_curve.drop(0)
-        .drop(columns=["Land Cover", "Ecoregion"])
-        .dropna()
-        .reset_index(drop=True)
-        .astype(float)
-    )
-    df_curve = df_curve.mean()
-    curve_array = df_curve.values
-    curve_values = []
-    for i in range(len(fire_ds.time)):
-        curve_values.append(
-            curve_array[fire_ds["solar_hour"].isel(time=i).values.astype(int) - 1]
-        )
-    fire_ds["diurnal_curve"] = (domain_dims, np.stack(curve_values))
+    # df_curve = pd.read_csv(str(data_dir) + "/frp/FRP_diurnal_climatology.csv")
+    # df_curve.columns = [
+    #     "Land Cover",
+    #     "Ecoregion",
+    #     "hh00",
+    #     "hh01",
+    #     "hh02",
+    #     "hh03",
+    #     "hh04",
+    #     "hh05",
+    #     "hh06",
+    #     "hh07",
+    #     "hh08",
+    #     "hh09",
+    #     "hh10",
+    #     "hh11",
+    #     "hh12",
+    #     "hh13",
+    #     "hh14",
+    #     "hh15",
+    #     "hh16",
+    #     "hh17",
+    #     "hh18",
+    #     "hh19",
+    #     "hh20",
+    #     "hh21",
+    #     "hh22",
+    #     "hh23",
+    # ]
+    # df_curve = (
+    #     df_curve.drop(0)
+    #     .drop(columns=["Land Cover", "Ecoregion"])
+    #     .dropna()
+    #     .reset_index(drop=True)
+    #     .astype(float)
+    # )
+    # df_curve = df_curve.mean()
+    # curve_array = df_curve.values
+    # curve_values = []
+    # for i in range(len(fire_ds.time)):
+    #     curve_values.append(
+    #         curve_array[fire_ds["solar_hour"].isel(time=i).values.astype(int) - 1]
+    #     )
+    # fire_ds["diurnal_curve"] = (domain_dims, np.stack(curve_values))
     return fire_ds

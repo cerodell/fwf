@@ -87,3 +87,10 @@ i also need tot test the model in an operation way, to do that i will use all ac
 TODO
 
 add lat dependency also and time of year dependency
+
+
+
+## Hudson Bay fire ID 24450415
+## Oak Fire ID 25485086
+## Caldor Fire ID 24564294
+## marshal Fire ID NOT IN GLOB FIRE DATABASE
