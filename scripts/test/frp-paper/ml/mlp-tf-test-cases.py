@@ -27,7 +27,7 @@ from context import data_dir
 
 all_fire = True
 mlp_test_case = "MLP_64U-Dense_64U-Dense_1U-Dense"
-method = "averaged-v12"
+method = "averaged-v15"
 ml_pack = "tf"
 target_vars = "FRP"
 model_dir = str(data_dir) + f"/mlp/{ml_pack}/{method}/{target_vars}/{mlp_test_case}"
@@ -38,12 +38,11 @@ with open(f"{model_dir}/config.json", "r") as json_data:
 
 fire_cases = np.loadtxt(f"{model_dir}/test_cases.txt", delimiter=",")
 test_ids = fire_cases[0].astype(int)
-
+test_years = fire_cases[1].astype(int)
 
 mlD = MLDATA(config=config)
 df = mlD.open_ml_ds()
 df_test = df[df["id"].isin(test_ids)].reset_index()
-
 
 X = df_test[config["feature_vars"]]
 
@@ -58,9 +57,11 @@ startFRP = datetime.now()
 # print("Start prediction:", startFRP)
 y_out_this_nhn = model(X_new_scaled).numpy()
 if config["target_scaler_type"] != None:
-    y_out_this_nhn[:, 0] = y_out_this_nhn[:, 0] * config["FRP_MAX"]
+    print("rescaling target")
+    y_out_this_nhn = y_out_this_nhn * config["FRP_MAX"]
 #     y_out_this_nhn = target_scaler.inverse_transform(y_out_this_nhn)\
 if config["transform"] == True:
+    print("retransforming target")
     y_out_this_nhn = np.expm1(y_out_this_nhn)
     df_test["FRP"] = np.expm1(df_test["FRP"])
 
@@ -98,15 +99,68 @@ for var in config["target_vars"]:
     ax.set_xlim(min_lim, max_lim)
     ax.set_ylim(min_lim, max_lim)
 
-df_ts = df_test[df_test["burn_time"] > df_test["burn_time"].mean()]
-test_ids = np.unique(df_ts["id"])
-years = []
 
-
+year_l = []
 mbe_l, rmse_l, r2_l, r_l, id_l = [], [], [], [], []
-for id in test_ids[:30]:
+for id in test_ids:
     fire_case = df_test[df_test["id"] == id]
-    years.append(fire_case["time"].dt.year.values[0])
+    fire_case = fire_case.set_index("time")
+    full_range = pd.date_range(
+        start=fire_case.index.min(), end=fire_case.index.max(), freq="h"
+    )
+    df_reindexed = fire_case.reindex(full_range)
+    y_t, y_nhn = df_reindexed["FRP"].dropna(), df_reindexed["P_FRP"].dropna()
+
+    # date_times = df_reindexed.index
+    # fig = plt.figure(figsize=(12, 4))
+    # ax = fig.add_subplot(1, 1, 1)
+    # ax.set_title(id, loc="left")
+    # title = (
+    #     "MBE: "
+    #     + str(np.round(MBE(y_t, y_nhn), 2))
+    #     + "\n"
+    #     + "rmse: "
+    #     + str(np.round(RMSE(y_t, y_nhn), 2))
+    #     + "\n"
+    #     + "r2_score: "
+    #     + str(np.round(r2_score(y_t, y_nhn), 2))
+    #     + "\n"
+    #     + "r: "
+    #     + str(np.round(stats.pearsonr(y_t, y_nhn)[0], 2))
+    #     + "\n"
+    # )
+
+    # ax.set_title(title, loc="right")
+    # ax.plot(date_times, df_reindexed["FRP"])
+    # ax.plot(date_times, df_reindexed["P_FRP"])
+    # print("MBE: ", str(np.round(MBE(y_t, y_nhn), 2)))
+    # print("rmse: ", np.round(RMSE(y_t, y_nhn), 2))
+    # print("r2: ", np.round(r2_score(y_t, y_nhn), 2))
+    # print("r: ", np.round(stats.pearsonr(y_t, y_nhn)[0], 2))
+    mbe_l.append(str(np.round(MBE(y_t, y_nhn), 2)))
+    rmse_l.append(np.round(RMSE(y_t, y_nhn), 2))
+    r2_l.append(np.round(r2_score(y_t, y_nhn), 2))
+    r_l.append(np.round(stats.pearsonr(y_t, y_nhn)[0], 2))
+    id_l.append(id)
+    year_l.append(fire_case.index.year[0])
+
+mbe_l, rmse_l, r2_l, r_l, id_l, year_l = (
+    np.array(mbe_l),
+    np.array(rmse_l),
+    np.array(r2_l),
+    np.array(r_l),
+    np.array(id_l),
+    np.array(year_l),
+)
+# # ticks = [10, 20, 50, 100, 200, 300, 500, 800, 1000, 1500,2000, 3000]
+# # ax.set_xticks(ticks)
+# # ax.set_yticks(ticks)
+# fig.savefig(str(save_dir) + f"/{target}-scatter.png")
+
+
+good_ids = id_l[r2_l > 0.3]
+for i in good_ids:
+    fire_case = df_test[df_test["id"] == float(i)]
     fire_case = fire_case.set_index("time")
     full_range = pd.date_range(
         start=fire_case.index.min(), end=fire_case.index.max(), freq="h"
@@ -117,7 +171,7 @@ for id in test_ids[:30]:
     date_times = df_reindexed.index
     fig = plt.figure(figsize=(12, 4))
     ax = fig.add_subplot(1, 1, 1)
-    ax.set_title(id, loc="left")
+    ax.set_title(int(fire_case["id"].values[0]), loc="left")
     title = (
         "MBE: "
         + str(np.round(MBE(y_t, y_nhn), 2))
@@ -136,48 +190,3 @@ for id in test_ids[:30]:
     ax.set_title(title, loc="right")
     ax.plot(date_times, df_reindexed["FRP"])
     ax.plot(date_times, df_reindexed["P_FRP"])
-    print("MBE: ", str(np.round(MBE(y_t, y_nhn), 2)))
-    print("rmse: ", np.round(RMSE(y_t, y_nhn), 2))
-    print("r2: ", np.round(r2_score(y_t, y_nhn), 2))
-    print("r: ", np.round(stats.pearsonr(y_t, y_nhn)[0], 2))
-    # mbe_l.append(str(np.round(MBE(y_t, y_nhn), 2)))
-    # rmse_l.append(np.round(RMSE(y_t, y_nhn), 2))
-    # r2_l.append(np.round(r2_score(y_t, y_nhn), 2))
-    # r_l.append(np.round(stats.pearsonr(y_t, y_nhn)[0], 2))
-    # id_l.append(id)
-# # ticks = [10, 20, 50, 100, 200, 300, 500, 800, 1000, 1500,2000, 3000]
-# # ax.set_xticks(ticks)
-# # ax.set_yticks(ticks)
-# fig.savefig(str(save_dir) + f"/{target}-scatter.png")
-
-
-fire_case = df_test[df_test["id"] == 24449334]
-fire_case = fire_case.set_index("time")
-full_range = pd.date_range(
-    start=fire_case.index.min(), end=fire_case.index.max(), freq="h"
-)
-df_reindexed = fire_case.reindex(full_range)
-y_t, y_nhn = df_reindexed["FRP"].dropna(), df_reindexed["P_FRP"].dropna()
-
-date_times = df_reindexed.index
-fig = plt.figure(figsize=(12, 4))
-ax = fig.add_subplot(1, 1, 1)
-ax.set_title(int(fire_case["id"].values[0]), loc="left")
-title = (
-    "MBE: "
-    + str(np.round(MBE(y_t, y_nhn), 2))
-    + "\n"
-    + "rmse: "
-    + str(np.round(RMSE(y_t, y_nhn), 2))
-    + "\n"
-    + "r2_score: "
-    + str(np.round(r2_score(y_t, y_nhn), 2))
-    + "\n"
-    + "r: "
-    + str(np.round(stats.pearsonr(y_t, y_nhn)[0], 2))
-    + "\n"
-)
-
-ax.set_title(title, loc="right")
-ax.plot(date_times, df_reindexed["FRP"])
-ax.plot(date_times, df_reindexed["P_FRP"])

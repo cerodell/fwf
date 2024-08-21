@@ -36,19 +36,19 @@ from sklearn.preprocessing import (
 from sklearn.utils import shuffle
 
 
-method = "averaged-v12"
+method = "averaged-v15"
 years = ["2021", "2022", "2023"]
 feature_vars = [
-    "ASPECT_sin",
-    "ASPECT_cos",
-    "HGT",
-    "GS",
     "R-hour_sin-Total_Fuel_Load",
+    "S-hour_sin-Total_Fuel_Load",
+    "S-hour_cos-Total_Fuel_Load",
+    "S-Total_Fuel_Load",
     "R-hour_cos-Total_Fuel_Load",
     "U-lat_sin-Total_Fuel_Load",
     "U-lon_sin-Total_Fuel_Load",
     "U-lat_cos-Total_Fuel_Load",
     "U-lon_cos-Total_Fuel_Load",
+    "hour_sin",
 ]
 
 
@@ -62,13 +62,22 @@ smoothing = False
 main_cases = False
 shuffle_data = False
 feature_engineer = False
-min_fire_size = 1000  ## hectors,
-burn_time = (48,)
+min_fire_size = 500  ## hectors,
+burn_time = int(55)
 filter_std = True
 wrf = False
 user_config = {"method": method, "min_fire_size": min_fire_size, "burn_time": burn_time}
 mlD = MLDATA(config=user_config)
 df = mlD.open_ml_ds()
+
+
+print(
+    stats.pearsonr(
+        df["FRP"],
+        df["S"],
+    )[0]
+)
+print("--------------------------------")
 
 
 # phi_sin = -np.pi
@@ -78,6 +87,18 @@ df = mlD.open_ml_ds()
 # )
 # df["hour_cos"] = (
 #     0.1 + (np.cos((2 * np.pi * df["solar_hour"] / 24) + phi_sin) + 1) * 0.45
+# )
+# Calculate the phase shift for sine to peak at 1800
+# phi_sin = (18 / 24) * 2 * np.pi - np.pi / 2  # phase shift for sine
+
+# # Calculate the phase shift for cosine to peak at 1400
+# phi_cos = (14 / 24) * 2 * np.pi  # phase shift for cosine
+
+# df["hour_sin"] = (
+#     0.1 + (np.sin((2 * np.pi * df["solar_hour"] / 24) + phi_sin) + 1) * 0.45
+# )
+# df["hour_cos"] = (
+#     0.1 + (np.cos((2 * np.pi * df["solar_hour"] / 24) + phi_cos) + 1) * 0.45
 # )
 
 
@@ -163,34 +184,35 @@ for feature in feature_vars:
 # if transform == True:
 # df['R-hour_sin-Total_Fuel_Load'] = np.log1p(df['R-hour_sin-Total_Fuel_Load'])
 
-print(
-    stats.pearsonr(
-        df["ASPECT"],
-        df["SAZ"],
-    )[0]
-)
+# print(
+#     stats.pearsonr(
+#         df["ASPECT"],
+#         df["SAZ"],
+#     )[0]
+# )
 
-# print(stats.pearsonr(
-#            df['FRP'],
-#            df['R-CLIMO_FRP-Total_Fuel_Load'],
-#         )[0])
+# # print(stats.pearsonr(
+# #            df['FRP'],
+# #            df['R-CLIMO_FRP-Total_Fuel_Load'],
+# #         )[0])
 
-print(
-    stats.pearsonr(
-        df["FRP"],
-        df["R-hour_sin-Total_Fuel_Load"],
-    )[0]
-)
+# print(
+#     stats.pearsonr(
+#         df["FRP"],
+#         df["R-hour_sin-Total_Fuel_Load"],
+#     )[0]
+# )
 
 print("Number of fires: ", len(np.unique(df["id"].values)))
 user_config["num_fire"] = str(len(np.unique(df["id"].values)))
 IDS = np.unique(df["id"].values)
 
 # Split into 70% train and 30% remaining
-train_ids, remaining_ids = train_test_split(IDS, test_size=0.30, random_state=100)
+train_ids, remaining_ids = train_test_split(IDS, test_size=0.30, random_state=85)
 
 # Split the remaining 30% into 15% validation and 15% test
-val_ids, test_ids = train_test_split(remaining_ids, test_size=0.50, random_state=100)
+val_ids, test_ids = train_test_split(remaining_ids, test_size=0.50, random_state=40)
+
 
 # Verify the splits
 print(f"Training IDs: {len(train_ids)}")
@@ -351,10 +373,25 @@ X_val_df = pd.DataFrame(X_val, columns=feature_vars)
 X_test_df = pd.DataFrame(X_test, columns=feature_vars)
 
 
+print("Training")
+print(
+    stats.pearsonr(
+        y_train["FRP"],
+        X_train_df["S-hour_sin-Total_Fuel_Load"],
+    )[0]
+)
+print("Validating")
 print(
     stats.pearsonr(
         y_val["FRP"],
-        X_val_df["R-hour_sin-Total_Fuel_Load"],
+        X_val_df["S-hour_sin-Total_Fuel_Load"],
+    )[0]
+)
+print("Testing")
+print(
+    stats.pearsonr(
+        y_test["FRP"],
+        X_test_df["S-hour_sin-Total_Fuel_Load"],
     )[0]
 )
 
@@ -363,3 +400,137 @@ print(
 #     ax = fig.add_subplot(1,1,1)
 #     X_train_df[var].plot.hist(ax = ax, bins =200)
 #     ax.set_title(var.title())
+
+# print(
+#     stats.pearsonr(
+#         df["FRP"],
+#         df["S"],
+#     )[0]
+# )
+
+
+df_group = df.groupby("id").first().reset_index()
+scaler = MinMaxScaler(feature_range=(10, 300))
+
+obs_hours_scaled = scaler.fit_transform(
+    np.array(df_group["burn_time"]).reshape(-1, 1)
+).flatten()
+# joblib.dump(scaler, 'dot-scaler.joblib')
+df_group["obs_hours_scaled"] = obs_hours_scaled
+df_train_group = df_group[df_group["id"].isin(train_ids)]
+df_val_group = df_group[df_group["id"].isin(val_ids)]
+df_test_group = df_group[df_group["id"].isin(test_ids)]
+
+# %%
+matplotlib.rcParams.update({"font.size": 16})
+# plt.rc("font", family="sans-serif")
+# plt.rc("text", usetex=True)
+# Open the NetCDF file
+ncfile = Dataset(str(data_dir) + f"/wrf/wrfout_d02_2023-04-20_00:00:00")
+# Get the sea level pressure
+slp = getvar(ncfile, "slp")
+# Get the cartopy mapping object
+cart_proj = get_cartopy(slp)
+## bring in state/prov boundaries
+states_provinces = cfeature.NaturalEarthFeature(
+    category="cultural",
+    name="admin_1_states_provinces_shp",
+    scale="50m",
+    facecolor="none",
+)
+
+# Create a figure
+fig = plt.figure(figsize=(14, 8))
+# Set the GeoAxes to the projection used by WRF
+ax = plt.axes(projection=cart_proj)
+
+ax.add_feature(cfeature.OCEAN, color="white", zorder=2)
+ax.add_feature(states_provinces, linewidth=0.5, edgecolor="black", zorder=5)
+ax.coastlines("50m", linewidth=0.8, zorder=5)
+
+## plot wx stations locations
+sc_train = ax.scatter(
+    df_train_group["lons"],
+    df_train_group["lats"],
+    color="tab:blue",
+    edgecolor="k",
+    lw=0.3,
+    zorder=1,
+    alpha=1,
+    s=df_train_group["obs_hours_scaled"],
+    transform=crs.PlateCarree(),
+    label=f"Training:    {len(df_train_group)}",
+)
+
+## plot wx stations locations
+sc_val = ax.scatter(
+    df_val_group["lons"],
+    df_val_group["lats"],
+    color="tab:green",
+    edgecolor="k",
+    lw=0.3,
+    zorder=10,
+    alpha=1,
+    s=df_val_group["obs_hours_scaled"],
+    transform=crs.PlateCarree(),
+    label=f"Validation:  {len(df_val_group)}",
+)
+
+## plot wx stations locations
+sc_test = ax.scatter(
+    df_test_group["lons"],
+    df_test_group["lats"],
+    color="tab:orange",
+    edgecolor="k",
+    lw=0.3,
+    zorder=10,
+    alpha=1,
+    s=df_test_group["obs_hours_scaled"],
+    transform=crs.PlateCarree(),
+    label=f"Testing:      {len(df_test_group)}",
+)
+
+# First legend for the color coding
+lgnd1 = ax.legend(loc="upper right")
+for handle in lgnd1.legend_handles:
+    handle._sizes = [100]
+
+# Add the gridlines with labels
+gl = ax.gridlines(
+    draw_labels=False, linewidth=0.2, color="gray", alpha=1, linestyle="--"
+)
+
+# Create a second legend for the sizes
+size_values = [10, 96, 187]
+size_values_invers = scaler.inverse_transform(
+    np.array(size_values).reshape(-1, 1)
+).ravel()  # Small, medium, large
+print(size_values_invers)
+# Calculate the range for obs_hours
+min_obs_hours = int(size_values_invers[0])
+median_obs_hours = int(size_values_invers[1])
+max_obs_hours = int(size_values_invers[2])
+
+# Generate the labels
+size_labels = [
+    f"{min_obs_hours:.0f} - {int((median_obs_hours//10)*10-1)} h",
+    f"{int((median_obs_hours//10)*10)} - {int((max_obs_hours//10)*10-1)} h",
+    r"$>=$" + f"{int((max_obs_hours//10)*10)} h",
+]
+size_legend = [
+    plt.scatter([], [], s=size, lw=0.4, color="gray", edgecolor="k")
+    for size in size_values
+]
+
+lgnd2 = plt.legend(
+    size_legend,
+    size_labels,
+    title="Observation Hours",
+    loc="upper center",
+    bbox_to_anchor=(0.5, 1.13),
+    ncol=3,
+)
+
+ax.add_artist(lgnd1)  # Add the first legend back to the axes
+
+plt.tight_layout()

@@ -15,7 +15,6 @@ from tensorflow.keras.optimizers import Adam
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import LSTM, Dense, TimeDistributed, Dropout
 
-
 # from tensorflow.keras.callbacks import ReduceLROnPlateau
 
 from sklearn.preprocessing import (
@@ -45,8 +44,8 @@ config = dict(
     method="averaged-v15",
     years=["2021", "2022", "2023"],
     feature_vars=[
-        # "ASPECT_sin",
-        # "ASPECT_cos",
+        "ASPECT_sin",
+        "ASPECT_cos",
         "S-hour_sin-Total_Fuel_Load",
         "S-hour_cos-Total_Fuel_Load",
         "Total_Fuel_Load",
@@ -65,8 +64,8 @@ config = dict(
     # main-cases=True,
     shuffle_data=True,
     feature_engineer=True,
-    min_fire_size=500,  ## hectors,
-    burn_time=int(55),
+    min_fire_size=0,  ## hectors,
+    burn_time=0,
     filter_std=True,
 )
 config["n_features"] = len(config["feature_vars"])
@@ -122,7 +121,7 @@ y_train, X_train, X_val, y_val = mlD.get_training()
 model.fit(
     X_train,
     y_train,
-    epochs=50,
+    epochs=30,
     batch_size=32,
     verbose=1,
     # validation_split=0.1,
@@ -135,7 +134,92 @@ y_out_this_nhn = model.predict(X_val)
 
 
 ## Save model
-mlD.save_model(model, y_out_this_nhn, save_dir, logger)
+user_config = mlD.save_model(model, y_out_this_nhn, save_dir, logger)
+
+
+if user_config["target_scaler_type"] == True:
+    y_out_this_nhn = y_out_this_nhn * user_config["FRP_MAX"]
+
+if user_config["transform"] == True:
+    y_out_this_nhn = np.expm1(y_out_this_nhn)
+    y_val = np.expm1(y_val)
+else:
+    y_val = y_val
+
+y_out_this_nhn = y_out_this_nhn.ravel()
+R2 = r2_score(y_val, y_out_this_nhn)
+pearsonr = np.round(stats.pearsonr(y_val.values.ravel(), y_out_this_nhn)[0], 2)
+
+# Feature reduction method
+feature_contributions_R2 = []
+feature_contributions_pearsonr = []
+
+for i in range(config["n_features"]):
+    # Create a copy of the training and validation data excluding the ith feature
+    X_train_reduced = np.delete(X_train, i, axis=1)
+    X_val_reduced = np.delete(X_val, i, axis=1)
+
+    # Reinitialize and retrain the model
+    model_reduced = Sequential(
+        [
+            Dense(64, activation="relu", input_shape=(config["n_features"] - 1,)),
+            Dropout(0.1),
+            Dense(64, activation="relu"),
+            Dropout(0.1),
+            Dense(config["n_targets"], activation="relu"),
+        ]
+    )
+
+    model_reduced.compile(optimizer=Adam(learning_rate=1e-04), loss="log_cosh")
+    model_reduced.fit(X_train_reduced, y_train, epochs=30, batch_size=32, verbose=1)
+
+    # Evaluate the reduced model performance
+    y_out_this_nhn_reduced = model_reduced.predict(X_val_reduced)
+    if user_config["target_scaler_type"] == True:
+        y_out_this_nhn_reduced = y_out_this_nhn_reduced * user_config["FRP_MAX"]
+    if user_config["transform"] == True:
+        y_out_this_nhn_reduced = np.expm1(y_out_this_nhn_reduced)
+    y_out_this_nhn_reduced = y_out_this_nhn_reduced.ravel()
+
+    R2_i = r2_score(y_val, y_out_this_nhn_reduced)
+    pearsonr_i = np.round(
+        stats.pearsonr(y_val.values.ravel(), y_out_this_nhn_reduced)[0], 2
+    )
+
+    # Compute the relative contribution C_i
+    R2_C = 1 - (R2_i / R2)
+    pearsonr_C = 1 - (pearsonr_i / pearsonr)
+    feature_contributions_R2.append(R2_C)
+    feature_contributions_pearsonr.append(pearsonr_C)
+
+# Plot the feature contributions
+feature_names = config["feature_vars"]
+print(feature_names)
+feature_contributions = np.array(feature_contributions_R2)
+print(feature_contributions)
+plt.figure(figsize=(10, 6))
+plt.bar(feature_names, feature_contributions, color="skyblue")
+plt.xlabel("Input Variable")
+plt.ylabel("Relative Contribution")
+plt.title("Feature Importance using Feature-Reduction Method")
+plt.xticks(rotation=45)
+plt.tight_layout()
+plt.show()
+
+
+# Plot the feature contributions
+feature_names = config["feature_vars"]
+feature_contributions = np.array(feature_contributions_pearsonr)
+print(feature_contributions)
+plt.figure(figsize=(10, 6))
+plt.bar(feature_names, feature_contributions, color="skyblue")
+plt.xlabel("Input Variable")
+plt.ylabel("Relative Contribution")
+plt.title("Feature Importance using Feature-Reduction Method")
+plt.xticks(rotation=45)
+plt.tight_layout()
+plt.show()
+
 
 ## Log run time
 logger.info("Total Run Time: %s", datetime.now() - startTime)

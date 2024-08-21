@@ -119,7 +119,6 @@ class MLDATA:
         df["hour_cos"] = (
             0.1 + (np.cos((2 * np.pi * df["solar_hour"] / 24) + phi_sin) + 1) * 0.45
         )
-
         # df["hour_sin"] =  df["hour_sin"]**2
         # df["hour_cos"] =   df["hour_cos"]**2
 
@@ -218,6 +217,11 @@ class MLDATA:
             y, x = "y", "x"
             lons, lats = static_ds.salem.grid.ll_coordinates
 
+        WD_sin = np.sin(np.radians(ds["WD"].values))
+        WD_cos = np.cos(np.radians(ds["WD"].values))
+        ds["WD_sin"] = (("time", "y", "x"), WD_sin)
+        ds["WD_cos"] = (("time", "y", "x"), WD_cos)
+
         lon_sin = np.sin(np.radians(lons))
         lon_cos = np.cos(np.radians(lons))
         lat_sin = np.sin(np.radians(lats))
@@ -277,7 +281,7 @@ class MLDATA:
 
         for var in list(fuels_roi):
             ds[var] = fuels_roi[var]
-
+        ds["OG_Total_Fuel_Load"] = ds["Total_Fuel_Load"]
         if self.transform == True:
             print("Transforming Features")
             ds["R"] = np.log1p(ds["R"])
@@ -310,13 +314,9 @@ class MLDATA:
     def get_eng_features(self, ds, wrf=False):
         ds = get_solar_hours(ds)
         phi_sin = -np.pi
+        # ds["hour_sin"] = np.sin(2 * np.pi * ds["solar_hour"] / 24)
+        # ds["hour_cos"] = np.cos(2 * np.pi * ds["solar_hour"] / 24)
         # Compute hour_sin and hour_cos with the phase shift
-        # ds["hour_sin"] = (
-        #     0.2 + (np.sin((2 * np.pi * ds["solar_hour"] / 24) + phi_sin) + 1) * 0.35
-        # ) * 100
-        # ds["hour_cos"] = (
-        #     0.2 + (np.cos((2 * np.pi * ds["solar_hour"] / 24) + phi_sin) + 1) * 0.35
-        # ) * 100
         ds["hour_sin"] = (
             0.1 + (np.sin((2 * np.pi * ds["solar_hour"] / 24) + phi_sin) + 1) * 0.45
         )
@@ -325,8 +325,6 @@ class MLDATA:
         )
         # ds["hour_sin"] = ds["hour_sin"]**2
         # ds["hour_cos"] = ds["hour_cos"]**2
-        # ds["hour_sin"] =  np.sin((2 * np.pi * ds["solar_hour"] / 24) + phi_sin)
-        # ds["hour_cos"] =  np.cos((2 * np.pi * ds["solar_hour"] / 24) + phi_sin)
         ds = self.add_engineered_features(ds, self.feature_vars, wrf)
 
         return ds
@@ -358,16 +356,24 @@ class MLDATA:
         # sample_size = int(0.12 * len(IDS))
         # sample_size = int(0.12 * len(IDS))
 
+        # # Split into 70% train and 30% remaining
+        # train_ids, remaining_ids = train_test_split(
+        #     IDS, test_size=0.30, random_state=120
+        # )
+
+        # # Split the remaining 30% into 15% validation and 15% test
+        # val_ids, test_ids = train_test_split(
+        #     remaining_ids, test_size=0.50, random_state=120
+        # )
+
         # Split into 70% train and 30% remaining
-        # train_ids, remaining_ids = train_test_split(IDS, test_size=0.30, random_state=np.random.randint(low=75, high=150))
         train_ids, remaining_ids = train_test_split(
-            IDS, test_size=0.30, random_state=100
+            IDS, test_size=0.30, random_state=85
         )
 
         # Split the remaining 30% into 15% validation and 15% test
-        # val_ids, test_ids = train_test_split(remaining_ids, test_size=0.50, random_state=np.random.randint(low=75, high=150))
         val_ids, test_ids = train_test_split(
-            remaining_ids, test_size=0.50, random_state=100
+            remaining_ids, test_size=0.50, random_state=40
         )
 
         # Verify the splits
@@ -428,10 +434,13 @@ class MLDATA:
             return perturbed_df
 
         if self.transform == True:
-            # cold_fires = df_train.loc[df_train["FRP"] < np.log1p(1)]
-            # cool_fires = df_train.loc[df_train["FRP"] < np.log1p(10)]
+            # cold_fires = add_perturbations(df_train.loc[df_train["FRP"] < np.log1p(1)], 0.01)
+            # cool_fires =  add_perturbations(df_train.loc[df_train["FRP"] < np.log1p(10)], 0.01)
             warm_fires = add_perturbations(
                 df_train.loc[df_train["FRP"] > np.log1p(500)], 0.01
+            )
+            warmer_fires = add_perturbations(
+                df_train.loc[df_train["FRP"] > np.log1p(800)], 0.01
             )
             hot_fires = add_perturbations(
                 df_train.loc[df_train["FRP"] > np.log1p(1000)], 0.01
@@ -448,7 +457,10 @@ class MLDATA:
         else:
             # cold_fires = df_train.loc[df_train["FRP"] < 1]
             # cool_fires = df_train.loc[df_train["FRP"] < 10]
+            # cold_fires = add_perturbations(df_train.loc[df_train["FRP"] < 1], 0.01)
+            # cool_fires =  add_perturbations(df_train.loc[df_train["FRP"] < 10], 0.01)
             warm_fires = add_perturbations(df_train.loc[df_train["FRP"] > 500], 0.01)
+            warmer_fires = add_perturbations(df_train.loc[df_train["FRP"] > 800], 0.01)
             hot_fires = add_perturbations(df_train.loc[df_train["FRP"] > 1000], 0.01)
             hotter_fires = add_perturbations(df_train.loc[df_train["FRP"] > 1500], 0.01)
             hotter_still_fire = add_perturbations(
@@ -463,6 +475,7 @@ class MLDATA:
                 # cold_fires,
                 # cool_fires,
                 warm_fires,
+                warmer_fires,
                 hot_fires,
                 hotter_fires,
                 hotter_still_fire,
@@ -589,7 +602,7 @@ class MLDATA:
                 units = "(MW)"
 
             mbe = str(np.round(MBE(y_t, y_nhn), 2))
-            rmse = np.round(RMSE(y_t, y_nhn), 2)
+            rmse = np.round(float(RMSE(y_t, y_nhn)), 2)
             r2 = np.round(r2_score(y_t, y_nhn), 2)
             r = np.round(stats.pearsonr(y_t, y_nhn)[0], 2)
             stats_dict[target] = {
@@ -640,7 +653,7 @@ class MLDATA:
         logger.info("Model name: %s", str(feature_scaler_path).split("/")[-2])
         print("Model name: ", str(feature_scaler_path).split("/")[-2])
 
-        return
+        return self.user_config
 
     # def save_model_tunning(self, model, y_out_this_nhn, save_dir, logger, history):
     #     if self.target_scaler_type == True:

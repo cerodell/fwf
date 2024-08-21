@@ -50,16 +50,22 @@ startTime = datetime.now()
 
 # Base configuration parameters
 base_config = dict(
-    method="averaged-v11",
+    method="averaged-v14",
     years=["2021", "2022", "2023"],
     feature_vars=[
-        "R-CLIMO_FRP-Total_Fuel_Load",
-        # "R-OFFSET_NORM-Total_Fuel_Load",
-        # "R-hour_sin-Total_Fuel_Load",
-        "U-lat_sin-Total_Fuel_Load",
-        "U-lon_sin-Total_Fuel_Load",
-        "U-lat_cos-Total_Fuel_Load",
-        "U-lon_cos-Total_Fuel_Load",
+        "ASPECT_sin",
+        "ASPECT_cos",
+        "GS",
+        "WD_sin",
+        "WD_cos",
+        "R-hour_sin-Total_Fuel_Load",
+        "R-hour_cos-Total_Fuel_Load",
+        "U",
+        "Total_Fuel_Load",
+        "lat_sin",
+        "lon_sin",
+        "lat_cos",
+        "lon_cos",
     ],
     target_vars=["FRP"],
     transform=True,
@@ -139,7 +145,6 @@ def build_model(hp):
     model.compile(
         optimizer=optimizer,
         loss=loss_choice,
-        # metrics=[r2_metric]  # Include R² in metrics
     )
     return model
 
@@ -168,17 +173,6 @@ for scaler_config in scaler_types:
 
     # Shuffle the training data
     X_train, y_train = shuffle(X_train, y_train, random_state=42)
-
-    # # Setup early stopping
-    # early_stopping = EarlyStopping(
-    #     monitor="val_loss",
-    #     min_delta=0,
-    #     patience=5,
-    #     verbose=1,
-    #     mode="auto",
-    #     baseline=None,
-    #     restore_best_weights=True,
-    # )
 
     # Search for best hyperparameters
     tuner.search(X_train, y_train, epochs=75, validation_split=0.1)

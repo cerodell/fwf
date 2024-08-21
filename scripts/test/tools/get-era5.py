@@ -8,8 +8,8 @@ from datetime import datetime
 
 c = cdsapi.Client()
 save_dir = "/Volumes/ThunderBay/CRodell/ecmwf/era5/"
-date_range = pd.date_range("2013-02-12", "2019-12-27")
-# date_range = pd.date_range("1989-12-27", "1992-01-01")
+# date_range = pd.date_range("2013-02-12", "2019-12-27")
+date_range = pd.date_range("1989-12-27", "1989-12-27")
 for date in date_range:
     startTime = datetime.now()
     c.retrieve(

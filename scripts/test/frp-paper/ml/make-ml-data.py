@@ -234,213 +234,147 @@ for year in ["2021", "2022", "2023"]:
                 ISI = xr.where(np.isnan(ds["FRP"].values) == True, np.nan, ds["R"])
                 frp_vals = ds["FRP"].mean(("x", "y")).dropna("time")
                 r_values = stats.pearsonr(
-                    ds["FRP"].mean(("x", "y")).dropna("time"),
+                    frp_vals,
                     ISI.mean(("x", "y")).dropna("time"),
                 )[0]
-                print(np.round(r_values, 2))
-                ds = get_solar_hours(ds)
-                # ds["solar_hour"] = xr.where(
-                #     np.isnan(ds["FRP"].values) == True, np.nan, ds["solar_hour"]
-                # )
-
-                nan_space = []
-                nan_time = []
-                for i in range(len(ds.time)):
-                    nan_array = np.isnan(ds["FRP"].isel(time=i)).values
-                    zero_full = np.zeros(nan_array.shape)
-                    zero_full[nan_array == False] = 1
-                    unique, counts = np.unique(nan_array, return_counts=True)
-                    nan_space.append(zero_full)
-                    if unique[0] == False:
-                        nan_time.append(counts[0])
-                    else:
-                        nan_time.append(0)
-                static_roi = add_static(ds, static_ds)
-                curves_roi = ds.salem.transform(curves_ds, interp="nearest")
-                fire_time = ds.time.values
-                hour_one = pd.Timestamp(fire_time[0]).hour
-                curves_roi = curves_roi.roll(time=-hour_one, roll_coords=True)
-
-                grid_roi = add_static(ds, grid_ds)
-                ds["area"] = grid_roi["area"]
-
-                # curves_roi['time'] = fire_time[:24]
-                OFFSET_NORM = curves_roi["OFFSET_NORM"].values
-                N = len(fire_time)
-                ds["OFFSET_NORM"] = (
-                    ("time", "y", "x"),
-                    np.tile(OFFSET_NORM, (N // 24 + 1, 1, 1))[:N, :, :],
-                )
-
-                CLIMO_FRP = curves_roi["CLIMO_FRP"].values
-                N = len(fire_time)
-                ds["CLIMO_FRP"] = (
-                    ("time", "y", "x"),
-                    np.tile(CLIMO_FRP, (N // 24 + 1, 1, 1))[:N, :, :],
-                )
-
-                fuel_date_range = pd.date_range(
-                    ds.attrs["initialdat"][:-3] + "-01",
-                    ds.attrs["finaldate"],
-                    freq="MS",
-                )
-                fuels_ds = xr.combine_nested(
-                    [open_fuels(moi) for moi in fuel_date_range], concat_dim="time"
-                )
-                fuels_roi = ds.salem.transform(fuels_ds, interp="linear")
-                fuels_roi = fuels_roi.reindex(time=ds.time, method="ffill")
-                fuels_roi = xr.where(fuels_roi < 0, 0, fuels_roi)
-                fuels_roi["Total_Fuel_Load"] = (
-                    fuels_roi["Live_Leaf"]
-                    + fuels_roi["Live_Wood"]
-                    + fuels_roi["Dead_Foliage"]
-                    + fuels_roi["Dead_Wood"]
-                )
-
-                if norm_fwi == True:
-                    # ds["NFWI"] = norm_fwi_ds(ds, fwi_max, fwi_min)
-                    ds = norm_fwi_ds(
-                        ds, fwi_max, fwi_min, isi_max, isi_min, bui_max, bui_min
-                    )
-                    # ds = ds.drop_vars("quantile")
-
-                for var in list(static_roi):
-                    # static_roi[var] = xr.where(
-                    #     np.isnan(ds["FRP"].values) == True, np.nan, static_roi[var]
-                    # )
-                    ds[var] = static_roi[var]
-
-                time_shape = ds.time.shape
-                ds["id"] = (("time"), np.full(time_shape, float(ds.attrs["id"])))
-                ds["area_ha"] = (
-                    ("time"),
-                    np.full(time_shape, float((ds.attrs["area_ha"]))),
-                )
-                ds["burn_time"] = (
-                    ("time"),
-                    np.full(
-                        time_shape,
-                        float(
-                            (
-                                pd.Timestamp(ds.attrs["finaldate"])
-                                - pd.Timestamp(ds.attrs["initialdat"])
-                            ).total_seconds()
-                            / 3600
-                        ),
-                    ),
-                )
-
-                WD_sin = np.sin(np.radians(ds["WD"].values))
-                WD_cos = np.cos(np.radians(ds["WD"].values))
-                ds["WD_sin"] = (("time", "y", "x"), WD_sin)
-                ds["WD_cos"] = (("time", "y", "x"), WD_cos)
-                ds["AF"] = (("time"), np.array(nan_time))
-
-                for var in list(fuels_roi):
-                    ds[var] = fuels_roi[var]
-
-                ds["R"] = np.log1p(ds["R"])
-                ds["U"] = np.log1p(ds["U"])
-                ds["Total_Fuel_Load"] = np.log1p(ds["Total_Fuel_Load"])
-                for var in list(ds):
-                    try:
-                        ds[var] = xr.where(
-                            np.isnan(ds["FRP"].values) == True, np.nan, ds[var]
-                        )
-                    except:
-                        pass
-
-                if spatially_averaged == False:
-                    print(f"Passed: {ii}/{file_list_len}")
-                    ds_list.append(
-                        ds.stack(z=("time", "x", "y"))
-                        .reset_index("z")
-                        .dropna("z")
-                        .reset_coords()
-                    )
+                if len(frp_vals) < 30:
+                    print(f"To short of fire buring time {len(frp_vals)}")
                 else:
-                    ds_mean = ds.mean(("x", "y"), skipna=True)
-                    # Create a mask of the original non-null values
-                    # original_non_null_mask = ds['FRP'].notnull()
+                    print(np.round(r_values, 2))
+                    ds = get_solar_hours(ds)
+                    # ds["solar_hour"] = xr.where(
+                    #     np.isnan(ds["FRP"].values) == True, np.nan, ds["solar_hour"]
+                    # )
 
-                    # # Forward fill along the time dimension
-                    # forward_filled = ds['FRP'].ffill(dim='time')
+                    nan_space = []
+                    nan_time = []
+                    for i in range(len(ds.time)):
+                        nan_array = np.isnan(ds["FRP"].isel(time=i)).values
+                        zero_full = np.zeros(nan_array.shape)
+                        zero_full[nan_array == False] = 1
+                        unique, counts = np.unique(nan_array, return_counts=True)
+                        nan_space.append(zero_full)
+                        if unique[0] == False:
+                            nan_time.append(counts[0])
+                        else:
+                            nan_time.append(0)
+                    static_roi = add_static(ds, static_ds)
+                    curves_roi = ds.salem.transform(curves_ds, interp="nearest")
+                    fire_time = ds.time.values
+                    hour_one = pd.Timestamp(fire_time[0]).hour
+                    curves_roi = curves_roi.roll(time=-hour_one, roll_coords=True)
 
-                    # # Backward fill along the time dimension
-                    # backward_filled = forward_filled.bfill(dim='time')
+                    grid_roi = add_static(ds, grid_ds)
+                    ds["area"] = grid_roi["area"]
 
-                    # # Combine the original non-null values with the forward/backward filled values
-                    # filled_data = ds['FRP'].where(original_non_null_mask, other=backward_filled)
+                    # curves_roi['time'] = fire_time[:24]
+                    OFFSET_NORM = curves_roi["OFFSET_NORM"].values
+                    N = len(fire_time)
+                    ds["OFFSET_NORM"] = (
+                        ("time", "y", "x"),
+                        np.tile(OFFSET_NORM, (N // 24 + 1, 1, 1))[:N, :, :],
+                    )
 
-                    # for var in ['FRP']:
-                    # #     if (var == 'FRP') or (var=='FRE'):
-                    # #         frp_mean = ds[var].quantile(
-                    # #                 [0.75],
-                    # #                 dim=("x", "y"),
-                    # #                 skipna=True,
-                    # #             ).isel(quantile=0).drop_vars('quantile')
-                    # #     else:
-                    #     # frp_mean = ds[var].mean(("x", "y"),  skipna=True)
-                    #     plt.figure()
-                    #     ds[var].mean(("x", "y"),  skipna=True).plot()
+                    CLIMO_FRP = curves_roi["CLIMO_FRP"].values
+                    N = len(fire_time)
+                    ds["CLIMO_FRP"] = (
+                        ("time", "y", "x"),
+                        np.tile(CLIMO_FRP, (N // 24 + 1, 1, 1))[:N, :, :],
+                    )
 
-                    #     frp_mean = ds[var].sum(("x", "y"),  skipna=True) / ds['area'].sum(("x", "y"),  skipna=True)
-                    #     frp_mean_series = frp_mean.to_series()
+                    fuel_date_range = pd.date_range(
+                        ds.attrs["initialdat"][:-3] + "-01",
+                        ds.attrs["finaldate"],
+                        freq="MS",
+                    )
+                    fuels_ds = xr.combine_nested(
+                        [open_fuels(moi) for moi in fuel_date_range], concat_dim="time"
+                    )
+                    fuels_roi = ds.salem.transform(fuels_ds, interp="linear")
+                    fuels_roi = fuels_roi.reindex(time=ds.time, method="ffill")
+                    fuels_roi = xr.where(fuels_roi < 0, 0, fuels_roi)
+                    fuels_roi["Total_Fuel_Load"] = (
+                        fuels_roi["Live_Leaf"]
+                        + fuels_roi["Live_Wood"]
+                        + fuels_roi["Dead_Foliage"]
+                        + fuels_roi["Dead_Wood"]
+                    )
 
-                    #     # Identify the missing data (NaNs)
-                    #     missing_data = frp_mean_series.isna()
+                    if norm_fwi == True:
+                        # ds["NFWI"] = norm_fwi_ds(ds, fwi_max, fwi_min)
+                        ds = norm_fwi_ds(
+                            ds, fwi_max, fwi_min, isi_max, isi_min, bui_max, bui_min
+                        )
+                        # ds = ds.drop_vars("quantile")
 
-                    #     # Calculate the length of each gap
-                    #     gap_lengths = missing_data.groupby((missing_data != missing_data.shift()).cumsum()).transform('size') * missing_data
+                    for var in list(static_roi):
+                        # static_roi[var] = xr.where(
+                        #     np.isnan(ds["FRP"].values) == True, np.nan, static_roi[var]
+                        # )
+                        ds[var] = static_roi[var]
 
-                    #     # Set a threshold for filling gaps (e.g., 6 hours)
-                    #     threshold = 6
+                    time_shape = ds.time.shape
+                    ds["id"] = (("time"), np.full(time_shape, float(ds.attrs["id"])))
+                    ds["area_ha"] = (
+                        ("time"),
+                        np.full(time_shape, float((ds.attrs["area_ha"]))),
+                    )
+                    # ds["burn_time"] = (
+                    #     ("time"),
+                    #     np.full(
+                    #         time_shape,
+                    #         float(
+                    #             (
+                    #                 pd.Timestamp(ds.attrs["finaldate"])
+                    #                 - pd.Timestamp(ds.attrs["initialdat"])
+                    #             ).total_seconds()
+                    #             / 3600
+                    #         ),
+                    #     ),
+                    # )
 
-                    #     # Fill gaps that are under the threshold
-                    #     filled_frp_mean_series = frp_mean_series.copy()
-                    #     for gap_length in range(1, threshold + 1):
-                    #         filled_frp_mean_series = filled_frp_mean_series.where(gap_lengths != gap_length, filled_frp_mean_series.interpolate(method='cubic'))
+                    WD_sin = np.sin(np.radians(ds["WD"].values))
+                    WD_cos = np.cos(np.radians(ds["WD"].values))
+                    ds["WD_sin"] = (("time", "y", "x"), WD_sin)
+                    ds["WD_cos"] = (("time", "y", "x"), WD_cos)
+                    ds["AF"] = (("time"), np.array(nan_time))
 
-                    #     filled_frp_mean_series = filled_frp_mean_series.clip(lower=0)
+                    for var in list(fuels_roi):
+                        ds[var] = fuels_roi[var]
 
-                    #     # # Apply Gaussian smoothing while preserving original nulls
-                    #     sigma = 2  # Define the standard deviation for Gaussian kernel
+                    ds["S"] = np.log1p(ds["S"])
+                    ds["R"] = np.log1p(ds["R"])
+                    ds["U"] = np.log1p(ds["U"])
+                    ds["Total_Fuel_Load"] = np.log1p(ds["Total_Fuel_Load"])
+                    for var in list(ds):
+                        try:
+                            ds[var] = xr.where(
+                                np.isnan(ds["FRP"].values) == True, np.nan, ds[var]
+                            )
+                        except:
+                            pass
 
-                    #     # # Create a mask of non-null values
-                    #     non_null_mask = ~filled_frp_mean_series.isna()
+                    if spatially_averaged == False:
+                        print(f"Passed: {ii}/{file_list_len}")
+                        ds_list.append(
+                            ds.stack(z=("time", "x", "y"))
+                            .reset_index("z")
+                            .dropna("z")
+                            .reset_coords()
+                        )
+                    else:
+                        ds_mean = ds.mean(("x", "y"), skipna=True).dropna("time")
+                        time_shape = ds_mean.time.shape
+                        ds_mean["burn_time"] = (
+                            ("time"),
+                            np.full(time_shape, float(len(ds_mean.time))),
+                        )
 
-                    #     # # Perform Gaussian smoothing only on non-null values
-                    #     smoothed_frp_mean_series = filled_frp_mean_series.copy()
-                    #     smoothed_values = gaussian_filter1d(filled_frp_mean_series[non_null_mask], sigma=sigma)
-                    #     smoothed_frp_mean_series[non_null_mask] = smoothed_values
-
-                    #     # Convert the smoothed Series back to an xarray DataArray
-                    #     smoothed_frp_mean = xr.DataArray(smoothed_frp_mean_series, coords=frp_mean.coords, dims=frp_mean.dims)
-                    #     # ds[var] =
-                    #     # # Plot everything on the same figure
-                    #     # plt.figure(figsize=(12, 6))
-                    #     # plt.plot(frp_mean_series, label=f'Original {var} Mean', linestyle='--', marker='o')
-                    #     # plt.plot(filled_frp_mean_series, label=f'Interpolated {var} Mean', linestyle='-', marker='x')
-                    #     # plt.plot(smoothed_frp_mean_series, label=f'Smoothed {var} Mean', linestyle='-', marker='.')
-
-                    #     # plt.title(f'{var} Mean Time Series')
-                    #     # plt.xlabel('Time')
-                    #     # plt.ylabel(f'{var} Mean')
-                    #     # plt.legend()
-                    #     # plt.grid(True)
-                    #     # plt.show()
-
-                    #     ds_mean[var] = smoothed_frp_mean
-                    #     plt.figure()
-                    #     ds_mean[var].plot()
-
-                    ds_mean = ds_mean.dropna("time")
-
-                    print(f"Passed: {ii}/{file_list_len}")
-                    print("Length of data: ", len(ds_mean.time))
-                    counter += 1
-                    ds_list.append(ds_mean)
-                    good_files.append(file)
+                        print(f"Passed: {ii}/{file_list_len}")
+                        print("Length of data: ", len(ds_mean.time))
+                        counter += 1
+                        ds_list.append(ds_mean)
+                        good_files.append(file)
         except:
             print(f"DID NOT RUN!! {file}")
 
@@ -469,7 +403,7 @@ for year in ["2021", "2022", "2023"]:
         )
 
     save_dir = (
-        f"/Users/crodell/fwf/data/ml-data/training-data/{year}-fires-averaged-v12.nc"
+        f"/Users/crodell/fwf/data/ml-data/training-data/{year}-fires-averaged-v15.nc"
     )
     print(save_dir)
     final_ds, encoding = compressor(final_ds)
@@ -481,7 +415,7 @@ for year in ["2021", "2022", "2023"]:
 print(
     stats.pearsonr(
         final_ds["FRP"],
-        final_ds["R"],
+        final_ds["S"],
     )[0]
 )
 print("--------------------------------")

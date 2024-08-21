@@ -36,7 +36,7 @@ warnings.simplefilter(action="ignore", category=FutureWarning)
 # def reduce_precision(coords, precision=2):
 #     return [(round(x, precision), round(y, precision)) for x, y in coords]
 
-ml_ver = "v8"
+ml_ver = "v14"
 all_dict = {}
 save_dir = "/Users/crodell/fwf/scripts/test/frp-paper/fire-cases/web/data"
 # Initialize MLP model and load dataset
@@ -60,10 +60,10 @@ for year in ["2021", "2022", "2023"]:
                 ds = xr.open_dataset(
                     f"/Volumes/ThunderBay/CRodell/fires/{ml_ver}/{year}-{ID}.nc"
                 )
-                ds_nan = xr.open_zarr(
-                    f"/Volumes/WFRT-Ext23/fire/full/{year}-{ID}.zarr"
-                )["FRP"].to_dataset()
-                ds = xr.where(np.isnan(ds_nan["FRP"].values) == True, np.nan, ds)
+                # ds_nan = xr.open_zarr(
+                #     f"/Volumes/WFRT-Ext23/fire/full/{year}-{ID}.zarr"
+                # )["FRP"].to_dataset()
+                ds = xr.where(np.isnan(ds["FRP"].values) == True, np.nan, ds)
                 ds = ds.salem.roi(shape=id_df, all_touched=True)
                 ds_space_avg = ds.mean(dim=("x", "y"))
                 ds_space_sum = ds.sum(dim=("x", "y"))
