@@ -135,21 +135,21 @@ def reindex_ds(ds_d2, ds_d3, info):
     ds_d2, ds_d3 = rechunk(ds_d2), rechunk(ds_d3)
     try:
         ds_d2["time"], ds_d3["time"] = (
-            ds_d2.Time.astype("datetime64[h]"),
-            ds_d3.Time.astype("datetime64[h]"),
+            ds_d2.Time.astype("datetime64[h]").astype('datetime64[ns]'),
+            ds_d3.Time.astype("datetime64[h]").astype('datetime64[ns]'),
         )
         if len(ds_d3.time) != len(ds_d2.time):
             print(f"Unequal lenght datasets for {info}")
             if len(ds_d3.time) > len(ds_d2.time):
                 print("d03 in longer")
-                time_array = ds_d2.Time.values.astype("datetime64[h]")
+                time_array = ds_d2.Time.values.astype("datetime64[h]").astype('datetime64[ns]')
                 ds_d3 = ds_d3.sel(time=slice(str(time_array[0]), str(time_array[-1])))
                 print(
                     f"reindex d03 from {str(time_array[0])} - {str(time_array[-1])} for {info}"
                 )
             elif len(ds_d3.time) < len(ds_d2.time):
                 print("d02 in longer")
-                time_array = ds_d3.Time.values.astype("datetime64[h]")
+                time_array = ds_d3.Time.values.astype("datetime64[h]").astype('datetime64[ns]')
                 ds_d2 = ds_d2.sel(time=slice(str(time_array[0]), str(time_array[-1])))
                 print(
                     f"reindex d02 from {str(time_array[0])} - {str(time_array[-1])} for {info}"
@@ -165,10 +165,10 @@ def reindex_ds(ds_d2, ds_d3, info):
         time_hack = (date + np.timedelta64(1, "D")).strftime("%Y-%m-%d")
         ds_d2["time"] = np.array(
             [date.strftime("%Y-%m-%d"), time_hack], dtype="datetime64[h]"
-        )
+        ).astype('datetime64[ns]')
         ds_d3["time"] = np.array(
             [date.strftime("%Y-%m-%d"), time_hack], dtype="datetime64[h]"
-        )
+        ).astype('datetime64[ns]')
         ds_d2["Time"] = np.array(
             [date.strftime("%Y-%m-%d"), time_hack], dtype="datetime64[ns]"
         )
@@ -299,7 +299,7 @@ for ztu in unique:
     wx_hourly_ds["r_o"] = wx_hourly__yester_ds.r_o.values[-1] + wx_hourly_ds.r_o
 
     try:
-        wx_hourly__yester_ds = wx_hourly__yester_ds.drop('XTIME')
+        wx_hourly__yester_ds = wx_hourly__yester_ds.drop_vars('XTIME')
     except:
         pass
     fianl_hourly_ds = xr.combine_nested(

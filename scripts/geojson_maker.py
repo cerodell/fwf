@@ -34,8 +34,8 @@ warnings.filterwarnings("ignore", message="invalid value encountered in true_div
 
 
 ### make folder for json files on webapge
-# forecast_date = pd.Timestamp("today").strftime("%Y%m%d")
-forecast_date = pd.Timestamp(2024, 6, 3).strftime("%Y%m%d")
+forecast_date = pd.Timestamp("today").strftime("%Y%m%d")
+# forecast_date = pd.Timestamp(2024, 6, 3).strftime("%Y%m%d")
 make_dir = Path(f"/bluesky/archive/fireweather/forecasts/{forecast_date}00/data/map")
 make_dir.mkdir(parents=True, exist_ok=True)
 
@@ -68,7 +68,7 @@ target_grid = salem.Grid(
 ).to_dataset()
 lon, lat = target_grid.salem.grid.ll_coordinates
 
-def open_fwf(domain, target_grid):
+def open_fwf(domain, target_grid, method):
     loopTime = datetime.now()
     hourly_file_dir = str(data_dir) + str(f"/fwf-data/fwf-hourly-{domain}-{forecast_date}.nc")
     daily_file_dir = str(data_dir) + str(f"/fwf-data/fwf-daily-{domain}-{forecast_date}.nc")
@@ -95,14 +95,14 @@ def open_fwf(domain, target_grid):
         hourly_ds[var].attrs["pyproj_srs"] = pyproj_srs
     hourly_ds.attrs["pyproj_srs"] = pyproj_srs
     hourly_ds = hourly_ds.drop_vars('r_o_hourly')
-    hourly_ds, daily_ds  = target_grid.salem.transform(hourly_ds,interp="nearest"), target_grid.salem.transform(daily_ds, interp="nearest")
+    hourly_ds, daily_ds  = target_grid.salem.transform(hourly_ds,interp=method), target_grid.salem.transform(daily_ds, interp=method)
 
     print('Time to tranform datasets: ', datetime.now() - loopTime )
     return hourly_ds, daily_ds
 
 
-hourly_d02, daily_d02 = open_fwf('d02', target_grid)
-hourly_d03, daily_d03 = open_fwf('d03', target_grid)
+hourly_d02, daily_d02 = open_fwf('d02', target_grid, method='linear')
+hourly_d03, daily_d03 = open_fwf('d03', target_grid, method='nearest')
 
 # hourly_d02 = hourly_d02.attrs["pyproj_srs"]
 hourly_ds = xr.where(~np.isnan(hourly_d03), hourly_d03, hourly_d02)
@@ -133,20 +133,20 @@ hourly_ds = hourly_ds.isel(south_north=I, west_east=J)
 daily_ds = daily_ds.isel(south_north=I, west_east=J)
 
 hourly_vars = [
-    # "F",
-    # "R",
-    # "S",
+    "F",
+    "R",
+    "S",
     "FRP",
-    # "HFI",
-    # "ROS",
-    # "CFB",
-    # "TFC",
-    # "W",
-    # "T",
-    # "H",
-    # "r_o",
-    # "r_o_3hour",
-    # "SNW",
+    "HFI",
+    "ROS",
+    "CFB",
+    "TFC",
+    "W",
+    "T",
+    "H",
+    "r_o",
+    "r_o_3hour",
+    "SNW",
 ]
 for var in hourly_vars:
     hourly_ds[var] = xr.where(
@@ -182,29 +182,29 @@ forecast_dir.mkdir(parents=True, exist_ok=True)
 make_dir = Path("/bluesky/fireweather/fwf/data/geojson/" + str(folderdate))
 make_dir.mkdir(parents=True, exist_ok=True)
 
-# # ## Make geojson of dmc, dc, bui at noon local for the two day forecast period
-# print(
-#     f"{str(datetime.now())} ---> start loop of daily fwf products"
-# )
-# try:
-#     for i in range(len(daily_ds.Time)):
-#         ds = daily_ds.isel(time=i)
-#         timestamp = np.array(ds.Time.dt.strftime("%Y%m%d%H")).tolist()
-#         timestamp = timestamp[:-2]
-#         for var in daily_vars:
-#             mycontourf_to_geojson(
-#                 cmaps, var, ds[var], folderdate, timestamp
-#             )
-# except:
-#     ds = daily_ds.isel(time=0)
-#     timestamp = np.array(ds.Time.dt.strftime("%Y%m%d%H")).tolist()
-#     timestamp = timestamp[:-2]
-#     for var in daily_vars:
-#         mycontourf_to_geojson(cmaps, var, ds[var], folderdate, timestamp)
+# ## Make geojson of dmc, dc, bui at noon local for the two day forecast period
+print(
+    f"{str(datetime.now())} ---> start loop of daily fwf products"
+)
+try:
+    for i in range(len(daily_ds.Time)):
+        ds = daily_ds.isel(time=i)
+        timestamp = np.array(ds.Time.dt.strftime("%Y%m%d%H")).tolist()
+        timestamp = timestamp[:-2]
+        for var in daily_vars:
+            mycontourf_to_geojson(
+                cmaps, var, ds[var], folderdate, timestamp
+            )
+except:
+    ds = daily_ds.isel(time=0)
+    timestamp = np.array(ds.Time.dt.strftime("%Y%m%d%H")).tolist()
+    timestamp = timestamp[:-2]
+    for var in daily_vars:
+        mycontourf_to_geojson(cmaps, var, ds[var], folderdate, timestamp)
 
-# print(
-#     f"{str(datetime.now())} ---> end loop of daily fwf products"
-# )
+print(
+    f"{str(datetime.now())} ---> end loop of daily fwf products"
+)
 
 # Make geojson of ffmc, isi, fwf every 3 hours
 print(

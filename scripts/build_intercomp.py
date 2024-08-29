@@ -245,10 +245,10 @@ for domain in ["d02", "d03"]:
     elevs = final_df["elev"].values.astype("float32")
     tz_correct = final_df["tz_correct"].values.astype(int)
     try:
-        day = np.array(day1_ds.Time[0], dtype="datetime64[D]")
+        day = np.array(day1_ds.Time[0], dtype="datetime64[D]").astype('datetime64[ns]')
         # day = np.array(day1_ds.Time[1], dtype="datetime64[D]")
     except:
-        day = np.array(day1_ds.Time, dtype="datetime64[D]")
+        day = np.array(day1_ds.Time, dtype="datetime64[D]").astype('datetime64[ns]')
 
     xr_list = []
     for var in final_var_list:
@@ -307,12 +307,13 @@ for domain in ["d02", "d03"]:
         intercomp_yesterday_ds = xr.open_zarr(
             str(data_dir)
             + "/intercomp/"
-            + f"intercomp-{domain}-{intercomp_yesterday_dir}.zarr"
+            + f"intercomp-{domain}-{intercomp_yesterday_dir}.zarr",
+            consolidated=False
         )
         final_ds = xr.combine_nested(
             [intercomp_yesterday_ds, intercomp_today_ds], "time"
         )
-        print(np.unique(np.isnan(final_ds['TEMP_day1']), return_counts = True))
+        # print(np.unique(np.isnan(final_ds['TEMP_day1']), return_counts = True))
         final_ds = rechunk(final_ds)
         final_ds.to_zarr(
             str(data_dir)
@@ -329,7 +330,7 @@ for domain in ["d02", "d03"]:
     else:
         final_ds = intercomp_today_ds
         final_ds = rechunk(final_ds)
-        print(np.unique(np.isnan(final_ds['TEMP_day1']), return_counts = True))
+        # print(np.unique(np.isnan(final_ds['TEMP_day1']), return_counts = True))
         final_ds.to_zarr(
             str(data_dir)
             + "/intercomp/"

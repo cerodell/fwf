@@ -26,9 +26,16 @@ startTime = datetime.now()
 # from dask.distributed import Client
 # client = Client(memory_limit='20GB',n_workers=3)
 # client.close()
-ds = salem.open_xr_dataset("/bluesky/fireweather/fwf/data/fwf-data/fwf-hourly-d02-2024060406.nc")
+static_ds = salem.open_xr_dataset(str(data_dir) + "/static/static-vars-wrf-d02.nc")
+
+ds = salem.open_xr_dataset(str(data_dir) + "/fwf-data/fwf-hourly-d02-2024061906.nc")
 
 
+ds = xr.where(static_ds['LAND']==1,10000, ds)
+
+for var in list(ds):
+    ds[var].attrs = static_ds.attrs
+# ds.attrs = static_ds.attrs
 
 
 frp_i = ds.isel(time=18)

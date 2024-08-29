@@ -35,8 +35,8 @@ __author__ = "Christopher Rodell"
 __email__ = "crodell@eoas.ubc.ca"
 
 ### make folder for json files on webapge
-# forecast_date = pd.Timestamp("today").strftime("%Y%m%d")
-forecast_date = pd.Timestamp(2024, 6, 4).strftime("%Y%m%d")
+forecast_date = pd.Timestamp("today").strftime("%Y%m%d")
+# forecast_date = pd.Timestamp(2024, 6, 4).strftime("%Y%m%d")
 
 make_dir = Path(f"/bluesky/archive/fireweather/forecasts/{forecast_date}00/data/plot")
 make_dir.mkdir(parents=True, exist_ok=True)

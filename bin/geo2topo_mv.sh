@@ -16,8 +16,14 @@ for filename in /bluesky/fireweather/fwf/data/geojson/$(date '+%Y%m%d06')/ffmc-m
     /bluesky/fireweather/fwf/node_modules/topojson-server/bin/geo2topo -q 1e4 FFMC="$filename" > "/bluesky/archive/fireweather/forecasts/$(date '+%Y%m%d00')/data/map/$(basename "$filename" .geojson).json"
 done
 
-
 ## Convert DMC to topojson and move to website directory
+cd /bluesky/fireweather/fwf/data/geojson/$(date '+%Y%m%d06')/
+for filename in /bluesky/fireweather/fwf/data/geojson/$(date '+%Y%m%d06')/dmc-merge*.geojson; do
+    # echo "$filename"
+    /bluesky/fireweather/fwf/node_modules/topojson-server/bin/geo2topo -q 1e4 DMC="$filename" > "/bluesky/archive/fireweather/forecasts/$(date '+%Y%m%d00')/data/map/$(basename "$filename" .geojson).json"
+done
+
+## Convert DC to topojson and move to website directory
 cd /bluesky/fireweather/fwf/data/geojson/$(date '+%Y%m%d06')/
 for filename in /bluesky/fireweather/fwf/data/geojson/$(date '+%Y%m%d06')/dc-merge*.geojson; do
     # echo "$filename"

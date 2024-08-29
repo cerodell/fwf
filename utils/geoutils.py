@@ -69,7 +69,7 @@ def mycontourf_to_geojson(cmaps, var, da, folderdate, timestamp):
         da.XLONG.values,
         da.XLAT.values,
         # ndimage.gaussian_filter(da.values, sigma=sigma),
-        smooth2d(da.values, 1, cenweight=2),
+        smooth2d(da.values, 3, cenweight=2),
         levels=levels,
         linestyles="None",
         norm=Cnorm,

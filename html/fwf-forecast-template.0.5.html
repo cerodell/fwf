@@ -68,7 +68,7 @@
     <script src="/static/js/fwf-time-layer-group-0.0.6.min.js"></script>
     <button id="remove-layers-btn">Remove Layers</button>
     <script>
-        var timeInterval = "2024-06-04T06:00:00Z/2024-06-06T12:00:00Z"
+        var timeInterval = "{%FirstDateTime%}/{%LastDateTime%}"
         let tinital = timeInterval.slice(0,20)
         var endtime = timeInterval.slice(21,)
 
@@ -150,9 +150,9 @@
         }
 
 
-        var json_fwf  = 'data/plot/fwf-gk-2024060406-d03.json';
-        var wxstations = 'data/wx-zone-X-20240603.json';
-        var wx_keys = 'data/wx-keys-20240603.json';
+        var json_fwf  = 'data/plot/fwf-gk-{%FileDateTime%}06-d03.json';
+        var wxstations = 'data/wx-zone-X-{%FileDateTimeYesterday%}.json';
+        var wx_keys = 'data/wx-keys-{%FileDateTimeYesterday%}.json';
 
     </script>
     <script src="/static/js/fwf-basemaps-0.0.3.min.js"></script>

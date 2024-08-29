@@ -27,7 +27,7 @@ forecast_end_date = forecast_end_date.strftime("%Y-%m-%dT12:00:00Z")
 
 files_datetime = folderdate
 print(f"{str(datetime.now())} ---> open/read html template")
-fcst_template = str(root_dir) + "/html/fwf-forecast-template.0.1.html"
+fcst_template = str(root_dir) + "/html/fwf-forecast-template.0.5.html"
 with open(fcst_template, "r") as fin:
     fcst = fin.read()
     ## update timedim start and end

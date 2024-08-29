@@ -2262,24 +2262,31 @@ class FWF:
             mlp_config = json.load(json_data)
         startFRP = datetime.now()
         # print("Start prediction:", startFRP)
-        fuel_date_range = pd.date_range(
-            fwf_ds["Time"].values[0],
-            fwf_ds["Time"].values[-1],
-            freq="MS",
-        )
-        if len(fuel_date_range) == 0:
-            fuel_date_range = [pd.Timestamp(fwf_ds["Time"].values[0])]
-        fuels_ds = xr.combine_nested(
-            [self.open_fuels(moi) for moi in fuel_date_range], concat_dim="time"
-        )
+        # fuel_date_range = pd.date_range(
+        #     fwf_ds["Time"].values[0],
+        #     fwf_ds["Time"].values[-1],
+        #     freq="MS",
+        # )
+        # if len(fuel_date_range) == 0:
+        #     fuel_date_range = [pd.Timestamp(fwf_ds["Time"].values[0])]
+        # fuels_ds = xr.combine_nested(
+        #     [self.open_fuels(moi) for moi in fuel_date_range], concat_dim="time"
+        # )
 
-        startTRANSFORM = datetime.now()
-        fuels_ds = self.static_ds.salem.transform(fuels_ds, interp="linear").reindex(
-            time=fwf_ds.Time, method="ffill"
-        )
+        # startTRANSFORM = datetime.now()
+        # fuels_ds = self.static_ds.salem.transform(fuels_ds, interp="linear").reindex(
+        #     time=fwf_ds.Time, method="ffill"
+        # )
+
+        moi = int(pd.Timestamp(fwf_ds["Time"].values[0]).strftime('%m')) -1
+        fuels_ds = salem.open_xr_dataset(f'{data_dir}/fuel-load/fuels_2021_wrf_{self.domain}.nc').isel(month=moi).drop_vars('month')
+        time_coords = fwf_ds["Time"].values
+        fuels_ds = fuels_ds.expand_dims(time=[time_coords[0]])
+        fuels_ds = fuels_ds.reindex(time=time_coords, method="ffill")
+
         for var in list(fuels_ds):
             fwf_ds[var] = (("time", "south_north", "west_east"), fuels_ds[var].values)
-        self.timer(title = 'Time to transform fuels to wrf projection', start_time = startTRANSFORM)
+        # self.timer(title = 'Time to transform fuels to wrf projection', start_time = startTRANSFORM)
 
         fwf_ds = get_solar_hours(fwf_ds)
         hour_sin = np.sin(2 * np.pi * fwf_ds["solar_hour"] / 24)
@@ -2362,10 +2369,10 @@ class FWF:
         # FRP_FULL = FRP.numpy().ravel().reshape(shape)
         hourly_ds["FRP"] = (("time", "south_north", "west_east"), FRP_FULL)
         hourly_ds["FRP"] = xr.where(hourly_ds["SNOWC"] > 0.5, 0, hourly_ds["FRP"])
-        fuel = fuels_ds.isel(time = 0)
-        total_fuel = fuel['Live_Wood'] + fuel['Dead_Wood'] + fuel['Live_Leaf'] + fuel['Dead_Foliage']
-        hourly_ds["FRP"] = xr.where(total_fuel <= 0.01, 0, hourly_ds["FRP"])
-        hourly_ds["FRP"] = xr.where(self.static_ds['FUELS'] == 17, 0, hourly_ds["FRP"])
+        # fuel = fuels_ds.isel(time = 0)
+        # total_fuel = fuel['Live_Wood'] + fuel['Dead_Wood'] + fuel['Live_Leaf'] + fuel['Dead_Foliage']
+        # hourly_ds["FRP"] = xr.where(total_fuel <= 0.01, 0, hourly_ds["FRP"])
+        hourly_ds["FRP"] = xr.where(self.static_ds['LAND'] == 1, 0, hourly_ds["FRP"])
 
         # startTRANSFORM = datetime.now()
         # print("Start transform:", startTRANSFORM)
