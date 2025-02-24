@@ -34,7 +34,7 @@ warnings.simplefilter(action="ignore", category=FutureWarning)
 
 
 mlp_test_case = "MLP_64U-Dense_64U-Dense_1U-Dense-Main"
-method = "averaged-v15"
+method = "averaged-v19"
 ml_pack = "tf"
 target_vars = "FRP"
 model_dir = str(data_dir) + f"/mlp/{ml_pack}/{method}/{target_vars}/{mlp_test_case}"
@@ -60,17 +60,19 @@ years_i, ids_i = [], []
 
 mlp_avg, obs_avg = [], []
 mlp_sum, obs_sum = [], []
-
+local_hours = []
 for jj in range(len(ids)):
+    # for jj in range(10):
     ID = int(ids[jj])
     year = years[jj]
 
     ds_map = xr.open_dataset(
         f"/Volumes/ThunderBay/CRodell/fires/{method[-3:]}/{year}-{ID}.nc"
-    )[["FRP", "FRE", "MODELED_FRP"]]
+    )[["FRP", "FRE", "MODELED_FRP", "ZoneST"]]
     area_ha_i = ds_map.attrs["area_ha"]
     lons_i = np.mean([float(ds_map.attrs["min_x"]), float(ds_map.attrs["max_x"])])
     lats_i = np.mean([float(ds_map.attrs["min_y"]), float(ds_map.attrs["max_y"])])
+    ds_map_og = ds_map
 
     if persist == True:
         ds_active = ds_map.isel(time=slice(0, dt))
@@ -120,16 +122,25 @@ for jj in range(len(ids)):
         ds_map = xr.where(np.isnan(ds_map["FRP"].values) == True, np.nan, ds_map)
 
     ######### mlp stats for avg FRP #########
-    ds_space_avg = ds_map.mean(dim=("x", "y"), skipna=True)
+    ds_space_avg = ds_map_og.mean(dim=("x", "y"), skipna=True)
     FRP = ds_space_avg["FRP"].values
     MODELED_FRP = ds_space_avg["MODELED_FRP"].values
 
     ####### combine all cases  #####
-    all_ds_space_avg = ds_map.mean(dim=("x", "y"), skipna=True).dropna("time")
+    all_ds_space_sum = ds_map.sum(dim=("x", "y"), skipna=True)
+
+    all_ds_space_sum = xr.where(
+        np.isnan(ds_space_avg["FRP"].values) == True, np.nan, all_ds_space_sum
+    )
+    all_ds_space_avg = ds_space_avg.dropna("time")
+    all_ds_space_sum = all_ds_space_sum.dropna("time")
+    local_hour = all_ds_space_sum.time - pd.Timedelta(int(ds_map["ZoneST"].mean()), "h")
+    local_hour = local_hour.dt.hour
     obs_avg.append(all_ds_space_avg["FRP"].values)
     mlp_avg.append(all_ds_space_avg["MODELED_FRP"].values)
-    obs_sum.append(all_ds_space_avg["FRE"].values)
-    mlp_sum.append(all_ds_space_avg["MODELED_FRP"].values * 3600)
+    obs_sum.append(all_ds_space_sum["FRE"].values)
+    mlp_sum.append(all_ds_space_sum["MODELED_FRP"].values * 3600)
+    local_hours.append(local_hour)
 
     FRP_PRE = ds_space_avg["FRP"].roll(time=24).interpolate_na(dim="time").values
     FRP_PRE[np.isnan(FRP) == True] = np.nan
@@ -195,9 +206,10 @@ for jj in range(len(ids)):
         ids_i.append(ID)
 
     else:
-        print(len(FRP_NAN))
-        print(ID)
-        print(year)
+        # print(len(FRP_NAN))
+        # print(ID)
+        # print(year)
+        pass
 
 df_final = pd.DataFrame(
     dict(
@@ -241,6 +253,7 @@ all_df = pd.DataFrame(
         obs_avg=np.hstack(obs_avg),
         mlp_sum=np.hstack(mlp_sum),
         obs_sum=np.hstack(obs_sum),
+        local_hours=np.hstack(local_hours),
     )
 )
 

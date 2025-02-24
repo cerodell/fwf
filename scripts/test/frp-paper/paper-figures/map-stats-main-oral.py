@@ -25,8 +25,8 @@ from wrf import to_np, getvar, get_cartopy, latlon_coords, g_uvmet, ll_to_xy, xy
 # Mark the start time for the run
 startTime = datetime.now()
 
-save_fig = False
-paper_fig = True
+save_fig = True
+paper_fig = False
 all_fire = False
 mlp_test_case = "MLP_64U-Dense_64U-Dense_1U-Dense-Main"
 method = "averaged-v19"
@@ -92,7 +92,7 @@ def add_static(ax):
 
 ########################     Pearson's r        ############################
 def map_r(var, index, sub_label, y_label):
-    ax = fig.add_subplot(3, 4, index, projection=cart_proj)
+    ax = fig.add_subplot(1, 2, index, projection=cart_proj)
     sc = ax.scatter(
         df["lons"],
         df["lats"],
@@ -104,7 +104,7 @@ def map_r(var, index, sub_label, y_label):
         lw=0.5,
         zorder=10,
         alpha=1,
-        s=df["obs_hours_scale"],
+        s=df["obs_hours_scale"] * 5,
         transform=crs.PlateCarree(),
     )
     # Add a colorbar
@@ -112,21 +112,21 @@ def map_r(var, index, sub_label, y_label):
     cbar.set_label("r")
     ax.set_title(sub_label)
     add_static(ax)
-    ax.text(
-        x=-0.1,  # x-coordinate of the text (use negative values to push it outside the map)
-        y=0.5,  # y-coordinate of the text (0.5 is centered vertically)
-        s=y_label,  # The label text
-        va="center",  # vertical alignment of the text
-        ha="center",  # horizontal alignment of the text
-        rotation="vertical",  # rotate the text vertically
-        transform=ax.transAxes,  # use axis coordinates (0,0 bottom-left, 1,1 top-right)
-    )
+    # ax.text(
+    #     x=-0.1,  # x-coordinate of the text (use negative values to push it outside the map)
+    #     y=0.5,  # y-coordinate of the text (0.5 is centered vertically)
+    #     s=y_label,  # The label text
+    #     va="center",  # vertical alignment of the text
+    #     ha="center",  # horizontal alignment of the text
+    #     rotation="vertical",  # rotate the text vertically
+    #     transform=ax.transAxes,  # use axis coordinates (0,0 bottom-left, 1,1 top-right)
+    # )
     return
 
 
 ############################       MAE        ##############################
 def map_mae(var, index, method, sub_label):
-    ax = fig.add_subplot(3, 4, index, projection=cart_proj)
+    ax = fig.add_subplot(1, 2, index, projection=cart_proj)
     vmin = np.percentile(df[f"mae_{method}_pers"], 5)
     vmax_pers = np.percentile(df[f"mae_{method}_pers"], 99)
     vmax_mlp = np.percentile(df[f"mae_{method}_mlp"], 99)
@@ -134,6 +134,7 @@ def map_mae(var, index, method, sub_label):
         vmax = vmax_pers
     else:
         vmax = vmax_mlp
+    print(vmax)
     ## plot wx stations locations
     sc = ax.scatter(
         df["lons"],
@@ -146,7 +147,7 @@ def map_mae(var, index, method, sub_label):
         lw=0.5,
         zorder=10,
         alpha=1,
-        s=df["obs_hours_scale"],
+        s=df["obs_hours_scale"] * 5,
         transform=crs.PlateCarree(),
     )
 
@@ -165,7 +166,7 @@ def map_mae(var, index, method, sub_label):
 
 
 def map_rmse(var, index, method, sub_label):
-    ax = fig.add_subplot(3, 4, index, projection=cart_proj)
+    ax = fig.add_subplot(1, 2, index, projection=cart_proj)
     vmin = np.percentile(df[f"rmse_{method}_pers"], 5)
     vmax_pers = np.percentile(df[f"rmse_{method}_pers"], 99)
     vmax_mlp = np.percentile(df[f"rmse_{method}_mlp"], 99)
@@ -173,6 +174,7 @@ def map_rmse(var, index, method, sub_label):
         vmax = vmax_pers
     else:
         vmax = vmax_mlp
+    print(vmax)
     ## plot wx stations locations
     sc = ax.scatter(
         df["lons"],
@@ -203,7 +205,7 @@ def map_rmse(var, index, method, sub_label):
 
 
 def map_r2(var, index, sub_label):
-    ax = fig.add_subplot(3, 4, index, projection=cart_proj)
+    ax = fig.add_subplot(1, 2, index, projection=cart_proj)
     ## plot wx stations locations
     sc = ax.scatter(
         df["lons"],
@@ -226,86 +228,18 @@ def map_r2(var, index, sub_label):
     return
 
 
-############################       DIFF       ##############################
-
-
-def map_dif(var, index, method, sub_title, y_label):
-    diff = df[f"{var}_{method}_mlp"] - df[f"{var}_{method}_pers"]
-
-    vmin = abs(np.percentile(diff, 2))
-    vmax = np.percentile(diff, 98)
-    if vmin > vmax:
-        vv = vmin
-    else:
-        vv = vmax
-
-    if (var == "mae") | (var == "rmse"):
-        cmap = "coolwarm_r"
-        print(
-            f"{var.upper()} {method}  MLP WINS: {len(np.where(diff<0)[0])} PERS WINS: {len(np.where(diff>0)[0])}  Equal: {len(np.where(diff==0)[0])}"
-        )
-    else:
-        cmap = "coolwarm"
-        print(
-            f"{var.upper()} {method} MLP WINS: {len(np.where(diff>0)[0])} PERS WINS: {len(np.where(diff<0)[0])} Equal: {len(np.where(diff==0)[0])}"
-        )
-    if var == "r2":
-        vv = 1
-    if var == "r":
-        vv = 0.5
-
-    ax = fig.add_subplot(3, 4, index, projection=cart_proj)
-    sc = ax.scatter(
-        df["lons"],
-        df["lats"],
-        c=df[f"{var}_{method}_mlp"] - df[f"{var}_{method}_pers"],
-        vmin=-vv,
-        vmax=vv,
-        cmap=cmap,
-        edgecolor="k",
-        lw=0.5,
-        zorder=10,
-        alpha=1,
-        s=df["obs_hours_scale"],
-        transform=crs.PlateCarree(),
-    )
-    cbar = plt.colorbar(sc, ax=ax, orientation="horizontal", pad=0.01)
-    cbar.set_label(sub_title)
-    add_static(ax)
-    ax.text(
-        x=-0.1,  # x-coordinate of the text (use negative values to push it outside the map)
-        y=0.5,  # y-coordinate of the text (0.5 is centered vertically)
-        s=y_label,  # The label text
-        va="center",  # vertical alignment of the text
-        ha="center",  # horizontal alignment of the text
-        rotation="vertical",  # rotate the text vertically
-        transform=ax.transAxes,  # use axis coordinates (0,0 bottom-left, 1,1 top-right)
-    )
-    return
-
-
 # fig = plt.figure(figsize=(24, 12))
-fig = plt.figure(figsize=(20, 14))
+fig = plt.figure(figsize=(20, 11))
 map_r("r_avg_mlp", 1, "Pearson's r", "MLP")
-map_r("r_avg_pers", 5, "", "PERS")
-map_r2("r2_avg_mlp", 2, "R Squared")
-map_r2("r2_avg_pers", 6, "")
-map_mae("mae_avg_mlp", 3, "avg", "Mean Absolute Error")
-map_mae("mae_avg_pers", 7, "avg", "")
-map_rmse("rmse_avg_mlp", 4, "avg", "Root Mean Square Error")
-map_rmse("rmse_avg_pers", 8, "avg", "")
-
-map_dif("r", 9, "avg", "", "Difference")
-map_dif("r2", 10, "avg", "", "")
-map_dif("mae", 11, "avg", "MW", "")
-map_dif("rmse", 12, "avg", "MW", "")
-
+# map_r2("r2_avg_mlp", 2, "R Squared")
+map_mae("mae_avg_mlp", 2, "avg", "Mean Absolute Error")
+# map_rmse("rmse_avg_mlp", 2, "avg", "Root Mean Square Error")
 
 # Create a second legend for the sizes
 size_values = [19.64, 99, 188.5]
 size_labels = ["55 - 499 h", "500 - 999 h", r"$>=$ 1000 h"]
 size_legend = [
-    plt.scatter([], [], s=size, lw=0.4, color="gray", edgecolor="k")
+    plt.scatter([], [], s=size * 5, lw=0.4, color="gray", edgecolor="k")
     for size in size_values
 ]
 
@@ -315,7 +249,7 @@ fig.legend(
     size_labels,
     title="Observation Hours",
     loc="upper center",
-    bbox_to_anchor=(0.5, 1.08),
+    # bbox_to_anchor=(0.5, 1.0),
     ncol=3,
 )
 plt.tight_layout()
@@ -323,74 +257,17 @@ plt.tight_layout()
 # ## save as png
 if save_fig == True:
     fig.savefig(
-        str(data_dir) + f"/images/frp-paper/map-frp-stats-{method}.png",
+        str(data_dir) + f"/images/frp-paper/map-frp-stats-{method}-oral.png",
         bbox_inches="tight",
         dpi=200,
     )
 if paper_fig == True:
     fig.savefig(
-        f"/Users/crodell/ams-frp/map-frp-stats-{method}.pdf",
+        f"/Users/crodell/ams-frp/map-frp-stats-{method}-oral.pdf",
         bbox_inches="tight",
     )
     fig.savefig(
-        f"/Users/crodell/ams-frp/map-frp-stats-{method}.png",
-        bbox_inches="tight",
-        dpi=100,
-    )
-# %%
-
-df = df.sort_values(by="r2_sum_mlp", ascending=True)
-fig = plt.figure(figsize=(20, 14))
-map_r("r_sum_mlp", 1, "Pearson's r", "MLP")
-map_r("r_sum_pers", 5, "", "PERS")
-map_r2("r2_sum_mlp", 2, "R Squared")
-map_r2("r2_sum_pers", 6, "")
-map_mae("mae_sum_mlp", 3, "sum", "Mean Absolute Error")
-map_mae("mae_sum_pers", 7, "sum", "")
-map_rmse("rmse_sum_mlp", 4, "sum", "Root Mean Square Error")
-map_rmse("rmse_sum_pers", 8, "sum", "")
-
-map_dif("r", 9, "sum", "", "Difference")
-map_dif("r2", 10, "sum", "", "")
-map_dif("mae", 11, "sum", "MJ", "")
-map_dif("rmse", 12, "sum", "MJ", "")
-
-# Create a second legend for the sizes
-# size_values = [10, 96, 187]
-size_values = [19.64, 99, 188.5]
-size_labels = ["55 - 499 h", "500 - 999 h", r"$>=$ 1000 h"]
-size_legend = [
-    plt.scatter([], [], s=size, lw=0.4, color="gray", edgecolor="k")
-    for size in size_values
-]
-
-# Add the global legend
-fig.legend(
-    size_legend,
-    size_labels,
-    title="Observation Hours",
-    loc="upper center",
-    bbox_to_anchor=(0.5, 1.08),
-    ncol=3,
-)
-
-plt.tight_layout()
-
-## save as png
-
-if save_fig == True:
-    fig.savefig(
-        str(data_dir) + f"/images/frp-paper/map-fre-stats-{method}.png",
-        bbox_inches="tight",
-        dpi=200,
-    )
-if paper_fig == True:
-    fig.savefig(
-        f"/Users/crodell/ams-frp/map-fre-stats-{method}.pdf",
-        bbox_inches="tight",
-    )
-    fig.savefig(
-        f"/Users/crodell/ams-frp/map-fre-stats-{method}.png",
+        f"/Users/crodell/ams-frp/map-frp-stats-{method}-oral.png",
         bbox_inches="tight",
         dpi=100,
     )

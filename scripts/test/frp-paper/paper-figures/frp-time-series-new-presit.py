@@ -17,8 +17,8 @@ from utils.ml_data import MLDATA
 from utils.firep import FIREP
 from utils.plot_fire_case import plot_fire, drop_outside_std
 from utils.solar_hour import get_solar_hours
-from utils.compressor import compressor
 import matplotlib.dates as mdates
+from matplotlib.patches import Ellipse
 
 from scipy import stats
 from utils.stats import MBE, RMSE, MAE
@@ -32,15 +32,20 @@ from matplotlib.ticker import FuncFormatter
 from context import root_dir, data_dir
 
 
-# 25282348 (2022) "Calf Canyon/Hermits Peak Fire" https://go.nasa.gov/4bQXoME
-# 24564081 (2021) "Fire ID 24564081 / Northern California"
-# 26691009 (2023) "Fire ID 26691009 / Coastal British Columbia"
-# 26567967 (2023) "Fire ID 26567967 / Northwest Territories, Canada"
-ID = 25282348
-year = 20222
-fig_title = "Calf Canyon/Hermits Peak Fire"
-mlp_test_case = "MLP_64U-Dense_64U-Dense_1U-Dense"
-method = "averaged-v15"
+######################################################
+# ID = 25723697
+# year = 2022
+# fig_title = "McFarland Fire, California, United States"
+######################################################
+ID = 26695902
+year = 2023
+fig_title = "Northwest Territories, Canada"
+hour_interval = 3
+######################################################
+save_fig = True
+paper_fig = False
+mlp_test_case = "MLP_64U-Dense_64U-Dense_1U-Dense-Main"
+method = "averaged-v19"
 ml_pack = "tf"
 target_vars = "FRP"
 plot_method = "mean"
@@ -60,6 +65,9 @@ fire_i = firep_df.iloc[jj : jj + 1]
 ds_map = xr.open_dataset(
     f"/Volumes/ThunderBay/CRodell/fires/{method[-3:]}/{year}-{ID}.nc"
 )[["FRP", "FRE", "MODELED_FRP"]]
+area_ha = float(ds_map.attrs["area_ha"])
+area_ha = format(area_ha, ".2e")
+# fig_title = fig_title + f"\n {area_ha} hectors"
 
 if persist == True:
     ds_active = ds_map.isel(time=slice(0, dt))
@@ -73,8 +81,8 @@ if persist == True:
     )
 
     # desired_shape = ds_active["FRP"].shape
-    # FRP_MEAN_PRES = ds_active["FRP"].mean(dim ='time').values
-    # ds_active['FRP_MEAN_PRES'] = (('time', 'y', 'x'), np.tile(FRP_MEAN_PRES, (desired_shape[0], 1, 1)))
+    # FRP_MEAN_PERS = ds_active["FRP"].mean(dim ='time').values
+    # ds_active['FRP_MEAN_PERS'] = (('time', 'y', 'x'), np.tile(FRP_MEAN_PERS, (desired_shape[0], 1, 1)))
 
     ds_active_mean = ds_active.mean("time", skipna=True)
     ds_active_sum = ds_active.sum(("time"), skipna=True)
@@ -86,19 +94,18 @@ if persist == True:
     sum_list = [ds_active_sum]
     nan_time = []
     for i in range(dt, len(ds_map.time), dt):
-        # FRP_MEAN_PRES = ds_active["FRP"].mean(dim ='time').values
+        # FRP_MEAN_PERS = ds_active["FRP"].mean(dim ='time').values
         ds_active = ds_map.isel(time=slice(i, i + dt))
         nan_array = np.isnan(ds_active["FRP"]).values
         ds_active["MODELED_FRP"] = xr.where(
             nan_space <= 0, np.nan, ds_active["MODELED_FRP"]
         )
         # desired_shape = ds_active["FRP"].shape
-        # ds_active['FRP_MEAN_PRES'] = (('time', 'y', 'x'), np.tile(FRP_MEAN_PRES, (desired_shape[0], 1, 1)))
+        # ds_active['FRP_MEAN_PERS'] = (('time', 'y', 'x'), np.tile(FRP_MEAN_PERS, (desired_shape[0], 1, 1)))
 
         zero_full = np.zeros(nan_array.shape)
         zero_full[nan_array == False] = 1
         nan_space = np.sum(np.stack(zero_full), axis=0)
-        # nan_space = np.stack(zero_full)
 
         ds_active_mean = ds_active.mean(("time"), skipna=True)
         ds_active_sum = ds_active.sum(("time"), skipna=True)
@@ -131,14 +138,14 @@ LOCAL_TIME = ds_map.time.values - pd.Timedelta(hours=utc_offset)
 FRP = ds_space_avg["FRP"].values
 MODELED_FRP = ds_space_avg["MODELED_FRP"].values
 
-# pres_days = []
+# PERS_days = []
 # FRP_PRE = ds_space_avg['FRP'].roll(time =24).interpolate_na(dim ='time').to_dataset()
 # for i in range(0, len(FRP_PRE.time), 24):
 #     FRP_PRE_DAY = FRP_PRE.isel(time = slice(i, i+24))
 #     desired_shape = FRP_PRE_DAY['FRP'].shape
-#     FRP_MEAN_PRES = FRP_PRE_DAY['FRP'].mean(dim ='time').values
-#     FRP_PRE_DAY['FRP_MEAN_PRES'] = (('time'), np.tile(FRP_MEAN_PRES, (desired_shape[0])))
-#     pres_days.append(FRP_PRE_DAY)
+#     FRP_MEAN_PERS = FRP_PRE_DAY['FRP'].mean(dim ='time').values
+#     FRP_PRE_DAY['FRP_MEAN_PERS'] = (('time'), np.tile(FRP_MEAN_PERS, (desired_shape[0])))
+#     PERS_days.append(FRP_PRE_DAY)
 
 FRP_PRE = ds_space_avg["FRP"].roll(time=24).interpolate_na(dim="time").values
 FRP_PRE[np.isnan(FRP) == True] = np.nan
@@ -190,8 +197,32 @@ range_max = max(x_max - x_min, y_max - y_min)
 # Set the new limits to ensure both axes have the same range
 ax.set_xlim(x_min, x_min + range_max)
 ax.set_ylim(y_min, y_min + range_max)
-
-
+ellipse = Ellipse(
+    xy=(20, 350),  # Center of the oval (adjust these values to your data)
+    width=85,  # Width of the oval
+    height=750,  # Height of the oval
+    angle=0,  # Angle of the oval (in degrees)
+    edgecolor="black",
+    facecolor="none",  # No fill
+    linestyle="--",  # Dashed line
+    linewidth=1.5,  # Thickness of the border
+    zorder=15,
+)
+# Add the ellipse to the plot
+ax.add_patch(ellipse)
+ellipse = Ellipse(
+    xy=(350, 40),  # Center of the oval (adjust these values to your data)
+    width=750,  # Width of the oval
+    height=85,  # Height of the oval
+    angle=0,  # Angle of the oval (in degrees)
+    edgecolor="black",
+    facecolor="none",  # No fill
+    linestyle="--",  # Dashed line
+    linewidth=1.5,  # Thickness of the border
+    zorder=15,
+)
+# Add the ellipse to the plot
+ax.add_patch(ellipse)
 ax = fig.add_subplot(gs[0, 1])
 frp_vals = [FRP_NAN, MODELED_FRP_NAN, FRP_PRE_NAN]
 labels = ["OBS", "MLP", "PERS"]
@@ -202,7 +233,7 @@ bplot = ax.boxplot(frp_vals, patch_artist=True, labels=labels)
 for patch, color in zip(bplot["boxes"], colors):
     patch.set_facecolor(color)
 ax.set_title(
-    "PRES. vs OBS \n"
+    "PERS vs OBS \n"
     + "r: "
     + str(np.round(stats.pearsonr(FRP_NAN, FRP_PRE_NAN)[0], 2))
     + r" $R^{2}$: "
@@ -229,21 +260,42 @@ ax.legend(
     fancybox=True,
     shadow=True,
 )
-plt.gca().xaxis.set_major_formatter(mdates.DateFormatter("%Y-%m-%d"))
-ax.set_xlabel(f"Local DateTime (YYYY-MM-DD)", fontsize=18)
+
+# Set the major and minor ticks
+ax.xaxis.set_major_locator(
+    mdates.DayLocator(interval=hour_interval)
+)  # Major ticks every 1 day
+
+plt.gca().xaxis.set_major_formatter(mdates.DateFormatter("%m-%d"))
+ax.set_xlabel(f"Local DateTime ({pd.Timestamp(LOCAL_TIME[0]).year}-MM-DD)", fontsize=18)
 ax.set_ylabel(f"FRP (MW)", fontsize=18)
 ax.grid(True, which="both", linestyle="--", linewidth=0.1, color="grey")
 
-fig.suptitle(fig_title, fontsize=22)
+fig.suptitle(fig_title, fontsize=22, y=1)
 
-# save as png
-fig.savefig(
-    str(data_dir) + f"/images/frp-paper/fireID-{ID}-year-{year}-frp-time-series.png",
-    bbox_inches="tight",
-    dpi=240,
+# Add the area_ha in a smaller font as a subtitle
+fig.text(
+    0.5,
+    0.96,
+    f"Area Burned: {area_ha} hectares",
+    ha="center",
+    fontsize=14,
+    transform=fig.transFigure,
 )
 
-# %%
+if save_fig == True:
+    fig.savefig(
+        str(data_dir)
+        + f"/images/frp-paper/fireID-{ID}-year-{year}-frp-time-series-{method[-3:]}.png",
+        bbox_inches="tight",
+        dpi=240,
+    )
+
+if paper_fig == True:
+    fig.savefig(
+        f"/Users/crodell/ams-frp/fireID-{ID}-year-{year}-frp-time-series-{method[-3:]}.pdf",
+        bbox_inches="tight",
+    )
 
 
 # %%
@@ -322,6 +374,33 @@ range_max = max(x_max - x_min, y_max - y_min)
 ax.set_xlim(x_min, x_min + range_max)
 ax.set_ylim(y_min, y_min + range_max)
 
+ellipse = Ellipse(
+    xy=(1e7, 1.81e8),  # Center of the oval (adjust these values to your data)
+    width=4.7e7,  # Width of the oval
+    height=4e8,  # Height of the oval
+    angle=0,  # Angle of the oval (in degrees)
+    edgecolor="black",
+    facecolor="none",  # No fill
+    linestyle="--",  # Dashed line
+    linewidth=1.5,  # Thickness of the border
+    zorder=15,
+)
+# Add the ellipse to the plot
+ax.add_patch(ellipse)
+ellipse = Ellipse(
+    xy=(1.81e8, 1.6e7),  # Center of the oval (adjust these values to your data)
+    width=4.1e8,  # Width of the oval
+    height=4.8e7,  # Height of the oval
+    angle=0,  # Angle of the oval (in degrees)
+    edgecolor="black",
+    facecolor="none",  # No fill
+    linestyle="--",  # Dashed line
+    linewidth=1.5,  # Thickness of the border
+    zorder=15,
+)
+# Add the ellipse to the plot
+ax.add_patch(ellipse)
+
 # Setting the formatter for x and y axes
 # ax.xaxis.set_major_formatter(FuncFormatter(scientific_formatter))
 # ax.yaxis.set_major_formatter(FuncFormatter(scientific_formatter))
@@ -337,16 +416,16 @@ bplot = ax.boxplot(fre_vals, patch_artist=True, labels=labels)
 for patch, color in zip(bplot["boxes"], colors):
     patch.set_facecolor(color)
 ax.set_title(
-    "PRES. vs OBS \n"
+    "PERS vs OBS \n"
     + "r: "
     + str(np.round(stats.pearsonr(FRE_NAN, FRE_PRE_NAN)[0], 2))
     + r" $R^{2}$: "
     + str(np.round(r2_score(FRE_NAN, FRE_PRE_NAN), 2))
     + " MAE: "
     + "{:.1e}".format(np.round(MAE(FRE_NAN, FRE_PRE_NAN), 2))
-    + " (MW) RMSE: "
+    + " (MJ) RMSE: "
     + "{:.1e}".format(np.round(RMSE(FRE_NAN, FRE_PRE_NAN), 2))
-    + " (MW)",
+    + " (MJ)",
     loc="right",
     color="tab:red",
     fontsize=14,
@@ -369,70 +448,39 @@ ax.legend(
 # Setting the formatter for x and y axes
 # ax.xaxis.set_major_formatter(FuncFormatter(scientific_formatter))
 # ax.yaxis.set_major_formatter(FuncFormatter(scientific_formatter))
+ax.xaxis.set_major_locator(
+    mdates.DayLocator(interval=hour_interval)
+)  # Major ticks every 1 day
 
-plt.gca().xaxis.set_major_formatter(mdates.DateFormatter("%Y-%m-%d"))
-ax.set_xlabel(f"Local DateTime (YYYY-MM-DD)", fontsize=18)
+plt.gca().xaxis.set_major_formatter(mdates.DateFormatter("%m-%d"))
+ax.set_xlabel(f"Local DateTime ({pd.Timestamp(LOCAL_TIME[0]).year}-MM-DD)", fontsize=18)
 ax.set_ylabel(f"FRE (MJ)", fontsize=18)
 ax.grid(True, which="both", linestyle="--", linewidth=0.1, color="grey")
-fig.suptitle(fig_title, fontsize=22)
+fig.suptitle(fig_title, fontsize=22, y=1)
 
-
-# save as png
-fig.savefig(
-    str(data_dir) + f"/images/frp-paper/fireID-{ID}-year-{year}-fre-time-series.png",
-    bbox_inches="tight",
-    dpi=240,
+# Add the area_ha in a smaller font as a subtitle
+fig.text(
+    0.5,
+    0.96,
+    f"Area Burned: {area_ha} hectares",
+    ha="center",
+    fontsize=14,
+    transform=fig.transFigure,
 )
 
-# %%
-
-# fig = plt.figure(figsize=(16, 12))
-# # Create a gridspec layout
-# # The first row (for maps) is twice the height of the second row (for line plots)
-# gs = gridspec.GridSpec(2, 2, height_ratios=[3, 1])
-# g = salem.GoogleVisibleMap(
-#     x=[fire_i.min_x, fire_i.max_x],
-#     y=[fire_i.min_y, fire_i.max_y],
-#     scale=2,  # scale is for more details
-#     maptype="satellite",
-#     size_x=40,
-#     size_y=40,
-# )  # try out also: 'terrain'
+# save as png
+if save_fig == True:
+    fig.savefig(
+        str(data_dir)
+        + f"/images/frp-paper/fireID-{ID}-year-{year}-fre-time-series-{method[-3:]}.png",
+        bbox_inches="tight",
+        dpi=240,
+    )
 
 
-# model_title = "MODELED FIRE RADIATIVE ENERGY (MJ)"
-# obs_title = "OBSERVED FIRE RADIATIVE ENERGY (MJ)"
-# vmax = 4e8
-
-# vmax = np.nanpercentile(ds_time_sum["MODELED_FRE"].values,99)
-# # np.nanpercentile(ds_time_sum["FRE"].values,95)
-
-# for var in list(ds_map):
-#     ds_time_sum[var].attrs = ds.attrs
-# ds_time_sum.attrs = ds.attrs
-
-# # First map on the top left
-# ax = fig.add_subplot(gs[0, 0])
-# ax.set_title(model_title)
-# sm = salem.Map(g.grid, factor=1, countries=False, cmap="YlOrRd", vmin=0, vmax= vmax)
-# sm.set_shapefile(fire_i, lw=1.5, color="tab:red")
-# sm.set_data(ds_time_sum["MODELED_FRE"], overplot=True)
-# sm.set_scale_bar(
-#     location=(0.88, 0.94),
-# )
-# sm.visualize(ax=ax)
-# plt.setp(ax.get_xticklabels(), rotation=30, ha="right")
-
-# # Second map on the top right
-# ax = fig.add_subplot(gs[0, 1])
-# ax.set_title(obs_title)
-# sm = salem.Map(g.grid, factor=1, countries=False, cmap="YlOrRd", vmin=0, vmax= vmax)
-# sm.set_shapefile(fire_i, lw=1.5, color="tab:red")
-# sm.set_data(ds_time_sum["FRE"], overplot=True)
-# sm.set_scale_bar(location=(0.88, 0.94))
-# sm.visualize(ax=ax)
-# ax.set_yticklabels([])
-# plt.setp(ax.get_xticklabels(), rotation=30, ha="right")
-
-
+if paper_fig == True:
+    fig.savefig(
+        f"/Users/crodell/ams-frp/fireID-{ID}-year-{year}-fre-time-series-{method[-3:]}.pdf",
+        bbox_inches="tight",
+    )
 # %%

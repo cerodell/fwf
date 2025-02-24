@@ -50,31 +50,25 @@ startTime = datetime.now()
 
 # Base configuration parameters
 base_config = dict(
-    method="averaged-v14",
+    method="averaged-v19",
     years=["2021", "2022", "2023"],
     feature_vars=[
-        "ASPECT_sin",
-        "ASPECT_cos",
-        "GS",
-        "WD_sin",
-        "WD_cos",
-        "R-hour_sin-Total_Fuel_Load",
-        "R-hour_cos-Total_Fuel_Load",
-        "U",
-        "Total_Fuel_Load",
-        "lat_sin",
-        "lon_sin",
-        "lat_cos",
-        "lon_cos",
+        "S-hour_sin-Live_Leaf",
+        "S-hour_sin-Live_Wood",
+        "S-hour_sin-Dead_Foliage",
+        "S-hour_sin-Dead_Wood",
+        "S-hour_cos-Live_Leaf",
+        "S-hour_cos-Live_Wood",
+        "S-hour_cos-Dead_Foliage",
+        "S-hour_cos-Dead_Wood",
     ],
     target_vars=["FRP"],
     transform=True,
     package="tf",
     model_type="MLP",
-    # main_cases=True,
-    # shuffle_data=True,
     feature_engineer=True,
     min_fire_size=0,  # hectares
+    burn_time=0,
     filter_std=True,
 )
 

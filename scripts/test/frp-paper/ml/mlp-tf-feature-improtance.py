@@ -41,18 +41,17 @@ startTime = datetime.now()
 
 # Configuration parameters
 config = dict(
-    method="averaged-v15",
+    method="averaged-v19",
     years=["2021", "2022", "2023"],
     feature_vars=[
-        "ASPECT_sin",
-        "ASPECT_cos",
-        "S-hour_sin-Total_Fuel_Load",
-        "S-hour_cos-Total_Fuel_Load",
-        "Total_Fuel_Load",
-        "lat_sin",
-        "lon_sin",
-        "lat_cos",
-        "lon_cos",
+        "S-hour_sin-Live_Leaf",
+        "S-hour_sin-Live_Wood",
+        "S-hour_sin-Dead_Foliage",
+        "S-hour_sin-Dead_Wood",
+        "S-hour_cos-Live_Leaf",
+        "S-hour_cos-Live_Wood",
+        "S-hour_cos-Dead_Foliage",
+        "S-hour_cos-Dead_Wood",
     ],
     target_vars=["FRP"],
     feature_scaler_type="minmax",  ##robust or standard minmax

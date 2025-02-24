@@ -30,8 +30,10 @@ from netCDF4 import Dataset
 from wrf import to_np, getvar, get_cartopy, latlon_coords, g_uvmet, ll_to_xy, xy_to_ll
 
 
+save_fig = False
+paper_fig = True
 mlp_test_case = "MLP_64U-Dense_64U-Dense_1U-Dense-Main"
-method = "averaged-v15"
+method = "averaged-v19"
 ml_pack = "tf"
 target_vars = "FRP"
 model_dir = str(data_dir) + f"/mlp/{ml_pack}/{method}/{target_vars}/{mlp_test_case}"
@@ -112,7 +114,7 @@ sc_train = ax.scatter(
 sc_val = ax.scatter(
     df_val["lons"],
     df_val["lats"],
-    color="tab:green",
+    color="#13ba13",
     edgecolor="k",
     lw=0.3,
     zorder=10,
@@ -147,20 +149,21 @@ gl = ax.gridlines(
 )
 
 # Create a second legend for the sizes
-# size_values = [9.85, 92.2, 184.5]
-size_values = [10, 96, 187]
-size_values_invers = scaler.inverse_transform(
-    np.array(size_values).reshape(-1, 1)
-).ravel()  # Small, medium, large
+size_values = [9.9, 19.64, 99, 188.5]
+size_values_invers = (
+    scaler.inverse_transform(np.array(size_values).reshape(-1, 1)).ravel().astype(int)
+)  # Small, medium, large
 print(size_values_invers)
 # Calculate the range for obs_hours
 min_obs_hours = int(size_values_invers[0])
-median_obs_hours = int(size_values_invers[1])
-max_obs_hours = int(size_values_invers[2])
+low_obs_hours = int(size_values_invers[1])
+median_obs_hours = int(size_values_invers[2])
+max_obs_hours = int(size_values_invers[3])
 
 # Generate the labels
 size_labels = [
-    f"{min_obs_hours:.0f} - {int((median_obs_hours//10)*10-1)} h",
+    f"{min_obs_hours:.0f} - {(int(low_obs_hours)-1)} h",
+    f"{int(low_obs_hours)} - {int((median_obs_hours//10)*10-1)} h",
     f"{int((median_obs_hours//10)*10)} - {int((max_obs_hours//10)*10-1)} h",
     r"$>=$" + f"{int((max_obs_hours//10)*10)} h",
 ]
@@ -175,15 +178,26 @@ lgnd2 = plt.legend(
     title="Observation Hours",
     loc="upper center",
     bbox_to_anchor=(0.5, 1.13),
-    ncol=3,
+    ncol=4,
 )
 
 ax.add_artist(lgnd1)  # Add the first legend back to the axes
 
 plt.tight_layout()
 
-fig.savefig(
-    str(data_dir) + f"/images/frp-paper/map-fires-train-val-test-{method[-3:]}.png",
-    bbox_inches="tight",
-    dpi=240,
-)
+if save_fig == True:
+    fig.savefig(
+        str(data_dir) + f"/images/frp-paper/map-fires-train-val-test-{method[-3:]}.png",
+        bbox_inches="tight",
+        dpi=240,
+    )
+if paper_fig == True:
+    fig.savefig(
+        f"/Users/crodell/ams-frp/map-fires-train-val-test-{method[-3:]}.pdf",
+        bbox_inches="tight",
+    )
+    fig.savefig(
+        f"/Users/crodell/ams-frp/map-fires-train-val-test-{method[-3:]}.png",
+        bbox_inches="tight",
+        dpi=200,
+    )

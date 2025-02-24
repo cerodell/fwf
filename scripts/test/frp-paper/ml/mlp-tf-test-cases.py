@@ -26,8 +26,8 @@ from context import data_dir
 
 
 all_fire = True
-mlp_test_case = "MLP_64U-Dense_64U-Dense_1U-Dense"
-method = "averaged-v15"
+mlp_test_case = "MLP_64U-Dense_64U-Dense_1U-Dense-Main"
+method = "averaged-v19"
 ml_pack = "tf"
 target_vars = "FRP"
 model_dir = str(data_dir) + f"/mlp/{ml_pack}/{method}/{target_vars}/{mlp_test_case}"
@@ -102,6 +102,8 @@ for var in config["target_vars"]:
 
 year_l = []
 mbe_l, rmse_l, r2_l, r_l, id_l = [], [], [], [], []
+burn_time = []
+lats, lons = [], []
 for id in test_ids:
     fire_case = df_test[df_test["id"] == id]
     fire_case = fire_case.set_index("time")
@@ -143,6 +145,9 @@ for id in test_ids:
     r_l.append(np.round(stats.pearsonr(y_t, y_nhn)[0], 2))
     id_l.append(id)
     year_l.append(fire_case.index.year[0])
+    burn_time.append(fire_case["burn_time"].values[0])
+    lats.append(fire_case["lats"].values[0])
+    lons.append(fire_case["lons"].values[0])
 
 mbe_l, rmse_l, r2_l, r_l, id_l, year_l = (
     np.array(mbe_l),
@@ -152,13 +157,22 @@ mbe_l, rmse_l, r2_l, r_l, id_l, year_l = (
     np.array(id_l),
     np.array(year_l),
 )
+
+burn_time = np.array(burn_time)
+burn_time = np.array(burn_time)
+lons = np.array(lons)
+lats = np.array(lats)
+
 # # ticks = [10, 20, 50, 100, 200, 300, 500, 800, 1000, 1500,2000, 3000]
 # # ax.set_xticks(ticks)
 # # ax.set_yticks(ticks)
 # fig.savefig(str(save_dir) + f"/{target}-scatter.png")
 
 
-good_ids = id_l[r2_l > 0.3]
+good_ids = id_l[np.where((lats < 42) & (r2_l > 0.1) & (burn_time > 55))[0]]
+
+good_ids = id_l[r2_l > 0.1]
+print(len(good_ids))
 for i in good_ids:
     fire_case = df_test[df_test["id"] == float(i)]
     fire_case = fire_case.set_index("time")
@@ -185,6 +199,7 @@ for i in good_ids:
         + "r: "
         + str(np.round(stats.pearsonr(y_t, y_nhn)[0], 2))
         + "\n"
+        + f'{fire_case["lats"].values[0]}, {fire_case["lons"].values[0]}'
     )
 
     ax.set_title(title, loc="right")

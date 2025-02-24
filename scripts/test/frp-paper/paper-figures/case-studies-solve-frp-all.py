@@ -30,8 +30,8 @@ warnings.simplefilter(action="ignore", category=FutureWarning)
 warnings.simplefilter(action="ignore", category=RuntimeWarning)
 startTime = datetime.now()
 
-mlp_test_case = "MLP_64U-Dense_64U-Dense_1U-Dense"
-method = "averaged-v15"
+mlp_test_case = "MLP_64U-Dense_64U-Dense_1U-Dense-Main"
+method = "averaged-v19"
 ml_pack = "tf"
 target_vars = "FRP"
 model_dir = str(data_dir) + f"/mlp/{ml_pack}/{method}/{target_vars}/{mlp_test_case}"
@@ -40,9 +40,10 @@ with open(f"{model_dir}/config.json", "r") as json_data:
     config = json.load(json_data)["user_config"]
 
 fire_cases = np.loadtxt(f"{model_dir}/test_cases.txt", delimiter=",")
-ids = fire_cases[0].astype(int)
-years = fire_cases[1].astype(int)
-
+# ids = fire_cases[0].astype(int)
+# years = fire_cases[1].astype(int)
+ids = [26567967]
+years = [2023]
 ########################################################################################################
 #####################################       RUN MODEL         ##########################################
 ########################################################################################################

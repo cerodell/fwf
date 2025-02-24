@@ -9,7 +9,7 @@ import matplotlib.pyplot as plt
 from context import data_dir, root_dir
 
 mlp_test_case = "MLP_64U-Dense_64U-Dense_1U-Dense"
-method = "averaged-v14"
+method = "averaged-v15"
 ml_pack = "tf"
 target_vars = "FRP"
 model_dir = str(data_dir) + f"/mlp/{ml_pack}/{method}/{target_vars}/{mlp_test_case}"

@@ -41,7 +41,7 @@ warnings.simplefilter(action="ignore", category=FutureWarning)
 domain = "d02"
 doi = pd.Timestamp("2023-06-06")
 mlp_test_case = "MLP_64U-Dense_64U-Dense_1U-Dense"
-method = "averaged-v15"
+method = "averaged-v19"
 ml_pack = "tf"
 target_vars = "FRP"
 model_dir = str(data_dir) + f"/mlp/tf/{method}/{target_vars}/{mlp_test_case}"
@@ -191,72 +191,47 @@ FRPend = datetime.now() - startFRP
 print("Time to predict FRP: ", FRPend)
 # return fwf_ds
 
-# fwf_ds['R-diurnal_curve-Total_Fuel_Load'] = fwf_ds['R']  * fwf_ds['diurnal_curve']  * fwf_ds['Total_Fuel_Load']
+test = fwf_ds[
+    [
+        "F",
+        "SNOWC",
+        "T",
+        "W",
+        "r_o",
+        "H",
+        "R",
+        "S",
+        "U",
+        "ZoneST",
+        "Live_Leaf",
+        "Live_Wood",
+        "Dead_Foliage",
+        "Dead_Wood",
+        "solar_hour",
+        "hour_sin",
+        "hour_cos",
+        "FRP",
+    ]
+]
 
-# np.expm1(fwf_ds["Total_Fuel_Load"]).isel(time=18).salem.quick_map()
-# fwf_ds["FRP"].isel(time=18).salem.quick_map()
+test["ZoneST"] = (("south_north", "west_east"), test["ZoneST"].values[0])
+test["Live_Leaf"] = (("south_north", "west_east"), test["Live_Leaf"].values[0])
+test["Live_Wood"] = (("south_north", "west_east"), test["Live_Wood"].values[0])
+test["Dead_Foliage"] = (("south_north", "west_east"), test["Dead_Foliage"].values[0])
+test["Dead_Wood"] = (("south_north", "west_east"), test["Dead_Wood"].values[0])
 
+for var in list(test):
+    test[var].attrs = fwf_ds[var].attrs
 
-# fwf_ds.to_netcdf(str(data_dir) + f"/frp/sample_{domain}_{method}.nc")
-
-
-# fwf_ds = predict_frp(doi, domain, model_dir)
-
-# test = pd.DatetimeIndex(fwf_ds["Time"].values)
-# # print(float(fwf_ds["FRP"].max()))
-
-# # y, x = make_KDtree(49.01554, -76.43027, target_grid)
-# # y, x = make_KDtree(57.47797,-121.16833, target_grid)
-y, x = make_KDtree(27.92145, -81.09624, target_grid)
-# # y, x = make_KDtree(62.21035,-113.32549, target_grid)
-# # y, x = make_KDtree(37.307,-113.571, target_grid)
-# # y, x = make_KDtree(40,-140, target_grid)
-
-# y, x = make_KDtree(57.47797,-121.16833, target_grid)
-
-
-ds_i = fwf_ds.isel(west_east=x, south_north=y, time=slice(0, 48))
-
-static_i = target_grid.isel(west_east=x, south_north=y)
-ds_i["time"] = ds_i["Time"] - pd.Timedelta(int(static_i["ZoneST"]), "hour")
-ds_i["S-hour_sin-Total_Fuel_Load"].plot(color="tab:blue", zorder=10)
-
-
-# # frp_interp = fwf_ds.isel(x= x, y =y)
-# frp_interp = fwf_ds.isel(west_east=x, south_north=y)
-
-# fig = plt.figure(figsize=(10, 3))
-# ax = fig.add_subplot(1, 1, 1)
-# frp_interp["FRP"].plot(ax=ax)
-# # # plt.savefig('FRP.png')
-# fig = plt.figure(figsize=(10, 3))
-# ax = fig.add_subplot(1, 1, 1)
-# np.expm1(frp_interp["R"]).plot(ax=ax)
-
-# for var in config["feature_vars"]:
-#     fig = plt.figure(figsize=(10, 3))
-#     ax = fig.add_subplot(1, 1, 1)
-#     frp_interp[var].plot(ax=ax)
-
-# # # fig = plt.figure(figsize=(10,3))
-# # # ax = fig.add_subplot(1,1,1)
-# # # frp_interp['U'].plot(ax =ax)
-
-# fig = plt.figure(figsize=(10, 3))
-# ax = fig.add_subplot(1, 1, 1)
-# frp_interp["r_o"].plot(ax=ax)
-# # plt.savefig('S.png')
-
-
-# %%
+test.to_netcdf(str(data_dir) + f"/frp/bad_sample_{domain}_{method}.nc", mode="w")
 
 
 frp_i = fwf_ds.isel(time=18)
-np.expm1(frp_i["Total_Fuel_Load"]).salem.quick_map(oceans=True, lakes=True)
-frp_i["Total_Fuel_Load"].salem.quick_map(oceans=True, lakes=True)
+# np.expm1(frp_i["Total_Fuel_Load"]).salem.quick_map(oceans=True, lakes=True)
+# frp_i["Total_Fuel_Load"].salem.quick_map(vmax = 20, oceans=True, lakes=True)
 
-frp_i["FRP"].salem.quick_map(vmax=600, vmin=10, oceans=True, lakes=True)
-frp_i["S-hour_sin-Total_Fuel_Load"].salem.quick_map(oceans=True, lakes=True)
+frp_i["FRP"].salem.quick_map(vmax=600, vmin=0, oceans=True, lakes=True, prov=True)
+# frp_i["S-hour_sin-Total_Fuel_Load"].salem.quick_map(oceans=True, lakes=True)
 
 import matplotlib.colors as mcolors
 
@@ -434,13 +409,70 @@ ax = fig.add_subplot(3, 4, 12)
 # ax.set_title("Sine(Solar Azimuthal) x log(Total Fuel Load)" + "\n")
 # add_time_label(ax)
 
-fig.tight_layout()
-fig.savefig(
-    str(model_dir) + "/img/test-all-vars.pdf",
-    bbox_inches="tight",
-    pad_inches=0.1,
-    orientation="landscape",
-)
+# fig.tight_layout()
+# fig.savefig(
+#     str(model_dir) + "/img/test-all-vars.pdf",
+#     bbox_inches="tight",
+#     pad_inches=0.1,
+#     orientation="landscape",
+# )
 
 
-# %%
+# # %%
+
+
+# fwf_ds['R-diurnal_curve-Total_Fuel_Load'] = fwf_ds['R']  * fwf_ds['diurnal_curve']  * fwf_ds['Total_Fuel_Load']
+
+# np.expm1(fwf_ds["Total_Fuel_Load"]).isel(time=18).salem.quick_map()
+# fwf_ds["FRP"].isel(time=18).salem.quick_map()
+
+
+# fwf_ds.to_netcdf(str(data_dir) + f"/frp/sample_{domain}_{method}.nc")
+
+
+# fwf_ds = predict_frp(doi, domain, model_dir)
+
+# test = pd.DatetimeIndex(fwf_ds["Time"].values)
+# # print(float(fwf_ds["FRP"].max()))
+
+# # y, x = make_KDtree(49.01554, -76.43027, target_grid)
+# # y, x = make_KDtree(57.47797,-121.16833, target_grid)
+# y, x = make_KDtree(27.92145, -81.09624, target_grid)
+# # # y, x = make_KDtree(62.21035,-113.32549, target_grid)
+# # # y, x = make_KDtree(37.307,-113.571, target_grid)
+# # # y, x = make_KDtree(40,-140, target_grid)
+
+# # y, x = make_KDtree(57.47797,-121.16833, target_grid)
+
+
+# ds_i = fwf_ds.isel(west_east=x, south_north=y, time=slice(0, 48))
+
+# static_i = target_grid.isel(west_east=x, south_north=y)
+# ds_i["time"] = ds_i["Time"] - pd.Timedelta(int(static_i["ZoneST"]), "hour")
+# ds_i["S-hour_sin-Total_Fuel_Load"].plot(color="tab:blue", zorder=10)
+
+
+# # frp_interp = fwf_ds.isel(x= x, y =y)
+# frp_interp = fwf_ds.isel(west_east=x, south_north=y)
+
+# fig = plt.figure(figsize=(10, 3))
+# ax = fig.add_subplot(1, 1, 1)
+# frp_interp["FRP"].plot(ax=ax)
+# # # plt.savefig('FRP.png')
+# fig = plt.figure(figsize=(10, 3))
+# ax = fig.add_subplot(1, 1, 1)
+# np.expm1(frp_interp["R"]).plot(ax=ax)
+
+# for var in config["feature_vars"]:
+#     fig = plt.figure(figsize=(10, 3))
+#     ax = fig.add_subplot(1, 1, 1)
+#     frp_interp[var].plot(ax=ax)
+
+# # # fig = plt.figure(figsize=(10,3))
+# # # ax = fig.add_subplot(1,1,1)
+# # # frp_interp['U'].plot(ax =ax)
+
+# fig = plt.figure(figsize=(10, 3))
+# ax = fig.add_subplot(1, 1, 1)
+# frp_interp["r_o"].plot(ax=ax)
+# # plt.savefig('S.png')

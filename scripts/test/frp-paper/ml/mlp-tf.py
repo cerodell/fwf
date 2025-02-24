@@ -42,32 +42,49 @@ startTime = datetime.now()
 
 # Configuration parameters
 config = dict(
-    method="averaged-v15",
+    method="averaged-v20",
     years=["2021", "2022", "2023"],
     feature_vars=[
-        # "ASPECT_sin",
-        # "ASPECT_cos",
+        # "hour_sin",
+        # 'hour_cos',
+        # "R",
+        # 'S',
+        # 'Live_Wood',
+        # 'Dead_Foliage',
+        # 'Dead_Wood',
         "S-hour_sin-Total_Fuel_Load",
         "S-hour_cos-Total_Fuel_Load",
-        "Total_Fuel_Load",
         "lat_sin",
         "lon_sin",
         "lat_cos",
         "lon_cos",
+        # "S-hour_sin-Live_Wood",
+        # "S-hour_sin-Dead_Foliage",
+        # "S-hour_sin-Dead_Wood",
+        # "S-hour_cos-Live_Leaf",
+        # "S-hour_cos-Live_Wood",
+        # "S-hour_cos-Dead_Foliage",
+        # "S-hour_cos-Dead_Wood",
+        # "U-Total_Fuel_Load-lat_sin",
+        # "U-Total_Fuel_Load-lat_cos",
+        # "U-Total_Fuel_Load-lon_sin",
+        # "U-Total_Fuel_Load-lon_cos",
+        # "R-hr_sin-Total_Fuel_Load",
+        # "R-hour_cos-Total_Fuel_Load"
     ],
     target_vars=["FRP"],
-    feature_scaler_type="minmax",  ##robust or standard minmax
+    feature_scaler_type="robust",  ##robust or standard minmax
     target_scaler_type=True,  ##robust or standard minmax
     transform=True,
     package="tf",
     model_type="MLP",
     smoothing=False,
-    # main-cases=True,
     shuffle_data=True,
     feature_engineer=True,
-    min_fire_size=500,  ## hectors,
-    burn_time=int(55),
+    min_fire_size=0,  ## hectors,
+    burn_time=0,
     filter_std=True,
+    # r_values = 0.2
 )
 config["n_features"] = len(config["feature_vars"])
 config["n_targets"] = len(config["target_vars"])
@@ -82,6 +99,8 @@ model = Sequential(
         Dropout(0.1),
         Dense(64, activation="relu"),
         Dropout(0.1),
+        # Dense(64, activation="relu"),
+        # Dropout(0.1),
         Dense(config["n_targets"], activation="relu"),  # Output layer
     ]
 )
@@ -116,13 +135,13 @@ early_stopping = EarlyStopping(
 #     monitor="val_loss", factor=0.2, patience=3, min-lr=1e-6, verbose=1
 # )
 # Get Training Data
-y_train, X_train, X_val, y_val = mlD.get_training()
+y_train, X_train, X_val, y_val, X_test = mlD.get_training()
 
 ## Train the model with early stopping
 model.fit(
     X_train,
     y_train,
-    epochs=50,
+    epochs=30,
     batch_size=32,
     verbose=1,
     # validation_split=0.1,
@@ -132,10 +151,14 @@ model.fit(
 
 ## Predict using the trained model
 y_out_this_nhn = model.predict(X_val)
-
-
 ## Save model
-mlD.save_model(model, y_out_this_nhn, save_dir, logger)
+mlD.save_model(model, y_out_this_nhn, save_dir, logger, split="val")
+
+
+## Predict using the trained model
+y_out_this_nhn = model.predict(X_test)
+## Save model
+mlD.save_model(model, y_out_this_nhn, save_dir, logger, split="test")
 
 ## Log run time
 logger.info("Total Run Time: %s", datetime.now() - startTime)

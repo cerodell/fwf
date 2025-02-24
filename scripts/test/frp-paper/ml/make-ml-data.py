@@ -237,7 +237,7 @@ for year in ["2021", "2022", "2023"]:
                     frp_vals,
                     ISI.mean(("x", "y")).dropna("time"),
                 )[0]
-                if len(frp_vals) < 30:
+                if len(frp_vals) < 0:
                     print(f"To short of fire buring time {len(frp_vals)}")
                 else:
                     print(np.round(r_values, 2))
@@ -342,10 +342,15 @@ for year in ["2021", "2022", "2023"]:
                     for var in list(fuels_roi):
                         ds[var] = fuels_roi[var]
 
-                    ds["S"] = np.log1p(ds["S"])
-                    ds["R"] = np.log1p(ds["R"])
-                    ds["U"] = np.log1p(ds["U"])
-                    ds["Total_Fuel_Load"] = np.log1p(ds["Total_Fuel_Load"])
+                    # ds["S"] = np.log1p(ds["S"])
+                    # ds["R"] = np.log1p(ds["R"])
+                    # ds["U"] = np.log1p(ds["U"])
+                    # ds["Total_Fuel_Load"] = np.log1p(ds["Total_Fuel_Load"])
+                    # ds["Live_Leaf"] = np.log1p(ds["Live_Leaf"])
+                    # ds["Live_Wood"] = np.log1p(ds["Live_Wood"])
+                    # ds["Dead_Foliage"] = np.log1p(ds["Dead_Foliage"])
+                    # ds["FRP_LOG"] = np.log1p(ds["FRP"])
+
                     for var in list(ds):
                         try:
                             ds[var] = xr.where(
@@ -369,6 +374,16 @@ for year in ["2021", "2022", "2023"]:
                             ("time"),
                             np.full(time_shape, float(len(ds_mean.time))),
                         )
+                        ds_mean["r_values"] = (
+                            ("time"),
+                            np.full(time_shape, float(r_values)),
+                        )
+                        quant_ds = ds["FRP"].quantile(
+                            [0.75],
+                            dim=("x", "y"),
+                            skipna=True,
+                        )
+                        ds_mean["FRP_Target"] = quant_ds.isel(quantile=0)
 
                         print(f"Passed: {ii}/{file_list_len}")
                         print("Length of data: ", len(ds_mean.time))
@@ -403,7 +418,7 @@ for year in ["2021", "2022", "2023"]:
         )
 
     save_dir = (
-        f"/Users/crodell/fwf/data/ml-data/training-data/{year}-fires-averaged-v15.nc"
+        f"/Users/crodell/fwf/data/ml-data/training-data/{year}-fires-averaged-v20.nc"
     )
     print(save_dir)
     final_ds, encoding = compressor(final_ds)
@@ -431,6 +446,11 @@ print("--------------------------------")
 #            final_ds['NFWI'],
 #         )[0])
 
+# final_ds['FRP'].plot(color = 'r')
+# np.expm1(final_ds['FRP_LOG']).plot()
+
+# final_ds['FRP_LOG'].plot()
+# np.log1p(final_ds['FRP']).plot(color = 'r')
 # print('--------------------------------')
 
 # print((counter/(len(good_files)+len(bad_files)))*100)

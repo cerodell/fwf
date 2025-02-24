@@ -35,8 +35,8 @@ startFWX = datetime.now()
 # 24564081 (2021) "Fire ID 24564081 / Northern California"
 # 26691009 (2023) "Fire ID 26691009 / Coastal British Columbia"
 # 26567967 (2023) "Fire ID 26567967 / Northwest Territories, Canada"
-ID = 25282348
-year = 2022
+ID = 26567967
+year = 2023
 mlp_test_case = "MLP_64U-Dense_64U-Dense_1U-Dense-Main"
 method = "averaged-v15"
 ml_pack = "tf"
@@ -147,7 +147,7 @@ def predict_frp(config):
     return
 
 
-for i in range(len(ids)):
-    config["ID"] = int(ids[i])
-    config["year"] = years[i]
-    predict_frp(config)
+# for i in range(len(ids)):
+#     config["ID"] = int(ids[i])
+#     config["year"] = years[i]
+#     predict_frp(config)

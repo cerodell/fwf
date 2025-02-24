@@ -60,6 +60,7 @@ class MLDATA:
         self.package = config.get("package")
         self.feature_engineer = str_to_bool(config.get("feature_engineer", False))
         self.smoothing = str_to_bool(config.get("smoothing", False))
+        self.r_values = config.get("r_values", -1)
 
         return
 
@@ -101,7 +102,7 @@ class MLDATA:
         og_len = len(df)
         df = df.loc[df["area_ha"] > self.min_fire_size]
         df = df.loc[df["burn_time"] > self.burn_time]
-        df.loc[df["HGT"] < 0, "HGT"] = 0
+        # df.loc[df["HGT"] < 0, "HGT"] = 0
         df["local_time"] = pd.to_datetime(df["time"]) - pd.to_timedelta(
             df["ZoneST"].astype(int), unit="h"
         )
@@ -110,20 +111,20 @@ class MLDATA:
         df["dayofyear"] = df["local_time"].dt.dayofyear
         df["dayofyear_sin"] = np.sin(2 * np.pi * df["dayofyear"] / 365)
         df["dayofyear_cos"] = np.cos(2 * np.pi * df["dayofyear"] / 365)
-        # df["hour_sin"] = np.sin(2 * np.pi * df["solar_hour"] / 24)
-        # df["hour_cos"] = np.cos(2 * np.pi * df["solar_hour"] / 24)
+        df["hour_sin"] = np.sin(2 * np.pi * df["solar_hour"] / 24)
+        df["hour_cos"] = np.cos(2 * np.pi * df["solar_hour"] / 24)
         phi_sin = -np.pi
-        df["hour_sin"] = (
-            0.1 + (np.sin((2 * np.pi * df["solar_hour"] / 24) + phi_sin) + 1) * 0.45
-        )
-        df["hour_cos"] = (
-            0.1 + (np.cos((2 * np.pi * df["solar_hour"] / 24) + phi_sin) + 1) * 0.45
-        )
+        # df["hour_sin"] = (
+        #     0.1 + (np.sin((2 * np.pi * df["solar_hour"] / 24) + phi_sin) + 1) * 0.45
+        # )
+        # df["hour_cos"] = (
+        #     0.1 + (np.cos((2 * np.pi * df["solar_hour"] / 24) + phi_sin) + 1) * 0.45
+        # )
         # df["hour_sin"] =  df["hour_sin"]**2
         # df["hour_cos"] =   df["hour_cos"]**2
 
-        df.loc[df["LAI"] > 7, "LAI"] = 7
-        df.loc[df["LAI"] < 0, "LAI"] = 0.01
+        # df.loc[df["LAI"] > 7, "LAI"] = 7
+        # df.loc[df["LAI"] < 0, "LAI"] = 0.01
         # df["R"] = df['R'] / 50
         # df["Total_Fuel_Load"] = (
         #     df["Dead_Wood"] + df["Live_Wood"] + df["Live_Leaf"] + df["Dead_Foliage"]
@@ -132,6 +133,8 @@ class MLDATA:
         if self.transform == True:
             df["FRP"] = np.log1p(df["FRP"])
             df["FRE"] = np.log1p(df["FRE"])
+            df["FRP_Target"] = np.log1p(df["FRP_Target"])
+
             # df['R'] = df['R']**2
             # df['S'] = np.log1p(df['S'])
             # df['U'] = np.log1p(df['U'])
@@ -143,6 +146,7 @@ class MLDATA:
 
             # df['Total_Fuel_Load'] = np.log1p(df['Total_Fuel_Load'])
             # df['CLIMO_FRP'] = df['CLIMO_FRP'] / df['CLIMO_FRP'].max()
+
         if self.filter_std:
             ################ FRP ###################
             frp_max_threshold = 1000
@@ -282,13 +286,13 @@ class MLDATA:
         for var in list(fuels_roi):
             ds[var] = fuels_roi[var]
         ds["OG_Total_Fuel_Load"] = ds["Total_Fuel_Load"]
-        if self.transform == True:
-            print("Transforming Features")
-            ds["R"] = np.log1p(ds["R"])
-            ds["S"] = np.log1p(ds["S"])
-            ds["U"] = np.log1p(ds["U"])
-            ds["Total_Fuel_Load"] = np.log1p(ds["Total_Fuel_Load"])
-            # ds['CLIMO_FRP'] = ds['CLIMO_FRP'] / ds['CLIMO_FRP'].max()
+        # if self.transform == True:
+        #     print("Transforming Features")
+        #     ds["R"] = np.log1p(ds["R"])
+        #     ds["S"] = np.log1p(ds["S"])
+        #     ds["U"] = np.log1p(ds["U"])
+        #     ds["Total_Fuel_Load"] = np.log1p(ds["Total_Fuel_Load"])
+        #     ds['CLIMO_FRP'] = ds['CLIMO_FRP'] / ds['CLIMO_FRP'].max()
 
         return ds
 
@@ -332,6 +336,8 @@ class MLDATA:
     def get_training(self):
 
         df = self.open_ml_ds()
+        df = df[df["r_values"] > self.r_values]
+
         # Group by the unique ID
         # grouped = df.groupby('id')
         # # Filter out groups with fewer than 72 rows
@@ -366,16 +372,38 @@ class MLDATA:
         #     remaining_ids, test_size=0.50, random_state=120
         # )
 
-        # Split into 70% train and 30% remaining
+        # train_ids, remaining_ids = train_test_split(
+        #     IDS, test_size=0.30, random_state=33
+        # )
+
+        # # Split the remaining 30% into 15% validation and 15% test
+        # test_ids, val_ids = train_test_split(
+        #     remaining_ids, test_size=0.50, random_state=19
+        # )
+
         train_ids, remaining_ids = train_test_split(
-            IDS, test_size=0.30, random_state=85
+            IDS, test_size=0.30, random_state=110
         )
 
         # Split the remaining 30% into 15% validation and 15% test
         val_ids, test_ids = train_test_split(
-            remaining_ids, test_size=0.50, random_state=40
+            remaining_ids, test_size=0.50, random_state=120
         )
 
+        # train_ids, remaining_ids = train_test_split(
+        #     IDS, test_size=0.30, random_state=120
+        # )
+        # # train_ids = np.delete(train_ids, np.where(train_ids == 26695902))
+
+        # # train_ids 26695902
+        # # Split the remaining 30% into 15% validation and 15% test
+        # val_ids, test_ids = train_test_split(
+        #     remaining_ids, test_size=0.50, random_state=10
+        # )
+        # val_ids = np.append(val_ids, test_ids[-1])
+        # train_ids = np.delete(train_ids, np.where(test_ids == test_ids[-1]))
+
+        # 26695902
         # Verify the splits
         print(f"Training IDs: {len(train_ids)}")
         print(f"Validation IDs: {len(val_ids)}")
@@ -421,53 +449,58 @@ class MLDATA:
         user_config["pre_fire_test"] = np.round(100 * len(df_test) / len(df), 1)
 
         # Function to add perturbations
-        def add_perturbations(df, scale):
-            df = df_train.loc[df_train["FRP"] > np.log1p(500)]
-            df = df[self.feature_vars + self.target_vars]
-            perturbations = np.random.normal(loc=0, scale=scale, size=df.shape).astype(
-                "float32"
-            )
-            perturbed_df = df.copy()
-            perturbed_df = pd.DataFrame(
-                df.values + perturbations, columns=self.feature_vars + self.target_vars
-            )
-            return perturbed_df
+        # def add_perturbations(df, scale):
+        #     df = df[self.feature_vars + self.target_vars]
+        #     perturbations = np.random.normal(loc=0, scale=scale, size=df.shape).astype(
+        #         "float32"
+        #     )
+        #     perturbed_df = df.copy()
+        #     perturbed_df = pd.DataFrame(
+        #         df.values + perturbations, columns=self.feature_vars + self.target_vars
+        #     )
+        #     return perturbed_df
 
+        def add_perturbations(df, scale):
+            return df
+
+        p_lim = 0.2
         if self.transform == True:
             # cold_fires = add_perturbations(df_train.loc[df_train["FRP"] < np.log1p(1)], 0.01)
             # cool_fires =  add_perturbations(df_train.loc[df_train["FRP"] < np.log1p(10)], 0.01)
             warm_fires = add_perturbations(
-                df_train.loc[df_train["FRP"] > np.log1p(500)], 0.01
+                df_train.loc[df_train["FRP"] > np.log1p(500)], p_lim
             )
             warmer_fires = add_perturbations(
-                df_train.loc[df_train["FRP"] > np.log1p(800)], 0.01
+                df_train.loc[df_train["FRP"] > np.log1p(800)], p_lim
             )
             hot_fires = add_perturbations(
-                df_train.loc[df_train["FRP"] > np.log1p(1000)], 0.01
+                df_train.loc[df_train["FRP"] > np.log1p(1000)], p_lim
             )
             hotter_fires = add_perturbations(
-                df_train.loc[df_train["FRP"] > np.log1p(1500)], 0.01
+                df_train.loc[df_train["FRP"] > np.log1p(1500)], p_lim
             )
             hotter_still_fire = add_perturbations(
-                df_train.loc[df_train["FRP"] > np.log1p(2000)], 0.01
+                df_train.loc[df_train["FRP"] > np.log1p(2000)], p_lim
             )
             hottest_fires = add_perturbations(
-                df_train.loc[df_train["FRP"] > np.log1p(3000)], 0.01
+                df_train.loc[df_train["FRP"] > np.log1p(3000)], p_lim
             )
         else:
             # cold_fires = df_train.loc[df_train["FRP"] < 1]
             # cool_fires = df_train.loc[df_train["FRP"] < 10]
             # cold_fires = add_perturbations(df_train.loc[df_train["FRP"] < 1], 0.01)
             # cool_fires =  add_perturbations(df_train.loc[df_train["FRP"] < 10], 0.01)
-            warm_fires = add_perturbations(df_train.loc[df_train["FRP"] > 500], 0.01)
-            warmer_fires = add_perturbations(df_train.loc[df_train["FRP"] > 800], 0.01)
-            hot_fires = add_perturbations(df_train.loc[df_train["FRP"] > 1000], 0.01)
-            hotter_fires = add_perturbations(df_train.loc[df_train["FRP"] > 1500], 0.01)
+            warm_fires = add_perturbations(df_train.loc[df_train["FRP"] > 500], p_lim)
+            warmer_fires = add_perturbations(df_train.loc[df_train["FRP"] > 800], p_lim)
+            hot_fires = add_perturbations(df_train.loc[df_train["FRP"] > 1000], p_lim)
+            hotter_fires = add_perturbations(
+                df_train.loc[df_train["FRP"] > 1500], p_lim
+            )
             hotter_still_fire = add_perturbations(
-                df_train.loc[df_train["FRP"] > 2000], 0.01
+                df_train.loc[df_train["FRP"] > 2000], p_lim
             )
             hottest_fires = add_perturbations(
-                df_train.loc[df_train["FRP"] > 3000], 0.01
+                df_train.loc[df_train["FRP"] > 3000], p_lim
             )
         df_train = pd.concat(
             [
@@ -489,7 +522,8 @@ class MLDATA:
         X_val = df_val[self.feature_vars].copy()
         X_test = df_test[self.feature_vars].copy()
 
-        y_train = df_train[self.target_vars]
+        # y_train = df_train[self.target_vars]
+        y_train = df_train["FRP_Target"]
         y_val = df_val[self.target_vars]
         y_test = df_test[self.target_vars]
 
@@ -508,9 +542,17 @@ class MLDATA:
             # target_scaler = MinMaxScaler().fit(y_train)
             # target_scaler = RobustScaler().fit(y_train)
             # y_train = target_scaler.transform(y_train)
+            # for var in self.target_vars:
+            #     print(f"MAX FRP: {float(y_train[var].max())}")
+            #     user_config[f"{var}_MAX"] = float(y_train[var].max())
+            # y_train = y_train / y_train.max()
+            # print(f"MAX NORM FRP: {float(y_train.max())}")
             for var in self.target_vars:
-                user_config[f"{var}_MAX"] = float(y_train[var].max())
-            y_train = y_train / y_train.max()
+                print(f"MAX FRP: {float(df_train['FRP'].max())}")
+                user_config[f"{var}_MAX"] = float(df_train["FRP"].max())
+            y_train = y_train / float(df_train["FRP"].max())
+            print(f"MAX NORM FRP: {float(y_train.max())}")
+
             self.target_scaler = "MAX_MIN"
         else:
             self.target_scaler = None
@@ -527,12 +569,14 @@ class MLDATA:
         self.length_of_training = len(y_train)
         self.X_val = X_val
         self.y_val = y_val
+        self.y_test = y_test
+        self.X_test = X_test
         self.df_val = df_val
 
         self.user_config = user_config
-        return y_train, X_train, X_val, y_val
+        return y_train, X_train, X_val, y_val, X_test
 
-    def save_model(self, model, y_out_this_nhn, save_dir, logger):
+    def save_model(self, model, y_out_this_nhn, save_dir, logger, split):
         if self.target_scaler_type == True:
             # print("self.target_scaler_type is: ", self.target_scaler_type)
             # y_out_this_nhn = self.target_scaler.inverse_transform(y_out_this_nhn)
@@ -540,9 +584,15 @@ class MLDATA:
 
         if self.transform == True:
             y_out_this_nhn = np.expm1(y_out_this_nhn)
-            y_val = np.expm1(self.y_val)
+            if split == "val":
+                y_val = np.expm1(self.y_val)
+            elif split == "test":
+                y_val = np.expm1(self.y_test)
         else:
-            y_val = self.y_val
+            if split == "val":
+                y_val = self.y_val
+            elif split == "test":
+                y_val = self.y_test
 
         # Save model and scaler
         if self.package == "tf":
@@ -612,10 +662,11 @@ class MLDATA:
                 "pearson_r": str(r),
                 "length_of_training": str(self.length_of_training),
             }
-            self.df_val["model"] = y_nhn
+            # self.df_val["model"] = y_nhn
             print(f"Min prediction of {target}: {float(np.min(y_nhn))}")
-            self.df_val["obs"] = y_t
-            self.df_val = self.df_val.round(1)
+            # self.df_val["obs"] = y_t
+            # self.df_val = self.df_val.round(1)
+
             fig = plt.figure()
             ax = fig.add_subplot(1, 1, 1)
             ax.scatter(y_nhn, y_t, color="tab:red", s=15)
@@ -634,7 +685,7 @@ class MLDATA:
             # ticks = [10, 20, 50, 100, 200, 300, 500, 800, 1000, 1500,2000, 3000]
             # ax.set_xticks(ticks)
             # ax.set_yticks(ticks)
-            fig.savefig(str(save_dir) + f"/{target}-scatter.png")
+            fig.savefig(str(save_dir) + f"/{target}-scatter-{split}.png")
             return stats_dict
 
         targets = self.user_config["target_vars"]
@@ -646,7 +697,7 @@ class MLDATA:
             print(f"{key}: {value}")
 
         # Save statistics
-        stats_path = save_dir / "stats.json"
+        stats_path = save_dir / f"stats-{split}.json"
         with open(stats_path, "w") as json_file:
             json.dump(stats_dict, json_file, indent=4)
 

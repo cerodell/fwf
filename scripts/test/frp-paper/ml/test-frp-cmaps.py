@@ -17,7 +17,13 @@ import matplotlib.cm as cm
 from matplotlib.colors import LinearSegmentedColormap, BoundaryNorm
 
 
-ds = salem.open_xr_dataset(str(data_dir) + "/fwf-data/fwf-hourly-d02-2024060406.nc")
+# ds = salem.open_xr_dataset(str(data_dir) + "/fwf-data/fwf-hourly-d02-2024060406.nc")
+test = salem.open_xr_dataset("/Volumes/ThunderBay/CRodell/fires/2023-26922470.nc")
+
+
+rave = salem.open_xr_dataset(
+    "/Volumes/ThunderBay/CRodell/rave/2023/09/RAVE-HrlyEmiss-3km_v2r0_blend_s202309300000000_e202309302359590_c202312010711400.nc"
+)
 
 
 # %%

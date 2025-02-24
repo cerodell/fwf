@@ -48,7 +48,7 @@ save_fig = True
 norms = False
 int_plot = False
 paper = False
-full_fwx = False
+full_fwx = True
 case_study = "oak_fire"  # ['barrington_lake_fire', 'wildcat', 'marshall_fire', 'oak_fire', 'caldor_fire', 'fire_east_tulare', 'rossmoore_fire', 'crater_creek', 'lytton_creek]
 # print(case_study)
 
@@ -166,9 +166,9 @@ fig = plt.figure(figsize=(14, 4))
 
 ax = fig.add_subplot(1, 1, 1)
 title_line1 = (
-    r"\fontsize{22pt}{24pt}\selectfont " + f"{case_study.replace('_', ' ').title()}"
+    r"\fontsize{22pt}{28pt}\selectfont " + f"{case_study.replace('_', ' ').title()}"
 )
-title_line2 = r"\fontsize{18pt}{17pt}\selectfont " + f"{case_info['loc']}" + f", {year}"
+title_line2 = r"\fontsize{24pt}{17pt}\selectfont " + f"{case_info['loc']}" + f", {year}"
 title = f"{title_line1}\n{title_line2}"
 ax.set_title(title, loc="center", fontdict={"usetex": True}, y=1.2)
 # fig.suptitle(title, y=1.11)
@@ -196,7 +196,7 @@ ax.set_title(
 )
 ax2 = ax.twinx()
 ax.plot(hourly_ds.time, hfwi, color="tab:blue", lw=1.2, label="HFWI")
-ax.plot(daily_ds.time, dfwi, color="tab:blue", ls="--", lw=1.2, label="DFWI")
+# ax.plot(daily_ds.time, dfwi, color="tab:blue", ls="--", lw=1.2, label="DFWI")
 
 ax.plot(hourly_ds.time, hfwi, color="tab:red", lw=1, label="HFRP", zorder=0)
 set_axis_postion(ax, "FWI")
@@ -326,12 +326,19 @@ if save_fig == True:
             bbox_inches="tight",
         )
 # %%
+plt.rcParams.update({"font.size": 22})
 
 if full_fwx == True:
     hourly_ds = hourly_ds.compute()
     daily_ds_wx = daily_ds_og2.compute()
     daily_ds_fwx = daily_ds_wx.copy()
-    hourly_ds = hourly_precip(hourly_ds)
+    if case_study == "caldor_fire":
+        r_hourly = xr.DataArray(
+            np.zeros(hourly_ds.Time.shape), name="r_o_hourly", dims=("time")
+        )
+        hourly_ds["r_o_hourly"] = r_hourly
+    else:
+        hourly_ds = hourly_precip(hourly_ds)
     daily_ds_wx["time"] = daily_ds_wx["time"] + np.timedelta64(int(12), "h")
     daily_ds_wx = daily_ds_wx.sel(time=slice(start, stop))
     daily_ds_wx["Time"] = daily_ds_wx["time"]
@@ -351,11 +358,11 @@ if full_fwx == True:
     fig = plt.figure(figsize=(14, 12))
     # fig.suptitle("Fire Weather Index System Sensitivity Case Study", fontsize=20)
     ax = fig.add_subplot(2, 1, 1)
-    ax.set_title(f"{title} \n \nFire Weather", loc="left", fontsize=20)
+    ax.set_title(f"{title} \n \nFire Weather", loc="left", fontsize=24)
     ax.set_title(
         f"WRF Domain: {reso} \n{start_fwx} - {stop_fwx}, {year}",
         loc="right",
-        fontsize=20,
+        fontsize=24,
     )
     ffmc = ax
     dmc = ax.twinx()
@@ -426,7 +433,7 @@ if full_fwx == True:
     date_array = daily_ds_wx["time"] - np.timedelta64(int(12), "h")
     extended_date_array = np.append(date_array, date_array[-1] + np.timedelta64(1, "D"))
     # plt.gca().set_xticks(extended_date_array)
-    tkw = dict(size=4, width=1.5, labelsize=18)
+    tkw = dict(size=4, width=1.5, labelsize=22)
     ax.tick_params(
         axis="x",
         **tkw,
@@ -434,7 +441,7 @@ if full_fwx == True:
     # ax.set_xlabel("Local DateTime (MM-DD-HH)", fontsize=16)
 
     ax = fig.add_subplot(2, 1, 2)
-    ax.set_title(f"Weather Inputs", loc="left", fontsize=20)
+    ax.set_title(f"Weather Inputs", loc="left", fontsize=24)
     temp = ax
     rh = ax.twinx()
     wsp = ax.twinx()
@@ -473,8 +480,8 @@ if full_fwx == True:
 
     plt.gca().xaxis.set_major_formatter(mdates.DateFormatter("%m-%d-%H"))
     # plt.gca().set_xticks(extended_date_array)
-    ax.set_xlabel("Local DateTime (MM-DD-HH)", fontsize=20)
-    tkw = dict(size=4, width=1.5, labelsize=18)
+    ax.set_xlabel("Local DateTime (MM-DD-HH)", fontsize=22)
+    tkw = dict(size=4, width=1.5, labelsize=22)
     ax.tick_params(
         axis="x",
         **tkw,
@@ -483,12 +490,13 @@ if full_fwx == True:
 
     if save_fig == True:
         if paper == True:
+            print("yes")
             plt.savefig(
                 str(save_dir) + f"/{case_study}-fwx.pdf",
                 bbox_inches="tight",
             )
             plt.savefig(
-                str(save_dir) + f"/{case_study}-fwx.png",
+                str(save_dir) + f"/{case_study}-fwx-dis.png",
                 dpi=250,
                 bbox_inches="tight",
             )

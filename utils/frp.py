@@ -19,7 +19,7 @@ from context import data_dir, root_dir
 
 # plt.rc("font", family="sans-serif")
 # plt.rc("text", usetex=True)
-plt.rcParams.update({"font.size": 14})
+plt.rcParams.update({"font.size": 16})
 
 
 __author__ = "Christopher Rodell"
@@ -356,13 +356,13 @@ def set_axis_postion_full_fwx(ax, side, offset, label):
     ax.spines[side].set_visible(True)
     ax.yaxis.set_label_position(side)
     ax.yaxis.set_ticks_position(side)
-    ax.set_ylabel(label, fontsize=20)
+    ax.set_ylabel(label, fontsize=22)
     try:
         color = ax.get_lines()[0].get_color()
     except:
         color = ax.collections[0].get_edgecolor()
     ax.yaxis.label.set_color(color)
-    tkw = dict(size=4, width=1.5, labelsize=18)
+    tkw = dict(size=4, width=1.5, labelsize=22)
     ax.tick_params(
         axis="y",
         colors=color,
@@ -380,12 +380,12 @@ def set_axis_postion(ax, label, color=False, side=False, offset=False):
         ax.yaxis.set_ticks_position(side)
         # make_patch_spines_invisible(ax)
 
-    ax.set_ylabel(label, fontsize=20)
+    ax.set_ylabel(label, fontsize=22)
     try:
         ax.yaxis.label.set_color(ax.get_lines()[0].get_color())
     except:
-        ax.yaxis.label.set_color(color=color, labelsize=20)
-    tkw = dict(size=4, width=1.5, labelsize=18)
+        ax.yaxis.label.set_color(color=color, labelsize=22)
+    tkw = dict(size=4, width=1.5, labelsize=22)
     ax.tick_params(
         axis="y",
         colors=ax.get_lines()[0].get_color(),

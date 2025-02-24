@@ -40,7 +40,7 @@ warnings.simplefilter(action="ignore", category=FutureWarning)
 
 domain = "d02"
 doi = pd.Timestamp("2023-06-06")
-mlp_test_case = "MLP_64U-Dense_64U-Dense_1U-Dense-Main"
+mlp_test_case = "MLP_64U-Dense_64U-Dense_1U-Dense"
 method = "averaged-v15"
 ml_pack = "tf"
 target_vars = "FRP"
