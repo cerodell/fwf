@@ -9,6 +9,12 @@ fwf-docs
 fwf-docs/
 web_dev
 web_dev/
+log
+/log
+logs
+/logs
+img
+img/
 # fwf-web
 # fwf-web/
 docs

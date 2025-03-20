@@ -19,6 +19,8 @@ notebooks_dir = this_dir
 root_dir = notebooks_dir.parents[2]
 data_dir = root_dir / Path("data")
 
+wrf_dir = Path("/NASPANGEA2/HISTORICAL_WEATHER/FA_DTN_20_YEAR")
+
 sys.path.insert(0, str(root_dir))
 sep = "*" * 30
 print(f"{sep}\ncontext imported. Front of path:\n{sys.path[0]}\n{sys.path[1]}\n{sep}\n")

@@ -1,0 +1,81 @@
+2025-03-12 23:42:16,424 - distributed.nanny - INFO -         Start Nanny at: 'tcp://192.168.32.190:45633'
+2025-03-12 23:42:16,427 - distributed.nanny - INFO -         Start Nanny at: 'tcp://192.168.32.190:37271'
+2025-03-12 23:42:17,174 - distributed.worker - INFO -       Start worker at: tcp://192.168.32.190:45027
+2025-03-12 23:42:17,174 - distributed.worker - INFO -       Start worker at: tcp://192.168.32.190:38731
+2025-03-12 23:42:17,174 - distributed.worker - INFO -          Listening to: tcp://192.168.32.190:45027
+2025-03-12 23:42:17,174 - distributed.worker - INFO -           Worker name:           SLURMCluster-2-1
+2025-03-12 23:42:17,174 - distributed.worker - INFO -          Listening to: tcp://192.168.32.190:38731
+2025-03-12 23:42:17,174 - distributed.worker - INFO -          dashboard at:       192.168.32.190:46025
+2025-03-12 23:42:17,174 - distributed.worker - INFO -           Worker name:           SLURMCluster-2-0
+2025-03-12 23:42:17,174 - distributed.worker - INFO - Waiting to connect to: tcp://192.168.32.190:42293
+2025-03-12 23:42:17,174 - distributed.worker - INFO -          dashboard at:       192.168.32.190:45053
+2025-03-12 23:42:17,174 - distributed.worker - INFO - -------------------------------------------------
+2025-03-12 23:42:17,174 - distributed.worker - INFO - Waiting to connect to: tcp://192.168.32.190:42293
+2025-03-12 23:42:17,174 - distributed.worker - INFO -               Threads:                          1
+2025-03-12 23:42:17,174 - distributed.worker - INFO - -------------------------------------------------
+2025-03-12 23:42:17,174 - distributed.worker - INFO -               Threads:                          1
+2025-03-12 23:42:17,174 - distributed.worker - INFO -                Memory:                   1.86 GiB
+2025-03-12 23:42:17,174 - distributed.worker - INFO -       Local Directory: /tmp/37138/dask-scratch-space/worker-exbo5bs7
+2025-03-12 23:42:17,174 - distributed.worker - INFO -                Memory:                   1.86 GiB
+2025-03-12 23:42:17,174 - distributed.worker - INFO -       Local Directory: /tmp/37138/dask-scratch-space/worker-k7ggo0ur
+2025-03-12 23:42:17,174 - distributed.worker - INFO - -------------------------------------------------
+2025-03-12 23:42:17,174 - distributed.worker - INFO - -------------------------------------------------
+2025-03-12 23:42:17,474 - distributed.worker - INFO - Starting Worker plugin shuffle
+2025-03-12 23:42:17,474 - distributed.worker - INFO -         Registered to: tcp://192.168.32.190:42293
+2025-03-12 23:42:17,474 - distributed.worker - INFO - -------------------------------------------------
+2025-03-12 23:42:17,475 - distributed.worker - INFO - Starting Worker plugin shuffle
+2025-03-12 23:42:17,476 - distributed.worker - INFO -         Registered to: tcp://192.168.32.190:42293
+2025-03-12 23:42:17,476 - distributed.worker - INFO - -------------------------------------------------
+2025-03-12 23:42:17,476 - distributed.core - INFO - Starting established connection to tcp://192.168.32.190:42293
+2025-03-12 23:42:17,476 - distributed.core - INFO - Starting established connection to tcp://192.168.32.190:42293
+slurmstepd: error: *** JOB 37138 ON pangea01 CANCELLED AT 2025-03-12T23:42:30 ***
+2025-03-12 23:42:30,808 - distributed.worker - INFO - Stopping worker at tcp://192.168.32.190:45027. Reason: scheduler-close
+2025-03-12 23:42:30,808 - distributed.worker - INFO - Stopping worker at tcp://192.168.32.190:38731. Reason: scheduler-close
+2025-03-12 23:42:30,809 - distributed.batched - INFO - Batched Comm Closed <TCP (closed) Worker->Scheduler local=tcp://192.168.32.190:50802 remote=tcp://192.168.32.190:42293>
+Traceback (most recent call last):
+  File "/home/crodell/miniforge3/envs/fwx/lib/python3.11/site-packages/distributed/comm/tcp.py", line 298, in write
+    raise StreamClosedError()
+tornado.iostream.StreamClosedError: Stream is closed
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/home/crodell/miniforge3/envs/fwx/lib/python3.11/site-packages/distributed/batched.py", line 115, in _background_send
+    nbytes = yield coro
+             ^^^^^^^^^^
+  File "/home/crodell/miniforge3/envs/fwx/lib/python3.11/site-packages/tornado/gen.py", line 766, in run
+    value = future.result()
+            ^^^^^^^^^^^^^^^
+  File "/home/crodell/miniforge3/envs/fwx/lib/python3.11/site-packages/distributed/comm/tcp.py", line 308, in write
+    convert_stream_closed_error(self, e)
+  File "/home/crodell/miniforge3/envs/fwx/lib/python3.11/site-packages/distributed/comm/tcp.py", line 137, in convert_stream_closed_error
+    raise CommClosedError(f"in {obj}: {exc}") from exc
+distributed.comm.core.CommClosedError: in <TCP (closed) Worker->Scheduler local=tcp://192.168.32.190:50802 remote=tcp://192.168.32.190:42293>: Stream is closed
+2025-03-12 23:42:30,811 - distributed.batched - INFO - Batched Comm Closed <TCP (closed) Worker->Scheduler local=tcp://192.168.32.190:50748 remote=tcp://192.168.32.190:42293>
+Traceback (most recent call last):
+  File "/home/crodell/miniforge3/envs/fwx/lib/python3.11/site-packages/distributed/comm/tcp.py", line 298, in write
+    raise StreamClosedError()
+tornado.iostream.StreamClosedError: Stream is closed
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/home/crodell/miniforge3/envs/fwx/lib/python3.11/site-packages/distributed/batched.py", line 115, in _background_send
+    nbytes = yield coro
+             ^^^^^^^^^^
+  File "/home/crodell/miniforge3/envs/fwx/lib/python3.11/site-packages/tornado/gen.py", line 766, in run
+    value = future.result()
+            ^^^^^^^^^^^^^^^
+  File "/home/crodell/miniforge3/envs/fwx/lib/python3.11/site-packages/distributed/comm/tcp.py", line 308, in write
+    convert_stream_closed_error(self, e)
+  File "/home/crodell/miniforge3/envs/fwx/lib/python3.11/site-packages/distributed/comm/tcp.py", line 137, in convert_stream_closed_error
+    raise CommClosedError(f"in {obj}: {exc}") from exc
+distributed.comm.core.CommClosedError: in <TCP (closed) Worker->Scheduler local=tcp://192.168.32.190:50748 remote=tcp://192.168.32.190:42293>: Stream is closed
+2025-03-12 23:42:30,812 - distributed.nanny - INFO - Closing Nanny gracefully at 'tcp://192.168.32.190:37271'. Reason: scheduler-close
+2025-03-12 23:42:30,813 - distributed.nanny - INFO - Closing Nanny gracefully at 'tcp://192.168.32.190:45633'. Reason: scheduler-close
+2025-03-12 23:42:30,813 - distributed.worker - INFO - Removing Worker plugin shuffle
+2025-03-12 23:42:30,813 - distributed.worker - INFO - Removing Worker plugin shuffle
+2025-03-12 23:42:30,814 - distributed.core - INFO - Received 'close-stream' from tcp://192.168.32.190:42293; closing.
+2025-03-12 23:42:30,814 - distributed.core - INFO - Received 'close-stream' from tcp://192.168.32.190:42293; closing.
+2025-03-12 23:42:30,814 - distributed.nanny - INFO - Worker closed
+2025-03-12 23:42:30,814 - distributed.nanny - INFO - Worker closed

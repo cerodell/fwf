@@ -29,12 +29,12 @@ __author__ = "Christopher Rodell"
 __email__ = "crodell@eoas.ubc.ca"
 
 
+model = "wrf"
+customer = "fa"
+domain = "d03"
 season = "ST"
-model = "ecmwf"
-domain = "era5-land"
 
-
-filein = str(data_dir) + f"/{model}/{domain}-grid.nc"
+filein = str(data_dir) + f"/{model}/{customer}/{domain}-grid.nc"
 # filein = str(data_dir) + f"/{model}/wrfout_{domain}_2023-04-20_00:00:00"
 tzone_shp = (
     str(data_dir) + "/tzone/timezones-with-oceans/combined-shapefile-with-oceans.shp"
@@ -68,6 +68,14 @@ if season == "DT":
         name = df.loc[df["tzid"] == tz]
         timezone = pytz.timezone(tz)
         # dt = datetime.utcnow()
+        dt = datetime(
+            2023,
+            3,
+            9,
+            0,
+            53,
+            15,
+        )
         offset = timezone.utcoffset(dt)
         seconds = offset.total_seconds()
         if (

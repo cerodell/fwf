@@ -1,0 +1,94 @@
+2025-03-12 23:47:29,868 - distributed.nanny - INFO - Closing Nanny at 'tcp://192.168.32.190:35831'. Reason: failure-to-start-<class 'OSError'>
+2025-03-12 23:47:29,869 - distributed.nanny - INFO - Nanny at 'tcp://192.168.32.190:35831' closed.
+2025-03-12 23:47:29,869 - distributed.nanny - INFO - Closing Nanny at 'tcp://192.168.32.190:38843'. Reason: failure-to-start-<class 'OSError'>
+2025-03-12 23:47:29,869 - distributed.nanny - INFO - Nanny at 'tcp://192.168.32.190:38843' closed.
+2025-03-12 23:47:29,869 - distributed.dask_worker - INFO - End worker
+Traceback (most recent call last):
+  File "/home/crodell/miniforge3/envs/fwx/lib/python3.11/site-packages/distributed/utils.py", line 1910, in wait_for
+    return await fut
+           ^^^^^^^^^
+  File "/home/crodell/miniforge3/envs/fwx/lib/python3.11/site-packages/distributed/comm/tcp.py", line 547, in connect
+    stream = await self.client.connect(
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/crodell/miniforge3/envs/fwx/lib/python3.11/site-packages/tornado/tcpclient.py", line 279, in connect
+    af, addr, stream = await connector.start(connect_timeout=timeout)
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+asyncio.exceptions.CancelledError
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/home/crodell/miniforge3/envs/fwx/lib/python3.11/site-packages/distributed/comm/core.py", line 342, in connect
+    comm = await wait_for(
+           ^^^^^^^^^^^^^^^
+  File "/home/crodell/miniforge3/envs/fwx/lib/python3.11/site-packages/distributed/utils.py", line 1909, in wait_for
+    async with asyncio.timeout(timeout):
+  File "/home/crodell/miniforge3/envs/fwx/lib/python3.11/asyncio/timeouts.py", line 115, in __aexit__
+    raise TimeoutError from exc_val
+TimeoutError
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/home/crodell/miniforge3/envs/fwx/lib/python3.11/site-packages/distributed/core.py", line 528, in start
+    await wait_for(self.start_unsafe(), timeout=timeout)
+  File "/home/crodell/miniforge3/envs/fwx/lib/python3.11/site-packages/distributed/utils.py", line 1910, in wait_for
+    return await fut
+           ^^^^^^^^^
+  File "/home/crodell/miniforge3/envs/fwx/lib/python3.11/site-packages/distributed/nanny.py", line 358, in start_unsafe
+    comm = await self.rpc.connect(saddr)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/crodell/miniforge3/envs/fwx/lib/python3.11/site-packages/distributed/core.py", line 1485, in connect
+    return await self._connect(addr=addr, timeout=timeout)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/crodell/miniforge3/envs/fwx/lib/python3.11/site-packages/distributed/core.py", line 1429, in _connect
+    comm = await connect(
+           ^^^^^^^^^^^^^^
+  File "/home/crodell/miniforge3/envs/fwx/lib/python3.11/site-packages/distributed/comm/core.py", line 368, in connect
+    raise OSError(
+OSError: Timed out trying to connect to tcp://192.168.8.150:34231 after 30 s
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "<frozen runpy>", line 198, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+  File "/home/crodell/miniforge3/envs/fwx/lib/python3.11/site-packages/distributed/cli/dask_worker.py", line 546, in <module>
+    main()  # pragma: no cover
+    ^^^^^^
+  File "/home/crodell/miniforge3/envs/fwx/lib/python3.11/site-packages/click/core.py", line 1161, in __call__
+    return self.main(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/crodell/miniforge3/envs/fwx/lib/python3.11/site-packages/click/core.py", line 1082, in main
+    rv = self.invoke(ctx)
+         ^^^^^^^^^^^^^^^^
+  File "/home/crodell/miniforge3/envs/fwx/lib/python3.11/site-packages/click/core.py", line 1443, in invoke
+    return ctx.invoke(self.callback, **ctx.params)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/crodell/miniforge3/envs/fwx/lib/python3.11/site-packages/click/core.py", line 788, in invoke
+    return __callback(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/crodell/miniforge3/envs/fwx/lib/python3.11/site-packages/distributed/cli/dask_worker.py", line 452, in main
+    asyncio_run(run(), loop_factory=get_loop_factory())
+  File "/home/crodell/miniforge3/envs/fwx/lib/python3.11/site-packages/distributed/compatibility.py", line 204, in asyncio_run
+    return runner.run(main)
+           ^^^^^^^^^^^^^^^^
+  File "/home/crodell/miniforge3/envs/fwx/lib/python3.11/asyncio/runners.py", line 118, in run
+    return self._loop.run_until_complete(task)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/crodell/miniforge3/envs/fwx/lib/python3.11/asyncio/base_events.py", line 654, in run_until_complete
+    return future.result()
+           ^^^^^^^^^^^^^^^
+  File "/home/crodell/miniforge3/envs/fwx/lib/python3.11/site-packages/distributed/cli/dask_worker.py", line 449, in run
+    [task.result() for task in done]
+  File "/home/crodell/miniforge3/envs/fwx/lib/python3.11/site-packages/distributed/cli/dask_worker.py", line 449, in <listcomp>
+    [task.result() for task in done]
+     ^^^^^^^^^^^^^
+  File "/home/crodell/miniforge3/envs/fwx/lib/python3.11/site-packages/distributed/cli/dask_worker.py", line 422, in wait_for_nannies_to_finish
+    await asyncio.gather(*nannies)
+  File "/home/crodell/miniforge3/envs/fwx/lib/python3.11/asyncio/tasks.py", line 694, in _wrap_awaitable
+    return (yield from awaitable.__await__())
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/crodell/miniforge3/envs/fwx/lib/python3.11/site-packages/distributed/core.py", line 536, in start
+    raise RuntimeError(f"{type(self).__name__} failed to start.") from exc
+RuntimeError: Nanny failed to start.

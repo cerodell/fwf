@@ -21,20 +21,84 @@ from utils.diagnostic import solve_RH, solve_TD, solve_W_WD, solve_r_o
 # ds = xr.open_zarr(
 #     "/Volumes/WFRT-Ext21/fwf-data/adda/d01/01/fwf-hourly-d01-2003010100.zarr"
 # )
-
+# fwf-daily-d03-2022111900.nc
 ds = salem.open_xr_dataset(
-    "/Volumes/WFRT-Ext24/fwf-data/wrf/d02/04/fwf-hourly-d02-2023051506.nc"
+    "/NASPANGEA2/HISTORICAL_WEATHER/FA_DTN_20_YEAR/cffdrs/fwi/fwf-daily-d03-2022111800.nc"
 )
 # fig = plt.figure(figsize=(12, 6))
 # ax = fig.add_subplot(1, 1, 1)
 # ds["S"].isel(time = 0).salem.quick_map(ax=ax, cmap="jet", vmax = 30)
 
 fig = plt.figure(figsize=(12, 6))
-ax = fig.add_subplot(1, 1, 1)
-ds["FRP"].isel(time=18).salem.quick_map(
-    ax=ax, cmap="YlOrRd", vmax=1000, oceans=True, lakes=True, prov=True, states=True
+ax = fig.add_subplot(1, 3, 1)
+ds["F"].isel(time=0).salem.quick_map(
+    ax=ax, cmap="jet", 
+)
+ax.set_title('')
+ax = fig.add_subplot(1, 3, 2)
+ds["R"].isel(time=18).salem.quick_map(
+    ax=ax, cmap="jet", 
+)
+ax.set_title('')
+ax = fig.add_subplot(1, 3, 3)
+ds["S"].isel(time=18).salem.quick_map(
+    ax=ax, cmap="jet", 
+)
+ax.set_title('')
+
+
+
+# %%
+
+
+ds = xr.open_dataset(
+    "/home/crodell/fwf/data/ecmwf/era5-land/200401/era5-land-2004010100.nc"
 )
 
+ds = salem.open_xr_dataset(
+    "/NASPANGEA2/HISTORICAL_WEATHER/FA_DTN_20_YEAR/cffdrs/fwi/fwf-daily-d03-2004081000.nc"
+)
+# fig = plt.figure(figsize=(12, 6))
+# ax = fig.add_subplot(1, 1, 1)
+# ds["S"].isel(time = 0).salem.quick_map(ax=ax, cmap="jet", vmax = 30)
+
+fig = plt.figure(figsize=(12, 12))
+ax = fig.add_subplot(3, 3, 1)
+ds["F"].isel(time=0).salem.quick_map(
+    ax=ax, cmap="jet", 
+)
+ax.set_title('FFMC')
+
+ax = fig.add_subplot(3, 3, 2)
+ds["R"].isel(time=0).salem.quick_map(
+    ax=ax, cmap="jet", 
+)
+ax.set_title('ISI')
+
+ax = fig.add_subplot(3, 3, 3)
+ds["S"].isel(time=0).salem.quick_map(
+    ax=ax, cmap="jet", 
+)
+ax.set_title('FWI')
+
+ax = fig.add_subplot(3, 3, 4)
+ax.set_title('DMC')
+ds["P"].isel(time=0).salem.quick_map(
+    ax=ax, cmap="jet", 
+)
+ax.set_title('DMC')
+
+ax = fig.add_subplot(3, 3, 5)
+ds["D"].isel(time=0).salem.quick_map(
+    ax=ax, cmap="jet", 
+)
+ax.set_title('DC')
+
+ax = fig.add_subplot(3, 3, 6)
+ds["U"].isel(time=0).salem.quick_map(
+    ax=ax, cmap="jet", 
+)
+ax.set_title('BUI')
 
 # ds_1 = xr.open_zarr(
 #     "/Volumes/WFRT-Ext21/fwf-data/adda/d01/01/fwf-hourly-d01-2002123100.zarr"
@@ -334,3 +398,5 @@ ds["FRP"].isel(time=18).salem.quick_map(
 # # fc = 1.45e-4 * np.sin()
 
 # # IVP = (tilr + fc) / rho * ()
+
+# %%

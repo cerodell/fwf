@@ -19,6 +19,8 @@ notebooks_dir = this_dir
 root_dir = notebooks_dir.parents[1]
 data_dir = root_dir / Path("data")
 json_dir = root_dir / Path("json")
+wrf_dir = Path("/NASPANGEA2/HISTORICAL_WEATHER/FA_DTN_20_YEAR")
+
 
 sys.path.insert(0, str(root_dir))
 sep = "*" * 30

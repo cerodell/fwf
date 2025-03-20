@@ -9,7 +9,7 @@ import pandas as pd
 from pathlib import Path
 from netCDF4 import Dataset
 from datetime import datetime
-from context import data_dir
+from context import data_dir, wrf_dir
 
 from wrf import (
     getvar,
@@ -73,15 +73,13 @@ def read_wrf(config):
         - True: do not write wrfout to zarr
 
     """
-    doi, model, domain = config["doi"], config["model"], config["domain"]
+    doi, model, company, domain = config["doi"], config["model"], config["company"], config["domain"]
     if int(doi.strftime("%Y")) >= 2023:
         filein = f'/Volumes/WFRT-EXT23/fwf-data/{model}/{domain}/{doi.strftime("%Y%m")}/fwf-hourly-{domain}-{doi.strftime("%Y%m%d06")}.nc'
     else:
         filein = f'/Volumes/Scratch/fwf-data/{model}/{domain}/{doi.strftime("%Y%m")}/fwf-hourly-{domain}-{doi.strftime("%Y%m%d06")}.nc'
 
-    # filein = f'/Volumes/WFRT-EXT24/fwf-data/{model}/{domain}/02/fwf-hourly-{domain}-{doi.strftime("%Y%m%d06")}.nc'
-    # print(os.path.isfile(filein))
-    # print(filein)
+
     if os.path.isfile(filein) == True:
         grid_ds = salem.open_xr_dataset(str(data_dir) + f"/wrf/{domain}-grid.nc")
         if config["reanalysis_mode"] == True:
@@ -103,21 +101,7 @@ def read_wrf(config):
 
                 ds["south_north"] = grid_ds["south_north"]
                 ds["west_east"] = grid_ds["west_east"]
-                ### Solve for hourly rain totals in mm....will be used in hourly_ffmc calculation
-                # r_oi = np.array(ds.r_o)
-                # shape = np.shape(r_oi[0, :, :])
-                # zero_full = np.zeros(shape, dtype=float)
-                # r_o_plus1 = np.dstack((zero_full.T, r_oi.T)).T
-                # r_hourly_list = []
-                # for i in range(len(ds.Time)):
-                #     r_hour = ds.r_o[i] - r_o_plus1[i]
-                #     r_hourly_list.append(r_hour)
-                # r_hourly = np.stack(r_hourly_list)
-                # r_hourly = xr.DataArray(
-                #     r_hourly, name="r_o_hourly", dims=("time", "south_north", "west_east")
-                # )
-                # ds["r_o_hourly"] = r_hourly
-
+     
                 return ds
 
             fwf_ds = xr.combine_nested(
@@ -158,67 +142,86 @@ def read_wrf(config):
         fwf_ds = fwf_ds.transpose("time", "south_north", "west_east")
 
     else:
-        filein = str(data_dir) + f'/{doi.strftime("%Y%m%d00")}/'
-        omp_set_num_threads(8)
+        year = doi.strftime('%Y')
+        month = doi.strftime('%m')
+        day = doi.strftime('%d')
+        filein = f"{wrf_dir}/{year}/{month}/{day}/" 
+        omp_set_num_threads(4)
         print(f"read files with {omp_get_max_threads()} threads")
         startTime = datetime.now()
         print("begin readwrf: ", str(startTime))
-        pathlist = sorted(Path(filein).glob(f"wrfout_{domain}_*00"))
-        if domain == "d02":
-            pathlist = pathlist[6:61]
-        else:
-            pathlist = pathlist[6:]
+        pathlist = sorted(Path(filein).glob(f"wrfsfc_{domain}_*"))
+        try:
+            doi_yesterday = doi - pd.Timedelta('1d')
+            domain = "d03"
+            company = 'fa'
+            year = doi_yesterday.strftime('%Y')
+            month = doi_yesterday.strftime('%m')
+            day = doi_yesterday.strftime('%d')
+            filein = f"{wrf_dir}/{year}/{month}/{day}/" 
+            pathlist_yesterday = sorted(Path(filein).glob(f"wrfsfc_{domain}_*"))
+            pathlist.insert(0, pathlist_yesterday[-1])
+            yesterday  = True
+        except:
+            print("No anaylis prior")
+            yesterday  = False
 
         ds_list = []
         for path in pathlist:
             path_in_str = str(path)
-            print(path_in_str)
+            # print(path_in_str)
             wrf_file = Dataset(path_in_str, "r")
 
             T = getvar(wrf_file, "T2", meta=True) - 273.15
-            TD = getvar(wrf_file, "td2", meta=True, units="degC")
-            # H = getvar(wrf_file, "rh2", meta=True)
+   
+            # TD = getvar(wrf_file, "td2", meta=True, units="degC")
+            H = getvar(wrf_file, "rh2", meta=True)
 
             wsp_wdir = g_uvmet.get_uvmet10_wspd_wdir(wrf_file, units="km h-1")
             wsp_array = np.array(wsp_wdir[0])
             wdir_array = np.array(wsp_wdir[1])
             W = xr.DataArray(wsp_array, name="W", dims=("south_north", "west_east"))
             WD = xr.DataArray(wdir_array, name="WD", dims=("south_north", "west_east"))
-            U10 = getvar(wrf_file, "U10", meta=True)
-            V10 = getvar(wrf_file, "V10", meta=True)
 
             ##varied parameterization scheme to forecast rain..NOTE this is a sum of rain from the starts of the model run
-            rain_c = getvar(wrf_file, "RAINC", meta=True)
-            rain_sh = getvar(wrf_file, "RAINSH", meta=True)
-            rain_nc = getvar(wrf_file, "RAINNC", meta=True)
-            r_o_i = rain_c + rain_sh + rain_nc
-            r_o = xr.DataArray(r_o_i, name="r_o", dims=("south_north", "west_east"))
+            r_o = getvar(wrf_file, "RAINNC", meta=True)
 
-            SNW = getvar(wrf_file, "SNOWNC", meta=True)
-            SNOWC = getvar(wrf_file, "SNOWC", meta=True)
-            SNOWH = getvar(wrf_file, "SNOWH", meta=True)
-
-            # var_list = [T, TD, H, W, WD, r_o, SNW, SNOWC, SNOWH, U10, V10]
-            var_list = [T, TD, W, WD, r_o, SNW, SNOWC, SNOWH, U10, V10]
+            var_list = [T, H, W, WD, r_o]
             ds = xr.merge(var_list)
             ds_list.append(ds)
 
         ### Combine xarray and rename to match van wangers defs
         fwf_ds = xr.combine_nested(ds_list, "time")
-        fwf_ds = fwf_ds.rename_vars({"T2": "T", "td2": "TD", "SNOWNC": "SNW"})
-        fwf_ds["SNW"] = fwf_ds.SNW - fwf_ds.SNW.isel(time=0)
-        fwf_ds["r_o"] = fwf_ds.r_o - fwf_ds.r_o.isel(time=0)
+        fwf_ds = fwf_ds.rename_vars({"T2": "T", "rh2": "H", "RAINNC": "r_o"})
 
-        RH = (
-            (6.11 * 10 ** (7.5 * (fwf_ds.TD / (237.7 + fwf_ds.TD))))
-            / (6.11 * 10 ** (7.5 * (fwf_ds.T / (237.7 + fwf_ds.T))))
-            * 100
-        )
-        RH = xr.where(RH > 100, 100, RH)
-        RH = xr.DataArray(RH, name="H", dims=("time", "south_north", "west_east"))
-        fwf_ds["H"] = RH
-        if np.min(fwf_ds.H) > 90:
-            raise ValueError("ERROR: Check TD unphysical RH values")
+
+        if yesterday == True:
+            if (doi.month == 8) and (doi.day == 1):
+                print('Yesterday and Aug 1')
+                fwf_ds["r_o"][1,:,:] = fwf_ds["r_o"].isel(time=1)  - fwf_ds["r_o"].isel(time=0)
+                fwf_ds = fwf_ds.isel(time =slice(1,25))
+            else:
+                print('Yesterday')
+                fwf_ds["r_o"] = fwf_ds.r_o - fwf_ds.r_o.isel(time=0)
+                fwf_ds = fwf_ds.isel(time =slice(1,25))
+
+        if len(fwf_ds['time'])!=24:
+            raise ValueError('TIme lenght is wrong')
+
+        if len(fwf_ds['r_o'])<0:
+            raise ValueError('Precip is less than zero')
+
+
+        # RH = (
+        #     (6.11 * 10 ** (7.5 * (fwf_ds.TD / (237.7 + fwf_ds.TD))))
+        #     / (6.11 * 10 ** (7.5 * (fwf_ds.T / (237.7 + fwf_ds.T))))
+        #     * 100
+        # )
+        # RH = xr.where(RH > 100, 100, RH)
+        # RH = xr.DataArray(RH, name="H", dims=("time", "south_north", "west_east"))
+        # fwf_ds["H"] = RH
+        # if np.min(fwf_ds.H) > 90:
+        #     raise ValueError("ERROR: Check TD unphysical RH values")
 
         wrf_file = Dataset(str(pathlist[0]), "r")
         nc_attrs = wrf_file.ncattrs()
@@ -226,7 +229,7 @@ def read_wrf(config):
             fwf_ds.attrs[nc_attr] = repr(wrf_file.getncattr(nc_attr))
 
         print(list(fwf_ds))
-        grid_ds = salem.open_xr_dataset(str(data_dir) + f"/wrf/{domain}-grid.nc")
+        grid_ds = salem.open_xr_dataset(str(data_dir) + f"/wrf/{company}/{domain}-grid.nc")
         fwf_ds.attrs["pyproj_srs"] = grid_ds.attrs["pyproj_srs"]
         print("readwrf run time: ", datetime.now() - startTime)
 

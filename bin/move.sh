@@ -1,18 +1,11 @@
 #!/bin/bash
 
-cd /Volumes/WFRT-Ext23/fwf-data/ecmwf/era5-land/04
-for y in {1991..2023}; do
+cd /NASPANGEA2/HISTORICAL_WEATHER/FA_DTN_20_YEAR/cffdrs/fwi
+for y in {2004..2024}; do
     for m in {1..12}; do
-        if (( m < 10 )); then
-            echo "$y"0"$m"
-            mkdir "$y"0"$m"
-            mv fwf-hourly-era5-land-"$y"0"$m"* "$y"0"$m"/
-            mv fwf-daily-era5-land-"$y"0"$m"* "$y"0"$m"/
-        else
-            echo "$y$m"
-            mkdir "$y$m"
-            mv fwf-hourly-era5-land-"$y$m"* "$y$m"/
-            mv fwf-daily-era5-land-"$y$m"* "$y$m"/
-        fi
+        printf -v month "%02d" "$m"
+        # mkdir "$y$month"
+        mv fwf-hourly-d03-"$y$month"*  "$y$month/"
+        mv fwf-daily-d03-"$y$month"*   "$y$month/"
     done
 done

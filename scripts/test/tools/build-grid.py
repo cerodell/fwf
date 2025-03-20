@@ -9,16 +9,17 @@ import geopandas as gpd
 import matplotlib.pyplot as plt
 
 
-from context import data_dir
+from context import data_dir, wrf_dir
 
 
-model = "ecmwf"
-domain = "era5-land"
+model = "wrf"
+customer = "fa"
+domain = "d03"
 
 
 if model == "wrf":
     ds = salem.open_xr_dataset(
-        str(data_dir) + f"/{model}/wrfout_{domain}_2021-01-14_00:00:00"
+        str(wrf_dir) + f"/2008/01/01/wrfsfc_{domain}_20080101_1600.nc"
     ).isel(Time=0)
     var = "T2"
     var_array = ds[var]
@@ -117,5 +118,5 @@ ds_grid[var].salem.quick_map(
     extend="both",
 )
 
-# ds_grid.to_netcdf(str(data_dir) + f"/{model}/{domain}-grid.nc")
-# grid_ds = salem.open_xr_dataset(str(data_dir) + f"/wrf/{domain}-grid.nc")
+ds_grid.to_netcdf(str(data_dir) + f"/{model}/{customer}/{domain}-grid.nc")
+grid_ds = salem.open_xr_dataset(str(data_dir) + f"/{model}/{customer}/{domain}-grid.nc")

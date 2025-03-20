@@ -122,8 +122,8 @@ class FWF:
         ############ Set up dataset and get attributes ################
         self.attrs = self.int_ds.attrs
         self.model = config.get("model")
+        self.company = config.get("company")
         self.domain = config.get("domain")
-        self.trail_name = config["trail_name"]
         self.fbp_mode = config.get("fbp_mode", False)
         self.frp_mode = config.get("frp_mode", False)
         self.overwinter = config.get("overwinter", False)
@@ -134,9 +134,9 @@ class FWF:
         self.parallel = config.get("parallel", False)
         self.root_dir = config.get("root_dir")
 
-        # self.iterator_dir = config.get("iterator_dir", str(data_dir) + f"/fwf-data/")
-        # self.save_dir = config.get("save_dir", Path(str(data_dir) + f"/fwf-data/"))
-        self.filein_dir = f"{self.root_dir}/{self.model}/{self.domain}"
+        # self.iterator_dir = config.get("iterator_dir", str(data_dir) + f"/fwf-data/{self.company}/")
+        self.iterator_dir = f"{self.root_dir}/cffdrs/fwi/"
+        self.filein_dir =self.iterator_dir
 
         self.file_formate = config.get("file_formate", "netcdf")
         if self.file_formate == "netcdf":
@@ -146,18 +146,7 @@ class FWF:
             self.file_ext = ".zarr"
             self.dataloader = self.open_zarr
 
-        # ## NOTE this will be adjusted when made operational
-        # if self.reanalysis_mode == True:
-        #     self.iterator_dir = f"/Volumes/WFRT-Ext23/fwf-data/ecmwf/era5-land/04"
-        #     self.save_dir = Path(
-        #         f"/Volumes/WFRT-Ext21/fwf-data/{self.model}/{self.domain}/{self.trail_name}/"
-        #     )
-        #     self.filein_dir = f"{self.root_dir}/{self.model}/{self.domain}"
-        # else:
-        self.iterator_dir = f"/Volumes/WFRT-Ext21/fwf-data/{self.model}/{self.domain}/{self.trail_name}/"
-        #     # self.iterator_dir = f"/Volumes/WFRT-Ext25/fwf-data/{self.model}/{self.domain}/{self.trail_name}/"
-        #     self.iterator_dir = f"/Volumes/ThunderBay/CRodell/{self.model}/{self.domain}/{self.trail_name}/"
-        #     self.filein_dir = f"{self.root_dir}/{self.model}/{self.domain}"
+
         self.save_dir = Path(self.iterator_dir)
         self.save_dir.mkdir(parents=True, exist_ok=True)
 
@@ -282,23 +271,8 @@ class FWF:
         ################################################################################
         ################################################################################
 
-        ## TODO move this to into read_dataset
-        for var in ["SNW", "SNOWH", "U10", "V10"]:
-            try:
-                self.int_ds = self.int_ds.drop_vars(var)
-            except:
-                pass
-
         #### Define and create a daily datasets (daily_ds) by getting noon local meteorology from hourly_ds for solving daily fwi
         self.daily_ds = self.get_noon(self.int_ds, list(self.int_ds))
-
-        ## provide variables attributes from hourly_ds to daily_ds
-        ## TODO look if this is redundant , might be done before writing dataset
-        for var in self.hourly_ds.data_vars:
-            if var in {"SNW", "SNOWH", "U10", "V10"}:
-                pass
-            else:
-                self.daily_ds[var].attrs = self.hourly_ds[var].attrs
 
         ## define todays rain as r_o_tomorrow for next fwi calculation.
         ## this is needed to ensure daily fwi use precip from noon local to noon local each forecast run
@@ -998,18 +972,7 @@ class FWF:
             hourly_ds.r_o_hourly,
             self.F,
         )
-        ## NOTE Uncomment to apply a land mask
-        # maskTime = datetime.now()
-        # landmask = self.landmask
-        # W, T, H, r_o, F_o = (
-        #     hourly_ds.W.to_masked_array(),
-        #     hourly_ds.T.to_masked_array(),
-        #     hourly_ds.H.to_masked_array(),
-        #     hourly_ds.r_o_hourly.to_masked_array(),
-        #     self.F.to_masked_array(),
-        # )
-        # W.mask, T.mask, H.mask, r_o.mask, F_o.mask = landmask, landmask, landmask, landmask, landmask
-
+  
         # #Eq. 1
         m_o = 147.2 * (101 - F_o) / (59.5 + F_o)
 
@@ -1025,17 +988,17 @@ class FWF:
             + (
                 42.5
                 * r_f
-                * dask.array.exp((-100 / (251 - m_o)))
-                * (1 - dask.array.exp((-6.93 / r_f)))
+                * np.exp((-100 / (251 - m_o)))
+                * (1 - np.exp((-6.93 / r_f)))
             ),
             m_o
             + (
                 42.5
                 * r_f
-                * dask.array.exp((-100 / (251 - m_o)))
-                * (1 - dask.array.exp((-6.93 / r_f)))
+                * np.exp((-100 / (251 - m_o)))
+                * (1 - np.exp((-6.93 / r_f)))
             )
-            + (0.0015 * dask.array.power((m_o - 150), 2) * dask.array.power(r_f, 0.5)),
+            + (0.0015 * np.power((m_o - 150), 2) * np.power(r_f, 0.5)),
         )
 
         m_o = xr.where(m_o > 250, 250, xr.where(m_o < 0, 0.1, m_o))
@@ -1045,49 +1008,49 @@ class FWF:
         ### (2a) Solve Equilibrium Moisture content for drying (E_d)
 
         E_d = (
-            0.942 * dask.array.power(H, 0.679)
-            + 11 * dask.array.exp((H - 100) / 10)
-            + 0.18 * (21.1 - T) * (1 - dask.array.exp((-0.115 * H)))
+            0.942 * np.power(H, 0.679)
+            + 11 * np.exp((H - 100) / 10)
+            + 0.18 * (21.1 - T) * (1 - np.exp((-0.115 * H)))
         )
 
         ########################################################################
         ### (2b) Solve Equilibrium Moisture content for wetting (E_w)
 
         E_w = (
-            0.618 * (dask.array.power(H, 0.753))
-            + 10 * dask.array.exp((H - 100) / 10)
-            + 0.18 * (21.1 - T) * (1 - dask.array.exp((-0.115 * H)))
+            0.618 * (np.power(H, 0.753))
+            + 10 * np.exp((H - 100) / 10)
+            + 0.18 * (21.1 - T) * (1 - np.exp((-0.115 * H)))
         )
 
         ########################################################################
         ### (3a) intermediate step to k_d (k_a)
-        k_a = 0.424 * (1 - dask.array.power(H / 100, 1.7)) + 0.0694 * (
-            dask.array.power(W, 0.5)
-        ) * (1 - dask.array.power(H / 100, 8))
+        k_a = 0.424 * (1 - np.power(H / 100, 1.7)) + 0.0694 * (
+            np.power(W, 0.5)
+        ) * (1 - np.power(H / 100, 8))
 
         ########################################################################
         ### (3b) Log drying rate for hourly computation, log to base 10 (k_d)
-        k_d = 0.0579 * k_a * dask.array.exp(0.0365 * T)
+        k_d = 0.0579 * k_a * np.exp(0.0365 * T)
 
         ########################################################################
         ### (4a) intermediate steps to k_w (k_b)
         k_b = 0.424 * (
-            1 - dask.array.power(((100 - H) / 100), 1.7)
-        ) + 0.0694 * dask.array.power(W, 0.5) * (
-            1 - dask.array.power(((100 - H) / 100), 8)
+            1 - np.power(((100 - H) / 100), 1.7)
+        ) + 0.0694 * np.power(W, 0.5) * (
+            1 - np.power(((100 - H) / 100), 8)
         )
 
         ########################################################################
         ### (4b)  Log wetting rate for hourly computation, log to base 10 (k_w)
-        k_w = 0.0579 * k_b * dask.array.exp(0.0365 * T)
+        k_w = 0.0579 * k_b * np.exp(0.0365 * T)
 
         ########################################################################
         ### (5a) intermediate dry moisture code (m_d)
-        m_d = E_d + ((m_o - E_d) * dask.array.exp(-2.303 * (k_d)))
+        m_d = E_d + ((m_o - E_d) * np.exp(-2.303 * (k_d)))
 
         ########################################################################
         ### (5b) intermediate wet moisture code (m_w)
-        m_w = E_w - ((E_w - m_o) * dask.array.exp(-2.303 * (k_w)))
+        m_w = E_w - ((E_w - m_o) * np.exp(-2.303 * (k_w)))
 
         ########################################################################
         ### (5c) combine dry, wet, neutral moisture codes
@@ -1289,6 +1252,7 @@ class FWF:
         ########################################################################
         ### (11) Solve for the effective rain (r_e)
         r_e = (0.92 * r_o) - 1.27
+        r_e = np.where(r_e < 0, 0, r_e) #NOTE THIS WAS COMMENTED OUT 
 
         ########################################################################
         ### (12) NOTE Alteratered for more accurate calculation (Lawson 2008)
@@ -1300,12 +1264,10 @@ class FWF:
 
         ########################################################################
         ### (13b) Solve for coefficients b where 33 < P_o <= 65 (b_mid)
-
         b_mid = np.where((P_o > 33) & (P_o <= 65), 14 - 1.3 * np.log(P_o), zero_full)
 
         ########################################################################
         ### (13c) Solve for coefficients b where  P_o > 65 (b_high)
-
         b_high = np.where(P_o > 65, 6.2 * np.log(P_o) - 17.2, zero_full)
         ########################################################################
         ### Combine (13a 13b 13c) for coefficients b
@@ -1321,7 +1283,6 @@ class FWF:
         ## Apply rain condition if precip is less than 2.8 then use yesterday's DC
         P_r = np.where(r_o <= 1.5, P_o, P_r)
         P_r = np.where(P_r < 0, 0, P_r)
-
         ########################################################################
         ### (16) Log drying rate (K)
         K = (
@@ -1336,7 +1297,8 @@ class FWF:
         ## constrain P to default start up and convert to dataarray
         P = np.where(P < self.P_initial, self.P_initial, P)
         P = xr.DataArray(P, name="P", dims=("south_north", "west_east"))
-
+        print(float(P.min()))
+        print(float(P.max()))
         self.P = P
         return P
 
@@ -1403,7 +1365,7 @@ class FWF:
 
         ##  Constrain temp
         ##    - The log drying rate K is proportional to temperature, becoming negligible at about -2.8°C (Van Wagner 1985) .
-        T = np.where(T < (-2.8), -2.8, T)
+        T = np.where(T < -2.8, -2.8, T)
 
         ########################################################################
         ### (18) Solve for the effective rain (r_d)
@@ -1735,12 +1697,11 @@ class FWF:
             B = 0.1 * R * f_D
 
         #### HOPEFULLY SOLVES RUNTIME WARNING
-        B = xr.where(B > 0, B, 1e-6)
+        B = xr.where(B >= 1, B, 1.01) #NOTE THIS WAS COMMENTED OUT 
 
         ########################################################################
         ### (30) Solve FWI
         S = xr.where(B <= 1, B, np.exp(2.72 * np.power((0.434 * np.log(B)), 0.647)))
-
         S = xr.DataArray(S, name="S", dims=("time", "south_north", "west_east"))
 
         ########################################################################
@@ -2552,7 +2513,7 @@ class FWF:
             for var in var_list:
                 var_array = int_ds[var].values
                 noon = var_array[(i + tzone + offset_noon), I, J]
-                day = np.array(int_ds.Time[i + 1], dtype="datetime64[D]")
+                day = np.array(int_ds.Time[i + 1], dtype="datetime64[D]").astype("datetime64[ns]")       
                 var_da = xr.DataArray(
                     noon,
                     name=var,
@@ -2806,7 +2767,6 @@ class FWF:
         length = len(self.hourly_ds.time)
         loopTime = datetime.now()
         print(f"Solve Hourly FWI System with {length} number of hours")
-
         FFMC = xr.combine_nested(
             [
                 self.solve_hourly_ffmc(self.hourly_ds.isel(time=i))
@@ -2814,8 +2774,6 @@ class FWF:
             ],
             "time",
         )
-        FFMC = FFMC.chunk("auto")
-        # FFMC = FFMC.assign_coords(Time = ('time', self.hourly_ds.Time.values))
         FFMC["Time"] = self.hourly_ds.Time
         self.hourly_ds["F"] = FFMC["F"]
         self.hourly_ds["m_o"] = FFMC["m_o"]
@@ -2841,7 +2799,6 @@ class FWF:
 
         if self.frp_mode == True:
             from tensorflow.keras.models import load_model
-
             hourly_ds = self.solve_frp(hourly_ds)
 
         return hourly_ds
@@ -2946,15 +2903,6 @@ class FWF:
         hourly_ds = self.hourly_loop()
         hourly_ds.attrs = self.attrs
 
-        keep_vars = ["F", "T", "W", "WD", "r_o", "H", "R", "S"]
-        # keep_vars = ['F', 'R', 'S']
-        # keep_vars =  ['F', 'T', 'W', 'WD', 'r_o', 'H', 'r_o_hourly', 'R', 'S', 'U', 'FMC', 'SFC', 'ISI', 'ROS', 'CFB', 'TFC', 'HFI']
-        # if self.reanalysis_mode == True:
-        #     hourly_ds['time'] = hourly_ds['Time']
-        #     hourly_ds = hourly_ds[keep_vars].sel(time=slice(self.int_ds.attrs["FS"] , self.int_ds.attrs["FE"]))
-        # else:
-        #     hourly_ds = hourly_ds[keep_vars].isel(time=slice(0, 24))
-        hourly_ds = hourly_ds[keep_vars]
         ## change all to float32 and give attributes to variabels
         for var in hourly_ds.data_vars:
             hourly_ds[var] = hourly_ds[var].astype(dtype="float32")
@@ -2968,7 +2916,8 @@ class FWF:
         )
 
         hourly_ds = self.prepare_ds(hourly_ds)
-
+        keep_vars = ['F', 'R', 'S']
+        hourly_ds = hourly_ds[keep_vars]
         #############################################################################################
         ##################################     RESEARCH MODE     ####################################
         #############################################################################################
@@ -3104,30 +3053,17 @@ class FWF:
                 "%Y%m%d%H"
             )
 
-        keep_vars = [
-            "F",
-            "P",
-            "D",
-            "r_o_tomorrow",
-            "R",
-            "U",
-            "S",
-            "DSR",
-            "T",
-            "W",
-            "H",
-            "r_o",
-        ]
 
-        daily_ds = daily_ds[keep_vars]
-        print("daily_ds var list", list(daily_ds))
+
+        # daily_ds = daily_ds[keep_vars]
         ## change all to float32 and give attributes to variabels
         for var in daily_ds.data_vars:
             daily_ds[var] = daily_ds[var].astype(dtype="float32")
             daily_ds[var].attrs = self.var_dict[var]
             daily_ds[var].attrs["pyproj_srs"] = daily_ds.attrs["pyproj_srs"]
         daily_ds = self.prepare_ds(daily_ds)
-
+        keep_vars = ['F', 'P', 'D', 'R', 'U', 'S', 'DSR', 'r_o_tomorrow']
+        daily_ds = daily_ds[keep_vars]
         # ## Write and save DataArray (.nc) file
         make_dir = Path(
             str(self.save_dir)
@@ -3139,8 +3075,9 @@ class FWF:
         if self.file_formate == "netcdf":
             writeTime = datetime.now()
             print("Start Write ", datetime.now())
-            daily_ds, encoding = compressor(daily_ds, self.var_dict)
-            daily_ds.to_netcdf(make_dir, encoding=encoding, mode="w")
+            # daily_ds, encoding = compressor(daily_ds, self.var_dict)
+            # daily_ds.to_netcdf(make_dir, encoding=encoding, mode="w")
+            daily_ds.to_netcdf(make_dir, mode="w")
             print("Write Time: ", datetime.now() - writeTime)
             print(f"Wrote working {make_dir}")
             print("Daily method run time: ", datetime.now() - dailyTimer)

@@ -1,4 +1,4 @@
-#!/bluesky/fireweather/miniconda3/envs/fwf/bin/python
+#!/home/crodell/miniforge3/envs/fwx/bin/python
 
 """
 Runs the FWF model for each model domain.

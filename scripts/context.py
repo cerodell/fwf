@@ -20,12 +20,7 @@ root_dir = notebooks_dir.parents[0]
 data_dir = root_dir / Path("data")
 json_dir = root_dir / Path("json")
 
-tzone_dir = root_dir / Path("data/tzone/")
-html_dir = root_dir / Path("fwf-web/static/html/")
-ops_dir = Path("/bluesky/archive/fireweather/forecasts/")
-
-
-wrf_dir = Path("/bluesky/working/wrf2arl/WAN00CG-01/")
+wrf_dir = Path("/NASPANGEA2/HISTORICAL_WEATHER/FA_DTN_20_YEAR")
 
 
 sys.path.insert(0, str(root_dir))

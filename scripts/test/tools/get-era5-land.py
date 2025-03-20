@@ -6,10 +6,11 @@ import pandas as pd
 from datetime import datetime
 from pathlib import Path
 
+from context import data_dir
 
 c = cdsapi.Client()
-save_dir = "/Volumes/WFRT-Ext25/ecmwf/era5-land/"
-date_range = pd.date_range("1991-01-22", "2024-1-01")
+save_dir = f"/{data_dir}/ecmwf/era5-land/"
+date_range = pd.date_range("2004-01-01", "2004-01-02")
 for date in date_range:
     startTime = datetime.now()
     make_dir = Path(str(save_dir) + f"/{date.strftime('%Y%m')}")
@@ -24,15 +25,13 @@ for date in date_range:
                 "10m_v_component_of_wind",
                 "2m_dewpoint_temperature",
                 "2m_temperature",
-                "snow_depth",
                 "total_precipitation",
-                "potential_evaporation",
             ],
             "area": [
-                86,
-                -180,
-                15,
-                -25,
+                61.2,
+                -122.44,
+                47.4,
+                -108,
             ],
             "year": date.strftime("%Y"),
             "month": date.strftime("%m"),
