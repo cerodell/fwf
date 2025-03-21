@@ -7,19 +7,23 @@ import pandas as pd
 import xarray as xr
 import geopandas as gpd
 import matplotlib.pyplot as plt
+from pathlib import Path
 
 
 from context import data_dir, wrf_dir
 
 
 model = "wrf"
-customer = "fa"
+customer = "bc"
 domain = "d03"
 
 
 if model == "wrf":
+    # ds = salem.open_xr_dataset(
+    #     str(wrf_dir) + f"/2008/01/01/wrfsfc_{domain}_20080101_1600.nc"
+    # ).isel(Time=0)
     ds = salem.open_xr_dataset(
-        str(wrf_dir) + f"/2008/01/01/wrfsfc_{domain}_20080101_1600.nc"
+        "/NASPANGEA/WRF/BCWS_forecast/all_wrfsfc_d03_2025030800PT.nc"
     ).isel(Time=0)
     var = "T2"
     var_array = ds[var]
@@ -110,13 +114,17 @@ ds_grid = ds_grid.rename(
         "y": "south_north",
     }
 )
+# ds_grid['HGT'] = ds['HGT']
 
 ds_grid[var] = (("south_north", "west_east"), var_array.values)
 ds_grid[var].attrs["pyproj_srs"] = ds_grid.attrs["pyproj_srs"]
 ds_grid[var].salem.quick_map(
     cmap="coolwarm",
     extend="both",
+    # vmin = 0
 )
 
-ds_grid.to_netcdf(str(data_dir) + f"/{model}/{customer}/{domain}-grid.nc")
-grid_ds = salem.open_xr_dataset(str(data_dir) + f"/{model}/{customer}/{domain}-grid.nc")
+save_dir = Path(str(data_dir) + f"/grids/")
+save_dir.mkdir(parents=True, exist_ok=True)
+ds_grid.to_netcdf(f"{save_dir}/{customer}-{model}-{domain}-grid.nc")
+grid_ds = salem.open_xr_dataset(f"{save_dir}/{customer}-{model}-{domain}-grid.nc")

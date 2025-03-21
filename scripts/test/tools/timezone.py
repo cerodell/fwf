@@ -30,11 +30,11 @@ __email__ = "crodell@eoas.ubc.ca"
 
 
 model = "wrf"
-customer = "fa"
+customer = "bc"
 domain = "d03"
 season = "ST"
 
-filein = str(data_dir) + f"/{model}/{customer}/{domain}-grid.nc"
+filein = str(data_dir) + f"/grids/{customer}-{model}-{domain}-grid.nc"
 # filein = str(data_dir) + f"/{model}/wrfout_{domain}_2023-04-20_00:00:00"
 tzone_shp = (
     str(data_dir) + "/tzone/timezones-with-oceans/combined-shapefile-with-oceans.shp"
@@ -161,7 +161,7 @@ ds["ZoneST"].attrs["pyproj_srs"] = pyproj_srs
 
 ds["ZoneST"].salem.quick_map(cmap="coolwarm")
 ds = ds.drop("var")
-ds.to_netcdf(str(data_dir) + f"/tzone/tzone-{model}-{domain}-{season}.nc", mode="w")
+ds.to_netcdf(str(data_dir) + f"/tzone/{customer}-{model}-{domain}-tzone.nc", mode="w")
 
 
 # ####################################

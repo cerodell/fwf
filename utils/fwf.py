@@ -206,7 +206,7 @@ class FWF:
 
         ## Open gridded static
         static_ds = salem.open_xr_dataset(
-            str(data_dir) + f"/static/static-vars-{self.model.lower()}-{self.domain}.nc"
+            str(data_dir) + f"/static/{self.customer}-{self.model.lower()}-{self.domain}-static.nc"
         )
         self.static_ds = static_ds
 
