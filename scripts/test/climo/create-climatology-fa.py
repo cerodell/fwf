@@ -29,7 +29,7 @@ cluster = SLURMCluster(
     cores=6,
     memory="32GB",
     processes=1,
-    walltime="06:00:00",
+    walltime="02:00:00",
     log_directory="/home/crodell/fwf/log",
     job_name="fwf_dask_cluster"  # Custom job name
 )
@@ -60,7 +60,6 @@ file_name = (
     str(save_dir)
     + f"/fwi-system-{method}-climatology-{start.replace('-','')}-{stop.replace('-','')}.zarr"
 )
-test = xr.open_dataset(file_name)
 
 # %%
 
@@ -166,4 +165,5 @@ print("Run Time: ", datetime.now() - runAll)
 # %%
 
 
+test = xr.open_dataset(file_name)
 
