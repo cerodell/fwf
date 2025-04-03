@@ -6,7 +6,7 @@ ssh-add /home/$USER/.ssh/dtn_key
 
 # Get the current date in the desired format (YYYYMMDD)
 # TODAY=$(date +%Y%m%d)
-TODAY="20250325"
+TODAY="20250327"
 
 # Define the filename with the current date, need to chage depending on dataset
 FILENAME="all_wrf2d_d03_${TODAY}00MT.nc"

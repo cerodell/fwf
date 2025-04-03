@@ -27,13 +27,8 @@ import warnings
 __author__ = "Christopher Rodell"
 __email__ = "crodell@tecnosylva.com"
 
-# ignore RuntimeWarning
-# warnings.filterwarnings("ignore", category=RuntimeWarning)
-# warnings.filterwarnings("ignore", category=UserWarning)
-# date_range = pd.date_range("2004-08-01", "2004-08-01")
-# date_range = pd.date_range("2004-08-01", "2004-08-10")
-# date_range = pd.date_range("2022-11-22", "2024-08-01")
-date_range = pd.date_range("2022-11-15", "2024-08-01")
+date_range = pd.date_range("2025-03-08", "2025-03-26")
+# date_range = pd.date_range("2025-03-05", "2025-03-05")
 
 config = dict(
     model="wrf",
@@ -42,13 +37,10 @@ config = dict(
     initialize=False,
     initialize_hffmc=False,
     overwinter=False,
-    # fbp_mode=True,
-    # frp_mode=True,
-    correctbias=False,
-    reanalysis_mode=False,
-    parallel=False,
+    fbp_mode=False,
     file_formate="netcdf",
-    root_dir = "/NASPANGEA2/HISTORICAL_WEATHER/FA_DTN_20_YEAR/"
+    nwp_dir = "/NASPANGEA/WRF/Fortis_Alberta_forecast/",       ## "/NASPANGEA/WRF/Fortis_Alberta_forecast/"  or "/NASPANGEA/WRF/BCWS_forecast/"
+    # save_dir = "/path_to/save/fwf/" ## if not defined a folder is created nwp_dir/cffdrs
 )
 
 
